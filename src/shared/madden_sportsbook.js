@@ -14,9 +14,10 @@ import { awardRecognitionPoints, consumeRecognitionPerk, getRecognitionGameOfWee
 import { getCoachAssignmentMap } from './madden_coach_assignments.js';
 import { loadLeagueSnapshot, resolveLeagueIdWithConfig } from '../../madden/madden_data.js';
 import { getMaddenSnapshotContext } from './madden_metadata.js';
+import { loadMaddenChannelMap } from './madden_metadata.js';
+import { getGuildRoleMap } from './madden_guild_config.js';
 
 const STORE_PATH = path.join(process.cwd(), 'data', 'madden', 'sportsbook.json');
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const WEEKLY_GAME_LOG_FILE = path.join(process.cwd(), 'data', 'madden', 'weekly_game_log.json');
 
@@ -55,8 +56,14 @@ function saveStore(store) {
   saveJSON(STORE_PATH, store);
 }
 
-function loadRoleMap() {
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
   return safeReadJSON(ROLE_MAP_FILE, {});
+}
+
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
 function loadWeeklyGameLog() {
@@ -812,13 +819,14 @@ function gameAlreadyPlayed(leagueId, weekNumber, line, liveGames = []) {
   );
 }
 
-function sportsbookHeaderEmbed(weekNumber, seasonKey, intel = null) {
+function sportsbookHeaderEmbed(weekNumber, seasonKey, intel = null, guildId = null) {
+  const roleMap = loadRoleMap(guildId);
   const embed = new EmbedBuilder()
     .setColor(0x2ecc71)
     .setTitle(brandTitle(`LB Sportsbook • Week ${weekNumber}`))
     .setDescription([
       `Open the private board below to view this week's lines, check your card, and place bets.`,
-      `Eligible: coaches and <@&${loadRoleMap()['Ghost Legacy']}>`,
+      `Eligible: coaches and <@&${roleMap?.['Ghost Legacy'] || 'Ghost Legacy'}>`,
       ``,
       `Markets: spread, moneyline, over/under`,
       `Rules: current week only • max ${MAX_GAME_MARKETS} markets per game`,
@@ -930,7 +938,7 @@ function linePrice(line, market, selection) {
 }
 
 export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNumber, gameId, market, selection, wager }) {
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMap(guildId);
   if (!isCoachOrGhostLegacy(member, roleMap)) {
     return { ok: false, message: 'Only coaches and Ghost Legacy members can use the sportsbook.' };
   }

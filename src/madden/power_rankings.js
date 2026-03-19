@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { upsertGuildPin } from '../shared/madden_guild_config.js';
 
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
@@ -16,6 +17,10 @@ function loadSnapshot(leagueId) {
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
+}
+
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
 function teamEmoji(name, emojiMap) {
@@ -154,7 +159,7 @@ function teamRoleMention(teamName, roleMap) {
   return null;
 }
 
-export async function updatePowerRankings(client, leagueId) {
+export async function updatePowerRankings(client, leagueId, guildId = null) {
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const displayWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? 0;
@@ -185,7 +190,7 @@ export async function updatePowerRankings(client, leagueId) {
   } else {
     lines = ranked.map((s, idx) => {
       const name = teams[s.teamId] || 'Team';
-       const emoji = teamEmoji(name, emojiMap);
+      const emoji = teamEmoji(name, emojiMap);
       const rec = formatRecord(s);
       const currentRank = idx + 1;
       const prevRank = prev[s.teamId];
@@ -211,7 +216,7 @@ export async function updatePowerRankings(client, leagueId) {
   }
   fields.push({ name: 'Top 10', value: lines.join('\n'), inline: false });
 
-  const channelMap = loadJson(CHANNEL_MAP_FILE);
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Power Rankings'];
   if (!channelId) throw new Error('Power Rankings channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -224,13 +229,14 @@ export async function updatePowerRankings(client, leagueId) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('power_rankings');
+  const pinId = getPinId('power_rankings', guildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) {
     console.warn('[power_rankings] pin not found; skipping create');
     return;
   }
+  if (channel?.guild?.id) upsertGuildPin(channel.guild.id, 'power_rankings', msg.id);
   await msg.edit({ embeds: [embed], content: null }).catch(() => null);
 
   // Tag new entrants separately
@@ -259,7 +265,8 @@ export async function updatePowerRankings(client, leagueId) {
 }
 
 export async function resetPowerRankings(client) {
-  const channelMap = loadJson(CHANNEL_MAP_FILE);
+  const guildId = client?.guilds?.cache?.first?.()?.id || null;
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Power Rankings'];
   if (!channelId) throw new Error('Power Rankings channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -272,10 +279,11 @@ export async function resetPowerRankings(client) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('power_rankings');
+  const pinId = getPinId('power_rankings', guildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) return;
+  if (channel?.guild?.id) upsertGuildPin(channel.guild.id, 'power_rankings', msg.id);
   await msg.edit({ embeds: [embed], content: null }).catch(() => null);
 }
 

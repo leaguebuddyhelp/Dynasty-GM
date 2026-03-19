@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { saveLeague as saveLeagueDb, loadLeague as loadLeagueDb } from './madden_db.js';
+import { getMaddenConfigPath } from '../leaguebuddy/paths.js';
 
-const CONFIG_PATH = path.join(process.cwd(), 'data', 'madden', 'config.json');
+const CONFIG_PATH = getMaddenConfigPath();
 
 function readConfig() {
   try {
@@ -36,6 +37,12 @@ export function getLeagueForGuild(guildId) {
   if (dbLeague) return dbLeague;
   // Finally global default in config
   return cfg.globalDefault || null;
+}
+
+export function getExplicitLeagueForGuild(guildId) {
+  const cfg = readConfig();
+  if (guildId && cfg.guilds && cfg.guilds[guildId]) return cfg.guilds[guildId];
+  return null;
 }
 
 export function setGlobalDefault(leagueId) {

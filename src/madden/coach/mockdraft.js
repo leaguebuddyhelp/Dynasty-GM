@@ -7,6 +7,8 @@ import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 
+export const featureKey = 'scouting_draft';
+
 let currentCalendarYear = 2025;
 const DRAFT_CLASS_DIR = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
 const DRAFT_ORDER_OVERRIDES_FILE = path.join(process.cwd(), 'data', 'madden', 'draft_order_overrides.json');
@@ -1232,7 +1234,7 @@ function deriveTeamNeedsDetailed(league) {
   return needsByTeam;
 }
 
-function deriveTeamNeeds(league) {
+export function deriveTeamNeeds(league) {
   const profiles = deriveTeamNeedsDetailed(league);
   return Object.fromEntries(Object.entries(profiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
 }
@@ -1538,5 +1540,5 @@ export async function execute(interaction) {
   await interaction.editReply(payload);
 }
 
-export { deriveTeamNeeds, loadTeamEmojis, formatTeamEmoji, applyPickTrades, loadDraftClass, loadOfficialDraftOrderOverride, prospectGroup };
+export { loadTeamEmojis, formatTeamEmoji, applyPickTrades, loadDraftClass, loadOfficialDraftOrderOverride, prospectGroup };
 export default { data, execute };

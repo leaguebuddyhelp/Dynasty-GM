@@ -9,6 +9,8 @@ import { getSportsbookLineForMatchup } from '../../shared/madden_sportsbook.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { formatTeamLabelWithEmoji, RECOGNITION_EMOJIS } from '../../shared/madden_visuals.js';
 
+export const featureKey = 'recognition';
+
 function normalizeName(name = '') {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -325,9 +327,9 @@ function injuryPriority(player = {}) {
   const weeks = Number(player?.injuryLength || 0);
   const posBoost =
     pos === 'QB' ? 60 :
-    ['LT', 'RT', 'WR', 'TE', 'CB', 'FS', 'SS'].includes(pos) ? 42 :
-    ['HB', 'RB', 'DT', 'LE', 'RE', 'MLB'].includes(pos) ? 30 :
-    16;
+      ['LT', 'RT', 'WR', 'TE', 'CB', 'FS', 'SS'].includes(pos) ? 42 :
+        ['HB', 'RB', 'DT', 'LE', 'RE', 'MLB'].includes(pos) ? 30 :
+          16;
   return posBoost + ovr + (weeks * 2);
 }
 

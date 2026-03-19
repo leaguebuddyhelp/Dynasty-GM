@@ -4,8 +4,9 @@ import { getPinId, setPinId } from './pins_store.js';
 import { getLatestReliableRegularSeasonWeekIndex } from './top_players.js';
 import { Stage } from './ea_client.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { upsertGuildPin } from '../shared/madden_guild_config.js';
 
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 
 function loadJson(file, fallback = {}) {
@@ -18,8 +19,8 @@ function loadSnapshot(leagueId) {
   return JSON.parse(raw);
 }
 
-function loadChannelMap() {
-  try { return JSON.parse(fs.readFileSync(CHANNEL_MAP_FILE, 'utf8')); } catch { return {}; }
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
 function teamMap(snapshot, emojiMap) {
@@ -249,6 +250,8 @@ async function resolveStatLeadersMessage(channel, pinId) {
     (msg.embeds || []).some((embed) => (embed?.title || '').includes('Madden Stat Leaders'))
   );
   if (recentMatch) {
+    const guildId = channel?.guild?.id || null;
+    if (guildId) upsertGuildPin(guildId, 'stat_leaders', recentMatch.id);
     setPinId('stat_leaders', recentMatch.id);
     return recentMatch;
   }
@@ -261,6 +264,8 @@ async function ensureStatLeadersMessage(channel, embed, pinId) {
   if (existing) {
     try {
       await existing.edit({ embeds: [embed], content: null });
+      const guildId = channel?.guild?.id || null;
+      if (guildId) upsertGuildPin(guildId, 'stat_leaders', existing.id);
       setPinId('stat_leaders', existing.id);
       return existing;
     } catch (error) {
@@ -269,18 +274,21 @@ async function ensureStatLeadersMessage(channel, embed, pinId) {
         messageId: existing.id,
         error: error?.message || error,
       });
-      try { if (existing.pinned) await existing.unpin().catch(() => null); } catch {}
+      try { if (existing.pinned) await existing.unpin().catch(() => null); } catch { }
     }
   }
 
   const created = await channel.send({ embeds: [embed] });
   await created.pin().catch(() => null);
+  const guildId = channel?.guild?.id || null;
+  if (guildId) upsertGuildPin(guildId, 'stat_leaders', created.id);
   setPinId('stat_leaders', created.id);
   console.log('[stat_leaders] replacement created', { channelId: channel.id, messageId: created.id, oldPinId: pinId || null });
   return created;
 }
 
 export async function updateStatLeaders(client, leagueId) {
+  const guildId = client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const currentWeek = (snapshot?.currentWeek ?? seasonInfo.displayWeek ?? 0);
@@ -343,7 +351,7 @@ export async function updateStatLeaders(client, leagueId) {
     });
   });
 
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Stat Leaders'];
   if (!channelId) throw new Error('Stat Leaders channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -358,7 +366,7 @@ export async function updateStatLeaders(client, leagueId) {
   };
 
   try {
-    const pinId = getPinId('stat_leaders');
+    const pinId = getPinId('stat_leaders', guildId);
     const msg = await ensureStatLeadersMessage(channel, embed, pinId);
     console.log('[stat_leaders] updated', { channelId, messageId: msg.id, pinId, latestWeek: latestReliableWeekIndex != null ? latestReliableWeekIndex + 1 : null });
   } catch (e) {
@@ -367,7 +375,8 @@ export async function updateStatLeaders(client, leagueId) {
 }
 
 export async function resetStatLeaders(client) {
-  const channelMap = loadChannelMap();
+  const guildId = client?.guilds?.cache?.first?.()?.id || null;
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Stat Leaders'];
   if (!channelId) return;
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -390,7 +399,7 @@ export async function resetStatLeaders(client) {
     timestamp: new Date().toISOString(),
   };
   try {
-    const pinId = getPinId('stat_leaders');
+    const pinId = getPinId('stat_leaders', guildId);
     const msg = await ensureStatLeadersMessage(channel, embed, pinId);
     console.log('[stat_leaders] reset', { channelId, messageId: msg.id, pinId });
   } catch (e) {

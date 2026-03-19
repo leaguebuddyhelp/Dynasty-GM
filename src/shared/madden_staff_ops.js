@@ -25,6 +25,7 @@ function saveJSON(file, data) {
 }
 
 function loadChannelMap() {
+  // For legacy callers that don't pass guildId explicitly, keep v1 behavior.
   return loadMaddenChannelMap();
 }
 
@@ -53,7 +54,7 @@ export function appendMaddenStaffLog(entry) {
 }
 
 export async function postMaddenStaffLog(client, guildId, title, description, fields = []) {
-  const channelMap = loadChannelMap();
+  const channelMap = loadMaddenChannelMap(guildId);
   const opsChannelId = getOpsChannelId(channelMap);
   if (!opsChannelId) return;
   const channel = await client.channels.fetch(opsChannelId).catch(() => null);
@@ -68,7 +69,7 @@ export async function postMaddenStaffLog(client, guildId, title, description, fi
 }
 
 export async function postMaddenStaffDecision(client, guildId, title, description, fields = []) {
-  const channelMap = loadChannelMap();
+  const channelMap = loadMaddenChannelMap(guildId);
   const staffChannelId = getStaffChannelId(channelMap);
   if (!staffChannelId) return;
   const channel = await client.channels.fetch(staffChannelId).catch(() => null);
@@ -83,7 +84,7 @@ export async function postMaddenStaffDecision(client, guildId, title, descriptio
 }
 
 export async function postLeagueStaffOpsSnapshot(client, guildId, reason = 'update') {
-  const channelMap = loadChannelMap();
+  const channelMap = loadMaddenChannelMap(guildId);
   const opsChannelId = getOpsChannelId(channelMap);
   if (!opsChannelId) return;
   const guild = client.guilds.cache.get(guildId) || await client.guilds.fetch(guildId).catch(() => null);

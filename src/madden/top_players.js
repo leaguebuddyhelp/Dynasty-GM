@@ -6,6 +6,7 @@ import { gatherWeeklyStats } from './awards.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadLeagueSnapshot } from './madden_data.js';
 import { getPinId, setPinId } from './pins_store.js';
+import { upsertGuildPin } from '../shared/madden_guild_config.js';
 
 const TOP_FILE = path.join(process.cwd(), 'data', 'madden', 'top_players.json');
 const TOP_HISTORY_DIR = path.join(process.cwd(), 'data', 'madden', 'top_players_history');
@@ -1731,9 +1732,9 @@ function computeSeasonTop100FromHistory(leagueId) {
           ? weekly.allGraded
           : Array.isArray(weekly?.top100)
             ? weekly.top100
-          : Array.isArray(weekly)
-            ? weekly
-            : [];
+            : Array.isArray(weekly)
+              ? weekly
+              : [];
         const used = new Set(top.map((p) => String(p.id || `${p.name}-${p.teamId || ''}`)));
         for (const player of weeklyTop) {
           const id = String(player.id || `${player.name}-${player.teamId || ''}`);
@@ -1853,7 +1854,7 @@ async function findExistingTop100Message(client, preferredChannelId, pinId) {
     if (existing) return { channel: preferredChannel, message: existing };
   }
 
-  const guild = preferredChannel?.guild || client.guilds.cache.first();
+  const guild = preferredChannel?.guild || null;
   const channels = guild?.channels?.cache
     ? [...guild.channels.cache.values()].filter((channel) => channel?.isTextBased?.())
     : [];
@@ -1880,15 +1881,20 @@ async function postTop100(client, leagueId, list, channelId, meta = {}) {
         .setStyle(ButtonStyle.Primary)
         .setDisabled(totalPages <= 1)
     );
-    const pinId = getPinId('top100');
-    const { channel, message } = await findExistingTop100Message(client, channelId, pinId);
-    if (!channel || !channel.isTextBased()) return;
+    const channel = channelId ? await client.channels.fetch(channelId).catch(() => null) : null;
+    const guildId = channel?.guild?.id || null;
+    const pinId = getPinId('top100', guildId);
+    const { channel: resolvedChannel, message } = await findExistingTop100Message(client, channelId, pinId);
+    if (!resolvedChannel || !resolvedChannel.isTextBased()) return;
     if (message) {
       await message.edit({ embeds: [embed], components: [row] });
       return;
     }
-    const sent = await channel.send({ embeds: [embed], components: [row] });
-    if (sent?.id) setPinId('top100', sent.id);
+    const sent = await resolvedChannel.send({ embeds: [embed], components: [row] });
+    if (sent?.id) {
+      if (guildId) upsertGuildPin(guildId, 'top100', sent.id);
+      setPinId('top100', sent.id);
+    }
   } catch (err) {
     console.error('[top_players] Failed to post Top 100:', err);
   }

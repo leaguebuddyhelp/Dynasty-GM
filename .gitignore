@@ -55,6 +55,30 @@ config.json
 # Madden sensitive data
 data/madden/tokens.json
 data/madden/leagues/*.json
+data/madden/leagues/previous/*.json
+
+# LEAGUEbuddy / Railway runtime data
+data/guilds/
+data/leaguebuddy/
+data/leaguebuddy_recognition.json
+data/madden/*.json
+data/madden/**/*.json
+data/madden/*.sqlite
+data/madden/*.sqlite-shm
+data/madden/*.sqlite-wal
+data/madden/*.code-workspace
+
+# Keep safe static/reference assets under data/madden tracked
+!data/madden/dev_emojis.json
+!data/madden/team_emojis.json
+!data/madden/README.md
+!data/madden/.gitkeep
+
+# Keep draft-class/reference assets tracked
+!data/draft_classes/
+!data/draft_classes/**
+!data/2k/
+!data/2k/**
 
 # Data files (do not commit to main)
 data/season.json

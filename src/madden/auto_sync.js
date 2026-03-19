@@ -1,7 +1,5 @@
 import { SnallabotProvider } from './providers/SnallabotProvider.js';
 import { runSync } from './sync.js';
-import { getLeagueForGuild } from './madden_config.js';
-
 const ENABLED = (process.env.MADDEN_AUTO_SYNC_ENABLED ?? 'false').toLowerCase() === 'true';
 const USE_SNALLABOT = (process.env.MADDEN_SYNC_USE_SNALLABOT ?? 'true').toLowerCase() !== 'false';
 const INTERVAL_MINUTES = Number(process.env.MADDEN_AUTO_SYNC_MINUTES || 30);
@@ -11,9 +9,9 @@ let running = false;
 
 async function doSync() {
   const envLeague = process.env.MADDEN_AUTO_SYNC_LEAGUE_ID || process.env.MADDEN_LEAGUE_ID || null;
-  const LEAGUE_ID = envLeague || getLeagueForGuild(null);
+  const LEAGUE_ID = envLeague || null;
   if (!LEAGUE_ID) {
-    console.warn('[madden-auto-sync] Skipping; no league id set (MADDEN_AUTO_SYNC_LEAGUE_ID or MADDEN_LEAGUE_ID)');
+    console.warn('[madden-auto-sync] Skipping; no league id set (configure MADDEN_AUTO_SYNC_LEAGUE_ID or MADDEN_LEAGUE_ID explicitly)');
     return;
   }
   if (running) {

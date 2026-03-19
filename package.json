@@ -9,6 +9,10 @@
   "scripts": {
     "start": "node app.js",
     "deploy-commands": "node deploy-commands.js",
+    "start:dev": "NODE_ENV=development APP_ENV=dev MADDEN_ONLY=true node -r dotenv/config app.js dotenv_config_path=.env.dev",
+    "deploy:dev": "NODE_ENV=development APP_ENV=dev MADDEN_ONLY=true DEPLOY_SCOPE=guild node -r dotenv/config deploy-commands.js dotenv_config_path=.env.dev",
+    "start:prod": "NODE_ENV=production APP_ENV=prod MADDEN_ONLY=true node -r dotenv/config app.js dotenv_config_path=.env.prod",
+    "deploy:prod": "NODE_ENV=production APP_ENV=prod MADDEN_ONLY=true DEPLOY_SCOPE=global node -r dotenv/config deploy-commands.js dotenv_config_path=.env.prod",
     "madden:avp": "node scripts/generate-madden-avp.js",
     "madden:sync": "node scripts/madden-import.js",
     "madden:export:upload": "node scripts/madden-upload-export.js",

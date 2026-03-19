@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 
 function loadSnapshot(leagueId) {
@@ -12,8 +12,8 @@ function loadSnapshot(leagueId) {
   return JSON.parse(raw);
 }
 
-function loadChannelMap() {
-  try { return JSON.parse(fs.readFileSync(CHANNEL_MAP_FILE, 'utf8')); } catch { return {}; }
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
 function loadEmojiMap() {
@@ -97,6 +97,7 @@ function sortDivision(list) {
 }
 
 export async function updateStandings(client, leagueId) {
+  const guildId = client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const seasonWeekType = seasonInfo.seasonWeekType;
@@ -152,7 +153,7 @@ export async function updateStandings(client, leagueId) {
     { name: 'NFC', value: nfcBlock, inline: true },
   ];
 
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Standings'];
   if (!channelId) throw new Error('Standings channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -165,7 +166,7 @@ export async function updateStandings(client, leagueId) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('standings');
+  const pinId = getPinId('standings', guildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) {
@@ -176,7 +177,8 @@ export async function updateStandings(client, leagueId) {
 }
 
 export async function resetStandings(client) {
-  const channelMap = loadChannelMap();
+  const guildId = client?.guilds?.cache?.first?.()?.id || null;
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Standings'];
   if (!channelId) throw new Error('Standings channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -189,7 +191,7 @@ export async function resetStandings(client) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('standings');
+  const pinId = getPinId('standings', guildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) return;

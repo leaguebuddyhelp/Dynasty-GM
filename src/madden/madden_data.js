@@ -1,12 +1,13 @@
 import fs from 'fs';
-import path from 'path';
-import { getLeagueForGuild } from './madden_config.js';
+import { getExplicitLeagueForGuild, getLeagueForGuild } from './madden_config.js';
+import { getMaddenLeagueSnapshotPath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 
-const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
+const LEAGUE_DIR = getMaddenLeaguesDir();
+const warnedFallbackSurfaces = new Set();
 
 export function loadLeagueSnapshot(leagueId) {
   if (!leagueId) throw new Error('Missing league_id');
-  const file = path.join(LEAGUE_DIR, `${leagueId}.json`);
+  const file = getMaddenLeagueSnapshotPath(leagueId);
   const raw = fs.readFileSync(file, 'utf8');
   return JSON.parse(raw);
 }
@@ -23,7 +24,7 @@ export function getDefaultLeagueId() {
   const files = listLeagueFiles();
   if (!files.length) return null;
   const withMtime = files.map(f => {
-    const full = path.join(LEAGUE_DIR, f);
+    const full = getMaddenLeagueSnapshotPath(f.replace('.json', ''));
     let mtime = 0;
     try { mtime = fs.statSync(full).mtimeMs; } catch {}
     return { name: f.replace('.json', ''), mtime };
@@ -32,9 +33,33 @@ export function getDefaultLeagueId() {
   return withMtime[0]?.name || null;
 }
 
-export function resolveLeagueIdWithConfig(guildId) {
-  // Prefer stored guild mapping; fall back to latest synced file.
-  return getLeagueForGuild(guildId) || getDefaultLeagueId();
+export function resolveLeagueIdWithConfig(guildId, surface = 'unknown') {
+  const mapped = getLeagueForGuild(guildId);
+  if (mapped) return mapped;
+
+  const fallback = getDefaultLeagueId();
+  if (fallback) {
+    const key = `${String(guildId || 'no-guild')}::${surface}`;
+    if (!warnedFallbackSurfaces.has(key)) {
+      warnedFallbackSurfaces.add(key);
+      console.warn('[madden] legacy league fallback used', {
+        guildId: guildId ? String(guildId) : null,
+        surface,
+        fallbackLeagueId: fallback,
+      });
+    }
+  }
+  return fallback;
+}
+
+export function resolveLeagueIdStrict(guildId) {
+  return getExplicitLeagueForGuild(guildId) || null;
+}
+
+export function requireLeagueIdForGuild(guildId) {
+  const leagueId = resolveLeagueIdStrict(guildId);
+  if (!leagueId) throw new Error('No Madden league is mapped to this server yet. Run /madden-set-league first.');
+  return leagueId;
 }
 
 export function findScheduleForWeek(snapshot, weekIndex) {

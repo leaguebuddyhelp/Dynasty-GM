@@ -15,8 +15,49 @@ import { updateFairSimBoard } from './shared/fairsim_board.js';
 import { inferRecognitionContext, recordRecognitionCommandUse, recordRecognitionThreadReply } from './shared/league_recognition.js';
 import { ensureSportsbookWeekPosted, refreshSportsbookHeaders } from './shared/madden_sportsbook.js';
 import { collectParticipation, getThreadState, hydrateThreadStateFromLiveThread, listThreadStates } from './shared/madden_thread_notifier.js';
+import { hasFeatureAccess, DEFAULT_DENY_MESSAGE } from './leaguebuddy/access.js';
+import overlayRepository from './leaguebuddy/repositories/guild_overlay_repository.js';
+import { resolveInteractionAccess } from './leaguebuddy/interaction_access_resolver.js';
+import { validateStartupConfig } from './leaguebuddy/startup_validation.js';
+import { markHealthReady, startHealthcheckServer } from './leaguebuddy/healthcheck.js';
+
+// For self-hosted / multi-server distribution, keep logs quiet by default.
+// Opt-in when you actually want the extra noise.
+const LB_VERBOSE_LOGS = String(process.env.LB_VERBOSE_LOGS ?? 'false').toLowerCase() === 'true';
+const LB_STAFF_LOGS_ENABLED = String(process.env.LB_STAFF_LOGS_ENABLED ?? 'false').toLowerCase() === 'true';
+
+function hasPackEnabled(guildId, featureKey) {
+  if (!guildId || !featureKey) return false;
+  return overlayRepository.hasPackEnabled(guildId, featureKey);
+}
+
+async function denyInteraction(interaction, message = DEFAULT_DENY_MESSAGE) {
+  try {
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({ content: message, embeds: [], components: [] }).catch(() => { });
+      return;
+    }
+    if (typeof interaction.deferReply === 'function') {
+      // Prefer a defer+edit for reliability on buttons.
+      await interaction.deferReply({ flags: 64 }).catch(() => { });
+      await interaction.editReply({ content: message, embeds: [], components: [] }).catch(() => { });
+      return;
+    }
+    if (typeof interaction.reply === 'function') {
+      await interaction.reply({ content: message, flags: 64 }).catch(() => { });
+    }
+  } catch {
+    // swallow
+  }
+}
 
 dotenv.config();
+validateStartupConfig();
+startHealthcheckServer();
+
+// Productization toggle: run Madden-only to simplify deployments and avoid loading 2K features.
+// Default: true (Madden-only) unless explicitly disabled.
+const MADDEN_ONLY = String(process.env.MADDEN_ONLY ?? 'true').toLowerCase() !== 'false';
 
 const client = new Client({
   intents: [
@@ -72,7 +113,8 @@ for (const file of interactionFiles) {
   for (const key of Object.keys(handler)) {
     if (key.startsWith('customId_')) {
       const customIdValue = handler[key];
-      const executeFn = handler[`execute_${key.replace('customId_', '')}`] || handler[`execute_${customIdValue}`];
+      const suffix = key.replace('customId_', '');
+      const executeFn = handler[`execute_${suffix}`] || handler.execute;
       if (typeof executeFn === 'function') {
         client.interactionHandlers.push({ customId: customIdValue, execute: executeFn });
       }
@@ -96,7 +138,47 @@ client.on('interactionCreate', async interaction => {
       return;
     }
     // Lightweight command audit log
-    console.log(`[CMD] ${interaction.user.tag} used /${interaction.commandName}`);
+    if (LB_VERBOSE_LOGS) console.log(`[CMD] ${interaction.user.tag} used /${interaction.commandName}`);
+
+    // ---- Central plan enforcement gate ----
+    // We currently map plan enforcement to the existing Madden v2 packsEnabled keys.
+    // Commands can opt-in by exporting `featureKey`.
+    // Otherwise we fall back to a small name->feature mapping for known pack-like features.
+    try {
+      const guildId = interaction.guildId;
+      if (guildId) {
+        const packs = overlayRepository.getPacksEnabled(guildId);
+
+        /** @type {Record<string, string>} */
+        const COMMAND_FEATURE_MAP = {
+          // scouting/draft tools
+          draftprimer: 'scouting_draft',
+          draftexport: 'scouting_draft',
+          // league recognition system
+          recognition: 'recognition',
+          // sportsbook system
+          sportsbook: 'sportsbook',
+        };
+
+        const featureKey = command.featureKey || COMMAND_FEATURE_MAP[interaction.commandName] || null;
+        if (featureKey && !packs.includes(featureKey)) {
+          const check = hasFeatureAccess(guildId, featureKey);
+          if (!check.ok) {
+            const msg = DEFAULT_DENY_MESSAGE;
+            if (interaction.deferred || interaction.replied) {
+              await interaction.editReply({ content: msg });
+            } else {
+              await interaction.reply({ content: msg, flags: 64 });
+            }
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[plans] command gate failed', e?.message || e);
+      // Fail open to avoid breaking production if the gate throws for a corner case.
+    }
+
     try {
       if (command.deferOnDispatch && !interaction.deferred && !interaction.replied) {
         await interaction.deferReply(command.deferOnDispatch);
@@ -106,18 +188,17 @@ client.on('interactionCreate', async interaction => {
       return;
     }
     try {
-      if (interaction.commandName?.startsWith('madden-')) {
-        recordRecognitionCommandUse({
-          guildId: interaction.guildId,
-          league: 'madden',
-          userId: interaction.user.id,
-          commandName: interaction.commandName,
-        });
-      }
+      // Madden-only now; track all slash command usage for recognition analytics.
+      recordRecognitionCommandUse({
+        guildId: interaction.guildId,
+        league: 'madden',
+        userId: interaction.user.id,
+        commandName: interaction.commandName,
+      });
     } catch (e) {
       console.warn('[recognition] command usage track failed', e?.message || e);
     }
-    if (interaction.commandName?.startsWith('madden-')) {
+    if (LB_STAFF_LOGS_ENABLED) {
       appendMaddenStaffLog({
         type: 'command',
         guildId: interaction.guildId,
@@ -168,7 +249,7 @@ client.on('interactionCreate', async interaction => {
 
   // Improved logging for other interaction types
   if (interaction.isButton()) {
-    console.log(`[INTERACTION] Button pressed: customId=${interaction.customId}, user=${interaction.user?.id}, channel=${interaction.channel?.id}, thread=${interaction.channel?.isThread ? interaction.channel.id : 'N/A'}`);
+    if (LB_VERBOSE_LOGS) console.log(`[INTERACTION] Button pressed: customId=${interaction.customId}, user=${interaction.user?.id}, channel=${interaction.channel?.id}, thread=${interaction.channel?.isThread ? interaction.channel.id : 'N/A'}`);
     const customId = String(interaction.customId || '').toLowerCase();
     const isMaddenButton =
       customId.includes('madden') ||
@@ -177,7 +258,7 @@ client.on('interactionCreate', async interaction => {
       customId.startsWith('fairsim') ||
       customId.startsWith('forcewin') ||
       customId.startsWith('staff_strike');
-    if (isMaddenButton) {
+    if (isMaddenButton && LB_STAFF_LOGS_ENABLED) {
       appendMaddenStaffLog({
         type: 'button',
         guildId: interaction.guildId,
@@ -195,9 +276,41 @@ client.on('interactionCreate', async interaction => {
       ).catch(() => null);
     }
   } else if (interaction.isStringSelectMenu()) {
-    console.log(`[INTERACTION] StringSelectMenu used: customId=${interaction.customId}, user=${interaction.user?.id}`);
+    if (LB_VERBOSE_LOGS) console.log(`[INTERACTION] StringSelectMenu used: customId=${interaction.customId}, user=${interaction.user?.id}`);
   } else if (interaction.isAutocomplete()) {
     // Handle trade and progression buttons, and generic interaction handlers as before
+  }
+
+  // ---- Central plan enforcement gate (interactions) ----
+  // Slash commands are already gated above. This closes the loophole where a guild can
+  // interact with previously-posted buttons/modals without the plan.
+  try {
+    const accessMatch = resolveInteractionAccess(interaction);
+    if (accessMatch?.featureKey) {
+      const { featureKey, ruleId, customId } = accessMatch;
+      if (!hasPackEnabled(interaction.guildId, featureKey)) {
+        const check = hasFeatureAccess(interaction.guildId, featureKey);
+        if (!check.ok) {
+          if (LB_VERBOSE_LOGS) {
+            console.log('[plans] interaction denied', {
+              guildId: interaction.guildId,
+              ruleId,
+              featureKey,
+              customId,
+              reason: check.reason,
+            });
+          }
+          await denyInteraction(interaction, DEFAULT_DENY_MESSAGE);
+          return;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[plans] interaction gate failed', {
+      customId: interaction?.customId || null,
+      message: e?.message || e,
+    });
+    // Fail open.
   }
 
   // --- REGEX/GENERIC BUTTONS: robust customId matching ---
@@ -219,22 +332,35 @@ client.on('interactionCreate', async interaction => {
       await setGameInfo.execute_modal_set_game_info(interaction);
       return;
     }
-    // Route 2K set_game_info| modals
-    if (interaction.isModalSubmit() && interaction.customId.startsWith('set_game_info_modal|')) {
-      console.log('[router] 2K set_game_info modal', interaction.customId);
-      const setGameInfo2k = await import('./2k/set_game_info.js');
-      await setGameInfo2k.execute_modal(interaction);
-      return;
+    // Route 2K set_game_info| modals/buttons (disabled in Madden-only mode)
+    if (!MADDEN_ONLY) {
+      if (interaction.isModalSubmit() && interaction.customId.startsWith('set_game_info_modal|')) {
+        console.log('[router] 2K set_game_info modal', interaction.customId);
+        const setGameInfo2k = await import('./2k/set_game_info.js');
+        await setGameInfo2k.execute_modal(interaction);
+        return;
+      }
+      if (interaction.isButton() && interaction.customId.startsWith('set_game_info|')) {
+        console.log('[router] 2K set_game_info button', interaction.customId);
+        const setGameInfo2k = await import('./2k/set_game_info.js');
+        await setGameInfo2k.execute(interaction);
+        return;
+      }
     }
-    // Route 2K set_game_info| button
-    if (interaction.isButton() && interaction.customId.startsWith('set_game_info|')) {
-      console.log('[router] 2K set_game_info button', interaction.customId);
-      const setGameInfo2k = await import('./2k/set_game_info.js');
-      await setGameInfo2k.execute(interaction);
+
+    // Route Madden live mock draft pick select menu (search results)
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('madden_mockdraft_pick|')) {
+      const mod = await import('./interactions/madden_mockdraft_live.js');
+      const handler = mod.default || mod;
+      if (typeof handler.execute !== 'function') {
+        throw new TypeError('mockdraft_live interaction handler missing execute()');
+      }
+      await handler.execute(interaction);
       return;
     }
     let foundHandler = null;
     for (const handler of client.interactionHandlers) {
+      if (!handler || typeof handler.execute !== 'function') continue;
       if (typeof handler.customId === 'string' && handler.customId === interaction.customId) {
         foundHandler = handler;
         break;
@@ -340,7 +466,10 @@ async function backfillRecognitionThreadReplies(client, guild) {
 
 // Bot clientReady event (Discord.js v15+)
 client.once('clientReady', (readyClient) => {
-  console.log(`ENVIRONMENT: ${process.env.NODE_ENV || 'undefined'}`);
+  markHealthReady(true);
+  const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'undefined';
+  console.log(`ENVIRONMENT: ${appEnv}`);
+  console.log(`APP FLAGS: MADDEN_ONLY=${MADDEN_ONLY}`);
   console.log('🏀 LEAGUEbuddy is online!');
   console.log(`📊 Logged in as ${readyClient.user.tag}`);
   console.log(`🏟️  Serving ${readyClient.guilds.cache.size} server(s)`);
@@ -365,13 +494,19 @@ client.once('clientReady', (readyClient) => {
 
 // Load all commands from src/commands/2k/{coach,staff} and src/commands/madden
 async function loadCommands() {
-  const commandFolders = [
-    ['2k', 'coach'],
-    ['2k', 'staff'],
-    ['madden'],
-    ['madden', 'coach'],
-    ['madden', 'staff'],
-  ];
+  const commandFolders = MADDEN_ONLY
+    ? [
+      ['madden'],
+      ['madden', 'coach'],
+      ['madden', 'staff'],
+    ]
+    : [
+      ['2k', 'coach'],
+      ['2k', 'staff'],
+      ['madden'],
+      ['madden', 'coach'],
+      ['madden', 'staff'],
+    ];
   // Only scan the primary command directories (old src/commands stubs are ignored)
   const roots = [
     join(process.cwd(), 'src'),
@@ -444,8 +579,10 @@ async function logLifecycle(state) {
 }
 
 process.on('SIGINT', () => {
+  markHealthReady(false);
   logLifecycle('offline').finally(() => process.exit(0));
 });
 process.on('SIGTERM', () => {
+  markHealthReady(false);
   logLifecycle('offline').finally(() => process.exit(0));
 });

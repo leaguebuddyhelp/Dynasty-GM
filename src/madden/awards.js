@@ -5,10 +5,10 @@ import { getPinId } from './pins_store.js'; // unused but kept in case future pi
 import { computeGradeFromRank } from './top_players.js';
 import { computeWeeklyList } from './top_players.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
 const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 const SEASON_STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'season_state.json');
@@ -18,6 +18,18 @@ const rosterYearsPro = new Map();
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
+}
+
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
+}
+
+function loadRoleMap(guildId = null) {
+  // Prefer per-guild overlay when complete, otherwise fall back to v1 global role ids file.
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
+  const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+  return loadJson(ROLE_MAP_FILE, {});
 }
 
 function saveJson(file, data) {
@@ -471,6 +483,7 @@ function normalizeGameScores(weekly) {
 export async function updateAwards(client, leagueId, weekOverride = null, options = {}) {
   const interaction = options.interaction || null;
   const isPublic = options.isPublic || false;
+  const guildId = interaction?.guildId || client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
   if (!snapshot && weekOverride == null) {
     console.warn('[awards] Snapshot missing; run weekly update first or supply weekOverride.');
@@ -478,8 +491,8 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   }
   const snapshotMtime = snapshotMtimeMs(leagueId);
   buildRosterYearsPro(snapshot);
-  const channelMap = loadJson(CHANNEL_MAP_FILE);
-  const roleMap = loadJson(ROLE_MAP_FILE);
+  const channelMap = loadChannelMap(guildId);
+  const roleMap = loadRoleMap(guildId);
   const emojiMap = loadJson(TEAM_EMOJIS_FILE);
   const awardsChannelId = channelMap['Awards'];
   const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId).catch(() => null) : null);

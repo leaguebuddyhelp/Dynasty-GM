@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { upsertGuildPin } from '../shared/madden_guild_config.js';
 
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 
 function loadSnapshot(leagueId) {
@@ -12,8 +13,8 @@ function loadSnapshot(leagueId) {
   return JSON.parse(raw);
 }
 
-function loadChannelMap() {
-  try { return JSON.parse(fs.readFileSync(CHANNEL_MAP_FILE, 'utf8')); } catch { return {}; }
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 function loadEmojiMap() {
   try { return JSON.parse(fs.readFileSync(TEAM_EMOJIS_FILE, 'utf8')); } catch { return {}; }
@@ -77,6 +78,7 @@ function topSeeds(standings, conferenceName, teams) {
 }
 
 export async function updatePlayoffPicture(client, leagueId) {
+  const guildId = client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const displayWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? 0;
@@ -93,7 +95,7 @@ export async function updatePlayoffPicture(client, leagueId) {
   const afcSeeds = topSeeds(standings, 'afc', teams);
   const nfcSeeds = topSeeds(standings, 'nfc', teams);
 
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Playoff Picture'];
   if (!channelId) throw new Error('Playoff Picture channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -109,7 +111,7 @@ export async function updatePlayoffPicture(client, leagueId) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('playoff_picture');
+  const pinId = getPinId('playoff_picture', guildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) {
@@ -120,7 +122,8 @@ export async function updatePlayoffPicture(client, leagueId) {
 }
 
 export async function resetPlayoffPicture(client) {
-  const channelMap = loadChannelMap();
+  const guildId = client?.guilds?.cache?.first?.()?.id || null;
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Playoff Picture'];
   if (!channelId) throw new Error('Playoff Picture channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -133,7 +136,7 @@ export async function resetPlayoffPicture(client) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('playoff_picture');
+  const pinId = getPinId('playoff_picture', guildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) {

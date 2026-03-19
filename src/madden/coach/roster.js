@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden_data.js';
 import { computePlayerValue } from '../madden_trade_modal_submit.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
@@ -120,8 +120,10 @@ export function buildRosterEmbeds(snapshot, teamName) {
 
 export async function execute(interaction) {
   const teamInput = interaction.options.getString('team');
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
+  let leagueId;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch {
     await interaction.reply({ content: coachErrorBlurb('noLeague', 'No Madden league set. Run /madden-set-league first.'), ephemeral: true });
     return;
   }
@@ -170,7 +172,7 @@ export default { data, execute, autocomplete };
 
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
+  const leagueId = interaction.guildId ? requireLeagueIdForGuild(interaction.guildId) : null;
   const focused = interaction.options.getFocused().toLowerCase();
   try {
     const snapshot = loadLeagueSnapshot(leagueId);

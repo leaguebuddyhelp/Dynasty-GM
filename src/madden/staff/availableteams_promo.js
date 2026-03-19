@@ -66,6 +66,24 @@ function resolveRoleId(team, roleMap) {
   return null;
 }
 
+async function buildRoleCounts(interaction) {
+  // Best effort: build a roleId -> memberCount map from a single member fetch.
+  // This is more reliable than fetching roles one-by-one mid-loop.
+  try {
+    const members = await interaction.guild.members.fetch();
+    const roleCounts = {};
+    members.forEach(m => {
+      m.roles.cache.forEach(r => {
+        roleCounts[r.id] = (roleCounts[r.id] || 0) + 1;
+      });
+    });
+    return roleCounts;
+  } catch (e) {
+    console.warn('[madden-promo] member fetch skipped:', e?.message || e);
+    return null;
+  }
+}
+
 function formatTeamName(team) {
   return getFullTeamName(team, `Team ${team?.teamId}`);
 }
@@ -112,6 +130,10 @@ function uniqPicks(picks = []) {
     out.push(p);
   }
   return out;
+}
+
+function firstRoundOnly(picks = []) {
+  return (picks || []).filter(p => Number(p?.num) >= 1 && Number(p?.num) <= 32);
 }
 
 export const data = new SlashCommandBuilder()
@@ -161,13 +183,23 @@ export async function execute(interaction) {
       console.log('[promo] isOffseason', isOffseason);
     }
     const seasonNumber = seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? (seasonInfo.calendarYear ? seasonInfo.calendarYear + 1 : '–');
+    const rawWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? seasonInfo.weekIndex ?? '–';
     const weekNumber = (isOffseason && seasonInfo.offSeasonStage)
       ? `Offseason (Stage ${seasonInfo.offSeasonStage})`
-      : (seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? seasonInfo.weekIndex ?? '–');
+      : (() => {
+        const n = Number(rawWeek);
+        if (Number.isFinite(n)) return `Week ${n}`;
+        const label = String(rawWeek || '').trim();
+        const match = label.match(/\b(?:week|w)\s*\.?\s*(\d+)\b/i) || label.match(/^\s*(\d+)\s*$/);
+        if (match) return `Week ${match[1]}`;
+        return label || '–';
+      })();
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
     const standings = snapshot?.standings?.teamStandingInfoList || [];
     const standingsByTeam = new Map();
     standings.forEach(s => standingsByTeam.set(s.teamId, s));
+
+    const roleCounts = await buildRoleCounts(interaction);
 
     const openLines = [];
     for (const t of teams) {
@@ -178,10 +210,12 @@ export async function execute(interaction) {
         assigned = true;
       }
       if (roleId) {
-        // Don't rely purely on cached role.members which can lag if roles were just assigned.
-        // Fetch the role fresh so last-second assignments don't cause the whole league to appear open.
-        const role = await interaction.guild.roles.fetch(String(roleId)).catch(() => null);
-        const count = role?.members?.size ?? 0;
+        let count = (roleCounts && typeof roleCounts[String(roleId)] === 'number') ? roleCounts[String(roleId)] : undefined;
+        if (count === undefined) {
+          const cachedRole = interaction.guild.roles.cache.get(String(roleId))
+            || await interaction.guild.roles.fetch(String(roleId)).catch(() => null);
+          count = cachedRole?.members ? cachedRole.members.size : 0;
+        }
         assigned = assigned || count > 0;
       }
       if (assigned) continue;
@@ -202,7 +236,7 @@ export async function execute(interaction) {
           if (arr && arr.length) merged = merged.concat(arr);
         }
         if (debug) console.log('[promo] open team', nameFormatted, 'keys', keys, 'picks', merged);
-        const deduped = uniqPicks(merged).sort((a, b) => a.num - b.num);
+        const deduped = firstRoundOnly(uniqPicks(merged)).sort((a, b) => a.num - b.num);
         const pickText = deduped && deduped.length
           ? deduped.map(p => p.via ? `${p.num} (via ${p.via})` : `${p.num}`).join(', ')
           : 'none';
@@ -218,23 +252,28 @@ export async function execute(interaction) {
     }
 
     const promoLines = [
-      '**Ghost Legacy Madden**',
+      '🔥 **GHOST LEGACY MADDEN** 🔥',
       `Season ${seasonNumber} • ${weekNumber}`,
       '',
-      'A modern franchise league powered by LEAGUEbuddy.',
-      '48 HR advances • All-Madden • Streaming Required',
-      'Discord economy for player upgrades',
+      '🤖 Run by a private Madden league manager bot: **LEAGUEbuddy**',
       '',
-      '**What the league offers:**',
-      '📡 Live league updates, standings, stat leaders, Top 100s, awards, and story-driven weekly content',
-      '🎮 Automated game threads, featured Game of the Week, reminders, staff logs, and clean trade flow',
-      '🕵️ Private Franchise Hub, scouting, draft primer, mock draft, and matchup strategy tools built around your team',
-      '🎟️ LB Sportsbook, recognition progression, perks, and seasonal league systems tied into real league activity',
+      '📌 **Quick Info**',
+      '⏱️ 48 HR advances',
+      '🎮 All-Madden',
+      '📺 Streaming required',
+      '💰 Discord economy for player upgrades',
       '',
-      '**Open Teams**',
-      openLines.length ? openLines.join('\n') : 'No open teams right now.',
+      '✨ **What the League Offers**',
+      '📡 Live league updates: standings, stat leaders, Top 100s, awards, and weekly content',
+      '🧵 Automated game threads (GOTW), reminders, staff logs, and clean trade flow',
+      '🕵️ Franchise Hub tools: scouting, draft primer, mock draft, matchup strategy tools',
+      '🎟️ LEAGUEbuddy systems: Sportsbook intel, recognition progression, and perks',
       '',
-      includeLink ? '**Join:** https://discord.gg/ghostsgaming' : null,
+      `🚨 **OPEN TEAMS (${openLines.length})** 🚨`,
+      (openLines.length
+        ? openLines.map(l => `✅ ${l}`).join('\n')
+        : '⛔ No open teams right now.'),
+      includeLink ? '\n🔗 **Join:** https://discord.gg/ghostsgaming' : null,
     ].filter(Boolean).join('\n');
 
     await safeEditReply(interaction, { content: promoLines });

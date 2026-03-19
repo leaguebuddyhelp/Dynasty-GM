@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 
 const ROUND_OPTIONS = ['1', '2', '3', '4', '5', '6', '7'];
@@ -112,8 +112,10 @@ export async function execute(interaction) {
     try { await interaction.deferReply({ flags: 64 }); } catch (_) {}
   }
 
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
+  let leagueId;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch {
     const payload = { content: 'No Madden league set. Run /madden-set-league first.' };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });

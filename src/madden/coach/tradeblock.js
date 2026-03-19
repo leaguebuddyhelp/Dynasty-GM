@@ -4,10 +4,13 @@ import path from 'path';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { computePlayerValue as computeValueBase } from '../../../madden/madden_trade_modal_submit.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
+import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+export const featureKey = 'trades_basic';
+
 const BLOCK_FILE = path.join(process.cwd(), 'data', 'madden', 'trade_block.json');
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
+const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
@@ -63,8 +66,14 @@ function getRoster(snapshot, teamId) {
   return snapshot?.rosters?.teams?.[teamId]?.rosterInfoList || [];
 }
 
-function loadChannelMap() {
-  try { return JSON.parse(fs.readFileSync(CHANNEL_MAP_FILE, 'utf8')); } catch { return {}; }
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
+}
+
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
+  return loadJson(ROLE_MAP_FILE);
 }
 
 async function announce(client, roleMap, channelMap, teamName, cleanLabelText, detailText, positionText, rosterId) {
@@ -209,7 +218,7 @@ async function autocomplete(interaction) {
   }, 1500);
   try {
     const focused = interaction.options.getFocused(true);
-    const roleMap = loadJson(ROLE_MAP_FILE);
+    const roleMap = loadRoleMap(interaction.guildId);
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
     if (!leagueId) throw new Error('no league');
     const snapshot = loadLeagueSnapshot(leagueId);
@@ -263,8 +272,8 @@ async function execute(interaction) {
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
     if (!leagueId) throw new Error('No league set. Run /madden-set-league first.');
     const snapshot = loadLeagueSnapshot(leagueId);
-    const roleMap = loadJson(ROLE_MAP_FILE);
-    const channelMap = loadChannelMap();
+    const roleMap = loadRoleMap(interaction.guildId);
+    const channelMap = loadChannelMap(interaction.guildId);
     const teamId = findCoachTeam(interaction.member, roleMap, snapshot);
     if (!teamId) {
       await interaction.editReply({ content: 'Could not determine your team from your coach role.' });

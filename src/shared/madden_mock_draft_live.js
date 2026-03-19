@@ -21,6 +21,8 @@ import {
   prospectGroup,
 } from '../madden/coach/mockdraft.js';
 
+const CONFIG_FILE = path.join(process.cwd(), 'data', 'config.json');
+
 const STORE_FILE = path.join(process.cwd(), 'data', 'madden', 'mock_draft_sessions.json');
 const AVP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_avp.json');
 const MAX_SELECT_OPTIONS = 25;
@@ -35,6 +37,75 @@ function loadAvpStore() {
   } catch {
     return null;
   }
+}
+
+function loadBotConfig() {
+  try {
+    if (!fs.existsSync(CONFIG_FILE)) return {};
+    const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
+    const data = JSON.parse(raw);
+    return data && typeof data === 'object' ? data : {};
+  } catch {
+    return {};
+  }
+}
+
+function maddenMetaMode() {
+  const cfg = loadBotConfig();
+  const raw = String(cfg?.maddenMockDraftMeta || cfg?.mockDraftMeta || 'hybrid').toLowerCase().trim();
+  if (['user', 'sim', 'hybrid'].includes(raw)) return raw;
+  return 'hybrid';
+}
+
+function maddenPositionValue(group, mode = 'hybrid') {
+  // Madden/CFM meta: users value impact positions + mismatch creators more than IRL draft discourse.
+  // Keep it conservative in hybrid; sim leans trench-heavy; user leans skill/secondary-heavy.
+  const tables = {
+    user: {
+      QB: 9,
+      OT: 7,
+      EDGE: 9,
+      CB: 9,
+      WR: 8,
+      IOL: 5,
+      DT: 6,
+      S: 7,
+      LB: 4,
+      TE: 5,
+      RB: 5,
+      BPA: 0,
+    },
+    sim: {
+      QB: 10,
+      OT: 8,
+      EDGE: 8,
+      CB: 7,
+      WR: 7,
+      IOL: 6,
+      DT: 7,
+      S: 5,
+      LB: 4,
+      TE: 3,
+      RB: 3,
+      BPA: 0,
+    },
+    hybrid: {
+      QB: 9,
+      OT: 7,
+      EDGE: 9,
+      CB: 8,
+      WR: 8,
+      IOL: 5,
+      DT: 6,
+      S: 6,
+      LB: 4,
+      TE: 4,
+      RB: 4,
+      BPA: 0,
+    },
+  };
+  const table = tables[mode] || tables.hybrid;
+  return table[group] || 0;
 }
 
 function seededRand(seedStr, salt, max) {
@@ -722,7 +793,19 @@ function avpForProspect(session, prospect) {
   return legacyKey ? avpStore.prospects?.[legacyKey]?.avp ?? null : null;
 }
 
-function buildPickSynopsis({ teamName, prospect, needRank, boardDelta, overall, group, session = null, avpDelta = null, avp = null }) {
+function buildPickSynopsis({
+  teamName,
+  prospect,
+  needRank,
+  boardDelta,
+  overall,
+  group,
+  session = null,
+  avpDelta = null,
+  avp = null,
+  passedEliteDelta = null,
+  bestRemaining = null,
+}) {
   const fitText =
     needRank === 0 ? 'a direct hit on their top need' :
       needRank === 1 ? 'a strong answer near the top of their board' :
@@ -810,11 +893,16 @@ function buildPickSynopsis({ teamName, prospect, needRank, boardDelta, overall, 
             premiumPositionValue(group) >= 7 ? 'The position value keeps it from being a total disaster.' :
               'Development curve will need to justify it.';
 
-  // RB/TE in the top half of round 1 is usually bad process unless it's a true blue-chip AND a clear need.
+  // RB/TE is higher-variance early, but we shouldn't auto-flame a clean, on-board need pick.
+  // Keep the tone consistent: one clear theme + one clear risk note (no competing ideas).
   const earlyRBSmellTest = ['RB', 'TE'].includes(group);
   const earlySkillPenaltyText =
     earlyRBSmellTest
-      ? 'RB/TE this early is usually bad process unless it’s a true blue-chip and a top need.'
+      ? (
+        needRank === 0
+          ? 'RB this early is always a bet on outcome — the margin for error is thinner, but the fit is real.'
+          : 'RB this early is a bet on outcome — you’re paying a premium for a position the league usually prices later.'
+      )
       : null;
 
   const topBoardProcessText =
@@ -830,11 +918,11 @@ function buildPickSynopsis({ teamName, prospect, needRank, boardDelta, overall, 
   const passOnPremiumValueText =
     (() => {
       if (isPremium) return null;
-      if (!(tier === 'as_expected' || tier === 'mild_reach' || tier === 'reach' || tier === 'major_reach')) return null;
+      if (!(tier === 'reach' || tier === 'major_reach')) return null;
       const best = findBestPremiumStillOnBoard();
-      if (!best.length) return 'Passing on premium-position talent for a lower-value slot raises the bar for the outcome.';
+      if (!best.length) return 'The opportunity cost is real when premium talent is still sitting there.';
       const names = best.map((p) => `${p.name} (#${p.rank} ${p.group})`).join(' or ');
-      return `Passing on premium-position talent (${names}) for a lower-value slot raises the bar for the outcome.`;
+      return `The opportunity cost is real when premium talent (${names}) is still sitting there.`;
     })();
   // Find positional rank
   let posRank = 1;
@@ -870,22 +958,22 @@ function buildPickSynopsis({ teamName, prospect, needRank, boardDelta, overall, 
 
   const processClose =
     tier === 'major_reach'
-      ? 'That’s a lot of draft capital to spend for a player the room expects much later.'
+      ? 'That’s a big premium to pay — the hit has to come fast.'
       : tier === 'reach'
-        ? 'They’re paying a premium here, and the margin for error shrinks fast.'
+        ? 'They’re paying for it — the hit has to come fast.'
         : tier === 'mild_reach'
-          ? 'It’s a touch aggressive, so the pick needs to hit early.'
+          ? 'A little aggressive, which means the early return matters.'
           : tier === 'steal'
-            ? 'When someone falls like this, you take the value and figure out the fit later.'
+            ? 'When that kind of value falls, you take it and sort the fit after.'
             : tier === 'value'
-              ? 'When the board gives you value like this, you take it.'
+              ? 'That’s how you build: take the value and move.'
               : tier === 'mild_value'
-                ? 'Solid value without overthinking it.'
-                : 'It’s a straightforward selection if the evaluation is right.';
+                ? 'Clean value — no notes.'
+                : 'It’s a clean, on-board decision if the eval is right.';
 
   const needReachCallout =
     (needRank >= 0 && (tier === 'reach' || tier === 'major_reach'))
-      ? 'Even if it fills a real need, overdrafting here is how you lose value at the top of the round.'
+      ? 'Need doesn’t erase price — if the room expected him later, you’re betting against the market.'
       : null;
 
   const strengthWarning =
@@ -909,15 +997,52 @@ function buildPickSynopsis({ teamName, prospect, needRank, boardDelta, overall, 
       ].filter(Boolean))
       : null;
 
-  // Keep to 2 max for readability.
-  const notes = [
-    topBoardProcessText,
-    valueRegardlessOfNeedText,
-    passOnPremiumValueText,
-    earlySkillPenaltyText,
-    qbStrengthWarning,
-    strengthWarning,
-  ].filter(Boolean).slice(0, 2);
+  const opportunityCostText =
+    passedEliteDelta != null && Number(passedEliteDelta) >= 12
+      ? seededPickOne(session?.variantSeed || session?.id || 'seed', `opp_cost:${teamName}:${prospect?.name}`, [
+        bestRemaining?.name && bestRemaining?.position
+          ? `The question is who they left on the table — ${bestRemaining.name} (${bestRemaining.position}) was still right there.`
+          : `The question is who they left on the table — there were cleaner top-of-board options still available.`,
+        `When the gap at the top of the board is this wide, passing on it usually comes back around.`,
+        `This is the kind of spot where you expect them to walk away with the best player still sitting there.`,
+      ].filter(Boolean))
+      : null;
+
+  // One central theme per pick write-up.
+  // We pick the "main" note first and optionally allow ONE small supporting note,
+  // but only if it's not competing with the main theme.
+  const themeKey = (() => {
+    // If they clearly passed elite value, that's the story.
+    if (opportunityCostText) return 'opportunity_cost';
+    // If they're drafting into a strength (luxury), that's the story.
+    if (qbStrengthWarning || strengthWarning) return 'luxury';
+    // If it's a reach at a non-premium spot, opportunity cost vs premium is the story.
+    if (passOnPremiumValueText) return 'passed_premium';
+    // If it's a big value fall, that's the story.
+    if (valueRegardlessOfNeedText) return 'value_fall';
+    // If it's RB/TE early, that's the story.
+    if (earlySkillPenaltyText) return 'early_skill';
+    // Otherwise keep it simple / board process.
+    if (topBoardProcessText) return 'top_board';
+    return 'none';
+  })();
+
+  const mainNote =
+    themeKey === 'opportunity_cost' ? opportunityCostText :
+      themeKey === 'luxury' ? (qbStrengthWarning || strengthWarning) :
+        themeKey === 'passed_premium' ? passOnPremiumValueText :
+          themeKey === 'value_fall' ? valueRegardlessOfNeedText :
+            themeKey === 'early_skill' ? earlySkillPenaltyText :
+              themeKey === 'top_board' ? topBoardProcessText :
+                null;
+
+  // Support note: only add a light "process" line when the main theme isn't already process/opportunity.
+  const supportNote =
+    mainNote && themeKey !== 'opportunity_cost' && themeKey !== 'passed_premium'
+      ? (topBoardProcessText && mainNote !== topBoardProcessText ? topBoardProcessText : null)
+      : null;
+
+  const notes = [mainNote, supportNote].filter(Boolean).slice(0, 2);
 
   const noteText = notes.length
     ? ` ${notes
@@ -971,20 +1096,35 @@ function evaluatePickGrade(session, slot, prospect) {
   // expectedPick - actualPick: positive => reach (picked early), negative => value (fell)
   const avpDelta = avp != null ? Number(avp) - boardExpectation : null;
   // Consensus is a blend of AVP (community expectation) + board rank (our class board).
-  // This prevents AVP alone from over-penalizing picks that are basically "on the board".
+  // This explicitly avoids "AVP only" grading and keeps the system layered.
   const boardBasedDelta = boardDelta * 1.0;
   const avpBasedDelta = avpDelta != null ? avpDelta * 1.0 : null;
   // Weight AVP more early (markets are tighter), then fade it slightly deeper into the round.
+  // Board rank is always part of the calculation.
   const avpWeight = avpBasedDelta == null
     ? 0
     : boardExpectation <= 10
-      ? 0.65
+      ? 0.6
       : boardExpectation <= 20
-        ? 0.55
-        : 0.45;
-  const gradeDelta = avpBasedDelta == null
+        ? 0.5
+        : 0.4;
+  const consensusDelta = avpBasedDelta == null
     ? boardBasedDelta
     : (avpBasedDelta * avpWeight) + (boardBasedDelta * (1 - avpWeight));
+
+  // "Best value remaining" signal: compare the selected player to the top board player still available.
+  // (If the drafter bypasses an elite board player by a wide margin, that should show up.)
+  const available = Array.isArray(session?.availableProspects) ? session.availableProspects : [];
+  const bestRemaining = available.length
+    ? available.reduce((best, p) => {
+      if (!best) return p;
+      const bestRank = Number(best?.rank ?? 9999);
+      const pRank = Number(p?.rank ?? 9999);
+      return pRank < bestRank ? p : best;
+    }, null)
+    : null;
+  const bestRemainingRank = bestRemaining ? Number(bestRemaining.rank ?? null) : null;
+  const passedEliteDelta = bestRemainingRank != null ? (boardRank - bestRemainingRank) : 0;
 
   // Guardrail: if you're basically drafting "on the board" (within 2 spots of board rank),
   // don't let AVP/market noise classify it as a true reach/major reach.
@@ -994,7 +1134,8 @@ function evaluatePickGrade(session, slot, prospect) {
   // If you're within 2 spots of board rank, we describe it as "in range" (or mild) instead of a market reach.
   const narrativeDelta = avpDelta != null && !onBoard ? avpDelta : boardDelta;
   const overall = Number(prospect.overall || 0);
-  const premium = premiumPositionValue(group);
+  const metaMode = maddenMetaMode();
+  const premium = maddenPositionValue(group, metaMode);
 
   const strongAtPos = isStrongAtPosition(session, slot?.name, group);
 
@@ -1005,13 +1146,13 @@ function evaluatePickGrade(session, slot, prospect) {
   // Use the blended consensusDelta for scoring and tier naming.
   // If you're on-board, cap the penalty tier at mild_reach.
   const reachTier =
-    (onBoard && gradeDelta >= 8) ? 'mild_reach' :
-      gradeDelta >= 14 ? 'major_reach' :
-        gradeDelta >= 8 ? 'reach' :
-          gradeDelta >= 3 ? 'mild_reach' :
-            gradeDelta <= -14 ? 'steal' :
-              gradeDelta <= -8 ? 'value' :
-                gradeDelta <= -3 ? 'mild_value' :
+    (onBoard && consensusDelta >= 8) ? 'mild_reach' :
+      consensusDelta >= 14 ? 'major_reach' :
+        consensusDelta >= 8 ? 'reach' :
+          consensusDelta >= 3 ? 'mild_reach' :
+            consensusDelta <= -14 ? 'steal' :
+              consensusDelta <= -8 ? 'value' :
+                consensusDelta <= -3 ? 'mild_value' :
                   'as_expected';
 
   const talentTier =
@@ -1047,6 +1188,18 @@ function evaluatePickGrade(session, slot, prospect) {
   else if (reachTier === 'reach') score -= 14;
   else if (reachTier === 'major_reach') score -= 22;
   else score += 2; // as expected gets a small stability bump
+
+  // Best-value-remaining / opportunity cost (board-based). This is a separate layer from AVP/consensus.
+  // If you pass on a much better board player and *also* reach, that's how you get the harsher grades.
+  // Conversely, if there wasn't much separation at the top of the board, don't punish it.
+  if (boardExpectation <= 20) {
+    if (passedEliteDelta >= 20) score -= 12;
+    else if (passedEliteDelta >= 12) score -= 8;
+    else if (passedEliteDelta >= 7) score -= 5;
+  } else {
+    if (passedEliteDelta >= 20) score -= 8;
+    else if (passedEliteDelta >= 12) score -= 5;
+  }
 
   // Extra calibration: if AVP exists and you're taking someone expected in the 20s in the top-5,
   // it's a reach in process terms even if our internal board likes the player.
@@ -1090,17 +1243,33 @@ function evaluatePickGrade(session, slot, prospect) {
 
   // Early RB/TE: it can still be a need, but process should be driven by board value + positional value.
   // If you're passing on elite tackles/EDGE/CB/WR/QB assets to take RB/TE, the grade should reflect that.
-  if (['RB', 'TE'].includes(group) && boardExpectation <= 16) {
+  if (['RB', 'TE', 'HB'].includes(group) && boardExpectation <= 16) {
     const isTrueBlueChip = boardTier === 'blue_chip' || boardTier === 'elite_board';
+    const onBoardEarly = onBoard || Math.abs(Number(boardDelta || 0)) <= 2;
     if (isTrueBlueChip && needRank === 0 && ['elite', 'generational'].includes(talentTier)) {
-      // Best-case: rare prospect + top need. Still a positional value ding.
+      // Best-case: rare prospect + top need. Still a positional value tax.
       score -= 8;
+    } else if (needRank === 0 && onBoardEarly) {
+      // Top need + basically on-board: still higher variance, but shouldn't be a D/F.
+      score -= 1;
     } else if (needRank === 0) {
-      // Need, but not a blue-chip board asset.
-      score -= 18;
+      // Need, but you're paying extra.
+      score -= 12;
     } else {
       // Not a top need.
-      score -= 24;
+      score -= 18;
+    }
+  }
+
+  // Guardrail: an on-board RB/TE that hits a primary need (top 3) in the top 16 should never come back as a D-grade.
+  // (Process tax is fair, but a pick like #12 at #11 that addresses a real need should live in the C-range.)
+  if (['RB', 'TE', 'HB'].includes(group) && boardExpectation <= 16) {
+    const onBoardEarly = onBoard || Math.abs(Number(boardDelta || 0)) <= 2;
+    const isPrimaryNeed = needRank >= 0 && needRank <= 2;
+    if (isPrimaryNeed && onBoardEarly) {
+      // Capped floor to keep the positional value tax real, but still reward an on-board need hit.
+      // B- (80) is the target floor for clean on-board RB/TE need picks in this range.
+      score = Math.max(score, 80);
     }
   }
   if (group === 'QB' && needRank === -1) score -= 10;
@@ -1128,7 +1297,19 @@ function evaluatePickGrade(session, slot, prospect) {
   return {
     score,
     grade: gradeLabelFromScore(score),
-    synopsis: buildPickSynopsis({ teamName: slot.name, prospect, needRank, boardDelta: narrativeDelta, overall, group, session, avpDelta, avp }),
+    synopsis: buildPickSynopsis({
+      teamName: slot.name,
+      prospect,
+      needRank,
+      boardDelta: narrativeDelta,
+      overall,
+      group,
+      session,
+      avpDelta,
+      avp,
+      passedEliteDelta,
+      bestRemaining,
+    }),
   };
 }
 
@@ -1184,6 +1365,11 @@ export function listUserAssignedSlots(session, userId) {
 export function buildPickMenu(session) {
   const avpStore = loadAvpStore();
 
+  const slot = session?.order?.[session?.currentPickIndex];
+  const needsCtx = slot ? buildNeedsContext(session, slot, null) : null;
+  const topNeeds = (needsCtx?.topNeeds || []).filter(Boolean).slice(0, 3);
+  const needsLabel = topNeeds.length ? `Needs: ${topNeeds.join(', ')}` : 'Needs: BPA';
+
   const avpFor = (prospect) => {
     if (!avpStore?.prospects) return null;
     const direct = avpStore.prospects?.[prospect?.id]?.avp;
@@ -1212,7 +1398,7 @@ export function buildPickMenu(session) {
   const row = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId(`madden_mockdraft_pick|${session.id}`)
-      .setPlaceholder('Choose a prospect from the top of the board')
+      .setPlaceholder(`Choose a prospect • ${needsLabel}`.slice(0, 150))
       .addOptions(options),
   );
   return [row];

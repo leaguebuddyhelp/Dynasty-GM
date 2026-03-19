@@ -6,12 +6,24 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_
 import { canTrade, loadTradeCounts } from '../shared/madden_trade_utils.js';
 import { saveTradeDraft } from '../shared/trade_draft_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
+}
+
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
+  return loadJson(ROLE_MAP_FILE);
+}
+
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
 function posAdj(position) {
@@ -523,8 +535,8 @@ export async function execute(interaction) {
 
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
-    const roleMap = loadJson(ROLE_MAP_FILE);
-    const channelMap = loadJson(CHANNEL_MAP_FILE);
+    const roleMap = loadRoleMap(interaction.guildId);
+    const channelMap = loadChannelMap(interaction.guildId);
     const yourTeamRaw = interaction.fields.getTextInputValue('yourTeam');
     const otherTeamRaw = interaction.fields.getTextInputValue('otherTeam');
     const assetsSent = interaction.fields.getTextInputValue('assetsSent');

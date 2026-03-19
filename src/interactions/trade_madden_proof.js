@@ -4,6 +4,8 @@ import path from 'path';
 import { loadActiveTrades, saveActiveTrades, loadTradeCounts, saveTradeCounts, updateTradeCountsEmbed, computeApprovedTradeCounts } from '../shared/madden_trade_utils.js';
 import { addPickOverridesFromTrade } from '../madden/pick_overrides_store.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
 const PENDING_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
@@ -15,11 +17,13 @@ function readPending() {
 function writePending(data) {
   try { fs.writeFileSync(PENDING_PATH, JSON.stringify(data ?? {}, null, 2)); } catch { }
 }
-function loadRoleMap() {
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
 }
-function loadChannelMap() {
-  try { return JSON.parse(fs.readFileSync(CHANNEL_MAP_FILE, 'utf8')); } catch { return {}; }
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 function getCoachRole(roleMap, teamName) {
   if (!teamName) return null;
@@ -46,7 +50,7 @@ export const customId = /^(trade_madden_proof\|.+|trade_madden_cancel\|.+|trade_
 export async function execute(interaction) {
   if (!(interaction instanceof ButtonInteraction)) return;
   const [action, sub, maybeId] = interaction.customId.split('|');
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMap(interaction.guildId);
   const committeeRole = getCommitteeRole(roleMap);
   const staffRoles = getStaffRoles(roleMap);
   const hasRole = (id) => interaction.member?.roles?.cache?.has(id);
@@ -67,7 +71,7 @@ export async function execute(interaction) {
       return;
     }
     const trade = entry.trade;
-    const channelMap = loadChannelMap();
+    const channelMap = loadChannelMap(interaction.guildId);
     const approvedChan = await interaction.client.channels.fetch(channelMap['Approved trades']).catch(() => null);
     const deniedChan = await interaction.client.channels.fetch(channelMap['Denied trades']).catch(() => null);
 

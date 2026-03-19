@@ -11,15 +11,22 @@ import fs from 'fs';
 import path from 'path';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 
 const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
+}
+
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
+  const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+  return loadJson(ROLE_MAP_FILE);
 }
 
 function hasStaffRole(member, roleMap) {
@@ -108,7 +115,7 @@ export async function execute(interaction) {
     await interaction.reply({ content: 'No league set. Run /madden-set-league first.', ephemeral: true });
     return;
   }
-  const roleMap = loadJson(ROLE_MAP_FILE);
+  const roleMap = loadRoleMap(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
     await interaction.reply({ content: 'Staff only.', ephemeral: true });
@@ -147,8 +154,8 @@ export async function execute_modal(interaction) {
     return;
   }
   const snapshot = loadLeagueSnapshot(leagueId);
-  const roleMap = loadJson(ROLE_MAP_FILE);
-  const channelMap = loadJson(CHANNEL_MAP_FILE);
+  const roleMap = loadRoleMap(interaction.guildId);
+  const channelMap = loadMaddenChannelMap(interaction.guildId);
   const emojiMap = loadJson(TEAM_EMOJIS_FILE);
   const awardsChannelId = channelMap['Yearly awards'] || channelMap['Yearly Awards'] || channelMap['Awards'];
   // Fallback season year: use config.json if snapshot lacks seasonYear

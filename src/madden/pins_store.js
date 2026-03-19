@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { getGuildPinsMap } from '../shared/madden_guild_config.js';
 
 const PINS_FILE = path.join(process.cwd(), 'data', 'madden', 'pins.json');
 const STATIC_PINS = {
@@ -24,7 +25,9 @@ export function savePins(pins) {
   fs.writeFileSync(PINS_FILE, JSON.stringify(pins ?? {}, null, 2));
 }
 
-export function getPinId(key) {
+export function getPinId(key, guildId = null) {
+  const overlay = guildId ? getGuildPinsMap(guildId) : null;
+  if (overlay?.[key]) return overlay[key];
   const pins = loadPins();
   if (pins[key]) return pins[key];
   return STATIC_PINS[key] || null;
@@ -37,7 +40,7 @@ export function setPinId(key, id) {
 }
 
 export function clearPins() {
-  try { fs.unlinkSync(PINS_FILE); } catch {}
+  try { fs.unlinkSync(PINS_FILE); } catch { }
 }
 
 export default { loadPins, savePins, getPinId, setPinId, clearPins };

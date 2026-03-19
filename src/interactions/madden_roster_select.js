@@ -1,4 +1,4 @@
-import { loadLeagueSnapshot } from '../madden/madden_data.js';
+import { loadLeagueSnapshot, resolveLeagueIdStrict } from '../madden/madden_data.js';
 import { buildRosterEmbeds } from '../madden/coach/roster.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 
@@ -12,7 +12,11 @@ export async function execute(interaction) {
     return;
   }
   try {
-    const leagueId = process.env.MADDEN_LEAGUE_ID || null;
+    const leagueId = resolveLeagueIdStrict(interaction.guildId);
+    if (!leagueId) {
+      await interaction.reply({ content: 'No Madden league is mapped to this server yet. Run /madden-set-league first.', ephemeral: true });
+      return;
+    }
     const snapshot = loadLeagueSnapshot(leagueId);
     if (!snapshot) {
       await interaction.reply({ content: 'Could not load the current Madden league snapshot.', ephemeral: true });

@@ -355,7 +355,7 @@ export async function execute(interaction) {
     deleteTradeDraft(draftId);
 
     // DM other coach (role members or user) with approve/deny buttons
-    const guild = interaction.guild || interaction.client.guilds.cache.first();
+    const guild = interaction.guild || null;
     const coachId = resolveTeamRoleId(otherTeam, snapshot, roleMap);
     const rowCoach = buildDecisionButtons(tradeId, true);
     let dmSent = false;

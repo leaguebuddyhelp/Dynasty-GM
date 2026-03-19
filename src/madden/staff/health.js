@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { getLeagueForGuild } from '../madden_config.js';
 import { hasStaffRole, loadRoleMap } from './staffUtils.js';
+import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 
 const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
 const THREAD_REMINDERS_PATH = path.join(process.cwd(), 'data', 'madden', 'thread_reminders.json');
@@ -10,7 +12,6 @@ const WEEKLY_GAME_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'weekly_
 const COACH_ASSIGNMENTS_PATH = path.join(process.cwd(), 'data', 'madden', 'coach_assignments.json');
 const RECOGNITION_PATH = path.join(process.cwd(), 'data', 'leaguebuddy_recognition.json');
 const STAFF_ACTIVITY_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'staff_activity_log.json');
-const CHANNEL_MAP_PATH = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const ROLE_MAP_PATH = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 
 export const data = new SlashCommandBuilder()
@@ -24,6 +25,12 @@ function readJson(file, fallback = {}) {
   } catch {
     return fallback;
   }
+}
+
+function loadRoleMapForGuild(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
+  return readJson(ROLE_MAP_PATH, {});
 }
 
 function clamp(value, min, max) {
@@ -83,8 +90,8 @@ function currentLeagueWeek(leagueId) {
 
 function buildCoverageMetrics(guildId, leagueId) {
   const assignedTeams = activeAssignedTeams(guildId);
-  const roleMap = readJson(ROLE_MAP_PATH, {});
-  const channelMap = readJson(CHANNEL_MAP_PATH, {});
+  const roleMap = loadRoleMapForGuild(guildId);
+  const channelMap = loadMaddenChannelMap(guildId);
   const leagueFile = leagueId ? path.join(LEAGUE_DIR, `${leagueId}.json`) : null;
   const snapshotFreshnessHours = leagueFile && fs.existsSync(leagueFile)
     ? ageHours(fs.statSync(leagueFile).mtimeMs)

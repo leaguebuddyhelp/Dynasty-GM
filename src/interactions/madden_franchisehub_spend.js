@@ -198,18 +198,18 @@ function buildConfirmPanel({ tier, perk, perkState, weekKey }) {
 
   const embed = new EmbedBuilder()
     .setColor(0xf1c40f)
-    .setTitle(`Confirm Purchase — ${perk.label}`)
+    .setTitle(`Confirm Spend — ${perk.label}`)
     .setDescription([
       `Week: ${weekKey.replace('_', ' ')}`,
       `Cost: ${perk.cost} ${TIER_EMOJIS[tier]}`,
       `Balance now: ${balance} ${TIER_EMOJIS[tier]}`,
-      `Balance after purchase: ${Math.max(0, balance - Number(perk.cost || 0))} ${TIER_EMOJIS[tier]}`,
+      `Balance after spend: ${Math.max(0, balance - Number(perk.cost || 0))} ${TIER_EMOJIS[tier]}`,
       '',
       perk.effect,
       '',
       'Are you sure you want to activate this perk for the current week?',
     ].join('\n'))
-    .setFooter({ text: 'This purchase cannot be undone this week.' });
+    .setFooter({ text: 'This spend cannot be undone this week.' });
 
   return { embeds: [embed], components: [row] };
 }
@@ -238,7 +238,7 @@ function buildPurchaseReceipt({ interaction, tier, perkKey, perk, weekKey, balan
     embeds: [
       new EmbedBuilder()
         .setColor(0x2ecc71)
-        .setTitle('Recognition Purchase')
+        .setTitle('Recognition Spend Receipt')
         .setDescription(`<@${interaction.user.id}> bought **${perk.label}** from Franchise Hub.`)
         .addFields(
           { name: 'Tier', value: tier, inline: true },
@@ -403,7 +403,7 @@ export async function execute(interaction) {
   await postMaddenStaffDecision(
     interaction.client,
     interaction.guildId,
-    'Recognition Purchase',
+    'Recognition Spend',
     `<@${interaction.user.id}> bought **${result.perk.label}** from Franchise Hub.`,
     [
       { name: 'Tier', value: tier, inline: true },

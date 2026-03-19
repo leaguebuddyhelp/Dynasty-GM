@@ -3,6 +3,7 @@ import path from 'path';
 import { EmbedBuilder } from 'discord.js';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getPinId, setPinId } from '../madden/pins_store.js';
+import { upsertGuildPin } from './madden_guild_config.js';
 
 const ACTIVE_TRADES_FILE = path.join(process.cwd(), 'data', 'madden', 'active_trades.json');
 const TRADE_COUNTS_FILE = path.join(process.cwd(), 'data', 'madden', 'trade_counts.json');
@@ -72,7 +73,7 @@ export function incrementTradeCounts(counts, teams) {
   return counts;
 }
 
-export async function updateTradeCountsEmbed(client, channelMap, counts) {
+export async function updateTradeCountsEmbed(client, channelMap, counts, { guildId = null } = {}) {
   const channelId = channelMap['Trade Counts'];
   if (!channelId) return;
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -115,7 +116,7 @@ export async function updateTradeCountsEmbed(client, channelMap, counts) {
       await botPin.edit({ embeds: [embed], content: null }).catch(() => null);
       return;
     }
-  } catch {}
+  } catch { }
 
   try {
     const recent = await channel.messages.fetch({ limit: 50 }).catch(() => null);
@@ -124,9 +125,9 @@ export async function updateTradeCountsEmbed(client, channelMap, counts) {
       await botMsg.edit({ embeds: [embed], content: null }).catch(() => null);
       return;
     }
-  } catch {}
+  } catch { }
 
-  const pinId = getPinId('trade_counts');
+  const pinId = getPinId('trade_counts', guildId);
   if (pinId) {
     const msg = await channel.messages.fetch(pinId).catch(() => null);
     if (msg) {
@@ -135,6 +136,7 @@ export async function updateTradeCountsEmbed(client, channelMap, counts) {
     }
   }
   const msg = await channel.send({ embeds: [embed] });
-  try { await msg.pin(); } catch {}
+  try { await msg.pin(); } catch { }
+  if (guildId) upsertGuildPin(guildId, 'trade_counts', msg.id);
   setPinId('trade_counts', msg.id);
 }

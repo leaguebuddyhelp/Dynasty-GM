@@ -7,14 +7,23 @@ import { registerThread } from '../../shared/madden_thread_notifier.js';
 import { brandTitle } from '../../shared/madden_branding.js';
 import { setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
 import { postSportsbookWeek } from '../../shared/madden_sportsbook.js';
+import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
+export const featureKey = 'threads';
+
 const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 const PLAYOFF_RESULTS_FILE = path.join(process.cwd(), 'data', 'madden', 'playoff_results.json');
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
+}
+
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
+  const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+  return loadJson(ROLE_MAP_FILE);
 }
 
 async function safeEditReply(interaction, payload) {
@@ -675,8 +684,8 @@ function pairFromSeeds(seeds, roundName) {
 
 async function execute(interaction) {
   await interaction.deferReply({ flags: 64 });
-  const roleMap = loadJson(ROLE_MAP_FILE);
-  const channelMap = loadJson(CHANNEL_MAP_FILE);
+  const roleMap = loadRoleMap(interaction.guildId);
+  const channelMap = loadMaddenChannelMap(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
     await safeEditReply(interaction, { content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });

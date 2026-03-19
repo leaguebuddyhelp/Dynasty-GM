@@ -10,6 +10,9 @@ import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_s
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
 
+// Plan gating (LEAGUEbuddy packsEnabled / plan enforcement)
+export const featureKey = 'scouting_draft';
+
 const ROLE_MAP_PATH = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const SCOUT_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_points.json');
 const SCOUT_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_log.json');
@@ -408,7 +411,7 @@ function buildWarRoomIntel({
                     .map((target) => `${target.name} R${projectedRoundForProspect(target)}`);
                 lines.push(`Season-long scout traffic is not crowded yet, but your board pressure is still live around ${roundPressure.join(' • ')}.`);
             } else {
-                lines.push('Season-long league traffic is still light, but no paid lane is blank: early board pressure is already forming around your current top targets.');
+                lines.push('Season-long league traffic is still light, but every lane has activity: early board pressure is already forming around your current top targets.');
             }
         }
         if (contestedNames.length) {
@@ -922,11 +925,11 @@ export async function execute(interaction) {
     if (teamId != null) {
         const edgePlayers = (league.rosters?.teams?.[teamId]?.rosterInfoList || []).filter(p => {
             const pos = (p.position || '').trim().toUpperCase();
-            return ['LE','RE','EDGE','EDG','LEDG','REDG','DE','RDE','LDE','ROLB','LOLB','OLB'].includes(pos);
+            return ['LE', 'RE', 'EDGE', 'EDG', 'LEDG', 'REDG', 'DE', 'RDE', 'LDE', 'ROLB', 'LOLB', 'OLB'].includes(pos);
         });
-        const edgeSacks = edgePlayers.reduce((s,p)=> s + (p.sacks ?? playerAgg[p.rosterId]?.sacks ?? 0), 0);
-        const topEdgeSackVal = edgePlayers.reduce((m,p)=> Math.max(m, p.sacks ?? playerAgg[p.rosterId]?.sacks ?? 0), 0);
-        const bestEdgeOvr = edgePlayers.reduce((m,p)=> Math.max(m, getMetricOvr(p)), 0);
+        const edgeSacks = edgePlayers.reduce((s, p) => s + (p.sacks ?? playerAgg[p.rosterId]?.sacks ?? 0), 0);
+        const topEdgeSackVal = edgePlayers.reduce((m, p) => Math.max(m, p.sacks ?? playerAgg[p.rosterId]?.sacks ?? 0), 0);
+        const bestEdgeOvr = edgePlayers.reduce((m, p) => Math.max(m, getMetricOvr(p)), 0);
         const teamDefSacks = (() => {
             const key = String(teamId);
             const ts = seasonAgg[teamId] || seasonAgg[key] || {};
@@ -943,11 +946,11 @@ export async function execute(interaction) {
         }
         // WR depth bump: if WR need is present or WR room thin, pull WR into top 3
         const wrs = (league.rosters?.teams?.[teamId]?.rosterInfoList || []).filter(p => (p.position || '').toUpperCase() === 'WR')
-            .map(p => ({...p, ovr: getMetricOvr(p), yds: p.recYds ?? playerAgg[p.rosterId]?.recYds ?? 0}))
-            .sort((a,b)=> (b.ovr - a.ovr) || (b.yds - a.yds));
+            .map(p => ({ ...p, ovr: getMetricOvr(p), yds: p.recYds ?? playerAgg[p.rosterId]?.recYds ?? 0 }))
+            .sort((a, b) => (b.ovr - a.ovr) || (b.yds - a.yds));
         const wr2 = wrs[1], wr3 = wrs[2];
         const wrWeak = (wr2 && (wr2.ovr < 78 || wr2.yds < 800)) || (wr3 && wr3.ovr < 75);
-        if (wrWeak && !needs.slice(0,3).includes('WR')) {
+        if (wrWeak && !needs.slice(0, 3).includes('WR')) {
             // Insert WR into position 2 or 3
             needs = [needs[0], 'WR', ...needs.slice(1)].filter(Boolean);
             needs = Array.from(new Set(needs)); // dedupe
@@ -1297,7 +1300,7 @@ export async function execute(interaction) {
     if (wrIndices.length > 2) {
         const usedNames = new Set(pickEntries.map(entry => entry.target?.name).filter(Boolean));
         const replacementPool = draftClass.filter(p => mapNeed(p) !== 'WR' && !usedNames.has(p.name));
-    if (process.env.MOCK_DEBUG) console.log('[WR CAP]', teamName, 'wrIndices', wrIndices.length, 'pool', replacementPool.length);
+        if (process.env.MOCK_DEBUG) console.log('[WR CAP]', teamName, 'wrIndices', wrIndices.length, 'pool', replacementPool.length);
         let repIdx = 0;
         for (let i = 2; i < wrIndices.length; i++) {
             const targetIdx = wrIndices[i].idx;
@@ -1349,8 +1352,8 @@ export async function execute(interaction) {
             const backHalfBias = teamStanding
                 ? (teamStanding.totalWins >= 12 ? 6
                     : teamStanding.totalWins >= 10 ? 4
-                    : teamStanding.totalWins >= 9 ? 2
-                    : 0)
+                        : teamStanding.totalWins >= 9 ? 2
+                            : 0)
                 : 0;
             const skip = Math.min(pool.length, skipBase + backHalfBias);
             const list = pool
@@ -1375,7 +1378,7 @@ export async function execute(interaction) {
             const slice = draftClass.slice(start, end);
 
             if (process.env.MOCK_DEBUG && teamName === 'Broncos' && round === 1) {
-                console.log('[BRONCOS R1] needs=', topNeeds.join(','), 'slice WR names=', slice.filter(p=>mapNeed(p)==='WR').map(p=>p.name));
+                console.log('[BRONCOS R1] needs=', topNeeds.join(','), 'slice WR names=', slice.filter(p => mapNeed(p) === 'WR').map(p => p.name));
             }
 
             // Force R1 to align with top need for non-QB teams; avoid top-8 elites for late pickers
@@ -1391,7 +1394,7 @@ export async function execute(interaction) {
                         (!eliteGate || ((p.__idx ?? 99) >= 8))
                     );
                     if (process.env.MOCK_DEBUG && teamName === 'Broncos') {
-                        console.log(`[R1_FORCE ${teamName}] need=${need} pool=${poolR1.map(p=>p.name).slice(0,5).join(',')}`);
+                        console.log(`[R1_FORCE ${teamName}] need=${need} pool=${poolR1.map(p => p.name).slice(0, 5).join(',')}`);
                     }
                     if (poolR1.length) {
                         pickedR1 = poolR1[seededRand(teamName, 901 + need.length, Math.min(poolR1.length, 6)) % poolR1.length];
@@ -1410,7 +1413,7 @@ export async function execute(interaction) {
             let picked = null;
             if (round === 1) {
                 picked = pickFrom(slice, true, round)
-                      || pickFrom(draftClass, true, round);
+                    || pickFrom(draftClass, true, round);
                 if (!picked) {
                     const eliteGate = (teamStanding && teamStanding.totalWins >= 10);
                     const alt = draftClass.find(p =>
@@ -1425,15 +1428,15 @@ export async function execute(interaction) {
 
             if (!picked) {
                 picked = pickFrom(slice, true, round)
-                      || pickFrom(draftClass.slice(start, Math.min(end + 16, draftClass.length)), true, round)
-                      || pickFrom(draftClass, true, round);
+                    || pickFrom(draftClass.slice(start, Math.min(end + 16, draftClass.length)), true, round)
+                    || pickFrom(draftClass, true, round);
             }
 
             // Early rounds must stay within needs; later rounds may fallback to BPA
             if (!picked && round >= 3) {
                 picked = pickFrom(slice, false, round)
-                      || pickFrom(draftClass.slice(start, Math.min(end + 32, draftClass.length)), false, round)
-                      || pickFrom(draftClass, false, round);
+                    || pickFrom(draftClass.slice(start, Math.min(end + 32, draftClass.length)), false, round)
+                    || pickFrom(draftClass, false, round);
             }
 
             let pick = picked?.cand || null;
@@ -1458,7 +1461,7 @@ export async function execute(interaction) {
             }
             const school = pick?.college || pick?.College || pick?.school || pick?.schoolName || 'N/A';
             rebuilt.push(pick ? `${round}. ${pick.name} (${pick.position || pick.position_1 || 'POS'}) — ${school} (Proj R${round})`
-                               : `${round}. No suggestion`);
+                : `${round}. No suggestion`);
         }
 
         // Allow ONE late depth QB if roster is thin (rounds 4+ only)
@@ -1531,8 +1534,8 @@ export async function execute(interaction) {
         overall: player.overall ?? rosterOvrById[player.rosterId],
         yearsLeft: player.yearsLeft ?? rosterYearsLeftById[player.rosterId]
     }));
-    const getVal = (obj, path) => path.split('.').reduce((o,k)=> (o && o[k] !== undefined ? o[k] : undefined), obj);
-    const topBy = (arr, path) => arr.slice().sort((a,b)=>(getVal(b,path) ?? 0)-(getVal(a,path) ?? 0))[0];
+    const getVal = (obj, path) => path.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), obj);
+    const topBy = (arr, path) => arr.slice().sort((a, b) => (getVal(b, path) ?? 0) - (getVal(a, path) ?? 0))[0];
 
     const qbs = teamPlayers.filter(p => (p.position || '').toUpperCase() === 'QB');
     const topQB = topBy(qbs, 'pass.yds') ||
@@ -1548,8 +1551,8 @@ export async function execute(interaction) {
             })
             .sort((a, b) => (b.passYds ?? 0) - (a.passYds ?? 0) || (getMetricOvr(b) - getMetricOvr(a)))[0];
 
-    const topRB = topBy(teamPlayers.filter(p => ['HB','RB','FB'].includes((p.position || '').toUpperCase())), 'rush.yds') ||
-        players.filter(p => ['HB','RB','FB'].includes((p.position || '').toUpperCase())).sort((a, b) => (b.rushYds ?? 0) - (a.rushYds ?? 0))[0];
+    const topRB = topBy(teamPlayers.filter(p => ['HB', 'RB', 'FB'].includes((p.position || '').toUpperCase())), 'rush.yds') ||
+        players.filter(p => ['HB', 'RB', 'FB'].includes((p.position || '').toUpperCase())).sort((a, b) => (b.rushYds ?? 0) - (a.rushYds ?? 0))[0];
 
     const topWR = topBy(teamPlayers.filter(p => (p.position || '').toUpperCase() === 'WR'), 'rec.yds') ||
         players.filter(p => (p.position || '').toUpperCase() === 'WR').sort((a, b) => (b.recYds ?? 0) - (a.recYds ?? 0))[0];
@@ -1562,7 +1565,7 @@ export async function execute(interaction) {
             })
             .sort((a, b) => (b.recYds ?? 0) - (a.recYds ?? 0) || (getMetricOvr(b) - getMetricOvr(a)))[0];
 
-    const topEdge = topBy(teamPlayers.filter(p => ['LE','RE','EDGE','EDG','LEDG','REDG','DE','RDE','LDE','ROLB','LOLB','OLB'].includes((p.position || '').toUpperCase())), 'def.sacks') ||
+    const topEdge = topBy(teamPlayers.filter(p => ['LE', 'RE', 'EDGE', 'EDG', 'LEDG', 'REDG', 'DE', 'RDE', 'LDE', 'ROLB', 'LOLB', 'OLB'].includes((p.position || '').toUpperCase())), 'def.sacks') ||
         players.filter(p => ['LE', 'RE', 'ROLB', 'LOLB', 'EDGE', 'EDG', 'OLB', 'DE', 'LEDG', 'REDG', 'RDE', 'LDE'].includes((p.position || '').toUpperCase()))
             .sort((a, b) => (b.sacks ?? 0) - (a.sacks ?? 0))[0];
 
@@ -1761,7 +1764,7 @@ export async function execute(interaction) {
     // Build a detailed blurb that touches the top 5 needs with decreasing urgency and woven stats
     const toneWeights = [1.0, 0.9, 0.8];
     // Helpers for roster-based fallbacks
-    const avgOvr = (arr) => arr.length ? Math.round(arr.reduce((s,p)=>s+getMetricOvr(p),0)/arr.length) : 0;
+    const avgOvr = (arr) => arr.length ? Math.round(arr.reduce((s, p) => s + getMetricOvr(p), 0) / arr.length) : 0;
     const group = (positions) => players.filter(p => positions.includes((p.position || '').toUpperCase()));
     const sackVal = (p) => p?.def?.sacks ?? p?.sacks ?? playerAgg[p?.rosterId]?.sacks ?? 0;
 
@@ -1772,8 +1775,8 @@ export async function execute(interaction) {
         const counts = (key && (seasonCounts[teamId] || seasonCounts[key])) || {};
         const seenPass = ts.pass?.yds !== undefined || (counts.pass || 0) > 0;
         const seenRush = ts.rush?.yds !== undefined || (counts.rush || 0) > 0;
-        const seenRec  = ts.rec?.yds  !== undefined || (counts.rec  || 0) > 0;
-        const seenDef  = ts.def?.sacks !== undefined || (counts.def  || 0) > 0;
+        const seenRec = ts.rec?.yds !== undefined || (counts.rec || 0) > 0;
+        const seenDef = ts.def?.sacks !== undefined || (counts.def || 0) > 0;
         const yearsLeft = (p) => {
             if (!p) return null;
             if (p.yearsLeft !== undefined && p.yearsLeft !== null) return p.yearsLeft;
@@ -1781,12 +1784,12 @@ export async function execute(interaction) {
             if (p.rosterId !== undefined && rosterYearsLeftById[p.rosterId] !== undefined) return rosterYearsLeftById[p.rosterId];
             return null;
         };
-        const edgeList = teamPlayers.filter(p => ['LE','RE','EDGE','EDG','LEDG','REDG','DE','RDE','LDE','ROLB','LOLB','OLB'].includes((p.position || '').toUpperCase()));
-        const dtList = teamPlayers.filter(p => ['DT','NT','IDL','IDL1','IDL2','IDL3'].includes((p.position || '').toUpperCase()));
-        const edgeSacks = edgeList.reduce((s,p)=> s + sackVal(p), 0);
-        const dtSacks = dtList.reduce((s,p)=> s + sackVal(p), 0);
+        const edgeList = teamPlayers.filter(p => ['LE', 'RE', 'EDGE', 'EDG', 'LEDG', 'REDG', 'DE', 'RDE', 'LDE', 'ROLB', 'LOLB', 'OLB'].includes((p.position || '').toUpperCase()));
+        const dtList = teamPlayers.filter(p => ['DT', 'NT', 'IDL', 'IDL1', 'IDL2', 'IDL3'].includes((p.position || '').toUpperCase()));
+        const edgeSacks = edgeList.reduce((s, p) => s + sackVal(p), 0);
+        const dtSacks = dtList.reduce((s, p) => s + sackVal(p), 0);
         const teamDefSacks = ts.def?.sacks ?? agg.defSacks;
-        const topPassRusher = [...edgeList, ...dtList].sort((a,b)=> sackVal(b)-sackVal(a))[0];
+        const topPassRusher = [...edgeList, ...dtList].sort((a, b) => sackVal(b) - sackVal(a))[0];
 
         if (pos === 'QB') {
             const qbName = topQB ? (topQB.name || getPlayerName(topQB)) : (ts.leaders?.passYds?.name || 'QB');
@@ -1893,7 +1896,7 @@ export async function execute(interaction) {
             if (teamSacks && teamSacks >= 45) return ''; // production already strong; deprioritize EDGE
             if (teamSacks && teamSacks >= 40) return `Edge group has ${productionText(teamSacks, 'sacks')}—focus elsewhere unless elite value falls.`;
             if (seenDef && leaderVal !== undefined) {
-                if (leaderPos && ['DT','NT','IDL','IDL1','IDL2','IDL3'].includes(leaderPos)) {
+                if (leaderPos && ['DT', 'NT', 'IDL', 'IDL1', 'IDL2', 'IDL3'].includes(leaderPos)) {
                     return `${leaderName} (DT) is carrying the rush with ${productionText(leaderVal, 'sacks')}—add a true edge finisher so QBs can’t step up.`;
                 }
                 if (leaderVal < 8) return `${leaderName} has ${productionText(leaderVal, 'sacks')}—need more edge juice; add a finisher.`;
@@ -1903,7 +1906,7 @@ export async function execute(interaction) {
             return '';
         }
         if (pos === 'DT') {
-            const dts = group(['DT','NT','IDL','IDL1','IDL2','IDL3']);
+            const dts = group(['DT', 'NT', 'IDL', 'IDL1', 'IDL2', 'IDL3']);
             const topDt = dts[0];
             const yl = yearsLeft(topDt);
             if (yl !== null && yl <= 1) return `${topDt ? getPlayerName(topDt) : 'Top DT'} is in a contract year—shore up the interior now.`;
@@ -1921,7 +1924,7 @@ export async function execute(interaction) {
             return '';
         }
         if (pos === 'LB') {
-            const lbs = group(['MLB','ILB','LB','LOLB','ROLB','OLB','SAM','MIKE','WILL']);
+            const lbs = group(['MLB', 'ILB', 'LB', 'LOLB', 'ROLB', 'OLB', 'SAM', 'MIKE', 'WILL']);
             const topLb = lbs[0];
             const yl = yearsLeft(topLb);
             if (yl !== null && yl <= 1) return `${topLb ? getPlayerName(topLb) : 'Top LB'} is in a contract year—add speed and communication at linebacker.`;
@@ -1944,7 +1947,7 @@ export async function execute(interaction) {
             return '';
         }
         if (pos === 'S') {
-            const safeties = group(['FS','SS']);
+            const safeties = group(['FS', 'SS']);
             const topS = safeties[0];
             const yl = yearsLeft(topS);
             if (yl !== null && yl <= 1) return `${topS ? getPlayerName(topS) : 'Top safety'} is in a contract year—secure range on the back end.`;
@@ -1988,8 +1991,8 @@ export async function execute(interaction) {
     const teamTop = seasonTop.filter(p =>
         (teamId != null && Number(p.teamId) === Number(teamId)) ||
         normalizeName(p.team || '') === normalizeName(teamName));
-    const topStar = teamTop.slice().sort((a,b)=>Number(b.grade||0)-Number(a.grade||0))[0];
-    const lowStar = teamTop.slice().sort((a,b)=>Number(a.grade||0)-Number(b.grade||0))[0];
+    const topStar = teamTop.slice().sort((a, b) => Number(b.grade || 0) - Number(a.grade || 0))[0];
+    const lowStar = teamTop.slice().sort((a, b) => Number(a.grade || 0) - Number(b.grade || 0))[0];
     const apFirstHit = allProFirst.find(p =>
         (teamId != null && Number(p.teamId) === Number(teamId)) ||
         normalizeName(p.team || '') === normalizeName(teamName));

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { computePlayerValue } from '../../../madden/madden_trade_modal_submit.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
@@ -58,8 +58,10 @@ export const data = new SlashCommandBuilder()
 
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
+  let leagueId;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch {
     await interaction.respond([]);
     return;
   }
@@ -107,8 +109,10 @@ export async function autocomplete(interaction) {
 }
 
 export async function execute(interaction) {
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
+  let leagueId;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch {
     await interaction.reply({ content: coachErrorBlurb('noLeague', 'No league set. Run /madden-setleague first.'), ephemeral: true });
     return;
   }

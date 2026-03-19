@@ -6,17 +6,21 @@ import {
   saveActiveTrades,
 } from '../shared/madden_trade_utils.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const PENDING_PROOFS_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.json');
 const PROOF_CHANNEL_ID = '1482473294769684561'; // pending trades (upload proof)
 
-function loadChannelMap() {
-  try { return JSON.parse(fs.readFileSync(CHANNEL_MAP_FILE, 'utf8')); } catch { return {}; }
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
-function loadRoleMap() {
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
 }
 
@@ -162,7 +166,7 @@ export async function execute(interaction) {
     return;
   }
 
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMap(interaction.guildId);
   const coachRoleId = roleMap['Ghost Legacy'];
   const coachRoleMention = coachRoleId ? `<@&${coachRoleId}> ` : '';
   const committeeRoleId = '1460399406737002579';
@@ -178,7 +182,7 @@ export async function execute(interaction) {
     teamRoleId(trade.otherTeam, roleMap),
   ].filter(Boolean).map(String);
 
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(interaction.guildId);
   const approvedId = channelMap['Approved trades'];
   const deniedId = channelMap['Denied trades'];
 

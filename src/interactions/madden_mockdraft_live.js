@@ -41,7 +41,10 @@ import {
 } from '../shared/madden_mock_draft_live.js';
 import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 
+// Handles live mock draft room controls plus the pick select menu used by search results.
+// Note: some components use `madden_mockdraft_live|...`, others use `madden_mockdraft|...`.
 export const customId = /^madden_mockdraft(_live)?\|/;
+export const customId_pick = /^madden_mockdraft_pick\|/;
 const SCOUTING_HUB_CHANNEL_ID = '1460288930946482299';
 const INVITE_REPLY_TTL_MS = 1000 * 60 * 20;
 
@@ -144,10 +147,13 @@ async function sendMockDraftSummaryDMs(client, sessionId) {
   const session = getMockDraftSession(sessionId);
   console.log(`[MockDraft] handleButton: sessionId=${sessionId}, session=`, session);
   if (!session || session.summarySentAt) return;
-  // Show all picks for DM summary
-  const allResults = (session.picks || [])
-    .map((pick) => `Pick ${pick.pickNumber}: ${pick.teamName} — ${pick.prospectName} (${pick.position})${pick.userId !== 'auto' && pick.grade ? ` • ${pick.grade}` : ''}`)
-    .join('\n') || 'No picks were made.';
+  const allPicks = (session.picks || []).slice().sort((a, b) => Number(a.pickNumber) - Number(b.pickNumber));
+  // Use pick-count truncation (not character truncation) so the "full recap" stays coherent.
+  // 32 picks comfortably fit in one embed description, but this safeguards partial mocks too.
+  const fullPickLines = allPicks.length
+    ? allPicks.map((pick) => `Pick ${pick.pickNumber}: ${pick.teamName} — ${pick.prospectName} (${pick.position})${pick.grade ? ` • ${pick.grade}` : ''}`)
+    : ['No picks were made.'];
+  const fullLog = fullPickLines.join('\n');
 
   for (const participant of session.participants || []) {
     const user = await client.users.fetch(participant.userId).catch(() => null);
@@ -168,10 +174,14 @@ async function sendMockDraftSummaryDMs(client, sessionId) {
         { name: 'Your Picks', value: userPicks, inline: false },
         { name: 'Your Pick Recaps', value: userRecaps.slice(0, 1024), inline: false },
       );
+
+    // Second embed: full pick log up to where the mock ended (or currently reached).
+    // Keep it exactly one embed as requested.
     const fullResultsEmbed = new EmbedBuilder()
-      .setTitle(`Full First Round • ${session.draftYear}`)
+      .setTitle(`Draft Log • ${session.draftYear}`)
       .setColor(0x1e90ff)
-      .setDescription(allResults.slice(0, 4096));
+      .setDescription(fullLog.length > 4096 ? fullLog.slice(0, 4088) + '\n…' : fullLog);
+
     await user.send({ embeds: [summaryEmbed, fullResultsEmbed] }).catch(() => null);
   }
 
@@ -341,13 +351,12 @@ function buildOnClockAnnouncementComponents(sessionId) {
 }
 
 function buildPostPickControlComponents(sessionId) {
+  // NOTE: must return a components array; discord.js expects an array of ActionRowBuilder-like objects.
+  // Host-only controls are enforced by checking the interaction user.
   return (interaction) => {
     const session = getMockDraftSession(sessionId);
     const isHost = interaction && interaction.user && interaction.user.id === session?.hostId;
-    if (!isHost) {
-      // Non-hosts get no controls
-      return [];
-    }
+    if (!isHost) return [];
     return [
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -882,7 +891,7 @@ async function handleButton(interaction) {
             .setColor(0x5865f2)
             .setDescription(`CPU made your pick: **${madePick.pickNumber}. ${madePick.teamName} — ${madePick.prospectName} (${madePick.position})**.\n\nChoose whether to continue the live mock, finish the rest with CPU, or end it here.`),
         ],
-        components: buildPostPickControlComponents(sessionId),
+        components: buildPostPickControlComponents(sessionId)(interaction),
       });
       return;
     }
@@ -938,9 +947,8 @@ async function handleButton(interaction) {
 async function handlePickSelect(interaction) {
   const [, sessionId] = interaction.customId.split('|');
   const prospectId = interaction.values?.[0];
-  const session = getMockDraftSession(sessionId);
-  // Defer immediately. If we miss Discord's acknowledgement window we'll get 10062 (Unknown interaction).
-  // In that case there's nothing we can send back to the user, so just log and return.
+  // ACK ASAP to avoid Discord's 3s interaction timeout.
+  // If we miss this window, we'll get 10062 (Unknown interaction) and cannot reply.
   try {
     await interaction.deferUpdate();
   } catch (err) {
@@ -950,61 +958,91 @@ async function handlePickSelect(interaction) {
     }
     throw err;
   }
-  if (!session) {
-    console.error(`[MockDraft] PickSelect: Session not found for sessionId: ${sessionId}`);
-    await interaction.editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('Pick Failed')
-          .setColor(0xe74c3c)
-          .setDescription(
-            'This pick could not be submitted because the mock draft session is no longer active or has expired.'
-            + '\nSessionId: ' + sessionId
-          ),
-      ],
-      components: [],
-    }).catch(() => null);
-    return;
-  }
-  try {
-    const next = makeMockDraftPick(sessionId, interaction.user.id, prospectId);
-    await syncMockDraftSessionMessage(interaction.client, next);
-    const madePick = next.picks[next.picks.length - 1];
-    const channel = await interaction.client.channels.fetch(next.channelId).catch(() => null);
-    await channel?.send?.({ embeds: [buildMockDraftPickEmbed(next, madePick)] }).catch(() => null);
-    const isHost = interaction && interaction.user && interaction.user.id === next.hostId;
-    await interaction.editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('Pick Submitted')
-          .setColor(0x5865f2)
-          .setDescription(`Pick ${madePick.pickNumber} is locked in: **${madePick.teamName} — ${madePick.prospectName} (${madePick.position})**.`),
-      ],
-      components: isHost ? buildPostPickControlComponents(sessionId)(interaction) : [],
-    }).catch(() => null);
-    // Only prompt host to continue/end, others auto-advance
-    if (!isHost) {
-      void runMockDraftTicker(interaction.client, sessionId);
+
+  // Do all heavier work off the acknowledgement path.
+  setImmediate(async () => {
+    const session = getMockDraftSession(sessionId);
+    if (!session) {
+      console.error(`[MockDraft] PickSelect: Session not found for sessionId: ${sessionId}`);
+      await interaction.followUp({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Pick Failed')
+            .setColor(0xe74c3c)
+            .setDescription(
+              'This pick could not be submitted because the mock draft session is no longer active or has expired.'
+              + '\nSessionId: ' + sessionId
+            ),
+        ],
+        components: [],
+        flags: 64,
+      }).catch(() => null);
+      return;
     }
-  } catch (error) {
-    const message = error?.message || 'That pick could not be submitted.';
-    console.error('[MockDraft] handlePickSelect error', {
-      sessionId,
-      prospectId,
-      userId: interaction.user?.id,
-      name: error?.name,
-      message: error?.message,
-    });
-    await interaction.editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('Pick Failed')
-          .setColor(0xe74c3c)
-          .setDescription(message + '\nSessionId: ' + sessionId)
-      ],
-      components: [],
-    }).catch(() => null);
-  }
+    try {
+      const next = makeMockDraftPick(sessionId, interaction.user.id, prospectId);
+      const madePick = next.picks[next.picks.length - 1];
+      const isHost = interaction && interaction.user && interaction.user.id === next.hostId;
+
+      // Update the private panel (best-effort).
+      await interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Pick Submitted')
+            .setColor(0x5865f2)
+            .setDescription(`Pick ${madePick.pickNumber} is locked in: **${madePick.teamName} — ${madePick.prospectName} (${madePick.position})**.`),
+        ],
+        components: [],
+      }).catch(() => null);
+
+      // Sync the session message and post the pick embed (don’t block buttons on these).
+      void syncMockDraftSessionMessage(interaction.client, next).catch(() => null);
+      void (async () => {
+        const channel = await interaction.client.channels.fetch(next.channelId).catch(() => null);
+        await channel?.send?.({ embeds: [buildMockDraftPickEmbed(next, madePick)] }).catch(() => null);
+      })();
+
+      if (isHost) {
+        const postPickControls = (() => {
+          try {
+            const built = buildPostPickControlComponents(sessionId)(interaction);
+            return Array.isArray(built) ? built : [];
+          } catch {
+            return [];
+          }
+        })();
+
+        // Buttons in a fresh ephemeral follow-up are the most reliable way to show controls.
+        await interaction.followUp({
+          content: 'Host controls: continue the live mock, finish with CPU, or end here.',
+          components: postPickControls,
+          flags: 64,
+        }).catch(() => null);
+      } else {
+        // Only prompt host; non-host picks auto-advance.
+        void runMockDraftTicker(interaction.client, sessionId);
+      }
+    } catch (error) {
+      const message = error?.message || 'That pick could not be submitted.';
+      console.error('[MockDraft] handlePickSelect error', {
+        sessionId,
+        prospectId,
+        userId: interaction.user?.id,
+        name: error?.name,
+        message: error?.message,
+      });
+      await interaction.followUp({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Pick Failed')
+            .setColor(0xe74c3c)
+            .setDescription(message + '\nSessionId: ' + sessionId)
+        ],
+        components: [],
+        flags: 64,
+      }).catch(() => null);
+    }
+  });
 }
 
 async function handleSearchModal(interaction) {

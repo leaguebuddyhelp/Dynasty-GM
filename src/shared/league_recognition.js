@@ -853,7 +853,14 @@ export function getRecognitionStreamTotal({ guildId, league, userId }) {
 }
 
 export function getLegacyOpportunityForTeam({ snapshot, teamId, teamAwardTotal = 0 }) {
-  const standings = (snapshot?.standings?.teamStandingInfoList || []).slice();
+  // Madden exports aren't consistent: standings most often live under
+  // snapshot.standings.teamStandingInfoList, but some older snapshots used
+  // snapshot.standings.standingInfoList.
+  const standings = (
+    snapshot?.standings?.teamStandingInfoList
+    || snapshot?.standings?.standingInfoList
+    || []
+  ).slice();
   const standing = standings.find((team) => Number(team.teamId) === Number(teamId));
   if (!standing) return { total: 0, reasons: [] };
 
@@ -896,6 +903,13 @@ export function getLegacyOpportunityForTeam({ snapshot, teamId, teamAwardTotal =
   const volumeBonus = Math.min(rules.awardVolume.max, Math.floor(Number(teamAwardTotal || 0) / rules.awardVolume.perAwards));
   if (volumeBonus > 0) {
     reasons.push(`+${volumeBonus} from sustained weekly award presence`);
+  }
+
+  // Baseline: avoid "+0" showing up for teams that are simply in solid shape.
+  // If none of the bigger swing rules apply, a team with a winning record still has
+  // a small legacy stake in maintaining momentum.
+  if (!reasons.length && wins >= losses) {
+    reasons.push('+1 for keeping momentum (not falling behind)');
   }
 
   return {

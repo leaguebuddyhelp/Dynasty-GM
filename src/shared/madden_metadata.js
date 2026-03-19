@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { loadLeagueSnapshot, resolveLeagueIdWithConfig } from '../madden/madden_data.js';
+import { getGuildChannelMap } from './madden_guild_config.js';
 
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 
@@ -41,7 +42,7 @@ export function getMaddenWeekKey(snapshot = null) {
 }
 
 export function getMaddenSnapshotContext(guildId, { leagueId = null, snapshot = null } = {}) {
-  const resolvedLeagueId = leagueId || resolveLeagueIdWithConfig(guildId);
+  const resolvedLeagueId = leagueId || resolveLeagueIdWithConfig(guildId, 'shared:madden_metadata.getMaddenSnapshotContext');
   if (!resolvedLeagueId) return null;
   let resolvedSnapshot = snapshot;
   if (!resolvedSnapshot) {
@@ -64,11 +65,13 @@ export function getMaddenSnapshotContext(guildId, { leagueId = null, snapshot = 
   };
 }
 
-export function loadMaddenChannelMap() {
+export function loadMaddenChannelMap(guildId = null) {
+  const overlay = guildId ? getGuildChannelMap(guildId) : null;
+  if (overlay) return overlay;
   return safeReadJSON(CHANNEL_MAP_FILE, {});
 }
 
-export function getMaddenChannelId(channelName) {
-  const channelMap = loadMaddenChannelMap();
+export function getMaddenChannelId(channelName, guildId = null) {
+  const channelMap = loadMaddenChannelMap(guildId);
   return channelMap?.[channelName] || null;
 }

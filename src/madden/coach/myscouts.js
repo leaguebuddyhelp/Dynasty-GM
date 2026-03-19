@@ -7,6 +7,8 @@ import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser }
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 
+export const featureKey = 'scouting_draft';
+
 const SCOUT_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_log.json');
 const DEV_EMOJI_PATH = path.join(process.cwd(), 'data', 'madden', 'dev_emojis.json');
 const DRAFT_DIR = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
@@ -412,12 +414,12 @@ function buildPagesForUser(userId, guildId) {
   const userData = getSeasonScoutUser(scoutData, userId, seasonKey);
   const perkState = recognitionContext?.seasonKey
     ? getRecognitionPerkState({
-        guildId,
-        league: 'madden',
-        seasonKey: recognitionContext.seasonKey,
-        userId,
-        weekKey: recognitionContext.weekKey,
-      })
+      guildId,
+      league: 'madden',
+      seasonKey: recognitionContext.seasonKey,
+      userId,
+      weekKey: recognitionContext.weekKey,
+    })
     : null;
 
   const pages = [];
@@ -581,7 +583,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   if (!interaction.deferred && !interaction.replied) {
-    try { await interaction.deferReply({ flags: 64 }); } catch (_) {}
+    try { await interaction.deferReply({ flags: 64 }); } catch (_) { }
   }
   const userId = interaction.user.id;
   const { pages, error, classKey, activeName } = buildPagesForUser(userId, interaction.guildId);

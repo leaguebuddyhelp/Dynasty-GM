@@ -3,6 +3,8 @@ import path from 'path';
 import { EmbedBuilder } from 'discord.js';
 import { draftOrder, applyPickTrades } from './coach/mockdraft.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { upsertGuildPin } from '../shared/madden_guild_config.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
@@ -156,7 +158,7 @@ function chunkFields(fields) {
 export async function updateAvailableTeamsPin(client, guildId, options = {}) {
   const attempt = async () => {
     const roleMap = loadJson(ROLE_MAP_FILE);
-    const channelMap = loadJson(CHANNEL_MAP_FILE);
+    const channelMap = loadMaddenChannelMap(guildId) || loadJson(CHANNEL_MAP_FILE);
     const channelId = channelMap['Available Teams'];
     if (!channelId) {
       console.warn('[available-teams] Channel ID missing in madden_channel_ids.json');
@@ -249,6 +251,7 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
       await botPin.edit({ embeds, content: null }).catch(() => null);
       if (!botPin.pinned) await botPin.pin().catch(() => null);
       saveJson(PIN_FILE, { pinId: botPin.id, channelId });
+      upsertGuildPin(guildId, 'available_teams', botPin.id);
       return true;
     }
     const sent = await channel.send({ embeds, content: null }).catch(() => null);
@@ -258,6 +261,7 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
     }
     await sent.pin().catch(() => null);
     saveJson(PIN_FILE, { pinId: sent.id, channelId });
+    upsertGuildPin(guildId, 'available_teams', sent.id);
     return true;
   };
 

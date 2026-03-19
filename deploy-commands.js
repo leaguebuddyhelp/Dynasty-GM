@@ -10,14 +10,24 @@ const __dirname = dirname(__filename);
 
 const commands = [];
 
+const DEPLOY_SCOPE = String(process.env.DEPLOY_SCOPE || 'guild').toLowerCase();
+const MADDEN_ONLY = String(process.env.MADDEN_ONLY ?? 'true').toLowerCase() !== 'false';
+const APP_ENV = String(process.env.APP_ENV || process.env.NODE_ENV || '').toLowerCase();
+
 async function loadCommandsForDeployment() {
-  const commandFolders = [
-    ['2k', 'staff'],
-    ['2k', 'coach'],
-    ['madden'],
-    ['madden', 'coach'],
-    ['madden', 'staff'],
-  ];
+  const commandFolders = MADDEN_ONLY
+    ? [
+      ['madden'],
+      ['madden', 'coach'],
+      ['madden', 'staff'],
+    ]
+    : [
+      ['2k', 'staff'],
+      ['2k', 'coach'],
+      ['madden'],
+      ['madden', 'coach'],
+      ['madden', 'staff'],
+    ];
 
   // Only scan the canonical command locations under src/
   const roots = [
@@ -80,10 +90,21 @@ async function deployCommands() {
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN || process.env.TOKEN);
 
-    const data = await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID || process.env.SERVER_ID),
-      { body: commands }
-    );
+    // Guardrail: prevent accidental global deploys from a dev environment.
+    if (DEPLOY_SCOPE === 'global' && (APP_ENV === 'dev' || APP_ENV === 'development')) {
+      throw new Error('Refusing to deploy GLOBAL commands from APP_ENV=dev. Use APP_ENV=prod (or omit APP_ENV) to proceed.');
+    }
+
+    let route;
+    if (DEPLOY_SCOPE === 'global') {
+      route = Routes.applicationCommands(process.env.CLIENT_ID);
+      console.log('🌐 Deploy scope: GLOBAL (all servers)');
+    } else {
+      route = Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID || process.env.SERVER_ID);
+      console.log('🏠 Deploy scope: GUILD (test server only)');
+    }
+
+    const data = await rest.put(route, { body: commands });
 
     console.log(`✅ Successfully registered ${data.length} application commands!`);
     console.log('🏀 LEAGUEbuddy commands are ready to use!');

@@ -1,13 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { deriveTeamNeeds } from './mockdraft.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadRoleMap } from '../staff/staffUtils.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
+
+export const featureKey = 'scouting_draft';
 
 const SCOUT_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_log.json');
 const DEV_EMOJI_PATH = path.join(process.cwd(), 'data', 'madden', 'dev_emojis.json');
@@ -181,7 +183,12 @@ export const data = new SlashCommandBuilder()
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
   // Keep autocomplete fast to avoid Unknown interaction (3s limit)
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
+  let leagueId = null;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch {
+    leagueId = null;
+  }
   const snapshot = leagueId ? loadLeagueSnapshot(leagueId) : null;
   const classId = classIdForSnapshot(snapshot);
   const { data: draftData, resolvedId: resolvedClassId } = loadDraftClass(classId);
@@ -195,7 +202,7 @@ export async function autocomplete(interaction) {
       .filter(p => p.toLowerCase().includes(focusedVal))
       .slice(0, 25)
       .map(p => ({ name: p, value: p }));
-    try { await interaction.respond(choices); } catch (_) {}
+    try { await interaction.respond(choices); } catch (_) { }
     return;
   }
 
@@ -213,7 +220,7 @@ export async function autocomplete(interaction) {
       name: `${p.name}${p.school ? ` (${p.school})` : ''}`,
       value: p.name,
     }));
-  try { await interaction.respond(choices); } catch (_) {}
+  try { await interaction.respond(choices); } catch (_) { }
 }
 
 export async function execute(interaction) {
@@ -222,8 +229,10 @@ export async function execute(interaction) {
     await interaction.deferReply({ flags: 64 });
   }
 
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
+  let leagueId;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch {
     const payload = { content: 'No league set. Run /madden-setleague first.' };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
@@ -271,12 +280,12 @@ export async function execute(interaction) {
   const recognitionContext = inferRecognitionContext('madden', interaction.guildId);
   const perkState = recognitionContext?.seasonKey
     ? getRecognitionPerkState({
-        guildId: interaction.guildId,
-        league: 'madden',
-        seasonKey: recognitionContext.seasonKey,
-        userId: interaction.user.id,
-        weekKey: recognitionContext.weekKey,
-      })
+      guildId: interaction.guildId,
+      league: 'madden',
+      seasonKey: recognitionContext.seasonKey,
+      userId: interaction.user.id,
+      weekKey: recognitionContext.weekKey,
+    })
     : null;
   const coachTeam = findCoachTeam(interaction.member, snapshot);
   const needsByTeam = deriveTeamNeeds(snapshot);

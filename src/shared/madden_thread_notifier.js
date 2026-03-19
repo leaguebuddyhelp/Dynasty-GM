@@ -5,6 +5,7 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from './madden_staff_ops.js';
 import { sendCoachReceipt } from './madden_coach_receipts.js';
 import { getMaddenSnapshotContext, loadMaddenChannelMap } from './madden_metadata.js';
+import { getGuildRoleMap } from './madden_guild_config.js';
 
 const STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'thread_reminders.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
@@ -117,7 +118,9 @@ function saveState(state) {
   fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 }
 
-function loadRoleMap() {
+function loadRoleMap(guildId = null) {
+  const overlay = guildId ? getGuildRoleMap(guildId) : null;
+  if (overlay) return overlay;
   try {
     return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8'));
   } catch {
@@ -584,8 +587,8 @@ function runReminderSideEffects(tasks = []) {
   }
 }
 
-async function buildLiveStartupThreadEntries(client, { debugDecisions = false } = {}) {
-  const channelMap = loadMaddenChannelMap();
+async function buildLiveStartupThreadEntries(client, { debugDecisions = false, guildId = null } = {}) {
+  const channelMap = loadMaddenChannelMap(guildId);
   const gameThreadsChannelId = channelMap['Game threads'] || null;
   if (!gameThreadsChannelId) return Object.entries(state.threads || {});
   const channel = await client.channels.fetch(gameThreadsChannelId).catch(() => null);
@@ -640,8 +643,9 @@ async function buildLiveStartupThreadEntries(client, { debugDecisions = false } 
 
 export async function runNotifierCycle(client, { forceImmediate = false, debugDecisions = false } = {}) {
   const now = Date.now();
+  const firstGuildId = client?.guilds?.cache?.first?.()?.id || null;
   const entries = forceImmediate
-    ? await buildLiveStartupThreadEntries(client, { debugDecisions })
+    ? await buildLiveStartupThreadEntries(client, { debugDecisions, guildId: firstGuildId })
     : Object.entries(state.threads || {});
   const entryList = Array.isArray(entries) ? [...entries] : [];
   if (debugDecisions) {
@@ -1073,7 +1077,7 @@ export async function hydrateThreadStateFromLiveThread(thread, existing = null) 
   if (!thread?.id || !thread?.guildId) return existing;
   const info = existing || getThreadState(thread.id) || {};
   const liveCreatedAt = Number.isFinite(Number(thread.createdTimestamp)) ? Number(thread.createdTimestamp) : null;
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMap(guildId);
   const leagueId = info.leagueId || resolveLeagueIdWithConfig(thread.guildId) || null;
   let snapshot = null;
   let coachStatusByTeam = new Map();

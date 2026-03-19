@@ -3,7 +3,9 @@ import { getPinId, setPinId } from './pins_store.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 
 export async function ensureMaddenAwardsButton(client) {
-  const channelMap = loadMaddenChannelMap();
+  // Use the first guild's overlay if present; this helper is typically called in a single-guild process.
+  const firstGuildId = client?.guilds?.cache?.first?.()?.id || null;
+  const channelMap = loadMaddenChannelMap(firstGuildId);
   const channelId = channelMap['Yearly Awards'] || channelMap['Awards'] || '1459456657229873419';
   if (!channelId) return;
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -27,7 +29,7 @@ export async function ensureMaddenAwardsButton(client) {
 
   const components = [new ActionRowBuilder().addComponents(button)];
 
-  const pinId = getPinId('madden_awards_button');
+  const pinId = getPinId('madden_awards_button', firstGuildId);
   if (!pinId) return; // only update if a pin was already created via the script
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (msg) {

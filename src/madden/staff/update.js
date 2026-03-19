@@ -28,8 +28,10 @@ import { settleSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getCoachAssignmentMap, setCoachAssignment } from '../../shared/madden_coach_assignments.js';
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
+import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
+export const featureKey = 'ops_full';
+
 const POWER_RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
 const SCOUT_POINTS_FILE = path.join(process.cwd(), 'data', 'madden', 'scout_points.json');
 const WEEKLY_UPDATE_OVERRIDES_FILE = path.join(process.cwd(), 'data', 'madden', 'weekly_update_overrides.json');
@@ -1085,7 +1087,7 @@ async function execute(interaction) {
     // On the first week of a new season (preseason), reset trade counts but keep pins
     if (!backfillOnlyAwards && inPreseason) {
       try {
-        const channelMap = JSON.parse(fs.readFileSync(CHANNEL_MAP_FILE, 'utf8'));
+        const channelMap = loadMaddenChannelMap(interaction.guildId);
         const emptyCounts = {};
         saveTradeCounts(emptyCounts);
         await updateTradeCountsEmbed(interaction.client, channelMap, emptyCounts);
@@ -1154,7 +1156,7 @@ async function execute(interaction) {
         console.warn('[madden-weeklyupdate] playoff picture update skipped:', e?.message || e);
       }
       try {
-        await updatePowerRankings(interaction.client, leagueId);
+        await updatePowerRankings(interaction.client, leagueId, interaction.guildId);
       } catch (e) {
         criticalFailures.push('Power rankings');
         console.warn('[madden-weeklyupdate] power rankings update skipped:', e?.message || e);
@@ -1326,7 +1328,7 @@ async function execute(interaction) {
       }
       // Injuries
       try {
-        await updateInjuries(interaction.client, leagueId);
+        await updateInjuries(interaction.client, leagueId, interaction.guildId);
       } catch (e) {
         console.warn('[madden-weeklyupdate] injuries update skipped:', e?.message || e);
       }
@@ -1529,7 +1531,7 @@ async function execute(interaction) {
 
     if (recapEnabled) {
       try {
-        const channelMap = JSON.parse(fs.readFileSync(CHANNEL_MAP_FILE, 'utf8'));
+        const channelMap = loadMaddenChannelMap(interaction.guildId);
         appendMaddenStaffLog({
           type: 'weekly_recap_queue_attempt',
           guildId: interaction.guildId,

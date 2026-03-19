@@ -4,8 +4,9 @@ import { EmbedBuilder } from 'discord.js';
 import { loadLeagueSnapshot } from './madden_data.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { deriveTeamNeeds } from './coach/mockdraft.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 const STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'draft_exports', 'posted_draft_grades.json');
 
@@ -125,6 +126,7 @@ function computeGrades(snapshot, emojiMap) {
 
 export async function maybePostDraftGrades(client, leagueId) {
   try {
+    const guildId = client?.guilds?.cache?.first?.()?.id || null;
     const snapshot = loadLeagueSnapshot(leagueId);
     if (!snapshot) return;
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
@@ -134,8 +136,10 @@ export async function maybePostDraftGrades(client, leagueId) {
     if (!isOffseason || isPreseason) return;
 
     const emojiMap = loadJson(TEAM_EMOJIS_FILE);
-    const channelMap = loadJson(CHANNEL_MAP_FILE);
-    const roleMap = loadJson(path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json'));
+    const channelMap = loadMaddenChannelMap(guildId);
+    const roleMap = (getGuildRoleMap(guildId) && Object.keys(getGuildRoleMap(guildId)).length)
+      ? getGuildRoleMap(guildId)
+      : loadJson(path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json'));
     const draftChannelId = channelMap['Draft Grades'] || channelMap['Draft grades'] || '1459445684703989800';
     if (!draftChannelId) return;
 

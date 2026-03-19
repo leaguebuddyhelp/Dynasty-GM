@@ -4,13 +4,14 @@ import { EmbedBuilder } from 'discord.js';
 import { getMessageForWeek } from './madden_utils.js';
 import { appendMaddenStaffLog, postMaddenStaffLog } from '../shared/madden_staff_ops.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 
 const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
 const PREV_DIR = path.join(LEAGUE_DIR, 'previous');
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 
-function loadJson(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; } }
-function loadChannelMap() { return loadJson(CHANNEL_MAP_FILE) || {}; }
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
+}
 
 function teamNameMap(snapshot) {
   const map = {};
@@ -117,7 +118,7 @@ function lastCompletedWeek(snapshot) {
   return { st: currentStage, wk: targetIdx };
 }
 
-export async function updateInjuries(client, leagueId) {
+export async function updateInjuries(client, leagueId, guildId = null) {
   const currPath = path.join(LEAGUE_DIR, `${leagueId}.json`);
   const prevPath = path.join(PREV_DIR, `${leagueId}.json`);
   const curr = loadJson(currPath);
@@ -127,7 +128,7 @@ export async function updateInjuries(client, leagueId) {
     return;
   }
 
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Injuries Log'];
   if (!channelId) {
     console.warn('[injuries] Injuries Log channel missing.');
@@ -197,7 +198,7 @@ export async function updateInjuries(client, leagueId) {
     );
     appendMaddenStaffLog({
       type: 'notable_injuries',
-      guildId: client.guilds.cache.first()?.id || null,
+      guildId,
       leagueId,
       count: notableInjuries.length,
       weekLabel,

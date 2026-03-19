@@ -1,21 +1,21 @@
-import { getDefaultLeagueId, loadLeagueSnapshot } from '../../madden/madden_data.js';
+import { loadLeagueSnapshot, resolveLeagueIdStrict } from '../../madden/madden_data.js';
 import { buildGameDetailView, buildScheduleWeekView } from '../madden/coach/schedule.js';
 
 export const customId = /^madden_schedule_game\|/;
 
 export async function execute(interaction) {
   const [, weekRaw] = interaction.customId.split('|');
-  const leagueId = getDefaultLeagueId();
+  const leagueId = resolveLeagueIdStrict(interaction.guildId);
   if (!leagueId) {
-    await interaction.reply({ content: 'No Madden league is set.', ephemeral: true });
+    await interaction.reply({ content: 'No Madden league is mapped to this server yet. Run /madden-set-league first.', ephemeral: true });
     return;
   }
   const snapshot = loadLeagueSnapshot(leagueId);
   const weekIndex = Number(weekRaw || 0);
   const scheduleId = interaction.values?.[0];
-  const detail = buildGameDetailView(snapshot, weekIndex, scheduleId);
+  const detail = buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId);
   if (!detail) {
-    const fallback = buildScheduleWeekView(snapshot, weekIndex);
+    const fallback = buildScheduleWeekView(snapshot, weekIndex, leagueId);
     await interaction.update({
       content: 'Could not open that game from the current export.',
       embeds: [fallback.embed],

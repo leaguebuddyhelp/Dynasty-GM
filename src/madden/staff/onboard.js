@@ -9,8 +9,7 @@ import { updateFairSimBoard } from '../../shared/fairsim_board.js';
 import { setCoachAssignment } from '../../shared/madden_coach_assignments.js';
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { listThreadStates, hydrateThreadStateFromLiveThread } from '../../shared/madden_thread_notifier.js';
-
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
+import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 
 const LEAGUE_JOIN_INFO = {
     name: 'Ghost Legacy',
@@ -46,6 +45,10 @@ function safeReadJSON(file, fallback = {}) {
     } catch {
         return fallback;
     }
+}
+
+function loadChannelMap(guildId = null) {
+    return loadMaddenChannelMap(guildId);
 }
 
 function normalizeKey(value = '') {
@@ -143,25 +146,32 @@ function getCoachRoleEntries(roleMap) {
 }
 
 async function buildCoachRoleMemberCountMap(guild, roleMap) {
-    // Cache-first: use roles cache member sizes. Fallback: fetch only missing roles.
-    // This avoids a full guild member fetch (which can be slow or require privileged intents).
+    // Autocomplete correctness > speed: use the same strategy as /madden-availableteams.
+    // 1) Best effort: one members.fetch() and build roleId -> count map.
+    // 2) Fallback: role.members.size (can be incomplete if cache/intents are limited).
+    // If we can't verify, callers should fail closed (hide teams).
     const out = new Map();
     if (!guild) return out;
 
+    try {
+        const members = await guild.members.fetch();
+        members.forEach((m) => {
+            m.roles.cache.forEach((r) => {
+                out.set(String(r.id), (out.get(String(r.id)) || 0) + 1);
+            });
+        });
+        return out;
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[madden-onboard] member fetch skipped (autocomplete):', e?.message || e);
+    }
+
     const coachRoles = getCoachRoleEntries(roleMap);
-    // Safety cap: if role map is unexpectedly huge, don't spend too long in autocomplete.
     const capped = coachRoles.slice(0, 200);
     for (const { roleId } of capped) {
-        const cached = guild.roles.cache.get(String(roleId));
-        if (cached) {
-            const size = typeof cached?.members?.size === 'number' ? cached.members.size : 0;
-            out.set(String(roleId), size);
-            continue;
-        }
-        // Very small fallback fetch; still bounded to coach roles only.
-        const fetched = await guild.roles.fetch(String(roleId)).catch(() => null);
-        if (!fetched) continue;
-        const size = typeof fetched?.members?.size === 'number' ? fetched.members.size : 0;
+        const role = guild.roles.cache.get(String(roleId)) || await guild.roles.fetch(String(roleId)).catch(() => null);
+        if (!role) continue;
+        const size = typeof role?.members?.size === 'number' ? role.members.size : 0;
         out.set(String(roleId), size);
     }
     return out;
@@ -319,7 +329,7 @@ function parseMatchupTeamsFromThreadName(name = '') {
 const GAME_THREADS_PARENT_CHANNEL_ID = '1460288550305005801';
 
 async function discoverCoachThreadsLive({ guild, teamNameForAssignment, currentWeekNumber, channelMap }) {
-    const resolvedMap = channelMap && typeof channelMap === 'object' ? channelMap : safeReadJSON(CHANNEL_MAP_FILE, {});
+    const resolvedMap = channelMap && typeof channelMap === 'object' ? channelMap : loadChannelMap(guild?.id);
     const parentId = resolvedMap?.['Game threads']
         || resolvedMap?.['Game Threads']
         || resolvedMap?.['game threads']
@@ -369,7 +379,7 @@ async function discoverCoachThreadsLive({ guild, teamNameForAssignment, currentW
 }
 
 async function getLiveThreadDebug({ guild, teamNameForAssignment, currentWeekNumber, channelMap }) {
-    const resolvedMap = channelMap && typeof channelMap === 'object' ? channelMap : safeReadJSON(CHANNEL_MAP_FILE, {});
+    const resolvedMap = channelMap && typeof channelMap === 'object' ? channelMap : loadChannelMap(guild?.id);
     const parentId = resolvedMap?.['Game threads']
         || resolvedMap?.['Game Threads']
         || resolvedMap?.['game threads']
@@ -643,7 +653,7 @@ export async function execute(interaction) {
         { added: 0, skipped: 0 },
     );
 
-    const channelMap = safeReadJSON(CHANNEL_MAP_FILE, {});
+    const channelMap = loadChannelMap(interaction.guildId);
 
     const threadLinks = await withTimeout(
         getCoachThreadLinks({
@@ -752,14 +762,11 @@ export async function autocomplete(interaction) {
     const snapshot = loadLeagueSnapshot(leagueId);
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
 
-    // Autocomplete must be fast (<3s). Avoid full guild member fetch.
-    // We'll best-effort filter assigned teams using role.members cache (if present).
-
-    // Precompute coach role member counts using cache-first role membership.
-    // This is much cheaper than fetching all guild members.
+    // Autocomplete must be correct: do the same best-effort role occupancy check as /madden-availableteams.
+    // If we can't verify counts, fail closed (return no suggestions) rather than showing owned teams.
     const coachRoleCounts = await withTimeout(
         buildCoachRoleMemberCountMap(interaction.guild, roleMap),
-        1200,
+        2200,
         null,
     );
 
@@ -776,12 +783,9 @@ export async function autocomplete(interaction) {
         // If we can't resolve a role, skip (can't onboard reliably)
         if (!roleId) continue;
 
-        // Best-effort "assigned" check.
-        // If we can't resolve it quickly, we *don't* filter it out (execute() still hard-blocks taken teams).
-        const assignedCount = coachRoleCounts?.get?.(String(roleId));
         // If we couldn't build counts in time, fail closed: don't show teams we can't verify as open.
         if (coachRoleCounts == null) continue;
-
+        const assignedCount = coachRoleCounts?.get?.(String(roleId));
         const assigned = typeof assignedCount === 'number' ? assignedCount > 0 : false;
         if (assigned) continue;
 

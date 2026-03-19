@@ -1,7 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { classIdForSeason, buildPages } from '../../../madden/helpers/bigboard_helpers.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
+
+export const featureKey = 'scouting_draft';
 
 export const data = new SlashCommandBuilder()
   .setName('madden-bigboard')
@@ -9,10 +11,12 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   if (!interaction.deferred && !interaction.replied) {
-    try { await interaction.deferReply({ flags: 64 }); } catch (_) {}
+    try { await interaction.deferReply({ flags: 64 }); } catch (_) { }
   }
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
+  let leagueId;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch {
     const payload = { content: coachErrorBlurb('noLeague', 'No league set. Run /madden-set-league first.') };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
@@ -43,7 +47,7 @@ export async function execute(interaction) {
     console.error('[madden-bigboard] failed:', err);
     try {
       await interaction.editReply({ content: 'Failed to load big board.' });
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 

@@ -167,7 +167,7 @@ export async function execute(interaction) {
             assetsReceived,
             notes,
             submittedAt: Date.now(),
-            guildId: interaction.guildId || interaction.guild?.id || interaction.client.guilds.cache.first()?.id || null,
+            guildId: interaction.guildId || interaction.guild?.id || null,
             expiresAt: Date.now() + 24 * 60 * 60 * 1000,
             status: "pending"
         };
@@ -194,7 +194,7 @@ export async function execute(interaction) {
             }
         } catch { }
         try {
-            const guild = interaction.guild || interaction.client.guilds.cache.first();
+            const guild = interaction.guild || null;
             const membersToDm = [];
             if (guild) {
                 // Try as user ID directly (do not fetch entire guild)

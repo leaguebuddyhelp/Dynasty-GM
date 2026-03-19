@@ -9,6 +9,8 @@ import { collectParticipation, listThreadStates } from '../../shared/madden_thre
 import { coachCommandDescription, coachPanelIntro, coachVoiceFooter, coachVoiceTitle, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { formatTeamLabelWithEmoji, RECOGNITION_EMOJIS } from '../../shared/madden_visuals.js';
 
+export const featureKey = 'recognition';
+
 const data = new SlashCommandBuilder()
   .setName('madden-franchisehub')
   .setDescription(coachCommandDescription('franchisehub'));
@@ -49,35 +51,27 @@ function findCoachTeam(member, snapshot) {
 }
 
 function recordForTeam(snapshot, teamName) {
+  // Use standings as the source of truth for record (and allow franchise_profile to
+  // optionally derive a corrected record from weekly log / schedule if standings are stale).
   if (!snapshot || !teamName) return null;
   const target = normalizeName(teamName);
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
-  const match = teams.find((team) => {
+  const teamMatch = teams.find((team) => {
     const full = getFullTeamName(team, `Team ${team.teamId}`);
     const mascot = String(team.displayName || team.nickName || '').trim();
     const city = String(team.cityName || '').trim();
     const abbr = String(team.abbrName || '').trim();
     return [full, mascot, city, abbr].some((value) => normalizeName(value) === target);
   });
-  if (!match) return null;
+  const teamId = teamMatch?.teamId != null ? Number(teamMatch.teamId) : null;
+  if (teamId == null) return null;
 
-  const winFields = ['totalWins', 'wins', 'win', 'seasonWins', 'regularSeasonWins'];
-  const lossFields = ['totalLosses', 'losses', 'loss', 'seasonLosses', 'regularSeasonLosses'];
-  const tieFields = ['totalTies', 'ties', 'tie', 'seasonTies', 'regularSeasonTies'];
-
-  const hasAnyRecordField = [...winFields, ...lossFields, ...tieFields].some((key) => match?.[key] != null);
-  if (!hasAnyRecordField) return null;
-
-  const winsRaw = winFields.find((key) => match?.[key] != null);
-  const lossesRaw = lossFields.find((key) => match?.[key] != null);
-  const tiesRaw = tieFields.find((key) => match?.[key] != null);
-
-  const wins = Number(winsRaw ? match[winsRaw] : NaN);
-  const losses = Number(lossesRaw ? match[lossesRaw] : NaN);
-  const ties = Number(tiesRaw ? match[tiesRaw] : NaN);
-  if (!Number.isFinite(wins) || !Number.isFinite(losses)) return null;
-  const base = `${wins}-${losses}`;
-  return Number.isFinite(ties) && ties > 0 ? `${base}-${ties}` : base;
+  const standing = (snapshot?.standings?.teamStandingInfoList || []).find((row) => Number(row?.teamId) === teamId) || null;
+  if (!standing) return null;
+  const wins = Number(standing.totalWins || 0);
+  const losses = Number(standing.totalLosses || 0);
+  const ties = Number(standing.totalTies || 0);
+  return ties ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
 }
 
 function scoutingLine(accountability) {

@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { loadLeagueSnapshot, currentWeek, getDefaultLeagueId } from '../../../madden/madden_data.js';
+import { loadLeagueSnapshot, currentWeek, getDefaultLeagueId, requireLeagueIdForGuild } from '../../../madden/madden_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadWeeklyGameLog } from '../weekly_game_log.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
@@ -130,9 +130,38 @@ function teamWeeklyTotals(snapshot, weekIndex, teamId) {
     return out;
   };
 
-  const passing = sum(weekly?.passing?.playerPassingStatInfoList, ['passYds', 'passTDs', 'passInts', 'passComp', 'passAtt']);
-  const rushing = sum(weekly?.rushing?.playerRushingStatInfoList, ['rushYds', 'rushTDs', 'rushAtt']);
-  const receiving = sum(weekly?.receiving?.playerReceivingStatInfoList, ['recYds', 'recTDs', 'recCatches']);
+  // Team-level weekly totals aren't always present/consistent in exports.
+  // Our most reliable per-game totals are simply summing *all* player stat rows for that team
+  // (starters + backups). We'll use teamstats only as a fallback for missing categories.
+  const teamstats = (weekly?.teamstats?.teamStatInfoList || []).find((row) => Number(row?.teamId) === Number(teamId)) || null;
+
+  const passingFromPlayers = sum(weekly?.passing?.playerPassingStatInfoList, ['passYds', 'passTDs', 'passInts', 'passComp', 'passAtt']);
+  const rushingFromPlayers = sum(weekly?.rushing?.playerRushingStatInfoList, ['rushYds', 'rushTDs', 'rushAtt']);
+  const receivingFromPlayers = sum(weekly?.receiving?.playerReceivingStatInfoList, ['recYds', 'recTDs', 'recCatches']);
+
+  const passing = {
+    passYds: Number(passingFromPlayers?.passYds || 0),
+    passTDs: Number(passingFromPlayers?.passTDs || 0),
+    passInts: Number(passingFromPlayers?.passInts || 0),
+    passComp: Number(passingFromPlayers?.passComp || 0),
+    passAtt: Number(passingFromPlayers?.passAtt || 0),
+  };
+
+  const rushing = {
+    rushYds: Number(rushingFromPlayers?.rushYds || 0),
+    rushTDs: Number(rushingFromPlayers?.rushTDs || 0),
+    rushAtt: Number(rushingFromPlayers?.rushAtt || 0),
+  };
+
+  // Receiving totals aren't always needed for the box score, but they're useful for leader lines.
+  // Prefer summed receiver yards; if for some reason it's missing, fall back to pass yards.
+  const receiving = {
+    recYds: Number(receivingFromPlayers?.recYds || 0) || passing.passYds,
+    recTDs: Number(receivingFromPlayers?.recTDs || 0) || passing.passTDs,
+    recCatches: Number(receivingFromPlayers?.recCatches || 0) || Number(teamstats?.receptions ?? teamstats?.recCatches ?? 0),
+  };
+
+  // Keep defense aggregation from player list (teamstats isn't always consistent for sacks/ints).
   const defense = sum(weekly?.defense?.playerDefensiveStatInfoList, ['defSacks', 'defInts', 'defTotalTackles', 'defPassDeflections']);
 
   const best = (list, scoreFn) =>
@@ -146,7 +175,7 @@ function teamWeeklyTotals(snapshot, weekIndex, teamId) {
     rushing,
     receiving,
     defense,
-    teamstats: (weekly?.teamstats?.teamStatInfoList || []).find((row) => Number(row?.teamId) === Number(teamId)) || null,
+    teamstats,
     kicking: sum(weekly?.kicking?.playerKickingStatInfoList, ['fGMade', 'xPMade']),
     passer: best(weekly?.passing?.playerPassingStatInfoList, (row) => Number(row?.passYds || 0)),
     rusher: best(weekly?.rushing?.playerRushingStatInfoList, (row) => Number(row?.rushYds || 0)),
@@ -171,7 +200,7 @@ function inferredPoints(totals) {
 }
 
 function gameDisplayScores(snapshot, game) {
-  const ledger = loadWeeklyGameLog(getDefaultLeagueId());
+    const ledger = loadWeeklyGameLog(leagueId);
   const logged = ledgerEntryForGame(ledger, game);
   if (logged && (Number(logged.awayScore || 0) > 0 || Number(logged.homeScore || 0) > 0)) {
     return {
@@ -182,6 +211,26 @@ function gameDisplayScores(snapshot, game) {
   }
   const explicitAway = Number(game?.awayScore || 0);
   const explicitHome = Number(game?.homeScore || 0);
+  // Madden exports sometimes mark a game as "played" but still show 0-0 for CPU-simmed results.
+  // In that case, fall back to weekly export stats (or the weekly game log inference).
+  if (Number(game?.status ?? 0) >= 2 && explicitAway === 0 && explicitHome === 0) {
+    const weekIndex = Number(game?.weekIndex ?? -1);
+    const awayTotals = teamWeeklyTotals(snapshot, weekIndex, Number(game?.awayTeamId));
+    const homeTotals = teamWeeklyTotals(snapshot, weekIndex, Number(game?.homeTeamId));
+    const awayScore = inferredPoints(awayTotals);
+    const homeScore = inferredPoints(homeTotals);
+    if (awayScore !== null && homeScore !== null) {
+      return { awayScore, homeScore, inferred: true };
+    }
+    // As a last resort, if the weekly game log has an inferred score, use it.
+    if (logged && (Number(logged.awayScore || 0) > 0 || Number(logged.homeScore || 0) > 0)) {
+      return {
+        awayScore: Number(logged.awayScore || 0),
+        homeScore: Number(logged.homeScore || 0),
+        inferred: true,
+      };
+    }
+  }
   if (explicitAway > 0 || explicitHome > 0 || Number(game?.status ?? 0) >= 2) {
     return { awayScore: explicitAway, homeScore: explicitHome, inferred: false };
   }
@@ -203,10 +252,32 @@ function formatMatchupContext(awayEmoji, awayRecord, homeEmoji, homeRecord) {
   return `${awayEmoji} (${awayRecord}) @ ${homeEmoji} (${homeRecord})`;
 }
 
+function winnerFlagsForScore(scoreView) {
+  if (!scoreView) return { awayFlag: '', homeFlag: '', awayWon: null, homeWon: null };
+  const away = Number(scoreView.awayScore ?? 0);
+  const home = Number(scoreView.homeScore ?? 0);
+  if (!Number.isFinite(away) || !Number.isFinite(home)) return { awayFlag: '', homeFlag: '', awayWon: null, homeWon: null };
+  // Avoid marking unplayed 0-0 games as ties.
+  if (away === 0 && home === 0) return { awayFlag: '', homeFlag: '', awayWon: null, homeWon: null };
+  if (away === home) return { awayFlag: '(T)', homeFlag: '(T)', awayWon: false, homeWon: false };
+  const awayWon = away > home;
+  return {
+    awayFlag: awayWon ? '(W)' : '(L)',
+    homeFlag: awayWon ? '(L)' : '(W)',
+    awayWon,
+    homeWon: !awayWon,
+  };
+}
+
 function formatResultContext({ status, scoreView, ledgerEntry }) {
   if (status === 'played' || status === 'played_inferred') {
     if (scoreView) {
-      return `Final: ${Number(scoreView.awayScore || 0)}-${Number(scoreView.homeScore || 0)}`;
+      const away = Number(scoreView.awayScore || 0);
+      const home = Number(scoreView.homeScore || 0);
+      // Madden exports can mark games played but still show 0-0 when no reliable score is present.
+      // Don't present that as a final.
+      if (away === 0 && home === 0) return 'Upcoming';
+      return `Final: ${away}-${home}`;
     }
     return 'Final logged';
   }
@@ -229,7 +300,17 @@ function compactGameLine(snapshot, game, names, standings, emojiMap, ledger = nu
   const status = ledgerEntry?.played ? (ledgerEntry?.outcomeLabel ? 'played_special' : 'played') : inferredGameStatus(snapshot, game);
   const scoreView = gameDisplayScores(snapshot, game);
 
-  const matchup = formatMatchupContext(awayEmoji, awayRecord, homeEmoji, homeRecord);
+  const { awayFlag, homeFlag, awayWon, homeWon } = winnerFlagsForScore(
+    ['played', 'played_inferred'].includes(status) ? scoreView : null,
+  );
+
+  const awaySide = `${awayEmoji} ${awayFlag} (${awayRecord})`;
+  const homeSide = `${homeEmoji} ${homeFlag} (${homeRecord})`;
+  const matchup = (awayWon === true)
+    ? `**${awaySide}** @ ${homeSide}`
+    : (homeWon === true)
+      ? `${awaySide} @ **${homeSide}**`
+      : `${awaySide} @ ${homeSide}`;
   const result = formatResultContext({ status, scoreView, ledgerEntry });
   return `${matchup} • ${result}`;
 }
@@ -242,8 +323,8 @@ function weekMenuOptions(totalWeeks, selectedWeek) {
   })).slice(0, 25);
 }
 
-export function buildScheduleWeekView(snapshot, weekIndex) {
-  const ledger = loadWeeklyGameLog(getDefaultLeagueId());
+export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
+  const ledger = loadWeeklyGameLog(leagueId);
   const emojiMap = safeReadJSON(TEAM_EMOJIS_PATH, {});
   const { names } = buildTeamMaps(snapshot);
   const standings = standingsMap(snapshot);
@@ -317,9 +398,13 @@ export function buildScheduleWeekView(snapshot, weekIndex) {
 
 function teamTotalsLine(totals) {
   if (!totals) return 'No weekly stat export found for this game.';
+  const passYds = Number(totals?.passing?.passYds || 0);
+  const rushYds = Number(totals?.rushing?.rushYds || 0);
+  const totalYds = passYds + rushYds;
   return [
-    `Pass ${Number(totals.passing?.passYds || 0)} yds`,
-    `Rush ${Number(totals.rushing?.rushYds || 0)} yds`,
+    `Pass ${passYds} yds`,
+    `Rush ${rushYds} yds`,
+    `Total ${totalYds} yds`,
     `TO ${Number(totals.passing?.passInts || 0)}`,
     `Sacks ${Number(totals.defense?.defSacks || 0)}`,
   ].join(' • ');
@@ -333,8 +418,8 @@ function playerStatLine(row, type) {
   return `${playerName(row)} • ${Number(row.defTotalTackles || 0)} tk • ${Number(row.defSacks || 0)} sacks • ${Number(row.defInts || 0)} INT`;
 }
 
-export function buildGameDetailView(snapshot, weekIndex, scheduleId) {
-  const ledger = loadWeeklyGameLog(getDefaultLeagueId());
+export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = null) {
+  const ledger = loadWeeklyGameLog(leagueId);
   const emojiMap = safeReadJSON(TEAM_EMOJIS_PATH, {});
   const { names } = buildTeamMaps(snapshot);
   const standings = standingsMap(snapshot);
@@ -360,32 +445,61 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId) {
   const matchupLine = formatMatchupContext(awayEmoji, awayRecord, homeEmoji, homeRecord);
   const resultLine = formatResultContext({ status, scoreView, ledgerEntry });
 
+  const awayScoreNum = Number(awayScore || 0);
+  const homeScoreNum = Number(homeScore || 0);
+  const awayTotalYds = Number(awayTotals?.passing?.passYds || 0) + Number(awayTotals?.rushing?.rushYds || 0);
+  const homeTotalYds = Number(homeTotals?.passing?.passYds || 0) + Number(homeTotals?.rushing?.rushYds || 0);
+  const awayTO = Number(awayTotals?.passing?.passInts || 0);
+  const homeTO = Number(homeTotals?.passing?.passInts || 0);
+  const awaySacks = Number(awayTotals?.defense?.defSacks || 0);
+  const homeSacks = Number(homeTotals?.defense?.defSacks || 0);
+
+  const boxTop = [
+    '```',
+    `${teamShortName(awayName).padEnd(12)} ${String(awayScoreNum).padStart(3)}   |   ${String(homeScoreNum).padStart(3)} ${teamShortName(homeName)}`,
+    `${'TOTAL YDS'.padEnd(12)} ${String(awayTotalYds).padStart(3)}   |   ${String(homeTotalYds).padStart(3)} ${'TOTAL YDS'}`,
+    `${'PASS'.padEnd(12)} ${String(Number(awayTotals?.passing?.passYds || 0)).padStart(3)}   |   ${String(Number(homeTotals?.passing?.passYds || 0)).padStart(3)} ${'PASS'}`,
+    `${'RUSH'.padEnd(12)} ${String(Number(awayTotals?.rushing?.rushYds || 0)).padStart(3)}   |   ${String(Number(homeTotals?.rushing?.rushYds || 0)).padStart(3)} ${'RUSH'}`,
+    `${'TURNOVERS'.padEnd(12)} ${String(awayTO).padStart(3)}   |   ${String(homeTO).padStart(3)} ${'TURNOVERS'}`,
+    `${'SACKS'.padEnd(12)} ${String(awaySacks).padStart(3)}   |   ${String(homeSacks).padStart(3)} ${'SACKS'}`,
+    '```',
+  ].join('\n');
+
   const embed = new EmbedBuilder()
     .setColor(0x00b0f4)
     .setTitle(`Week ${weekIndex + 1} — Game Stats`)
     .setDescription([
       matchupLine,
       resultLine,
+      '',
+      '🏟️ **Box Score**',
+      boxTop,
     ].filter(Boolean).join('\n'))
     .addFields(
       {
         name: `${awayEmoji} ${teamShortName(awayName)}`,
         value: [
+          '📊 **Team totals**',
           teamTotalsLine(awayTotals),
-          `Pass: ${playerStatLine(awayTotals?.passer, 'pass')}`,
-          `Rush: ${playerStatLine(awayTotals?.rusher, 'rush')}`,
-          `Rec: ${playerStatLine(awayTotals?.receiver, 'rec')}`,
-          `Def: ${playerStatLine(awayTotals?.defender, 'def')}`,
+          '',
+          '⭐ **Leaders**',
+          `QB: ${playerStatLine(awayTotals?.passer, 'pass')}`,
+          `RB: ${playerStatLine(awayTotals?.rusher, 'rush')}`,
+          `WR: ${playerStatLine(awayTotals?.receiver, 'rec')}`,
+          `DEF: ${playerStatLine(awayTotals?.defender, 'def')}`,
         ].join('\n'),
       },
       {
         name: `${homeEmoji} ${teamShortName(homeName)}`,
         value: [
+          '📊 **Team totals**',
           teamTotalsLine(homeTotals),
-          `Pass: ${playerStatLine(homeTotals?.passer, 'pass')}`,
-          `Rush: ${playerStatLine(homeTotals?.rusher, 'rush')}`,
-          `Rec: ${playerStatLine(homeTotals?.receiver, 'rec')}`,
-          `Def: ${playerStatLine(homeTotals?.defender, 'def')}`,
+          '',
+          '⭐ **Leaders**',
+          `QB: ${playerStatLine(homeTotals?.passer, 'pass')}`,
+          `RB: ${playerStatLine(homeTotals?.rusher, 'rush')}`,
+          `WR: ${playerStatLine(homeTotals?.receiver, 'rec')}`,
+          `DEF: ${playerStatLine(homeTotals?.defender, 'def')}`,
         ].join('\n'),
       },
     )
@@ -429,11 +543,10 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId) {
 export async function execute(interaction) {
   await interaction.deferReply({ ephemeral: true });
   try {
-    const leagueId = getDefaultLeagueId();
-    if (!leagueId) throw new Error('No synced Madden league found. Run weekly update first.');
+    const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     const initialWeek = Math.max(0, Math.min(totalRegularWeeks(snapshot) - 1, Number(currentWeek(snapshot) || 1) - 1));
-    const view = buildScheduleWeekView(snapshot, initialWeek);
+    const view = buildScheduleWeekView(snapshot, initialWeek, leagueId);
     await interaction.editReply({ embeds: [view.embed], components: view.components });
   } catch (err) {
     await interaction.editReply({ content: `Failed to load schedule: ${err.message}` });

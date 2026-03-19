@@ -4,8 +4,8 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'disc
 import { loadStrikeStore, ensureStrikeSeason, weightedCount, formatBreakdown, strikeHistory } from './madden_strikes.js';
 import { brandTitle } from './madden_branding.js';
 import { sendCoachReceipt } from './madden_coach_receipts.js';
+import { loadMaddenChannelMap } from './madden_metadata.js';
 
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const REVIEW_FILE = path.join(process.cwd(), 'data', 'madden', 'removal_reviews.json');
 
 function readJson(file, fallback) {
@@ -17,8 +17,8 @@ function saveJson(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-function loadChannelMap() {
-  return readJson(CHANNEL_MAP_FILE, {});
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
 function getReviewChannelId(channelMap = {}) {
@@ -46,7 +46,7 @@ export async function queueRemovalReview(client, guildId, {
 } = {}) {
   if (!userId || !roleId || !seasonKey) return false;
 
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(guildId);
   const staffChannelId = getReviewChannelId(channelMap);
   if (!staffChannelId) return false;
   const state = loadReviewState();
@@ -131,7 +131,7 @@ export async function queueImmediateRemedyReview(client, guildId, {
   teamName,
 } = {}) {
   if (!userId || !roleId || !seasonKey) return false;
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(guildId);
   const staffChannelId = getReviewChannelId(channelMap);
   if (!staffChannelId) return false;
   const state = loadReviewState();
