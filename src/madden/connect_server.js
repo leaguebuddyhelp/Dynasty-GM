@@ -927,6 +927,12 @@ function parseNotice(req) {
   return new URL(String(req.url || '/'), 'http://127.0.0.1').searchParams.get('notice') || '';
 }
 
+function parsePulse(req) {
+  const raw = new URL(String(req.url || '/'), 'http://127.0.0.1').searchParams.get('pulse') || '0';
+  const value = Number.parseInt(raw, 10);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 function parsePayload(raw, contentType) {
   if (String(contentType || '').includes('application/json')) {
     return raw;
@@ -992,7 +998,7 @@ function describeSyncError(error) {
   };
 }
 
-function renderDashboard({ token, dashboard, notice = '' }) {
+function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   const connection = dashboard.connection;
   const snapshot = dashboard.latestSnapshot;
   const guildTokens = dashboard.guildTokens || null;
@@ -1054,6 +1060,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const syncSucceeded = hasLeague && status === 'connected';
   const syncErrorSummary = describeSyncError(syncError);
   const syncInProgress = status === 'syncing' || syncProgress?.status === 'running';
+  const autoRefreshLimit = 10;
+  const autoRefreshActive = syncInProgress && pulse < autoRefreshLimit;
   const activeLeagueName = selectedLeague?.leagueName || connection?.leagueName || leagueName || 'No league connected yet';
   const activeLeagueId = connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown';
 
@@ -1157,6 +1165,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   function mobileCollapseClass(step) {
     return step < nextStep ? ' mobile-collapsed' : '';
   }
+
+  const refreshPath = `/madden/connect?token=${encodeURIComponent(token)}&pulse=${pulse + 1}${notice ? `&notice=${encodeURIComponent(notice)}` : ''}`;
 
   return html(`
     <section class="hero">
@@ -1422,7 +1432,12 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               ${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your first league snapshot. This page will refresh automatically.')}
             </div>
             <div class="info">
-              Stay on this page. LEAGUEbuddy is still working and this screen will update automatically as each import step finishes.
+              ${autoRefreshActive
+                ? 'Stay on this page. LEAGUEbuddy is still working and this screen will update automatically as each import step finishes.'
+                : 'LEAGUEbuddy is still working, but automatic refresh has paused so the page does not loop forever. Tap Refresh Status below to check again.'}
+            </div>
+            <div class="inline-actions">
+              <a class="button-link" href="${refreshPath}">Refresh Status</a>
             </div>
           ` : ''}
           <div class="inline-actions">
@@ -1522,7 +1537,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
       </div>
     </div>
-  `, { autoRefreshMs: syncInProgress ? 3000 : 0 });
+  `, { autoRefreshMs: autoRefreshActive ? 3000 : 0 });
 }
 
 export function startConnectServer() {
@@ -1553,6 +1568,7 @@ export function startConnectServer() {
     handler: async (req, res) => {
       const token = parseToken(req);
       const notice = parseNotice(req);
+      const pulse = parsePulse(req);
       const dashboard = await connectionService.getLeagueConnectionDashboardState(token);
       if (!dashboard.ok) {
         res.writeHead(400, { 'content-type': 'text/html; charset=utf-8' });
@@ -1560,7 +1576,7 @@ export function startConnectServer() {
         return;
       }
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(renderDashboard({ token, dashboard, notice }));
+      res.end(renderDashboard({ token, dashboard, notice, pulse }));
     },
   });
 
