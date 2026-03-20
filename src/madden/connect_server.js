@@ -161,6 +161,25 @@ function html(body) {
           gap: 10px;
           margin-top: 16px;
         }
+        .mini-list {
+          display: grid;
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .mini-item {
+          border: 1px solid #eadb95;
+          border-radius: 14px;
+          background: #fffef8;
+          padding: 12px 14px;
+        }
+        .mini-item strong {
+          display: block;
+          color: var(--lb-muted);
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.7px;
+          margin-bottom: 6px;
+        }
         .stat {
           background: var(--lb-panel-soft);
           color: #f8fafc;
@@ -369,6 +388,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const leagueName = connection?.leagueName || '';
   const leagueExternalId = connection?.leagueExternalId || '';
   const status = connection?.status || 'not_connected';
+  const guildName = dashboard.session?.guildName || `Discord Server ${dashboard.session?.guildId || ''}`;
 
   const exportRows = exportSources.length
     ? exportSources.map((source) => `
@@ -462,6 +482,16 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         <section class="panel meta-card">
           <span class="eyebrow" style="color:#b58900;">Live Status</span>
           <h2 style="margin-top:4px;">Current Connection</h2>
+          <div class="mini-list">
+            <div class="mini-item">
+              <strong>Linked Discord Server</strong>
+              <div>${escapeHtml(guildName)}</div>
+            </div>
+            <div class="mini-item">
+              <strong>Server ID</strong>
+              <div><code>${escapeHtml(dashboard.session?.guildId || 'unknown')}</code></div>
+            </div>
+          </div>
           <div class="stat-grid">
             <div class="stat">
               <strong>Status</strong>

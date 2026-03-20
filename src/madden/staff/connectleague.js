@@ -17,6 +17,7 @@ export async function execute(interaction) {
 
   const { session, setupUrl, importUrl } = connectionService.beginLeagueConnection({
     guildId: interaction.guildId,
+    guildName: interaction.guild?.name || null,
     createdByUserId: interaction.user.id,
   });
 
@@ -47,6 +48,7 @@ export async function execute(interaction) {
           '4. Run `/league-status` back in Discord.',
         ].join('\n'))
         .addFields(
+          { name: 'Discord Server', value: interaction.guild?.name || 'Unknown Server', inline: false },
           { name: 'Dashboard Link', value: setupUrl, inline: false },
           { name: 'Testing', value: 'Use `Load Demo League` on the dashboard if you just want to test the flow.', inline: false },
           { name: 'Fallback Import Endpoint', value: `\`${importUrl}\``, inline: false },

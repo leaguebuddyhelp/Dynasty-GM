@@ -146,9 +146,10 @@ function demoPayloadForGuild(guildId) {
   };
 }
 
-export function beginLeagueConnection({ guildId, createdByUserId }) {
+export function beginLeagueConnection({ guildId, guildName, createdByUserId }) {
   const session = connectionRepository.createConnectSession({
     guildId,
+    guildName,
     createdByUserId,
     expiresAt: nowPlus(CONNECT_SESSION_TTL_MS),
   });

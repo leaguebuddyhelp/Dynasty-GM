@@ -54,6 +54,7 @@ function newId(prefix) {
 
 export function createConnectSession({
   guildId,
+  guildName,
   createdByUserId,
   expiresAt,
 }) {
@@ -62,6 +63,7 @@ export function createConnectSession({
     id: newId('cs'),
     token: randomBytes(18).toString('base64url'),
     guildId: String(guildId),
+    guildName: guildName ? String(guildName) : null,
     createdByUserId: createdByUserId ? String(createdByUserId) : null,
     status: 'open',
     expiresAt,
