@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 
-import { YEAR, ConsoleOverride } from './ea_constants.js';
+import { APP_REDIRECT_URL, REDIRECT_URL, YEAR, ConsoleOverride } from './ea_constants.js';
 import {
   exchangeLoginCode,
   exchangePersonaToken,
@@ -57,6 +57,7 @@ async function execute(interaction) {
   const redirectUrl = interaction.options.getString('redirect_url');
   const doReset = interaction.options.getBoolean('reset');
   const loginUrl = getGuildAuthStartUrl(interaction.guildId);
+  const manualFinishLikely = APP_REDIRECT_URL !== REDIRECT_URL;
 
   if (doReset) {
     deleteGuildEATokens(interaction.guildId);
@@ -88,9 +89,9 @@ async function execute(interaction) {
           .setDescription('The only supported way to connect a league account for this server is the redirect link flow.')
           .addFields(
             { name: 'Step 1', value: 'Tap **Open Connection Link** below.' },
-            { name: 'Step 2', value: 'Finish the browser sign-in and redirect flow.' },
-            { name: 'Step 3', value: 'If the callback page says the connection was saved for this server, run `/install-league`.' },
-            { name: 'Manual Finish', value: 'If the browser lands on the callback URL but the save does not finish automatically, copy the full callback URL from the browser address bar.' },
+            { name: 'Step 2', value: manualFinishLikely ? `Finish the browser sign-in. EA should redirect to \`${REDIRECT_URL}\`.` : 'Finish the browser sign-in and redirect flow.' },
+            { name: 'Step 3', value: manualFinishLikely ? 'Copy the full redirected URL from the browser address bar.' : 'If the callback page says the connection was saved for this server, run `/install-league`.' },
+            { name: 'Manual Finish', value: manualFinishLikely ? 'Go back to Discord and rerun the auth command with that full redirected URL so LEAGUEbuddy can finish the connection for this server.' : 'If the browser lands on the callback URL but the save does not finish automatically, copy the full callback URL from the browser address bar.' },
             { name: 'Run This In Discord', value: '`/auth redirect_url:<paste-full-callback-url>`' },
             { name: 'Next', value: 'After the redirect flow is saved, run `/install-league`.' },
           )
@@ -167,7 +168,9 @@ async function execute(interaction) {
             '',
             'This server must use the redirect link flow.',
             'Next: rerun `/auth` and use the connection link again.',
-            'If the browser reaches the callback URL but the save does not finish automatically, copy the full callback URL and run `/auth redirect_url:<paste-full-callback-url>` to finish that same redirect flow manually.',
+            manualFinishLikely
+              ? `When EA redirects to \`${REDIRECT_URL}\`, copy the full URL and rerun \`/auth redirect_url:<paste-full-callback-url>\` in Discord.`
+              : 'If the browser reaches the callback URL but the save does not finish automatically, copy the full callback URL and run `/auth redirect_url:<paste-full-callback-url>` to finish that same redirect flow manually.',
           ].join('\n'))
           .setColor(0xed4245),
       ],

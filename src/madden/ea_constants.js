@@ -1,10 +1,11 @@
 // Minimal constants extracted from Snallabot (Madden 26)
 export const AUTH_SOURCE = 317239;
 export const CLIENT_SECRET = "teJpJ9cSXFqZAuKNW8IuHpy8D4dwWPoVrPoek38iCnrGbrUSfjqnHMBAv8iCVjeSm_20250910175618";
-// Our local callback (served by auth_server). Override with EA_REDIRECT_URL if needed.
+// Public callback route served by the app/healthcheck server when available.
 export const APP_REDIRECT_URL = process.env.EA_REDIRECT_URL || "http://localhost:4001/madden/callback";
-// EA expects this redirect in the auth URL
-export const REDIRECT_URL = APP_REDIRECT_URL;
+// EA's OAuth client may only accept a fixed allowlisted redirect URI. Keep this separate
+// from the app callback so hosted production can still finish the flow manually in Discord.
+export const REDIRECT_URL = process.env.EA_OAUTH_REDIRECT_URL || "http://localhost:4001/madden/callback";
 export const CLIENT_ID = "MCA_26_COMP_APP";
 export const MACHINE_KEY = "444d362e8e067fe2";
 
