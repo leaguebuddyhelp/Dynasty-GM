@@ -66,8 +66,8 @@ function buildFeatureSummary(guildId, packsEnabled = []) {
 }
 
 function buildRecommendedNextAction({ overlayExists, overlayComplete, setupCompleted, syncNeeded, blockedFeatures }) {
-  if (!overlayExists) return 'Run /setup-channels to create the Madden overlay config, category, channels, and pins.';
-  if (!overlayComplete) return 'Complete the Madden overlay setup flow and rerun /syncsetupstatus.';
+  if (!overlayExists) return 'Run /setup-channels to create the LEAGUEbuddy category, channels, and first pin pass for this server.';
+  if (!overlayComplete) return 'Finish the LEAGUEbuddy setup flow: rerun /setup-channels, then /setup-roles, then /syncsetupstatus.';
   if (syncNeeded) return 'Run /syncsetupstatus so LEAGUEbuddy access state matches the completed Madden overlay.';
   if (!setupCompleted) return 'Mark setup complete by syncing setup status after verifying the overlay configuration.';
   const upgradeBlocked = blockedFeatures.filter((item) => item.reason === 'plan_too_low');

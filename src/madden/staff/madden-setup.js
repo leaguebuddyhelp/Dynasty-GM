@@ -346,6 +346,25 @@ function buildProgressLines(step, details = []) {
     ].join('\n');
 }
 
+function tierSetupNotes(tier, tradeEnabled) {
+    if (tier === 'premium') {
+        return [
+            'Premium setup includes the full channel pack, trade center, scouting hub, ops channels, recognition, and sportsbook boards.',
+            'After channels are ready, continue with `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
+        ];
+    }
+    if (tier === 'standard') {
+        return [
+            'Standard setup includes the core league boards, trade center, scouting hub, and light staff ops channels.',
+            'After channels are ready, continue with `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
+        ];
+    }
+    return [
+        'Free setup includes the core league boards, game threads, standings, stat leaders, and awards boards.',
+        tradeEnabled ? 'Trade center is included in this package.' : 'Trade center is not included in the Free plan.',
+    ];
+}
+
 async function withTimeout(promise, ms, label) {
     let timer = null;
     try {
@@ -510,15 +529,22 @@ export async function execute(interaction) {
                 '**Madden v2 setup complete**',
                 `Package: **${tier}**`,
                 `Packs: ${packsEnabled.join(', ')}`,
-                `- Roles were not created during this step`,
-                `- Trade center: ${tradeEnabled ? 'included' : 'not included in Free tier'}`,
+                '',
+                '**What this command did**',
+                '- Created or verified the LEAGUEbuddy category',
+                '- Created the plan-appropriate channels',
+                '- Seeded the first pin pass',
+                '- Saved the overlay config for this server',
+                '',
+                '**Plan notes**',
+                ...tierSetupNotes(tier, tradeEnabled).map((line) => `- ${line}`),
                 '',
                 `Pins: ${pinsSummary.replace(/^Pins:\s*/, '')}`,
                 !snapshotReady
-                    ? 'Next: run `/install-league`, then `/sync`.'
+                    ? 'Next: finish `/connectleague`, run `/sync`, then rerun `/setup-channels` if you want the boards hydrated with real data.'
                     : pinsNeedRetry
-                        ? 'Next: run `/setup-pins`.'
-                        : 'Next: run `/setup-roles`.'
+                        ? 'Next: run `/setup-pins`, then `/setup-roles`.'
+                        : 'Next: run `/setup-roles`, then `/syncsetupstatus`.'
             ].join('\n'),
         });
     } catch (error) {

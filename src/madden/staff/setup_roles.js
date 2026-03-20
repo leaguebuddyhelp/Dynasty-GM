@@ -30,9 +30,11 @@ export async function execute(interaction) {
   }
 
   const tradeEnabled = Array.isArray(cfg.packsEnabled) && cfg.packsEnabled.includes('trades_basic');
+  const tier = String(cfg?.license?.tier || 'free');
   await updateProgress([
     '**Setup Roles**',
     'Trying the role-only pass for this server.',
+    `Current package: ${tier}`,
     tradeEnabled ? 'Trade roles are included in this package.' : 'Trade roles are not included in this package.',
   ]);
   const staffSpecs = [...DEFAULT_ROLE_SPECS, ...(tradeEnabled ? TRADE_ROLE_SPECS : [])];
@@ -108,6 +110,13 @@ export async function execute(interaction) {
   await interaction.editReply({
     content: [
       '**Setup Roles Complete**',
+      `Package: **${tier}**`,
+      '',
+      '**What this command did**',
+      '- Created or verified staff roles',
+      tradeEnabled ? '- Created or verified trade roles' : '- Skipped trade roles because they are not included in this plan',
+      '- Refreshed channel permissions after the role pass',
+      '',
       `Staff roles: created ${staffSummary.created.length}, existing ${staffSummary.existing.length}, verified ${staffSummary.verified.length}, failed ${staffSummary.failed.length}`,
       ...(staffSummary.failed.length ? [`Failures: ${staffSummary.failed.map((item) => item.name).join(', ')}`] : []),
       '',
@@ -116,7 +125,7 @@ export async function execute(interaction) {
       'Channel permissions were refreshed after the role pass.',
       staffSummary.failed.length
         ? 'Next: fix the Discord role-create issue in this server, then rerun `/setup-roles`.'
-        : 'Next: run `/syncsetupstatus`.',
+        : 'Next: run `/syncsetupstatus`, then `/server-check`.',
     ].join('\n'),
   });
 }

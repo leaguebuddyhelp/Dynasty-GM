@@ -310,9 +310,13 @@ export async function execute(interaction) {
     await interaction.editReply({
         content: [
             '**Setup Pins Complete**',
+            'This command refreshes the pinned league boards and trade submit button for the channels created by `/setup-channels`.',
+            '',
             ...out.results.map((line) => `- ${line}`),
             '',
-            hasFailures ? 'Next: fix the missing snapshot/channel issue, then rerun `/setup-pins`.' : 'Next: run `/setup-roles`.',
+            hasFailures
+                ? 'Next: if a board says snapshot missing, run `/sync` first. Then rerun `/setup-pins`. After pins are healthy, continue with `/setup-roles`.'
+                : 'Next: run `/setup-roles`, then `/syncsetupstatus`.',
         ].join('\n'),
     });
 

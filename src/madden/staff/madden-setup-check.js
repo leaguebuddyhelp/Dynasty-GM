@@ -53,6 +53,19 @@ export async function execute(interaction) {
                 name: 'What To Fix Next',
                 value: status.recommendedNextAction,
             },
+            {
+                name: 'Recommended Order',
+                value: [
+                    '1. `/connectleague`',
+                    '2. `/league-status`',
+                    '3. `/sync` if needed',
+                    '4. `/setup-channels`',
+                    '5. `/setup-pins` if needed',
+                    '6. `/setup-roles`',
+                    '7. `/syncsetupstatus`',
+                    '8. `/server-check`',
+                ].join('\n'),
+            },
         );
 
     if (status.missingRequiredChannels.length || status.missingRequiredRoles.length) {
