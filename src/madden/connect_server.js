@@ -712,6 +712,11 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const selectedPersona = dashboard.session?.selectedPersona || null;
   const selectedLeague = dashboard.session?.selectedLeague || null;
   const leagueFetchError = dashboard.leagueFetchError || '';
+  const resolvedPersona = selectedPersona || (guildTokens ? {
+    displayName: guildTokens.personaName || guildTokens.blazeId || 'Connected Madden account',
+    systemConsole: guildTokens.console || 'unknown',
+    entitlement: guildTokens.entitlement || 'Madden',
+  } : null);
 
   const personaDraftRows = Array.isArray(authDraft?.personas) && authDraft.personas.length
     ? authDraft.personas.map((persona) => `
@@ -743,7 +748,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
   const hasLeagueName = Boolean(connection?.leagueName);
   const hasEaConnection = Boolean(guildTokens);
-  const hasPersona = Boolean(selectedPersona);
+  const hasPersona = Boolean(resolvedPersona || availableLeagues.length);
   const hasLeague = Boolean(selectedLeague || connection?.leagueExternalId);
   const syncError = connection?.summary?.lastSyncError || '';
   const syncSucceeded = hasLeague && status === 'connected';
@@ -795,7 +800,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       active: nextStep === 3,
       title: 'Madden account selected',
       copy: hasPersona
-        ? `${selectedPersona?.displayName || 'Persona selected'} on ${String(selectedPersona?.systemConsole || '').toUpperCase() || 'your console'}.`
+        ? `${resolvedPersona?.displayName || 'Persona selected'} on ${String(resolvedPersona?.systemConsole || '').toUpperCase() || 'your console'}.`
         : 'Choose the Madden account/persona tied to your league.',
     },
     {
@@ -983,12 +988,12 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               </select>
               <button type="submit">Use This Madden Account</button>
             </form>
-          ` : selectedPersona ? `
+          ` : resolvedPersona ? `
             <div class="source-card">
-              <strong>${escapeHtml(selectedPersona.displayName)}</strong>
+              <strong>${escapeHtml(resolvedPersona.displayName)}</strong>
               <div class="source-meta">
-                <div>Console: ${escapeHtml(selectedPersona.systemConsole || 'unknown')}</div>
-                <div>Entitlement: ${escapeHtml(selectedPersona.entitlement || 'Madden')}</div>
+                <div>Console: ${escapeHtml(resolvedPersona.systemConsole || 'unknown')}</div>
+                <div>Entitlement: ${escapeHtml(resolvedPersona.entitlement || 'Madden')}</div>
               </div>
             </div>
           ` : `
