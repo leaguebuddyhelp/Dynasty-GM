@@ -128,6 +128,13 @@ function html(body) {
           padding: 12px 14px;
           margin-top: 12px;
         }
+        .subtle {
+          background: rgba(255, 225, 90, 0.16);
+          color: #6b5200;
+          border-radius: 14px;
+          padding: 12px 14px;
+          margin-top: 12px;
+        }
         .meta-card {
           background: linear-gradient(180deg, #fff6c5 0%, #fffdf4 100%);
           border: 1px solid var(--lb-border);
@@ -354,6 +361,10 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           ${noticeBanner(notice)}
           <h2>Step 1: Name Your League</h2>
           <p style="color:#4b5563;">Start by naming the league you want this Discord server to use.</p>
+          <form method="POST" action="/madden/connect/demo?token=${encodeURIComponent(token)}" style="margin-bottom:16px;">
+            <button type="submit">Load Demo League</button>
+          </form>
+          <div class="subtle">Just testing? This fills the dashboard with a sample league, sample export link, and a snapshot so you can click around right now.</div>
           <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
             <label for="league_name"><strong>League Name</strong></label><br />
             <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="Ghost Legacy" required />
@@ -496,6 +507,20 @@ export function startConnectServer() {
       });
       const location = result.ok
         ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('League record saved.')}`
+        : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
+      res.writeHead(302, { location });
+      res.end();
+    },
+  });
+
+  registerHttpRoute({
+    method: 'POST',
+    path: '/madden/connect/demo',
+    handler: async (req, res) => {
+      const token = parseToken(req);
+      const result = connectionService.loadDemoLeague(token);
+      const location = result.ok
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Demo league loaded. You can now test the dashboard and run /league-status in Discord.')}`
         : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
       res.writeHead(302, { location });
       res.end();

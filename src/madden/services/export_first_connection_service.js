@@ -84,6 +84,68 @@ function publicBaseUrl() {
   return 'http://127.0.0.1:8080';
 }
 
+function createSnapshotForGuild({
+  guildId,
+  connectSessionId = null,
+  payload,
+  sourceType = 'dashboard_export',
+}) {
+  const summary = summarizePayload(payload);
+  const importJob = connectionRepository.createImportJob({
+    guildId,
+    connectSessionId,
+    rawPayload: payload,
+  });
+  const snapshot = connectionRepository.createSnapshot({
+    guildId,
+    importJobId: importJob.id,
+    leagueName: summary.leagueName,
+    leagueExternalId: summary.leagueExternalId,
+    summary,
+    payload,
+  });
+  connectionRepository.finishImportJob(importJob.id, {
+    status: 'succeeded',
+    summary,
+  });
+  const connection = connectionRepository.upsertLeagueConnection({
+    guildId,
+    leagueName: summary.leagueName,
+    leagueExternalId: summary.leagueExternalId,
+    sourceType,
+    status: 'connected',
+    lastImportJobId: importJob.id,
+    lastSnapshotId: snapshot.id,
+    summary,
+  });
+  return {
+    summary,
+    importJob,
+    snapshot,
+    connection,
+  };
+}
+
+function demoPayloadForGuild(guildId) {
+  const suffix = String(guildId).slice(-4);
+  return {
+    leagueName: `Demo League ${suffix}`,
+    leagueId: `demo-${suffix}`,
+    currentWeek: 7,
+    seasonInfo: {
+      currentWeek: 7,
+      currentSeason: 2026,
+      stage: 'regular_season',
+    },
+    teams: [
+      { name: 'Baltimore Ravens', user: 'ShotyMcFly', record: '4-2' },
+      { name: 'Kansas City Chiefs', user: 'ionpoltic', record: '4-2' },
+      { name: 'Detroit Lions', user: 'FxForceYT', record: '3-3' },
+      { name: 'Miami Dolphins', user: 'kosmiChurro', record: '4-2' },
+    ],
+  };
+}
+
 export function beginLeagueConnection({ guildId, createdByUserId }) {
   const session = connectionRepository.createConnectSession({
     guildId,
@@ -232,6 +294,59 @@ export function addLeagueExportSource({
   };
 }
 
+export function loadDemoLeague(token) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+
+  const existingConnection = dashboard.connection;
+  const leagueName = existingConnection?.leagueName || `Demo League ${String(dashboard.session.guildId).slice(-4)}`;
+  const leagueExternalId = existingConnection?.leagueExternalId || `demo-${String(dashboard.session.guildId).slice(-4)}`;
+
+  const connection = connectionRepository.upsertLeagueConnection({
+    guildId: dashboard.session.guildId,
+    leagueName,
+    leagueExternalId,
+    sourceType: existingConnection?.sourceType || 'dashboard_export',
+    status: 'pending_exports',
+    lastImportJobId: existingConnection?.lastImportJobId || null,
+    lastSnapshotId: existingConnection?.lastSnapshotId || null,
+    summary: existingConnection?.summary || { leagueName, leagueExternalId },
+  });
+
+  if (!dashboard.exportSources.length) {
+    connectionRepository.createExportSource({
+      connectionId: connection.id,
+      guildId: dashboard.session.guildId,
+      label: 'Demo Export Source',
+      exportUrl: 'http://127.0.0.1:4010/demo-export',
+      leagueInfo: true,
+      weeklyStats: true,
+      roster: true,
+      extraData: true,
+      autoUpdate: true,
+    });
+  }
+
+  const payload = demoPayloadForGuild(dashboard.session.guildId);
+  payload.leagueName = leagueName;
+  payload.leagueId = leagueExternalId;
+
+  const result = createSnapshotForGuild({
+    guildId: dashboard.session.guildId,
+    connectSessionId: dashboard.session.id,
+    payload,
+    sourceType: 'dashboard_export',
+  });
+
+  return {
+    ok: true,
+    session: dashboard.session,
+    connection: result.connection,
+    snapshot: result.snapshot,
+    summary: result.summary,
+  };
+}
+
 export function ingestImportedPayload({ token, rawPayload }) {
   const dashboard = getLeagueConnectionDashboard(token);
   if (!dashboard.ok) return dashboard;
@@ -247,40 +362,19 @@ export function ingestImportedPayload({ token, rawPayload }) {
   }
 
   const summary = summarizePayload(payload);
-  const importJob = connectionRepository.createImportJob({
+  const result = createSnapshotForGuild({
     guildId: dashboard.session.guildId,
     connectSessionId: dashboard.session.id,
-    rawPayload: payload,
-  });
-  const snapshot = connectionRepository.createSnapshot({
-    guildId: dashboard.session.guildId,
-    importJobId: importJob.id,
-    leagueName: summary.leagueName,
-    leagueExternalId: summary.leagueExternalId,
-    summary,
     payload,
-  });
-  connectionRepository.finishImportJob(importJob.id, {
-    status: 'succeeded',
-    summary,
-  });
-  const connection = connectionRepository.upsertLeagueConnection({
-    guildId: dashboard.session.guildId,
-    leagueName: summary.leagueName,
-    leagueExternalId: summary.leagueExternalId,
     sourceType: dashboard.connection?.sourceType || 'dashboard_export',
-    status: 'connected',
-    lastImportJobId: importJob.id,
-    lastSnapshotId: snapshot.id,
-    summary,
   });
 
   return {
     ok: true,
     session: dashboard.session,
-    connection,
-    importJob,
-    snapshot,
+    connection: result.connection,
+    importJob: result.importJob,
+    snapshot: result.snapshot,
     summary,
   };
 }
@@ -291,5 +385,6 @@ export default {
   getLeagueConnectionStatus,
   saveLeagueConnectionSetup,
   addLeagueExportSource,
+  loadDemoLeague,
   ingestImportedPayload,
 };
