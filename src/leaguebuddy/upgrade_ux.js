@@ -121,7 +121,7 @@ function planHeading(plan, activePlan) {
   const title = PLAN_COPY[plan].title;
   const price = planPriceLabel(plan);
   const current = activePlan === plan ? ' • current' : '';
-  return `${title}${price ? ` • ${price}` : ''}${current}`;
+  return `${title}${price ? ` • ${price}/month` : ''}${current}`;
 }
 
 export function buildPricingEmbeds({ currentPlan = null } = {}) {
@@ -130,7 +130,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
     .setTitle('LEAGUEbuddy Madden Pricing')
     .setColor(0x5865f2)
     .setDescription([
-      'Pick a plan below, then use the buy buttons.',
+      'Pick a monthly plan below, then use the buy buttons.',
       'After checkout, invite LEAGUEbuddy to your server and run `/start-here` there.',
     ].join('\n'))
     .addFields(
@@ -161,7 +161,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
     .setTitle('How Buying Works')
     .setDescription([
       '1. Choose Standard or Premium below.',
-      '2. Finish checkout.',
+      '2. Finish monthly checkout.',
       '3. Invite LEAGUEbuddy to your own server.',
       '4. Run `/start-here` there.',
     ].join('\n'));
