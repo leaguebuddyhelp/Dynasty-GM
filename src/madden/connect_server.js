@@ -148,6 +148,57 @@ function html(body) {
           gap: 12px;
           margin: 12px 0 0;
         }
+        .step-panel {
+          position: relative;
+          overflow: hidden;
+        }
+        .step-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 10px;
+        }
+        .step-header h2 {
+          margin: 0;
+        }
+        .step-kicker {
+          display: inline-block;
+          margin-bottom: 6px;
+          color: #7c6100;
+          font-size: 0.78rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+        }
+        .step-chip {
+          flex: 0 0 auto;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 999px;
+          font-size: 0.82rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.7px;
+        }
+        .step-chip.done {
+          background: #dcfce7;
+          color: #166534;
+        }
+        .step-chip.active {
+          background: #fef3c7;
+          color: #92400e;
+        }
+        .step-chip.locked {
+          background: #e5e7eb;
+          color: #4b5563;
+        }
+        .step-chip.error {
+          background: #fee2e2;
+          color: #991b1b;
+        }
         .timeline-step {
           border: 1px solid #eadb95;
           border-radius: 16px;
@@ -209,6 +260,10 @@ function html(body) {
           border-radius: 18px;
           padding: 18px;
         }
+        .sidebar-card {
+          position: sticky;
+          top: 18px;
+        }
         .stat-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -251,6 +306,98 @@ function html(body) {
         .stat span {
           font-size: 1.1rem;
           font-weight: 700;
+        }
+        .summary-list {
+          display: grid;
+          gap: 10px;
+          margin-top: 14px;
+        }
+        .summary-item {
+          border: 1px solid #eadb95;
+          border-radius: 14px;
+          background: #fffef8;
+          padding: 12px 14px;
+        }
+        .summary-item strong {
+          display: block;
+          margin-bottom: 6px;
+          color: #1f1b08;
+          font-size: 0.95rem;
+        }
+        .summary-item p {
+          margin: 0;
+          color: #4b5563;
+        }
+        .summary-item.done {
+          background: #f6fffb;
+          border-color: #9ad6b2;
+        }
+        .summary-item.active {
+          background: #fffbea;
+          border-color: #d9b200;
+        }
+        .summary-item.blocker {
+          background: #fff7ed;
+          border-color: #fdba74;
+        }
+        .summary-bullets {
+          margin: 0;
+          padding-left: 18px;
+          color: #4b5563;
+        }
+        .checklist {
+          display: grid;
+          gap: 10px;
+          margin-top: 14px;
+        }
+        .check-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          border: 1px solid #eadb95;
+          border-radius: 14px;
+          background: #fffef8;
+          padding: 12px 14px;
+        }
+        .check-item.done {
+          background: #f6fffb;
+          border-color: #9ad6b2;
+        }
+        .check-item.active {
+          background: #fffbea;
+          border-color: #d9b200;
+        }
+        .check-item.locked {
+          opacity: 0.72;
+        }
+        .check-icon {
+          flex: 0 0 28px;
+          width: 28px;
+          height: 28px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 900;
+          font-size: 0.9rem;
+          background: #e5e7eb;
+          color: #4b5563;
+        }
+        .check-item.done .check-icon {
+          background: #10b981;
+          color: white;
+        }
+        .check-item.active .check-icon {
+          background: #facc15;
+          color: #1f2937;
+        }
+        .check-copy strong {
+          display: block;
+          margin-bottom: 4px;
+        }
+        .check-copy span {
+          color: #4b5563;
+          display: block;
         }
         form {
           margin: 0;
@@ -458,6 +605,12 @@ function html(body) {
           .guide-grid {
             grid-template-columns: 1fr;
           }
+          .sidebar-card {
+            position: static;
+          }
+          .step-header {
+            flex-direction: column;
+          }
         }
       </style>
     </head>
@@ -555,6 +708,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const hasEaConnection = Boolean(guildTokens);
   const hasPersona = Boolean(selectedPersona);
   const hasLeague = Boolean(selectedLeague || connection?.leagueExternalId);
+  const syncError = connection?.summary?.lastSyncError || '';
+  const syncSucceeded = hasLeague && status === 'connected';
 
   const nextStep = !hasLeagueName
     ? 1
@@ -565,6 +720,81 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         : !hasLeague
           ? 4
           : 5;
+
+  function stepStatus(step) {
+    if (step < nextStep) return 'done';
+    if (step === nextStep) return 'active';
+    return 'locked';
+  }
+
+  function stepChip(step, labels = {}) {
+    const statusName = labels[stepStatus(step)] || (
+      stepStatus(step) === 'done' ? 'Done' : stepStatus(step) === 'active' ? 'Do This Now' : 'Locked'
+    );
+    return `<span class="step-chip ${stepStatus(step)}">${statusName}</span>`;
+  }
+
+  const setupChecks = [
+    {
+      key: 'league_name',
+      done: hasLeagueName,
+      active: nextStep === 1,
+      title: 'League name saved',
+      copy: hasLeagueName ? `Using ${leagueName}.` : 'Save a league name to begin setup.',
+    },
+    {
+      key: 'ea',
+      done: hasEaConnection,
+      active: nextStep === 2,
+      title: 'EA connected',
+      copy: hasEaConnection
+        ? `Connected as ${guildTokens?.personaName || 'your EA account'}.`
+        : 'Open EA Login and save the returned browser URL.',
+    },
+    {
+      key: 'persona',
+      done: hasPersona,
+      active: nextStep === 3,
+      title: 'Madden account selected',
+      copy: hasPersona
+        ? `${selectedPersona?.displayName || 'Persona selected'} on ${String(selectedPersona?.systemConsole || '').toUpperCase() || 'your console'}.`
+        : 'Choose the Madden account/persona tied to your league.',
+    },
+    {
+      key: 'league',
+      done: hasLeague,
+      active: nextStep === 4,
+      title: 'League linked',
+      copy: hasLeague
+        ? `${selectedLeague?.leagueName || connection?.leagueName || 'League connected'} is linked to this Discord server.`
+        : 'Choose the Madden league LEAGUEbuddy should manage.',
+    },
+    {
+      key: 'sync',
+      done: syncSucceeded,
+      active: hasLeague && !syncSucceeded,
+      title: 'First sync complete',
+      copy: syncSucceeded
+        ? `Week ${snapshot?.summary?.week || connection?.summary?.week || 'current'} data is available.`
+        : hasLeague
+          ? 'League linked, but first sync still needs attention.'
+          : 'This will happen automatically after you connect the league.',
+    },
+  ];
+
+  const doneCount = setupChecks.filter((item) => item.done).length;
+  const remaining = setupChecks.filter((item) => !item.done).map((item) => item.title);
+  const currentTask = !hasLeagueName
+    ? 'Save your league name.'
+    : !hasEaConnection
+      ? 'Connect EA and save the returned browser URL.'
+      : !hasPersona
+        ? 'Choose the correct Madden account/persona.'
+        : !hasLeague
+          ? 'Choose the league to connect to this Discord server.'
+          : status === 'sync_error'
+            ? 'League is linked. Run /sync in Discord after the sync issue is fixed.'
+            : 'Go back to Discord and run /league-status.';
 
   function stepClass(step) {
     if (step < nextStep) return 'timeline-step done';
@@ -617,9 +847,24 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           </div>
         </section>
 
-        <section class="panel">
-          <h2>Step 1: Name Your League</h2>
+        <section class="panel step-panel">
+          <div class="step-header">
+            <div>
+              <span class="step-kicker">Step 1</span>
+              <h2>Name Your League</h2>
+            </div>
+            ${stepChip(1)}
+          </div>
           <p style="color:#4b5563;">Start here. This is the name LEAGUEbuddy will show in Discord and on this dashboard.</p>
+          <div class="checklist">
+            <div class="check-item ${hasLeagueName ? 'done' : nextStep === 1 ? 'active' : 'locked'}">
+              <span class="check-icon">${hasLeagueName ? '✓' : nextStep === 1 ? '1' : '•'}</span>
+              <div class="check-copy">
+                <strong>Save the league record for this Discord server</strong>
+                <span>${hasLeagueName ? `Saved as ${escapeHtml(leagueName)}.` : 'This unlocks the rest of the setup flow.'}</span>
+              </div>
+            </div>
+          </div>
           <div class="guide-grid">
             <div class="guide-card">
               <h3>What this step does</h3>
@@ -647,8 +892,14 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           </form>
         </section>
 
-        <section class="panel">
-          <h2>Step 2: Connect EA</h2>
+        <section class="panel step-panel">
+          <div class="step-header">
+            <div>
+              <span class="step-kicker">Step 2</span>
+              <h2>Connect EA</h2>
+            </div>
+            ${stepChip(2)}
+          </div>
           <p style="color:#4b5563;">This matches the Snallabot-style reverse login flow. You sign in with EA in a new tab, then paste the returned browser URL here.</p>
           <div class="info">
             <strong>How to connect EA:</strong>
@@ -677,8 +928,14 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           </div>
         </section>
 
-        <section class="panel">
-          <h2>Step 3: Choose Madden Account</h2>
+        <section class="panel step-panel">
+          <div class="step-header">
+            <div>
+              <span class="step-kicker">Step 3</span>
+              <h2>Choose Madden Account</h2>
+            </div>
+            ${stepChip(3)}
+          </div>
           <p style="color:#4b5563;">After EA login is saved, choose the correct Madden account for this league.</p>
           ${authDraft?.personas?.length ? `
             <form method="POST" action="/madden/connect/persona?token=${encodeURIComponent(token)}">
@@ -701,8 +958,14 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           `}
         </section>
 
-        <section class="panel">
-          <h2>Step 4: Choose League</h2>
+        <section class="panel step-panel">
+          <div class="step-header">
+            <div>
+              <span class="step-kicker">Step 4</span>
+              <h2>Choose League</h2>
+            </div>
+            ${stepChip(4, { active: 'Choose Now' })}
+          </div>
           <p style="color:#4b5563;">Choose the Madden league LEAGUEbuddy should connect to this Discord server.</p>
           ${leagueFetchError ? `<div class="warning"><strong>League list unavailable.</strong><br />${escapeHtml(leagueFetchError)}</div>` : ''}
           ${availableLeagues.length ? `
@@ -725,8 +988,14 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           `}
         </section>
 
-        <section class="panel">
-          <h2>League Landing Page</h2>
+        <section class="panel step-panel">
+          <div class="step-header">
+            <div>
+              <span class="step-kicker">Final Check</span>
+              <h2>League Landing Page</h2>
+            </div>
+            <span class="step-chip ${syncSucceeded ? 'done' : status === 'sync_error' ? 'error' : 'active'}">${syncSucceeded ? 'Ready' : status === 'sync_error' ? 'Needs Sync' : 'In Progress'}</span>
+          </div>
           <p style="color:#4b5563;">Once your league is connected, this becomes your confirmation page before returning to Discord.</p>
           <div class="source-card">
             <strong>${escapeHtml(connection?.leagueName || selectedLeague?.leagueName || 'No league connected yet')}</strong>
@@ -742,7 +1011,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       </div>
 
       <div class="stack">
-        <section class="panel meta-card">
+        <section class="panel meta-card sidebar-card">
           <span class="eyebrow" style="color:#b58900;">Live Status</span>
           <h2 style="margin-top:4px;">Current Connection</h2>
           <div class="mini-list">
@@ -773,19 +1042,38 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <span>${escapeHtml(snapshot?.summary?.week || connection?.summary?.week || 'unknown')}</span>
             </div>
           </div>
-          <p style="margin:16px 0 0;color:#475569;">When this looks right, go back to Discord and run <code>/league-status</code>.</p>
-        </section>
-
-        <section class="panel">
-          <span class="eyebrow" style="color:#b58900;">Setup Flow</span>
-          <h2 style="margin-top:4px;">What to do next</h2>
-          <ol style="padding-left:20px;margin:0;">
-            <li>Save your league name.</li>
-            <li>Connect EA and paste the returned browser URL.</li>
-            <li>Choose your Madden account/persona.</li>
-            <li>Choose your league.</li>
-            <li>Go back to Discord and run <code>/league-status</code>.</li>
-          </ol>
+          <div class="summary-list">
+            <div class="summary-item done">
+              <strong>Progress</strong>
+              <p>${doneCount} of ${setupChecks.length} setup items finished.</p>
+            </div>
+            <div class="summary-item active">
+              <strong>Do this next</strong>
+              <p>${escapeHtml(currentTask)}</p>
+            </div>
+            ${syncError ? `
+              <div class="summary-item blocker">
+                <strong>Current blocker</strong>
+                <p>${escapeHtml(syncError)}</p>
+              </div>
+            ` : ''}
+            <div class="summary-item">
+              <strong>Finished</strong>
+              <ul class="summary-bullets">
+                ${setupChecks.filter((item) => item.done).map((item) => `<li>${escapeHtml(item.title)}</li>`).join('') || '<li>Nothing finished yet.</li>'}
+              </ul>
+            </div>
+            <div class="summary-item">
+              <strong>Left to do</strong>
+              <ul class="summary-bullets">
+                ${remaining.map((item) => `<li>${escapeHtml(item)}</li>`).join('') || '<li>Setup complete. Go back to Discord and run /league-status.</li>'}
+              </ul>
+            </div>
+            <div class="summary-item">
+              <strong>Discord handoff</strong>
+              <p>${syncSucceeded ? 'Setup is ready. Return to Discord and run /league-status, then continue with /sync or server setup commands.' : 'Discord is the final handoff after the league link and first sync are healthy.'}</p>
+            </div>
+          </div>
         </section>
       </div>
     </div>
