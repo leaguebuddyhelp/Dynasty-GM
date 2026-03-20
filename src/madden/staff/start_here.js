@@ -18,16 +18,18 @@ export async function execute(interaction) {
         value: [
           '1. Turn on the package: `/activateplan`',
           'If you still need plan info first, check `/pricing`.',
-          '2. Start the account connection flow: `/auth`',
-          '3. Connect the league: `/install-league`',
-          '4. Pull the league data: `/sync`',
-          '5. Build the category and channels, then attempt the first pin pass: `/setup-channels`',
+          '2. Open the league dashboard: `/connectleague`',
+          'If you just want to test the dashboard, click `Load Demo League` there and then run `/league-status`.',
+          '3. Start the account connection flow if needed later: `/auth`',
+          '4. Connect the league if needed later: `/install-league`',
+          '5. Pull the league data: `/sync`',
+          '6. Build the category and channels, then attempt the first pin pass: `/setup-channels`',
           'If that reply says pins missed, rerun only pins with `/setup-pins`',
-          '6. Create the staff, trade, and coach roles: `/setup-roles`',
-          '7. Mark setup complete: `/syncsetupstatus`',
-          '8. Confirm ready: `/server-check`',
-          '9. Open the week: `/create-threads`',
-          '10. Keep it moving weekly: `/weeklyupdate`',
+          '7. Create the staff, trade, and coach roles: `/setup-roles`',
+          '8. Mark setup complete: `/syncsetupstatus`',
+          '9. Confirm ready: `/server-check`',
+          '10. Open the week: `/create-threads`',
+          '11. Keep it moving weekly: `/weeklyupdate`',
         ].join('\n'),
       },
       {
@@ -54,7 +56,7 @@ export async function execute(interaction) {
         ].join('\n'),
       },
     )
-    .setFooter({ text: 'Install entry: invite bot -> /start-here. Main path: /activateplan -> /auth -> /install-league -> /sync -> /setup-channels -> /setup-roles -> /syncsetupstatus -> /server-check -> /create-threads' });
+    .setFooter({ text: 'Install entry: invite bot -> /start-here. Main path now begins with /connectleague before the Discord setup flow continues.' });
 
   await interaction.editReply({ embeds: [embed] });
 }

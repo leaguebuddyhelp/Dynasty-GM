@@ -135,6 +135,12 @@ function html(body) {
           padding: 12px 14px;
           margin-top: 12px;
         }
+        .big-action {
+          display: block;
+          width: 100%;
+          padding: 16px 18px;
+          font-size: 1rem;
+        }
         .meta-card {
           background: linear-gradient(180deg, #fff6c5 0%, #fffdf4 100%);
           border: 1px solid var(--lb-border);
@@ -359,12 +365,17 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       <div class="stack">
         <section class="panel">
           ${noticeBanner(notice)}
-          <h2>Step 1: Name Your League</h2>
-          <p style="color:#4b5563;">Start by naming the league you want this Discord server to use.</p>
+          <h2>Fastest Way To Test</h2>
+          <p style="color:#4b5563;">If you just want to click around and make sure everything works, use the demo button first.</p>
           <form method="POST" action="/madden/connect/demo?token=${encodeURIComponent(token)}" style="margin-bottom:16px;">
-            <button type="submit">Load Demo League</button>
+            <button type="submit" class="big-action">Load Demo League</button>
           </form>
-          <div class="subtle">Just testing? This fills the dashboard with a sample league, sample export link, and a snapshot so you can click around right now.</div>
+          <div class="subtle">This fills the dashboard with a sample league, sample export link, and a sample snapshot. Then go back to Discord and run <code>/league-status</code>.</div>
+        </section>
+
+        <section class="panel">
+          <h2>Real League Setup</h2>
+          <p style="color:#4b5563;">Use this when you are ready to connect a real league instead of the demo.</p>
           <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
             <label for="league_name"><strong>League Name</strong></label><br />
             <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="Ghost Legacy" required />
@@ -375,8 +386,9 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
 
         <section class="panel">
-          <h2>Step 2: Add Export Link</h2>
-          <p style="color:#4b5563;">Add the export link LEAGUEbuddy should use to pull league data for this server.</p>
+          <h2>Add Export Link</h2>
+          <p style="color:#4b5563;">Paste the export link LEAGUEbuddy should use to pull league data for this server.</p>
+          <div class="subtle">If you are only testing, you can skip this and just use <strong>Load Demo League</strong>.</div>
           <table>
             <thead>
               <tr>
@@ -446,10 +458,10 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <span class="eyebrow" style="color:#b58900;">Setup Flow</span>
           <h2 style="margin-top:4px;">What to do next</h2>
           <ol style="padding-left:20px;margin:0;">
-            <li>Save your league name.</li>
-            <li>Add at least one export link.</li>
+            <li>If testing, click <strong>Load Demo League</strong>.</li>
+            <li>If setting up for real, save your league name and add an export link.</li>
             <li>Go back to Discord and run <code>/league-status</code>.</li>
-            <li>Then continue your normal setup flow there.</li>
+            <li>Then continue the normal server setup flow there.</li>
           </ol>
         </section>
       </div>

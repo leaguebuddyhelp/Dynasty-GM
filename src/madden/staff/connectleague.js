@@ -4,7 +4,7 @@ import connectionService from '../services/export_first_connection_service.js';
 
 export const data = new SlashCommandBuilder()
   .setName('connectleague')
-  .setDescription('Open the league dashboard setup flow for this server.')
+  .setDescription('Open the easy league dashboard setup for this server.')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
@@ -33,19 +33,25 @@ export async function execute(interaction) {
         .setTitle('Connect League')
         .setColor(0x5865f2)
         .setDescription([
-          'Use the dashboard below to create the league record and add one or more export sources.',
+          'Use the dashboard below to connect your league.',
           '',
-          'What happens next:',
+          'Fastest way to test:',
           '1. Open the dashboard.',
-          '2. Save the league record.',
-          '3. Add an export URL.',
+          '2. Click `Load Demo League`.',
+          '3. Come back here and run `/league-status`.',
+          '',
+          'Real setup path:',
+          '1. Open the dashboard.',
+          '2. Save your league name.',
+          '3. Add your export link.',
           '4. Run `/league-status` back in Discord.',
         ].join('\n'))
         .addFields(
           { name: 'Dashboard Link', value: setupUrl, inline: false },
+          { name: 'Testing', value: 'Use `Load Demo League` on the dashboard if you just want to test the flow.', inline: false },
           { name: 'Fallback Import Endpoint', value: `\`${importUrl}\``, inline: false },
           { name: 'Expires', value: `<t:${Math.floor(new Date(session.expiresAt).getTime() / 1000)}:R>`, inline: false },
-          { name: 'Next', value: 'After the dashboard setup looks right, run `/league-status`.', inline: false },
+          { name: 'Next', value: 'After the dashboard looks right, run `/league-status`.', inline: false },
         ),
     ],
     components: [row],
