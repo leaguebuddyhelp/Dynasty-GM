@@ -6,6 +6,7 @@ import {
   getGuildEATokens,
   saveGuildEATokens,
 } from '../ea_guild_auth.js';
+import { ephemeralClientFromToken } from '../ea_client.js';
 import {
   exchangeLoginCode,
   exchangePersonaToken,
@@ -383,16 +384,26 @@ export async function getLeagueConnectionDashboardState(token) {
 
   const guildTokens = getGuildEATokens(dashboard.session.guildId);
   const authDraft = dashboard.session?.authDraft || null;
-  let availableLeagues = [];
-  let leagueFetchError = null;
+  let availableLeagues = Array.isArray(dashboard.session?.availableLeagues)
+    ? dashboard.session.availableLeagues
+    : [];
+  let leagueFetchError = dashboard.session?.leagueFetchError || null;
 
-  if (guildTokens) {
+  if (guildTokens && !availableLeagues.length && !dashboard.session?.selectedLeague) {
     try {
       const client = await createEAClientForGuild(dashboard.session.guildId);
       const leagues = await client.getLeagues();
       availableLeagues = Array.isArray(leagues) ? leagues : [];
+      connectionRepository.updateConnectSessionByToken(token, {
+        availableLeagues,
+        leagueFetchError: null,
+      });
+      leagueFetchError = null;
     } catch (error) {
       leagueFetchError = error?.message || 'Could not load leagues from EA right now.';
+      connectionRepository.updateConnectSessionByToken(token, {
+        leagueFetchError,
+      });
     }
   }
 
@@ -535,7 +546,7 @@ export async function submitEaPersona({
       chosen.namespaceName,
     );
 
-    saveGuildEATokens(dashboard.session.guildId, {
+    const savedTokens = {
       accessToken: personaToken.access_token,
       refreshToken: personaToken.refresh_token,
       expiry: Date.now() + (personaToken.expires_in || 0) * 1000,
@@ -545,7 +556,28 @@ export async function submitEaPersona({
       personaName: chosen.displayName,
       entitlement: chosen.entitlement,
       namespace: chosen.namespaceName,
+    };
+
+    saveGuildEATokens(dashboard.session.guildId, {
+      ...savedTokens,
     });
+
+    let availableLeagues = [];
+    let leagueFetchError = null;
+    try {
+      const client = await ephemeralClientFromToken({
+        accessToken: savedTokens.accessToken,
+        refreshToken: savedTokens.refreshToken,
+        expiry: new Date(Number(savedTokens.expiry)),
+        console: savedTokens.console,
+        blazeId: savedTokens.blazeId,
+        gameYear: savedTokens.gameYear,
+      });
+      const leagues = await client.getLeagues();
+      availableLeagues = Array.isArray(leagues) ? leagues : [];
+    } catch (error) {
+      leagueFetchError = error?.message || 'EA connected, but the league list could not be loaded yet.';
+    }
 
     connectionRepository.updateConnectSessionByToken(token, {
       authDraft: null,
@@ -556,11 +588,15 @@ export async function submitEaPersona({
         entitlement: chosen.entitlement,
         systemConsole: chosen.systemConsole,
       },
+      availableLeagues,
+      leagueFetchError,
     });
 
     return {
       ok: true,
-      message: 'EA account connected. Choose your league below.',
+      message: availableLeagues.length
+        ? 'EA account connected. Choose your league below.'
+        : 'EA account connected. LEAGUEbuddy is still trying to load your league list.',
     };
   } catch (error) {
     return {
@@ -584,8 +620,12 @@ export async function selectEaLeague({
   }
 
   try {
-    const client = await createEAClientForGuild(dashboard.session.guildId);
-    const leagues = await client.getLeagues();
+    const leagues = Array.isArray(dashboard.session?.availableLeagues) && dashboard.session.availableLeagues.length
+      ? dashboard.session.availableLeagues
+      : await (async () => {
+        const client = await createEAClientForGuild(dashboard.session.guildId);
+        return client.getLeagues();
+      })();
     const selectedLeague = (Array.isArray(leagues) ? leagues : []).find((league) => {
       const summary = summarizeLeagueRecord(league);
       return summary.leagueId === normalizedLeagueId;
@@ -618,6 +658,8 @@ export async function selectEaLeague({
         leagueId: summary.leagueId,
         leagueName: summary.leagueName,
       },
+      availableLeagues: Array.isArray(leagues) ? leagues : [],
+      leagueFetchError: null,
     });
 
     try {
