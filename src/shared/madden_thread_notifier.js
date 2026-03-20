@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from './madden_staff_ops.js';
