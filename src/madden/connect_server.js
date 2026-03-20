@@ -62,8 +62,9 @@ function html(body) {
           height: 96px;
           object-fit: contain;
           border-radius: 22px;
-          background: rgba(255, 255, 255, 0.06);
-          padding: 10px;
+          background: #ffe162;
+          padding: 0;
+          box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
         }
         .eyebrow {
           display: inline-block;
@@ -335,7 +336,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
   return html(`
     <section class="hero">
-      <img src="/madden/assets/ghost-legacy.png" alt="LEAGUEbuddy logo" />
+      <img src="/madden/assets/lb-official-logo.png" alt="LEAGUEbuddy logo" />
       <div>
         <span class="eyebrow">LEAGUEbuddy Madden</span>
         <h1>League Dashboard Setup</h1>
@@ -443,9 +444,9 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 export function startConnectServer() {
   registerHttpRoute({
     method: 'GET',
-    path: '/madden/assets/ghost-legacy.png',
+    path: '/madden/assets/lb-official-logo.png',
     handler: async (_req, res) => {
-      const filePath = path.join(process.cwd(), 'ghost_logos', 'ghost_legacy.png');
+      const filePath = path.join(process.cwd(), 'nfl_logos', 'lb logo', 'LB_Offical_Logo.PNG');
       try {
         const file = fs.readFileSync(filePath);
         res.writeHead(200, {
