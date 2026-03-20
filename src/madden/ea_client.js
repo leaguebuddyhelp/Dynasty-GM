@@ -46,6 +46,20 @@ function persistTokensToTarget(token, persistTokenUpdate) {
   persistTokens(token);
 }
 
+function buildReadableSessionError(errors = [], primaryConsole) {
+  const joined = String(errors.join(' | '));
+  if (joined.includes('AUTH_ERR_INVALID_TOKEN') || joined.includes('invalid_token')) {
+    return `EA session expired for ${primaryConsole}. Reconnect EA from /connectleague and try again.`;
+  }
+  if (joined.includes('The Server Information was not found')) {
+    return `EA could not open the Madden ${YEAR} ${String(primaryConsole || '').toUpperCase()} service right now. Try again in a moment.`;
+  }
+  if (joined.includes('ERR_SYSTEM')) {
+    return 'EA returned a temporary system error while opening the Madden service. Try again in a moment.';
+  }
+  return 'LEAGUEbuddy could not open the Madden service for this account right now. Reconnect EA and try again.';
+}
+
 // TokenInformation / SessionInformation shapes (JS version)
 // token: { accessToken, refreshToken, expiry: Date, console: 'ps5'|'xbsx'|..., blazeId }
 // session: { blazeId: number, sessionKey: string, requestId: number }
@@ -147,7 +161,8 @@ async function retrieveBlazeSession(token) {
       errors.push(`console=${c} service=${variant.service} no sessionKey: ${textResponse}`);
     }
   }
-  throw new Error(`EA login failed (no sessionKey). Tried consoles: ${errors.join(' | ')}`);
+  const readable = buildReadableSessionError(errors, primaryConsole);
+  throw new Error(readable);
 }
 
 function calculateMessageAuthData(blazeId, requestId) {

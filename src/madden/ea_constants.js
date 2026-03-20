@@ -142,55 +142,11 @@ export const BLAZE_PRODUCT_NAME = ((a) => ({
 }))(YEAR);
 
 // Some EA deployments still use non-gen suffixes; provide both to retry on 404.
-function buildVariantsForYear(consoleKey, yearStr) {
-  const variants = [];
-  const base = `madden-${yearStr}-${consoleKey}`;
-  const gen5 = (consoleKey === 'ps5' || consoleKey === 'xbsx') ? `madden-${yearStr}-${consoleKey}-gen5` : null;
-
-  // Default gen5 + mca, then non-mca
-  if (gen5) variants.push({ service: gen5, product: `${gen5}-mca` });
-  if (gen5) variants.push({ service: gen5, product: base });
-
-  // Base service with mca/non-mca
-  variants.push({ service: base, product: `${base}-mca` });
-  variants.push({ service: base, product: base });
-
-  return variants;
-}
-
 export function getServiceVariantsForConsole(consoleKey) {
-  // Force PS5 to known Madden 25/26 endpoints to avoid noisy 404s
-  if (consoleKey === 'ps5') {
-    const y = YEAR;
-    const base = `madden-${y}-ps5`;
-    const gen5 = `madden-${y}-ps5-gen5`;
-    return [
-      { service: gen5, product: `${gen5}-mca` },
-      { service: gen5, product: gen5 },
-      { service: base, product: `${base}-mca` },
-      { service: base, product: base },
-    ];
-  }
-
-  // Include current YEAR, two-digit YEAR, and a legacy fallback of YEAR-1 and its two-digit form.
-  const numericYear = Number(YEAR);
-  const legacyYear = Number.isFinite(numericYear) ? numericYear - 1 : null;
-  const legacyTwoDigit = legacyYear ? String(legacyYear).slice(-2) : null;
-  const yearCandidates = [YEAR, TWO_DIGIT_YEAR, legacyYear, legacyTwoDigit].filter(Boolean);
-  const seen = new Set();
-  const variants = [];
-
-  for (const y of yearCandidates) {
-    for (const v of buildVariantsForYear(consoleKey, y)) {
-      const key = `${v.service}|${v.product}`;
-      if (!seen.has(key) && v.service && v.product) {
-        seen.add(key);
-        variants.push(v);
-      }
-    }
-  }
-
-  return variants;
+  const service = BLAZE_SERVICE[consoleKey];
+  const product = BLAZE_PRODUCT_NAME[consoleKey];
+  if (!service || !product) return [];
+  return [{ service, product }];
 }
 
 export const LeagueData = {

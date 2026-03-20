@@ -704,7 +704,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         <section class="panel">
           <h2>Step 4: Choose League</h2>
           <p style="color:#4b5563;">Choose the Madden league LEAGUEbuddy should connect to this Discord server.</p>
-          ${leagueFetchError ? `<div class="warning">${escapeHtml(leagueFetchError)}</div>` : ''}
+          ${leagueFetchError ? `<div class="warning"><strong>League list unavailable.</strong><br />${escapeHtml(leagueFetchError)}</div>` : ''}
           ${availableLeagues.length ? `
             <form method="POST" action="/madden/connect/league-select?token=${encodeURIComponent(token)}">
               <label for="selected_league_id"><strong>Available Leagues</strong></label><br />
