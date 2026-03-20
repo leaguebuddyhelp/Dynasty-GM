@@ -143,6 +143,26 @@ function html(body) {
           padding: 14px 16px;
           margin: 0 0 18px;
         }
+        .timeline {
+          display: grid;
+          gap: 12px;
+          margin: 12px 0 0;
+        }
+        .timeline-step {
+          border: 1px solid #eadb95;
+          border-radius: 16px;
+          background: #fffef8;
+          padding: 14px;
+          display: grid;
+          gap: 6px;
+        }
+        .timeline-step strong {
+          color: #1f1b08;
+          font-size: 1rem;
+        }
+        .timeline-step span {
+          color: #4b5563;
+        }
         .big-action {
           display: block;
           width: 100%;
@@ -458,24 +478,38 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       <div>
         <span class="eyebrow">LEAGUEbuddy Madden</span>
         <h1>League Dashboard Setup</h1>
-        <p>Set up your league here first, then finish the rest in Discord. This keeps league connection stable and gives your server one clear source for syncs and updates.</p>
+        <p>Set up your league here first, then finish the rest in Discord. This is your one setup path for a real league.</p>
       </div>
     </section>
     <div class="layout">
       <div class="stack">
         <section class="panel">
           ${noticeBanner(notice)}
-          <h2>Fastest Way To Test</h2>
-          <p style="color:#4b5563;">If you just want to click around and make sure everything works, use the demo button first.</p>
-          <form method="POST" action="/madden/connect/demo?token=${encodeURIComponent(token)}" style="margin-bottom:16px;">
-            <button type="submit" class="big-action">Load Demo League</button>
-          </form>
-          <div class="subtle">This fills the dashboard with a sample league, sample export link, and a sample snapshot. Then go back to Discord and run <code>/league-status</code>.</div>
+          <h2>Setup Overview</h2>
+          <p style="color:#4b5563;">This dashboard is already linked to your Discord server. Complete these steps in order.</p>
+          <div class="timeline">
+            <div class="timeline-step">
+              <strong>1. Name your league</strong>
+              <span>Save the league name so this server knows what it belongs to.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>2. Add a public export link</strong>
+              <span>Use a public JSON link Railway can reach from the internet.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>3. Click Import Now</strong>
+              <span>LEAGUEbuddy will pull the data and create the first snapshot.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>4. Return to Discord</strong>
+              <span>Run <code>/league-status</code> and continue the normal server setup there.</span>
+            </div>
+          </div>
         </section>
 
         <section class="panel">
-          <h2>Real League Setup</h2>
-          <p style="color:#4b5563;">Use this when you are ready to connect a real league instead of the demo.</p>
+          <h2>Step 1: Name Your League</h2>
+          <p style="color:#4b5563;">Start here for a real league.</p>
           <div class="guide-grid">
             <div class="guide-card">
               <h3>What works</h3>
@@ -504,9 +538,9 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
 
         <section class="panel">
-          <h2>Add Export Link</h2>
+          <h2>Step 2: Add Export Link</h2>
           <p style="color:#4b5563;">Paste the public JSON export link LEAGUEbuddy should use to pull league data for this server.</p>
-          <div class="subtle">If you are only testing, skip this and use <strong>Load Demo League</strong>. If your link lives on your own computer, this import will fail because Railway cannot reach it.</div>
+          <div class="subtle">If your link lives on your own computer, this import will fail because Railway cannot reach it.</div>
           <div class="info">
             <strong>How exporting works:</strong>
             <ol class="step-list">
@@ -536,10 +570,17 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
 
         <section class="panel">
-          <h2>Fallback Import</h2>
-          <p style="color:#4b5563;">Only use this if support tells you to, or if you already have raw JSON data but no public export link yet.</p>
+          <h2>Support Tools</h2>
+          <p style="color:#4b5563;">These are not part of the normal customer setup path.</p>
           <details>
-            <summary>Open JSON importer</summary>
+            <summary>Testing only: Load demo league</summary>
+            <form method="POST" action="/madden/connect/demo?token=${encodeURIComponent(token)}" style="margin-top:16px;">
+              <button type="submit" class="big-action">Load Demo League</button>
+            </form>
+            <div class="subtle">This fills the dashboard with sample data for testing only.</div>
+          </details>
+          <details>
+            <summary>Support only: JSON importer</summary>
             <form method="POST" action="/madden/import?token=${encodeURIComponent(token)}" style="margin-top:16px;">
               <textarea id="payload" name="payload" placeholder='{"leagueName":"My League","leagueId":"abc123"}'></textarea>
               <button type="submit">Import Snapshot</button>
@@ -587,10 +628,10 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <span class="eyebrow" style="color:#b58900;">Setup Flow</span>
           <h2 style="margin-top:4px;">What to do next</h2>
           <ol style="padding-left:20px;margin:0;">
-            <li>If testing, click <strong>Load Demo League</strong>.</li>
-            <li>If setting up for real, save your league name and add an export link.</li>
+            <li>Save your league name.</li>
+            <li>Add your public export link.</li>
+            <li>Click <strong>Import Now</strong>.</li>
             <li>Go back to Discord and run <code>/league-status</code>.</li>
-            <li>Then continue the normal server setup flow there.</li>
           </ol>
         </section>
       </div>
