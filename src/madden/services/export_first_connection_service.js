@@ -1057,6 +1057,8 @@ export default {
   getLeagueConnectionDashboard,
   getLeagueConnectionDashboardState,
   getLeagueConnectionStatus,
+  resetLeagueConnectionByGuild,
+  resetLeagueConnectionByToken,
   saveLeagueConnectionSetup,
   submitEaRedirectUrl,
   submitEaPersona,
