@@ -585,16 +585,75 @@ function html(body) {
           display: grid;
           gap: 18px;
         }
+        .primary-stack {
+          order: 1;
+        }
+        .sidebar-stack {
+          order: 2;
+        }
         @media (max-width: 860px) {
           .layout {
             grid-template-columns: 1fr;
           }
+          .primary-stack {
+            order: 2;
+          }
+          .sidebar-stack {
+            order: 1;
+          }
           .hero {
             grid-template-columns: 1fr;
+            padding: 22px 18px;
+            gap: 16px;
           }
           .hero img {
             width: 72px;
             height: 72px;
+          }
+          .shell {
+            padding: 14px 10px 40px;
+          }
+          .panel {
+            padding: 18px 16px;
+            border-radius: 18px;
+          }
+          h1 {
+            font-size: clamp(1.8rem, 8vw, 2.5rem);
+            line-height: 1.02;
+          }
+          .hero p {
+            font-size: 0.96rem;
+            line-height: 1.45;
+          }
+          .panel h2 {
+            font-size: 1.15rem;
+          }
+          .eyebrow,
+          .step-kicker,
+          .mini-item strong,
+          .stat strong,
+          .summary-item strong {
+            letter-spacing: 0.5px;
+          }
+          input,
+          textarea,
+          select,
+          button,
+          .button-link {
+            min-height: 52px;
+            font-size: 16px;
+          }
+          button,
+          .button-link {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+          }
+          .source-actions {
+            flex-direction: column;
+          }
+          .source-actions > * {
+            width: 100%;
           }
           .check-grid {
             grid-template-columns: 1fr;
@@ -610,6 +669,88 @@ function html(body) {
           }
           .step-header {
             flex-direction: column;
+            gap: 10px;
+            margin-bottom: 14px;
+          }
+          .step-chip {
+            align-self: flex-start;
+          }
+          .timeline-step,
+          .check-item,
+          .guide-card,
+          .method-card,
+          .source-card,
+          .mini-item,
+          .summary-item,
+          .stat {
+            border-radius: 14px;
+          }
+          .timeline-step,
+          .check-item,
+          .method-card,
+          .mini-item,
+          .summary-item {
+            padding: 12px;
+          }
+          .check-icon {
+            flex-basis: 24px;
+            width: 24px;
+            height: 24px;
+            font-size: 0.8rem;
+          }
+          .subtle,
+          .warning,
+          .notice,
+          .info {
+            padding: 12px;
+            border-radius: 12px;
+          }
+          code {
+            word-break: break-word;
+          }
+        }
+        @media (max-width: 520px) {
+          body {
+            background:
+              radial-gradient(circle at top left, rgba(255, 225, 90, 0.18), transparent 24%),
+              linear-gradient(180deg, #fff8cb 0%, #fffdf6 42%, #f6f1de 100%);
+          }
+          .shell {
+            padding: 10px 8px 28px;
+          }
+          .layout,
+          .stack,
+          .timeline,
+          .summary-list,
+          .mini-list,
+          .method-grid,
+          .checklist {
+            gap: 12px;
+          }
+          .hero {
+            padding: 18px 14px;
+            border-radius: 18px;
+          }
+          .panel {
+            padding: 16px 14px;
+          }
+          .panel p,
+          .panel li,
+          .panel label,
+          .panel span,
+          .panel div {
+            font-size: 0.98rem;
+          }
+          .step-list {
+            padding-left: 18px;
+          }
+          .timeline-step strong,
+          .check-copy strong,
+          .source-card strong {
+            font-size: 0.98rem;
+          }
+          .summary-bullets {
+            padding-left: 16px;
           }
         }
       </style>
@@ -876,7 +1017,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       </div>
     </section>
     <div class="layout">
-      <div class="stack">
+      <div class="stack primary-stack">
         <section class="panel">
           ${noticeBanner(notice)}
           <h2>Setup Overview</h2>
@@ -1084,7 +1225,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
       </div>
 
-      <div class="stack">
+      <div class="stack sidebar-stack">
         <section class="panel meta-card sidebar-card">
           <span class="eyebrow" style="color:#b58900;">Live Status</span>
           <h2 style="margin-top:4px;">Current Connection</h2>
