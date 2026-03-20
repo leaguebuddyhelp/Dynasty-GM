@@ -155,6 +155,14 @@ function html(body) {
           position: relative;
           overflow: hidden;
         }
+        .step-body {
+          display: block;
+        }
+        .step-mobile-summary {
+          display: none;
+          margin-top: 8px;
+          color: #4b5563;
+        }
         .step-header {
           display: flex;
           justify-content: space-between;
@@ -695,6 +703,12 @@ function html(body) {
           .step-panel {
             scroll-margin-top: 14px;
           }
+          .step-panel.mobile-collapsed .step-body {
+            display: none;
+          }
+          .step-panel.mobile-collapsed .step-mobile-summary {
+            display: block;
+          }
           .timeline-step,
           .check-item,
           .guide-card,
@@ -831,6 +845,9 @@ function html(body) {
           }
           .step-header {
             margin-bottom: 10px;
+          }
+          .step-panel.mobile-collapsed .step-header {
+            margin-bottom: 0;
           }
           .subtle,
           .warning,
@@ -1104,6 +1121,10 @@ function renderDashboard({ token, dashboard, notice = '' }) {
     return '<span class="step-state locked">Locked</span>';
   }
 
+  function mobileCollapseClass(step) {
+    return step < nextStep ? ' mobile-collapsed' : '';
+  }
+
   return html(`
     <section class="hero">
       <img src="/madden/assets/lb-official-logo.png" alt="LEAGUEbuddy logo" />
@@ -1162,7 +1183,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           </div>
         </section>
 
-        <section class="panel step-panel">
+        <section class="panel step-panel${mobileCollapseClass(1)}">
           <div class="step-header">
             <div>
               <span class="step-kicker">Step 1</span>
@@ -1170,6 +1191,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             </div>
             ${stepChip(1)}
           </div>
+          <div class="step-mobile-summary">${hasLeagueName ? `Saved as ${escapeHtml(leagueName)}.` : 'Save your league name to begin.'}</div>
+          <div class="step-body">
           <p style="color:#4b5563;">Start here. This is the name LEAGUEbuddy will show in Discord and on this dashboard.</p>
           <div class="checklist">
             <div class="check-item ${hasLeagueName ? 'done' : nextStep === 1 ? 'active' : 'locked'}">
@@ -1205,9 +1228,10 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             <input id="league_external_id" name="league_external_id" value="${escapeHtml(leagueExternalId)}" placeholder="Use this only if you already know the league ID" />
             <button type="submit">Save League Name</button>
           </form>
+          </div>
         </section>
 
-        <section class="panel step-panel">
+        <section class="panel step-panel${mobileCollapseClass(2)}">
           <div class="step-header">
             <div>
               <span class="step-kicker">Step 2</span>
@@ -1215,6 +1239,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             </div>
             ${stepChip(2)}
           </div>
+          <div class="step-mobile-summary">${hasEaConnection ? `Connected as ${escapeHtml(guildTokens?.personaName || 'your EA account')}.` : 'Connect EA to continue.'}</div>
+          <div class="step-body">
           <p style="color:#4b5563;">This matches the Snallabot-style reverse login flow. You sign in with EA in a new tab, then paste the returned browser URL here.</p>
           <div class="info">
             <strong>How to connect EA:</strong>
@@ -1241,9 +1267,10 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               </form>
             </div>
           </div>
+          </div>
         </section>
 
-        <section class="panel step-panel">
+        <section class="panel step-panel${mobileCollapseClass(3)}">
           <div class="step-header">
             <div>
               <span class="step-kicker">Step 3</span>
@@ -1251,6 +1278,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             </div>
             ${stepChip(3)}
           </div>
+          <div class="step-mobile-summary">${hasPersona ? `${escapeHtml(resolvedPersona?.displayName || 'Persona selected')}` : 'Choose the correct Madden account.'}</div>
+          <div class="step-body">
           <p style="color:#4b5563;">After EA login is saved, choose the correct Madden account for this league.</p>
           ${authDraft?.personas?.length ? `
             <form method="POST" action="/madden/connect/persona?token=${encodeURIComponent(token)}">
@@ -1271,9 +1300,10 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           ` : `
             <div class="source-card" style="color:#6b7280;">Connect EA first. Your available Madden accounts will appear here.</div>
           `}
+          </div>
         </section>
 
-        <section class="panel step-panel">
+        <section class="panel step-panel${mobileCollapseClass(4)}">
           <div class="step-header">
             <div>
               <span class="step-kicker">Step 4</span>
@@ -1281,6 +1311,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             </div>
             ${stepChip(4, { active: 'Choose Now' })}
           </div>
+          <div class="step-mobile-summary">${hasLeague ? `${escapeHtml(activeLeagueName)} is linked.` : 'Choose the league for this server.'}</div>
+          <div class="step-body">
           <p style="color:#4b5563;">Choose the Madden league LEAGUEbuddy should connect to this Discord server.</p>
           ${leagueFetchError ? `<div class="warning"><strong>League list unavailable.</strong><br />${escapeHtml(leagueFetchError)}</div>` : ''}
           ${availableLeagues.length ? `
@@ -1308,6 +1340,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           ` : `
             <div class="source-card" style="color:#6b7280;">Connect EA and choose a Madden account first. Then your leagues will appear here.</div>
           `}
+          </div>
         </section>
 
         <section class="panel step-panel">
