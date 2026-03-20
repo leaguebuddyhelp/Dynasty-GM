@@ -1,8 +1,272 @@
+import fs from 'fs';
+import path from 'path';
+
 import { registerHttpRoute, startHealthcheckServer } from '../leaguebuddy/healthcheck.js';
 import connectionService from './services/export_first_connection_service.js';
 
 function html(body) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LEAGUEbuddy Connect</title></head><body style="font-family:sans-serif;max-width:760px;margin:40px auto;padding:0 16px;">${body}</body></html>`;
+  return `<!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>LEAGUEbuddy Connect</title>
+      <style>
+        :root {
+          --lb-bg: #0f172a;
+          --lb-panel: #111827;
+          --lb-panel-soft: #172033;
+          --lb-surface: #ffffff;
+          --lb-surface-soft: #f8fafc;
+          --lb-border: #dbe2ea;
+          --lb-text: #0f172a;
+          --lb-muted: #475569;
+          --lb-accent: #fee75c;
+          --lb-accent-strong: #ffcc00;
+          --lb-accent-ink: #332600;
+          --lb-success-bg: #ecfdf5;
+          --lb-success-border: #10b981;
+          --lb-success-text: #065f46;
+          --lb-warning-bg: #fff7ed;
+          --lb-warning-text: #9a3412;
+          --lb-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+          margin: 0;
+          font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+          background:
+            radial-gradient(circle at top left, rgba(254, 231, 92, 0.22), transparent 22%),
+            linear-gradient(180deg, #fffdf1 0%, #f8fafc 100%);
+          color: var(--lb-text);
+        }
+        .shell {
+          max-width: 1080px;
+          margin: 0 auto;
+          padding: 28px 16px 56px;
+        }
+        .hero {
+          background: linear-gradient(135deg, var(--lb-bg) 0%, var(--lb-panel) 58%, #1f2937 100%);
+          color: #f8fafc;
+          border-radius: 24px;
+          padding: 28px;
+          box-shadow: var(--lb-shadow);
+          display: grid;
+          grid-template-columns: 96px 1fr;
+          gap: 20px;
+          align-items: center;
+        }
+        .hero img {
+          width: 96px;
+          height: 96px;
+          object-fit: contain;
+          border-radius: 22px;
+          background: rgba(255, 255, 255, 0.06);
+          padding: 10px;
+        }
+        .eyebrow {
+          display: inline-block;
+          color: var(--lb-accent);
+          font-size: 12px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 1.4px;
+          margin-bottom: 8px;
+        }
+        h1 {
+          margin: 0 0 8px;
+          font-size: clamp(2rem, 5vw, 3.4rem);
+          line-height: 0.98;
+        }
+        .hero p {
+          margin: 0;
+          max-width: 680px;
+          color: #dbe4ee;
+          font-size: 1rem;
+          line-height: 1.55;
+        }
+        .layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+          gap: 18px;
+          margin-top: 20px;
+        }
+        .panel {
+          background: rgba(255, 255, 255, 0.94);
+          border: 1px solid rgba(219, 226, 234, 0.88);
+          border-radius: 22px;
+          padding: 22px;
+          box-shadow: 0 18px 48px rgba(15, 23, 42, 0.09);
+        }
+        .panel h2 {
+          margin: 0 0 10px;
+          font-size: 1.35rem;
+        }
+        .panel p,
+        .panel li,
+        .panel td,
+        .panel th,
+        .panel label {
+          line-height: 1.5;
+        }
+        .notice {
+          background: var(--lb-success-bg);
+          border: 1px solid var(--lb-success-border);
+          color: var(--lb-success-text);
+          padding: 12px 16px;
+          border-radius: 14px;
+          margin: 0 0 18px;
+        }
+        .warning {
+          background: var(--lb-warning-bg);
+          color: var(--lb-warning-text);
+          border-radius: 14px;
+          padding: 12px 14px;
+          margin-top: 12px;
+        }
+        .meta-card {
+          background: linear-gradient(180deg, var(--lb-surface-soft) 0%, #fff 100%);
+          border: 1px solid var(--lb-border);
+          border-radius: 18px;
+          padding: 18px;
+        }
+        .stat-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .stat {
+          background: var(--lb-panel-soft);
+          color: #f8fafc;
+          border-radius: 16px;
+          padding: 14px;
+        }
+        .stat strong {
+          display: block;
+          color: var(--lb-accent);
+          font-size: 0.78rem;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          margin-bottom: 6px;
+        }
+        .stat span {
+          font-size: 1.1rem;
+          font-weight: 700;
+        }
+        form {
+          margin: 0;
+        }
+        input,
+        textarea,
+        select {
+          width: 100%;
+          margin: 8px 0 16px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px solid #cbd5e1;
+          background: #fff;
+          color: var(--lb-text);
+          font: inherit;
+        }
+        textarea {
+          min-height: 220px;
+          resize: vertical;
+        }
+        button {
+          border: 0;
+          border-radius: 14px;
+          padding: 12px 16px;
+          background: linear-gradient(180deg, var(--lb-accent) 0%, var(--lb-accent-strong) 100%);
+          color: var(--lb-accent-ink);
+          font: inherit;
+          font-weight: 800;
+          cursor: pointer;
+        }
+        button[disabled] {
+          background: #cbd5e1;
+          color: #64748b;
+          cursor: not-allowed;
+        }
+        code {
+          font-family: "SFMono-Regular", Menlo, monospace;
+          font-size: 0.92em;
+          word-break: break-all;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 18px;
+        }
+        th {
+          text-align: left;
+          color: var(--lb-muted);
+          font-size: 0.82rem;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+        }
+        td, th {
+          padding: 10px 8px 10px 0;
+          border-top: 1px solid #e5e7eb;
+          vertical-align: top;
+        }
+        td:last-child, th:last-child {
+          padding-right: 0;
+        }
+        .pill {
+          display: inline-block;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: rgba(254, 231, 92, 0.2);
+          color: #6b4f00;
+          font-weight: 700;
+          font-size: 0.85rem;
+        }
+        .check-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+          gap: 8px;
+          margin: 8px 0 16px;
+        }
+        .check-grid label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 12px;
+          border-radius: 12px;
+          border: 1px solid #dbe2ea;
+          background: #fff;
+        }
+        details {
+          margin-top: 18px;
+        }
+        summary {
+          cursor: pointer;
+          font-weight: 700;
+        }
+        .stack {
+          display: grid;
+          gap: 18px;
+        }
+        @media (max-width: 860px) {
+          .layout {
+            grid-template-columns: 1fr;
+          }
+          .hero {
+            grid-template-columns: 1fr;
+          }
+          .hero img {
+            width: 72px;
+            height: 72px;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="shell">${body}</div>
+    </body>
+  </html>`;
 }
 
 function escapeHtml(value) {
@@ -48,7 +312,7 @@ function selected(value, expected) {
 
 function noticeBanner(notice) {
   if (!notice) return '';
-  return `<div style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:10px;margin:16px 0;"><strong>${escapeHtml(notice)}</strong></div>`;
+  return `<div class="notice"><strong>${escapeHtml(notice)}</strong></div>`;
 }
 
 function renderDashboard({ token, dashboard, notice = '' }) {
@@ -62,84 +326,140 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const exportRows = exportSources.length
     ? exportSources.map((source) => `
         <tr>
-          <td style="padding:8px;border-top:1px solid #e5e7eb;">${escapeHtml(source.label)}</td>
-          <td style="padding:8px;border-top:1px solid #e5e7eb;"><code>${escapeHtml(source.exportUrl)}</code></td>
-          <td style="padding:8px;border-top:1px solid #e5e7eb;">${source.autoUpdate ? 'On' : 'Manual'}</td>
+          <td>${escapeHtml(source.label)}</td>
+          <td><code>${escapeHtml(source.exportUrl)}</code></td>
+          <td>${source.autoUpdate ? '<span class="pill">Auto</span>' : 'Manual'}</td>
         </tr>
       `).join('')
-    : `<tr><td colspan="3" style="padding:8px;border-top:1px solid #e5e7eb;color:#6b7280;">No export sources added yet.</td></tr>`;
+    : `<tr><td colspan="3" style="color:#6b7280;">No export sources added yet.</td></tr>`;
 
   return html(`
-    <h1>LEAGUEbuddy League Setup</h1>
-    <p>This setup page mirrors the real product flow more closely: create the league record here, add export sources here, then return to Discord to finish setup.</p>
-    ${noticeBanner(notice)}
-    <section style="border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin:20px 0;">
-      <h2 style="margin-top:0;">League Record</h2>
-      <p style="color:#4b5563;">This ties your Discord server to one backend league record.</p>
-      <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
-        <label for="league_name"><strong>League Name</strong></label><br />
-        <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" style="width:100%;margin:8px 0 16px;padding:10px;" placeholder="GHOST LEGACY" required />
-        <label for="league_external_id"><strong>League ID</strong> <span style="color:#6b7280;">(optional)</span></label><br />
-        <input id="league_external_id" name="league_external_id" value="${escapeHtml(leagueExternalId)}" style="width:100%;margin:8px 0 16px;padding:10px;" placeholder="ea-league-id" />
-        <button type="submit">Save League Record</button>
-      </form>
+    <section class="hero">
+      <img src="/madden/assets/ghost-legacy.png" alt="LEAGUEbuddy logo" />
+      <div>
+        <span class="eyebrow">LEAGUEbuddy Madden</span>
+        <h1>League Dashboard Setup</h1>
+        <p>Create the league record, attach your export sources, and use Discord as the control layer. This keeps setup stable without depending on fragile browser auth callbacks.</p>
+      </div>
     </section>
+    <div class="layout">
+      <div class="stack">
+        <section class="panel">
+          ${noticeBanner(notice)}
+          <h2>League Record</h2>
+          <p style="color:#4b5563;">This ties your Discord server to one backend league record.</p>
+          <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
+            <label for="league_name"><strong>League Name</strong></label><br />
+            <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="GHOST LEGACY" required />
+            <label for="league_external_id"><strong>League ID</strong> <span style="color:#6b7280;">(optional)</span></label><br />
+            <input id="league_external_id" name="league_external_id" value="${escapeHtml(leagueExternalId)}" placeholder="ea-league-id" />
+            <button type="submit">Save League Record</button>
+          </form>
+        </section>
 
-    <section style="border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin:20px 0;">
-      <h2 style="margin-top:0;">Export Sources</h2>
-      <p style="color:#4b5563;">Add one or more export URLs that LEAGUEbuddy should treat as the source of truth for this league.</p>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-        <thead>
-          <tr style="text-align:left;">
-            <th style="padding:8px 8px 8px 0;">Label</th>
-            <th style="padding:8px;">Export URL</th>
-            <th style="padding:8px;">Mode</th>
-          </tr>
-        </thead>
-        <tbody>${exportRows}</tbody>
-      </table>
-      <form method="POST" action="/madden/connect/export-source?token=${encodeURIComponent(token)}">
-        <label for="label"><strong>Source Label</strong></label><br />
-        <input id="label" name="label" style="width:100%;margin:8px 0 16px;padding:10px;" placeholder="Primary Export Source" />
-        <label for="export_url"><strong>Export URL</strong></label><br />
-        <input id="export_url" name="export_url" style="width:100%;margin:8px 0 16px;padding:10px;" placeholder="http://127.0.0.1:PORT/..." required />
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:8px 0 16px;">
-          <label><input type="checkbox" name="league_info" value="1" checked /> League Info</label>
-          <label><input type="checkbox" name="weekly_stats" value="1" checked /> Weekly Stats</label>
-          <label><input type="checkbox" name="roster" value="1" checked /> Roster</label>
-          <label><input type="checkbox" name="extra_data" value="1" /> Extra Data</label>
-          <label><input type="checkbox" name="auto_update" value="1" checked /> Auto Update</label>
-        </div>
-        <button type="submit"${connection ? '' : ' disabled'}>Add Export Source</button>
-        ${connection ? '' : '<p style="color:#b45309;margin-top:12px;">Save the league record first.</p>'}
-      </form>
-    </section>
+        <section class="panel">
+          <h2>Export Sources</h2>
+          <p style="color:#4b5563;">Add one or more export URLs that LEAGUEbuddy should treat as the source of truth for this league.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Export URL</th>
+                <th>Mode</th>
+              </tr>
+            </thead>
+            <tbody>${exportRows}</tbody>
+          </table>
+          <form method="POST" action="/madden/connect/export-source?token=${encodeURIComponent(token)}">
+            <label for="label"><strong>Source Label</strong></label><br />
+            <input id="label" name="label" placeholder="Primary Export Source" />
+            <label for="export_url"><strong>Export URL</strong></label><br />
+            <input id="export_url" name="export_url" placeholder="http://127.0.0.1:PORT/..." required />
+            <div class="check-grid">
+              <label><input type="checkbox" name="league_info" value="1"${checked(true)} /> League Info</label>
+              <label><input type="checkbox" name="weekly_stats" value="1"${checked(true)} /> Weekly Stats</label>
+              <label><input type="checkbox" name="roster" value="1"${checked(true)} /> Roster</label>
+              <label><input type="checkbox" name="extra_data" value="1"${checked(false)} /> Extra Data</label>
+              <label><input type="checkbox" name="auto_update" value="1"${checked(true)} /> Auto Update</label>
+            </div>
+            <button type="submit"${connection ? '' : ' disabled'}>Add Export Source</button>
+            ${connection ? '' : '<p class="warning">Save the league record first.</p>'}
+          </form>
+        </section>
 
-    <section style="border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin:20px 0;">
-      <h2 style="margin-top:0;">Current Status</h2>
-      <ul>
-        <li><strong>Status:</strong> ${escapeHtml(status)}</li>
-        <li><strong>Export Sources:</strong> ${escapeHtml(exportSources.length)}</li>
-        <li><strong>Last Snapshot:</strong> ${escapeHtml(snapshot?.id || 'none yet')}</li>
-        <li><strong>Current Week:</strong> ${escapeHtml(snapshot?.summary?.week || connection?.summary?.week || 'unknown')}</li>
-      </ul>
-      <p>After this page looks right, return to Discord and run <code>/league-status</code>.</p>
-    </section>
+        <section class="panel">
+          <h2>Fallback Import</h2>
+          <p style="color:#4b5563;">The raw JSON import is still available as a fallback while we finish the fully guided customer flow.</p>
+          <details>
+            <summary>Open fallback JSON importer</summary>
+            <form method="POST" action="/madden/import?token=${encodeURIComponent(token)}" style="margin-top:16px;">
+              <textarea id="payload" name="payload" placeholder='{"leagueName":"My League","leagueId":"abc123"}'></textarea>
+              <button type="submit">Import Snapshot</button>
+            </form>
+          </details>
+        </section>
+      </div>
 
-    <details style="margin:24px 0;">
-      <summary><strong>Fallback: manual JSON import</strong></summary>
-      <p style="color:#4b5563;">This is still available as a debug/import fallback, but it is no longer the primary customer path.</p>
-      <form method="POST" action="/madden/import?token=${encodeURIComponent(token)}">
-        <textarea id="payload" name="payload" rows="12" style="width:100%;margin-top:8px;" placeholder='{"leagueName":"My League","leagueId":"abc123"}'></textarea>
-        <div style="margin-top:16px;">
-          <button type="submit">Import Snapshot</button>
-        </div>
-      </form>
-    </details>
+      <div class="stack">
+        <section class="panel meta-card">
+          <span class="eyebrow" style="color:#b58900;">Live Status</span>
+          <h2 style="margin-top:4px;">Current Connection</h2>
+          <div class="stat-grid">
+            <div class="stat">
+              <strong>Status</strong>
+              <span>${escapeHtml(status)}</span>
+            </div>
+            <div class="stat">
+              <strong>Export Sources</strong>
+              <span>${escapeHtml(exportSources.length)}</span>
+            </div>
+            <div class="stat">
+              <strong>Last Snapshot</strong>
+              <span>${escapeHtml(snapshot?.id || 'none')}</span>
+            </div>
+            <div class="stat">
+              <strong>Current Week</strong>
+              <span>${escapeHtml(snapshot?.summary?.week || connection?.summary?.week || 'unknown')}</span>
+            </div>
+          </div>
+          <p style="margin:16px 0 0;color:#475569;">When this looks right, go back to Discord and run <code>/league-status</code>.</p>
+        </section>
+
+        <section class="panel">
+          <span class="eyebrow" style="color:#b58900;">Setup Flow</span>
+          <h2 style="margin-top:4px;">What to do here</h2>
+          <ol style="padding-left:20px;margin:0;">
+            <li>Save your league record.</li>
+            <li>Add at least one export URL.</li>
+            <li>Return to Discord and run <code>/league-status</code>.</li>
+            <li>Continue with the normal setup flow there.</li>
+          </ol>
+        </section>
+      </div>
+    </div>
   `);
 }
 
 export function startConnectServer() {
+  registerHttpRoute({
+    method: 'GET',
+    path: '/madden/assets/ghost-legacy.png',
+    handler: async (_req, res) => {
+      const filePath = path.join(process.cwd(), 'ghost_logos', 'ghost_legacy.png');
+      try {
+        const file = fs.readFileSync(filePath);
+        res.writeHead(200, {
+          'content-type': 'image/png',
+          'cache-control': 'public, max-age=3600',
+        });
+        res.end(file);
+      } catch {
+        res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+        res.end('missing asset');
+      }
+    },
+  });
+
   registerHttpRoute({
     method: 'GET',
     path: '/madden/connect',
