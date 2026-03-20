@@ -17,7 +17,9 @@ const DEPLOY_PROFILE = String(process.env.LB_DEPLOY_PROFILE || 'beta').toLowerCa
 
 const BETA_MADDEN_COMMANDS = new Set([
   'auth',
+  'connectleague',
   'leagues',
+  'league-status',
   'sync',
   'ping',
   'plan',
