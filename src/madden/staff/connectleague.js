@@ -39,14 +39,14 @@ export async function execute(interaction) {
           'Main setup path:',
           '1. Open the dashboard.',
           '2. Save your league name.',
-          '3. Add a public export link.',
-          '4. Click `Import Now` on that export.',
+          '3. Save your league source.',
+          '4. Click `Import Now` on that source.',
           '5. Return to Discord and run `/league-status`.',
         ].join('\n'))
         .addFields(
           { name: 'Discord Server', value: interaction.guild?.name || 'Unknown Server', inline: false },
           { name: 'Dashboard Link', value: setupUrl, inline: false },
-          { name: 'Export Link Rule', value: 'Use a public JSON URL. `localhost` and links that only work on your machine will fail.', inline: false },
+          { name: 'League Source Rule', value: 'Use a public JSON URL. `localhost` and links that only work on your machine will fail.', inline: false },
           { name: 'Support Only', value: `Fallback JSON import endpoint: \`${importUrl}\``, inline: false },
           { name: 'Expires', value: `<t:${Math.floor(new Date(session.expiresAt).getTime() / 1000)}:R>`, inline: false },
           { name: 'Next', value: 'After the dashboard looks right, run `/league-status`.', inline: false },

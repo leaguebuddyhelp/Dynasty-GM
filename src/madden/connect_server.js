@@ -361,6 +361,39 @@ function html(body) {
         .guide-card ul {
           padding-left: 18px;
         }
+        .method-grid {
+          display: grid;
+          gap: 14px;
+          margin-top: 12px;
+        }
+        .method-card {
+          border: 1px solid #eadb95;
+          border-radius: 18px;
+          background: #fffef8;
+          padding: 16px;
+          display: grid;
+          gap: 10px;
+        }
+        .method-badge {
+          display: inline-block;
+          width: fit-content;
+          padding: 5px 10px;
+          border-radius: 999px;
+          background: rgba(255, 204, 0, 0.18);
+          color: #6b5200;
+          font-weight: 800;
+          font-size: 0.78rem;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+        }
+        .method-card h3 {
+          margin: 0;
+          font-size: 1.1rem;
+        }
+        .method-card p {
+          margin: 0;
+          color: #4b5563;
+        }
         details {
           margin-top: 18px;
         }
@@ -538,35 +571,45 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
 
         <section class="panel">
-          <h2>Step 2: Add Export Link</h2>
-          <p style="color:#4b5563;">Paste the public JSON export link LEAGUEbuddy should use to pull league data for this server.</p>
-          <div class="subtle">If your link lives on your own computer, this import will fail because Railway cannot reach it.</div>
+          <h2>Step 2: Choose League Source</h2>
+          <p style="color:#4b5563;">Choose the source LEAGUEbuddy should use for this league. Right now there is one production-ready customer path.</p>
           <div class="info">
-            <strong>How exporting works:</strong>
+            <strong>How this works:</strong>
             <ol class="step-list">
-              <li>Create a public export from your league tool.</li>
-              <li>Copy that export URL.</li>
-              <li>Paste it here and save it.</li>
-              <li>Click <strong>Import Now</strong> on the saved export card.</li>
+              <li>Save your league source below.</li>
+              <li>Click <strong>Import Now</strong> on the saved source card.</li>
               <li>Go back to Discord and run <code>/league-status</code>.</li>
             </ol>
           </div>
-          <div class="source-list">${exportRows}</div>
-          <form method="POST" action="/madden/connect/export-source?token=${encodeURIComponent(token)}">
-            <label for="label"><strong>Export Name</strong></label><br />
-            <input id="label" name="label" placeholder="Primary Export" />
-            <label for="export_url"><strong>Export Link</strong></label><br />
-            <input id="export_url" name="export_url" placeholder="https://your-export-source.example/league.json" required />
-            <div class="check-grid">
-              <label><input type="checkbox" name="league_info" value="1"${checked(true)} /><span>League Info</span></label>
-              <label><input type="checkbox" name="weekly_stats" value="1"${checked(true)} /><span>Weekly Stats</span></label>
-              <label><input type="checkbox" name="roster" value="1"${checked(true)} /><span>Rosters</span></label>
-              <label><input type="checkbox" name="extra_data" value="1"${checked(false)} /><span>Extra Data</span></label>
-              <label><input type="checkbox" name="auto_update" value="1"${checked(true)} /><span>Keep Updated</span></label>
+          <div class="method-grid">
+            <div class="method-card">
+              <span class="method-badge">Recommended</span>
+              <h3>Public Export URL</h3>
+              <p>Use a public <code>https://...</code> link that returns league JSON. This is the live source LEAGUEbuddy will sync from on Railway.</p>
+              <div class="subtle">Do not use <code>localhost</code>, <code>127.0.0.1</code>, or links that only work on your computer.</div>
+              <form method="POST" action="/madden/connect/export-source?token=${encodeURIComponent(token)}">
+                <label for="label"><strong>Source Name</strong></label><br />
+                <input id="label" name="label" placeholder="Primary League Source" />
+                <label for="export_url"><strong>Public Export URL</strong></label><br />
+                <input id="export_url" name="export_url" placeholder="https://your-export-source.example/league.json" required />
+                <div class="check-grid">
+                  <label><input type="checkbox" name="league_info" value="1"${checked(true)} /><span>League Info</span></label>
+                  <label><input type="checkbox" name="weekly_stats" value="1"${checked(true)} /><span>Weekly Stats</span></label>
+                  <label><input type="checkbox" name="roster" value="1"${checked(true)} /><span>Rosters</span></label>
+                  <label><input type="checkbox" name="extra_data" value="1"${checked(false)} /><span>Extra Data</span></label>
+                  <label><input type="checkbox" name="auto_update" value="1"${checked(true)} /><span>Keep Updated</span></label>
+                </div>
+                <button type="submit"${connection ? '' : ' disabled'}>Save League Source</button>
+                ${connection ? '' : '<p class="warning">Save the league name first.</p>'}
+              </form>
             </div>
-            <button type="submit"${connection ? '' : ' disabled'}>Add Export Source</button>
-            ${connection ? '' : '<p class="warning">Save the league name first.</p>'}
-          </form>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Step 3: Import From Saved Source</h2>
+          <p style="color:#4b5563;">After you save a source, use the button below it to pull the latest league data into LEAGUEbuddy.</p>
+          <div class="source-list">${exportRows}</div>
         </section>
 
         <section class="panel">
@@ -629,8 +672,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <h2 style="margin-top:4px;">What to do next</h2>
           <ol style="padding-left:20px;margin:0;">
             <li>Save your league name.</li>
-            <li>Add your public export link.</li>
-            <li>Click <strong>Import Now</strong>.</li>
+            <li>Save your league source.</li>
+            <li>Click <strong>Import Now</strong> on that source.</li>
             <li>Go back to Discord and run <code>/league-status</code>.</li>
           </ol>
         </section>

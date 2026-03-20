@@ -28,7 +28,7 @@ export async function execute(interaction) {
           .setColor(0xf39c12)
           .setDescription('No league is connected to this server yet.')
           .addFields(
-            { name: 'Next', value: 'Run `/connectleague`, open the dashboard, save the league name, add a public export link, then click `Import Now`.', inline: false },
+            { name: 'Next', value: 'Run `/connectleague`, open the dashboard, save the league name, save your league source, then click `Import Now`.', inline: false },
           ),
       ],
     });
@@ -49,7 +49,7 @@ export async function execute(interaction) {
           { name: 'Week', value: String(snapshot?.summary?.week || connection?.summary?.week || 'unknown'), inline: true },
           { name: 'Teams', value: String(snapshot?.summary?.teams || connection?.summary?.teams || 0), inline: true },
           { name: 'Last Import', value: snapshot?.createdAt ? `<t:${Math.floor(new Date(snapshot.createdAt).getTime() / 1000)}:R>` : 'never', inline: false },
-          { name: 'Next', value: 'If you need fresh data, go back to the dashboard, click `Import Now`, then rerun `/league-status`.', inline: false },
+          { name: 'Next', value: 'If you need fresh data, go back to the dashboard, use your saved league source, click `Import Now`, then rerun `/league-status`.', inline: false },
         ),
     ],
   });
