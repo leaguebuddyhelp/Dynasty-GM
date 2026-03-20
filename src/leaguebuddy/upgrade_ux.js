@@ -11,6 +11,7 @@ import { PLANS } from './guild_store.js';
 const PLAN_COPY = {
   [PLANS.free]: {
     title: 'Free',
+    audience: 'Best for getting a league connected and running fast.',
     summary: 'Good for getting a league connected and running the base Madden workflow.',
     unlocks: [
       'Core league utilities',
@@ -20,6 +21,7 @@ const PLAN_COPY = {
   },
   [PLANS.standard]: {
     title: 'Standard',
+    audience: 'Best for leagues that want trade, scouting, and draft tools.',
     summary: 'Adds the draft and scouting layer once the league setup is complete.',
     unlocks: [
       'Everything in Free',
@@ -30,6 +32,7 @@ const PLAN_COPY = {
   },
   [PLANS.premium]: {
     title: 'Premium',
+    audience: 'Best for leagues that want the full LEAGUEbuddy stack.',
     summary: 'Unlocks the full Madden v2 product surface for leagues that want the complete stack.',
     unlocks: [
       'Everything in Standard',
@@ -46,6 +49,10 @@ function asPlan(plan) {
 
 function planEnvKey(plan) {
   return plan === PLANS.premium ? 'LB_UPGRADE_URL_PREMIUM' : 'LB_UPGRADE_URL_STANDARD';
+}
+
+function planAmountEnvKey(plan) {
+  return plan === PLANS.premium ? 'LB_STRIPE_PREMIUM_AMOUNT_CENTS' : 'LB_STRIPE_STANDARD_AMOUNT_CENTS';
 }
 
 function maybeUrl(value) {
@@ -96,19 +103,44 @@ export function pricingLinkFor(plan) {
   return maybeUrl(process.env?.LB_UPGRADE_URL);
 }
 
+function formatUsd(cents) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
+  }).format(cents / 100);
+}
+
+function planPriceLabel(plan) {
+  if (plan === PLANS.free) return '$0';
+  const amount = Number(process.env?.[planAmountEnvKey(plan)] || 0);
+  return Number.isFinite(amount) && amount > 0 ? formatUsd(amount) : null;
+}
+
+function planHeading(plan, activePlan) {
+  const title = PLAN_COPY[plan].title;
+  const price = planPriceLabel(plan);
+  const current = activePlan === plan ? ' • current' : '';
+  return `${title}${price ? ` • ${price}` : ''}${current}`;
+}
+
 export function buildPricingEmbeds({ currentPlan = null } = {}) {
   const activePlan = currentPlan ? asPlan(currentPlan) : null;
   const pricing = new EmbedBuilder()
     .setTitle('LEAGUEbuddy Madden Pricing')
     .setColor(0x5865f2)
-    .setDescription('Use `/start-here` first in your server for the full setup path. Use this screen for plan details and checkout links.')
+    .setDescription([
+      'Pick a plan below, then use the buy buttons.',
+      'After checkout, invite LEAGUEbuddy to your server and run `/start-here` there.',
+    ].join('\n'))
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
         const entry = PLAN_COPY[plan];
-        const header = activePlan === plan ? `${entry.title} (current)` : entry.title;
         return {
-          name: header,
+          name: planHeading(plan, activePlan),
           value: [
+            entry.audience,
+            '',
             entry.summary,
             '',
             ...entry.unlocks.map((line) => `• ${line}`),
@@ -117,14 +149,24 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
               ? 'Payment link available below.'
               : plan === PLANS.free
                 ? 'No payment needed.'
-                : 'Payment link not configured yet.',
+                : 'Checkout link not configured yet.',
           ].join('\n'),
           inline: false,
         };
       }),
     );
 
-  return [pricing];
+  const nextStep = new EmbedBuilder()
+    .setColor(0x57f287)
+    .setTitle('How Buying Works')
+    .setDescription([
+      '1. Choose Standard or Premium below.',
+      '2. Finish checkout.',
+      '3. Invite LEAGUEbuddy to your own server.',
+      '4. Run `/start-here` there.',
+    ].join('\n'));
+
+  return [pricing, nextStep];
 }
 
 export function buildPostPaymentEmbed() {
