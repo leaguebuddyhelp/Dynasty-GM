@@ -93,7 +93,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
   const pricing = new EmbedBuilder()
     .setTitle('LEAGUEbuddy Madden Pricing')
     .setColor(0x5865f2)
-    .setDescription('Pick a plan, pay with Stripe, invite LEAGUEbuddy to your server, then run `/claim-plan` to unlock access.')
+    .setDescription('Use `/start-here` first in your server for the full setup path. Use this screen for plan details and checkout links.')
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
         const entry = PLAN_COPY[plan];
@@ -124,11 +124,11 @@ export function buildPostPaymentEmbed() {
     .setTitle('After You Buy')
     .setColor(0x57f287)
     .setDescription([
-      '1. Buy your plan with one of the buttons below.',
-      '2. Invite LEAGUEbuddy to the server you want to activate.',
-      '3. Run `/claim-plan` and paste the payment reference from your Stripe receipt email.',
+      '1. Invite LEAGUEbuddy to the server you want to activate.',
+      '2. Run `/start-here` in that server.',
+      '3. If you are using the manual claim flow, run `/claim-plan` and paste the payment reference from your Stripe receipt email.',
       '4. Run `/plan` to confirm access.',
-      '5. Run `/setup-check` if the server still needs setup.',
+      '5. Continue the setup flow from `/start-here`.',
     ].join('\n'));
 }
 
@@ -227,19 +227,20 @@ export function buildActivationFollowup({ guildId, plan }) {
     '**Customer follow-up**',
     `Plan **${plan}** is now active for guild **${guildId}**.`,
     'Next steps for the commissioner:',
+    '• Run `/start-here`.',
     '• Run `/plan` to confirm access.',
-    '• Run `/setup-check` to verify setup state.',
-    '• If setup is incomplete, finish the missing channel/role mapping before using paid features.',
+    '• Finish the setup flow before using paid features.',
   ].join('\n');
 }
 
 export function buildClaimInstructions() {
   return [
     'How to claim access:',
-    '1. Buy from `/pricing`.',
+    '1. Buy from `/pricing` if you need a paid plan.',
     '2. Invite LEAGUEbuddy to your server.',
     '3. Run `/claim-plan`.',
     '4. Paste either your one-time claim code or the Stripe payment reference from your receipt email.',
+    '5. Run `/start-here`.',
   ].join('\n');
 }
 
