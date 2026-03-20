@@ -135,6 +135,14 @@ function html(body) {
           padding: 12px 14px;
           margin-top: 12px;
         }
+        .info {
+          background: #fff8dc;
+          color: #5b4300;
+          border: 1px solid #ecd56b;
+          border-radius: 16px;
+          padding: 14px 16px;
+          margin: 0 0 18px;
+        }
         .big-action {
           display: block;
           width: 100%;
@@ -217,25 +225,27 @@ function html(body) {
           font-size: 0.92em;
           word-break: break-all;
         }
-        table {
-          width: 100%;
-          border-collapse: collapse;
+        .source-list {
+          display: grid;
+          gap: 12px;
           margin-bottom: 18px;
         }
-        th {
-          text-align: left;
+        .source-card {
+          border: 1px solid #eadb95;
+          border-radius: 16px;
+          background: #fffef8;
+          padding: 14px;
+        }
+        .source-card strong {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 1rem;
+        }
+        .source-meta {
+          display: grid;
+          gap: 6px;
           color: var(--lb-muted);
-          font-size: 0.82rem;
-          text-transform: uppercase;
-          letter-spacing: 0.6px;
-        }
-        td, th {
-          padding: 10px 8px 10px 0;
-          border-top: 1px solid #e5e7eb;
-          vertical-align: top;
-        }
-        td:last-child, th:last-child {
-          padding-right: 0;
+          font-size: 0.95rem;
         }
         .pill {
           display: inline-block;
@@ -254,12 +264,24 @@ function html(body) {
         }
         .check-grid label {
           display: flex;
-          align-items: center;
-          gap: 8px;
+          align-items: flex-start;
+          gap: 10px;
           padding: 10px 12px;
           border-radius: 12px;
           border: 1px solid #e6d78a;
           background: #fffdf4;
+        }
+        .check-grid input {
+          width: 20px;
+          height: 20px;
+          margin: 2px 0 0;
+          flex: 0 0 auto;
+        }
+        .check-grid span {
+          display: block;
+          min-width: 0;
+          word-break: break-word;
+          font-size: 0.98rem;
         }
         details {
           margin-top: 18px;
@@ -282,6 +304,12 @@ function html(body) {
           .hero img {
             width: 72px;
             height: 72px;
+          }
+          .check-grid {
+            grid-template-columns: 1fr;
+          }
+          .stat-grid {
+            grid-template-columns: 1fr;
           }
         }
       </style>
@@ -344,13 +372,15 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
   const exportRows = exportSources.length
     ? exportSources.map((source) => `
-        <tr>
-          <td>${escapeHtml(source.label)}</td>
-          <td><code>${escapeHtml(source.exportUrl)}</code></td>
-          <td>${source.autoUpdate ? '<span class="pill">Auto</span>' : 'Manual'}</td>
-        </tr>
+        <div class="source-card">
+          <strong>${escapeHtml(source.label)}</strong>
+          <div class="source-meta">
+            <div><code>${escapeHtml(source.exportUrl)}</code></div>
+            <div>Mode: ${source.autoUpdate ? '<span class="pill">Auto</span>' : 'Manual'}</div>
+          </div>
+        </div>
       `).join('')
-    : `<tr><td colspan="3" style="color:#6b7280;">No export sources added yet.</td></tr>`;
+    : `<div class="source-card" style="color:#6b7280;">No export links added yet.</div>`;
 
   return html(`
     <section class="hero">
@@ -389,27 +419,26 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <h2>Add Export Link</h2>
           <p style="color:#4b5563;">Paste the export link LEAGUEbuddy should use to pull league data for this server.</p>
           <div class="subtle">If you are only testing, you can skip this and just use <strong>Load Demo League</strong>.</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Export Link</th>
-                <th>Mode</th>
-              </tr>
-            </thead>
-            <tbody>${exportRows}</tbody>
-          </table>
+          <div class="info">
+            <strong>How to use this:</strong>
+            <ol style="margin:8px 0 0;padding-left:18px;">
+              <li>Create or get the export link from your league data source.</li>
+              <li>Paste that link here.</li>
+              <li>Save it, then run <code>/league-status</code> in Discord.</li>
+            </ol>
+          </div>
+          <div class="source-list">${exportRows}</div>
           <form method="POST" action="/madden/connect/export-source?token=${encodeURIComponent(token)}">
             <label for="label"><strong>Export Name</strong></label><br />
             <input id="label" name="label" placeholder="Primary Export" />
             <label for="export_url"><strong>Export Link</strong></label><br />
-            <input id="export_url" name="export_url" placeholder="http://127.0.0.1:PORT/..." required />
+            <input id="export_url" name="export_url" placeholder="Paste your real export link here" required />
             <div class="check-grid">
-              <label><input type="checkbox" name="league_info" value="1"${checked(true)} /> League Info</label>
-              <label><input type="checkbox" name="weekly_stats" value="1"${checked(true)} /> Weekly Stats</label>
-              <label><input type="checkbox" name="roster" value="1"${checked(true)} /> Rosters</label>
-              <label><input type="checkbox" name="extra_data" value="1"${checked(false)} /> Extra Data</label>
-              <label><input type="checkbox" name="auto_update" value="1"${checked(true)} /> Keep Updated</label>
+              <label><input type="checkbox" name="league_info" value="1"${checked(true)} /><span>League Info</span></label>
+              <label><input type="checkbox" name="weekly_stats" value="1"${checked(true)} /><span>Weekly Stats</span></label>
+              <label><input type="checkbox" name="roster" value="1"${checked(true)} /><span>Rosters</span></label>
+              <label><input type="checkbox" name="extra_data" value="1"${checked(false)} /><span>Extra Data</span></label>
+              <label><input type="checkbox" name="auto_update" value="1"${checked(true)} /><span>Keep Updated</span></label>
             </div>
             <button type="submit"${connection ? '' : ' disabled'}>Add Export Source</button>
             ${connection ? '' : '<p class="warning">Save the league name first.</p>'}
