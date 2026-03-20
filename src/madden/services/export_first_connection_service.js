@@ -21,6 +21,7 @@ import { runSync } from '../sync.js';
 import { SnallabotProvider } from '../providers/SnallabotProvider.js';
 
 const CONNECT_SESSION_TTL_MS = 1000 * 60 * 60 * 24;
+const LEAGUE_FETCH_TIMEOUT_MS = 12000;
 
 function nowPlus(ms) {
   return new Date(Date.now() + ms).toISOString();
@@ -277,6 +278,28 @@ function isExpectedEaLoopbackUrl(value) {
   );
 }
 
+async function withTimeout(task, ms, message) {
+  let timeoutId;
+  try {
+    return await Promise.race([
+      task,
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(message)), ms);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+async function fetchLeaguesWithClient(client) {
+  return withTimeout(
+    Promise.resolve().then(() => client.getLeagues()),
+    LEAGUE_FETCH_TIMEOUT_MS,
+    'EA is taking too long to load your league list. Refresh the page and try again.',
+  );
+}
+
 function createSnapshotForGuild({
   guildId,
   connectSessionId = null,
@@ -392,7 +415,7 @@ export async function getLeagueConnectionDashboardState(token) {
   if (guildTokens && !availableLeagues.length && !dashboard.session?.selectedLeague) {
     try {
       const client = await createEAClientForGuild(dashboard.session.guildId);
-      const leagues = await client.getLeagues();
+      const leagues = await fetchLeaguesWithClient(client);
       availableLeagues = Array.isArray(leagues) ? leagues : [];
       connectionRepository.updateConnectSessionByToken(token, {
         availableLeagues,
@@ -573,7 +596,7 @@ export async function submitEaPersona({
         blazeId: savedTokens.blazeId,
         gameYear: savedTokens.gameYear,
       });
-      const leagues = await client.getLeagues();
+      const leagues = await fetchLeaguesWithClient(client);
       availableLeagues = Array.isArray(leagues) ? leagues : [];
     } catch (error) {
       leagueFetchError = error?.message || 'EA connected, but the league list could not be loaded yet.';
@@ -596,7 +619,7 @@ export async function submitEaPersona({
       ok: true,
       message: availableLeagues.length
         ? 'EA account connected. Choose your league below.'
-        : 'EA account connected. LEAGUEbuddy is still trying to load your league list.',
+        : 'EA account connected. If your leagues do not appear right away, refresh this page and try again.',
     };
   } catch (error) {
     return {
@@ -624,7 +647,7 @@ export async function selectEaLeague({
       ? dashboard.session.availableLeagues
       : await (async () => {
         const client = await createEAClientForGuild(dashboard.session.guildId);
-        return client.getLeagues();
+        return fetchLeaguesWithClient(client);
       })();
     const selectedLeague = (Array.isArray(leagues) ? leagues : []).find((league) => {
       const summary = summarizeLeagueRecord(league);
