@@ -137,6 +137,15 @@ await startOptionalService({
   },
 });
 
+await startOptionalService({
+  enabled: envEnabled('MADDEN_CONNECT_ENABLED', true),
+  label: 'madden-connect',
+  loader: async () => {
+    const { startConnectServer } = await import('./madden/connect_server.js');
+    startConnectServer();
+  },
+});
+
 // Register startseason_confirm button handler
 import * as startseasonConfirm from './interactions/startseason_confirm.js';
 // Dynamically load all interaction handlers from src/interactions

@@ -31,6 +31,10 @@ export function getLeaguebuddyClaimsStorePath() {
   return path.join(getLeaguebuddyDir(), 'claims.json');
 }
 
+export function getLeaguebuddyMaddenConnectionsPath() {
+  return path.join(getLeaguebuddyDir(), 'madden_connections.json');
+}
+
 export function getGuildsRoot() {
   return path.join(getDataRoot(), 'guilds');
 }
@@ -93,6 +97,7 @@ export default {
   getLeaguebuddyGuildStorePath,
   getLeaguebuddyAuditLogPath,
   getLeaguebuddyClaimsStorePath,
+  getLeaguebuddyMaddenConnectionsPath,
   getLeaguebuddyRecognitionStorePath,
   getGuildsRoot,
   getGuildOverlayConfigPath,
