@@ -148,6 +148,9 @@ function html(body) {
           gap: 12px;
           margin: 12px 0 0;
         }
+        .mobile-only {
+          display: none;
+        }
         .step-panel {
           position: relative;
           overflow: hidden;
@@ -399,6 +402,9 @@ function html(body) {
           color: #4b5563;
           display: block;
         }
+        .compact-summary {
+          display: none;
+        }
         form {
           margin: 0;
         }
@@ -617,6 +623,17 @@ function html(body) {
             padding: 18px 16px;
             border-radius: 18px;
           }
+          .timeline {
+            display: none;
+          }
+          .compact-summary {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+          }
+          .compact-summary .summary-item {
+            padding: 10px 12px;
+          }
           h1 {
             font-size: clamp(1.8rem, 8vw, 2.5rem);
             line-height: 1.02;
@@ -675,6 +692,9 @@ function html(body) {
           .step-chip {
             align-self: flex-start;
           }
+          .step-panel {
+            scroll-margin-top: 14px;
+          }
           .timeline-step,
           .check-item,
           .guide-card,
@@ -705,6 +725,24 @@ function html(body) {
             padding: 12px;
             border-radius: 12px;
           }
+          .guide-grid {
+            margin: 10px 0 14px;
+          }
+          .guide-card ul {
+            padding-left: 16px;
+          }
+          .source-meta {
+            gap: 8px;
+          }
+          .mini-list {
+            margin-top: 12px;
+          }
+          .summary-list {
+            margin-top: 12px;
+          }
+          .panel + .panel {
+            margin-top: 0;
+          }
           code {
             word-break: break-word;
           }
@@ -734,12 +772,71 @@ function html(body) {
           .panel {
             padding: 16px 14px;
           }
+          .step-kicker,
+          .eyebrow {
+            font-size: 0.72rem;
+          }
+          .step-chip {
+            font-size: 0.74rem;
+            padding: 7px 10px;
+          }
+          .checklist {
+            gap: 8px;
+          }
+          .check-item {
+            gap: 10px;
+            padding: 10px 11px;
+          }
+          .summary-item,
+          .mini-item,
+          .guide-card,
+          .source-card,
+          .method-card,
+          .stat {
+            padding: 11px;
+          }
+          .stat span {
+            font-size: 1rem;
+          }
+          .mini-item strong,
+          .stat strong,
+          .summary-item strong {
+            margin-bottom: 4px;
+          }
+          select,
+          input {
+            padding: 14px 12px;
+            margin-bottom: 14px;
+          }
+          button,
+          .button-link {
+            padding: 14px 14px;
+            border-radius: 12px;
+          }
+          .mobile-only {
+            display: block;
+          }
+          .desktop-only {
+            display: none;
+          }
           .panel p,
           .panel li,
           .panel label,
           .panel span,
           .panel div {
             font-size: 0.98rem;
+          }
+          .source-actions {
+            margin-top: 10px;
+          }
+          .step-header {
+            margin-bottom: 10px;
+          }
+          .subtle,
+          .warning,
+          .notice,
+          .info {
+            font-size: 0.94rem;
           }
           .step-list {
             padding-left: 18px;
@@ -1025,6 +1122,22 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <div class="subtle" style="margin-bottom:14px;">
             <strong>This server is being linked to:</strong> ${escapeHtml(activeLeagueName)} <code>${escapeHtml(activeLeagueId)}</code>
           </div>
+          <div class="compact-summary">
+            <div class="summary-item done">
+              <strong>Progress</strong>
+              <p>${doneCount} of ${setupChecks.length} items finished.</p>
+            </div>
+            <div class="summary-item active">
+              <strong>Next step</strong>
+              <p>${escapeHtml(currentTask)}</p>
+            </div>
+            ${syncError ? `
+              <div class="summary-item blocker">
+                <strong>Current blocker</strong>
+                <p>${escapeHtml(syncErrorSummary.detail)}</p>
+              </div>
+            ` : ''}
+          </div>
           <div class="timeline">
             <div class="${stepClass(1)}">
               ${stepState(1)}
@@ -1068,7 +1181,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             </div>
           </div>
           <div class="guide-grid">
-            <div class="guide-card">
+            <div class="guide-card desktop-only">
               <h3>What this step does</h3>
               <ul>
                 <li>Ties this dashboard to your Discord server</li>
@@ -1179,6 +1292,9 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <select id="selected_league_id" name="league_id" required>
                 ${leagueRows}
               </select>
+              <div class="mobile-only subtle" style="margin:0 0 12px;">
+                Double-check the league name and team before you connect it.
+              </div>
               <button type="submit">Connect This League</button>
             </form>
           ` : selectedLeague ? `
@@ -1226,7 +1342,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       </div>
 
       <div class="stack sidebar-stack">
-        <section class="panel meta-card sidebar-card">
+        <section class="panel meta-card sidebar-card desktop-only">
           <span class="eyebrow" style="color:#b58900;">Live Status</span>
           <h2 style="margin-top:4px;">Current Connection</h2>
           <div class="mini-list">
