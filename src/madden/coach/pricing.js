@@ -16,7 +16,7 @@ export async function execute(interaction) {
   await interaction.editReply({
     embeds: [
       ...buildPricingEmbeds({ currentPlan }),
-      buildPostPaymentEmbed({ guildId }),
+      buildPostPaymentEmbed(),
     ],
     components: buildPricingLinkRows({ currentPlan }),
   });

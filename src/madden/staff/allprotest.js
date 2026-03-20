@@ -292,7 +292,7 @@ function injectCentersIfNeeded(players, minCenters = 2, leagueId = null) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-allprotest')
+  .setName('allprotest')
   .setDescription('Post All-Pro First/Second teams (staff-only).')
   .setDefaultMemberPermissions(null)
   .addStringOption(opt =>
@@ -349,7 +349,7 @@ export async function execute(interaction, options = {}) {
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
     if (isButton) return interaction.update({ content: 'No league configured.', components: [], embeds: [] });
-    return interaction.editReply({ content: 'No league configured. Run /madden-set-league first.' });
+    return interaction.editReply({ content: 'No league configured. Run /set-league first.' });
   }
 
   // Load list

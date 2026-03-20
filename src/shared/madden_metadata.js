@@ -1,9 +1,9 @@
 import fs from 'fs';
-import path from 'path';
 import { loadLeagueSnapshot, resolveLeagueIdWithConfig } from '../madden/madden_data.js';
 import { getGuildChannelMap } from './madden_guild_config.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
+const CHANNEL_MAP_FILE = getMaddenDataFilePath('madden_channel_ids.json');
 
 function safeReadJSON(file, fallback = {}) {
   try {

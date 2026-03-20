@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { getDataFilePath } from '../leaguebuddy/paths.js';
 
-const STORE_PATH = path.join(process.cwd(), 'data', 'trade_drafts.json');
+const STORE_PATH = getDataFilePath('trade_drafts.json');
 const MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 const drafts = new Map();

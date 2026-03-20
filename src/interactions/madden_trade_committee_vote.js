@@ -12,7 +12,6 @@ import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const PENDING_PROOFS_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.json');
-const PROOF_CHANNEL_ID = '1482473294769684561'; // pending trades (upload proof)
 
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
@@ -169,7 +168,13 @@ export async function execute(interaction) {
   const roleMap = loadRoleMap(interaction.guildId);
   const coachRoleId = roleMap['Ghost Legacy'];
   const coachRoleMention = coachRoleId ? `<@&${coachRoleId}> ` : '';
-  const committeeRoleId = '1460399406737002579';
+  const committeeRoleId = roleMap['Trade Committee']
+    || roleMap['Ghost Legacy Trade Committee']
+    || roleMap['Madden Trade Committee']
+    || roleMap['Madden Trade Committe']
+    || roleMap['LB Trade Committee']
+    || roleMap['LEAGUEbuddy Trade Committee']
+    || null;
   // Only tag Ghost Legacy + the two team roles on final approve/deny
   const teamMentions = [
     teamRoleMention(trade.yourTeam, roleMap),
@@ -267,7 +272,10 @@ export async function execute(interaction) {
       .setColor(0x57F287);
 
     try {
-      const proofChan = await interaction.client.channels.fetch(PROOF_CHANNEL_ID).catch(() => null);
+      const proofChannelId = channelMap['Pending Trades'] || channelMap['Trade Committee'] || null;
+      const proofChan = proofChannelId
+        ? await interaction.client.channels.fetch(proofChannelId).catch(() => null)
+        : null;
       if (proofChan?.isTextBased()) {
         await proofChan.send({
           content: `${tags} Trade approved by committee. Upload Madden proof below.`,

@@ -1,17 +1,11 @@
-import fs from 'fs';
-import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden_data.js';
 import { computePlayerValue } from '../madden_trade_modal_submit.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
+import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
-const DEV_LABEL = { 0: 'Normal', 1: 'Star', 2: 'SS', 3: 'X' };
-const DEV_EMOJI_FILE = path.join(process.cwd(), 'data', 'madden', 'dev_emojis.json');
-
-function loadJson(file, fallback = {}) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
-}
+const DEV_LABEL = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
 
 function num(n, digits = 1) {
   const v = Number(n);
@@ -24,10 +18,8 @@ function capHit(p) {
   return cap > 0 ? `$${(cap / 1_000_000).toFixed(1)}M` : '—';
 }
 
-function dev(p, emojis) {
+function dev(p) {
   const d = p.devTrait ?? p.dev ?? 0;
-  const emojiId = emojis?.[d] ?? emojis?.[String(d)];
-  if (emojiId) return `<:dev_${d}:${emojiId}>`;
   return DEV_LABEL[d] || DEV_LABEL[0];
 }
 
@@ -77,7 +69,7 @@ function chunkLines(lines, maxCount = 12) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-roster')
+  .setName('roster')
   .setDescription(coachCommandDescription('roster'))
   .addStringOption(o =>
     o.setName('team')
@@ -101,7 +93,7 @@ export function buildRosterEmbeds(snapshot, teamName) {
       const pos = p.position || '—';
       const age = p.age ?? '—';
       const ovr = p.overallRating ?? p.playerBestOvr ?? p.ovrRating ?? '—';
-      const devTrait = dev(p, loadJson(DEV_EMOJI_FILE, {}));
+      const devTrait = dev(p);
       const cap = capHit(p);
       const value = num(computePlayerValue(p));
       const name = `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown';
@@ -109,13 +101,14 @@ export function buildRosterEmbeds(snapshot, teamName) {
     });
 
   const chunks = chunkLines(lines, 12);
+  const logoAsset = getNflTeamLogoAsset(teamInfo, `roster_${teamInfo.teamId}.png`);
   const embeds = chunks.map((chunk, idx) => new EmbedBuilder()
     .setTitle(`${fullTeamName} — Roster`)
     .setDescription(chunk.join('\n'))
     .setColor(0x00a3ff)
     .setFooter({ text: chunks.length > 1 ? `${coachVoiceFooter('roster', 'Live roster card')} • Page ${idx + 1}/${chunks.length}` : coachVoiceFooter('roster', 'Live roster card') })
   );
-  return { embeds, teamInfo };
+  return { embeds, teamInfo, logoAsset };
 }
 
 export async function execute(interaction) {
@@ -124,7 +117,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    await interaction.reply({ content: coachErrorBlurb('noLeague', 'No Madden league set. Run /madden-set-league first.'), ephemeral: true });
+    await interaction.reply({ content: coachErrorBlurb('noLeague', 'No league is set. Run /set-league first.'), ephemeral: true });
     return;
   }
   try {
@@ -140,6 +133,8 @@ export async function execute(interaction) {
       return;
     }
     const buttons = [];
+    let files = [];
+    files = applyEmbedThumbnailFromAsset(result.embeds[0], files, result.logoAsset);
     if (result.embeds.length > 1) {
       const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = await import('discord.js');
       const baseId = `madden_roster_page_${leagueId}_${result.teamInfo.teamId}`;
@@ -157,7 +152,7 @@ export async function execute(interaction) {
       );
       buttons.push(row);
     }
-    await interaction.editReply({ embeds: [result.embeds[0]], components: buttons });
+    await interaction.editReply({ embeds: [result.embeds[0]], components: buttons, files });
   } catch (err) {
     console.error('[madden-roster] failed:', err);
     if (interaction.deferred || interaction.replied) {

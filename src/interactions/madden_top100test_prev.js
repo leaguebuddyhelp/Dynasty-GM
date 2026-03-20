@@ -17,9 +17,9 @@ export async function execute(interaction) {
   } catch (err) {
     console.error('[madden_top100test_prev] failed:', err);
     if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: 'Interaction expired. Please rerun `/madden-top100test`.', flags: 64 }).catch(() => {});
+      await interaction.reply({ content: 'Interaction expired. Please rerun `/top100test`.', flags: 64 }).catch(() => {});
     } else {
-      await interaction.followUp({ content: 'Interaction expired. Please rerun `/madden-top100test`.', flags: 64 }).catch(() => {});
+      await interaction.followUp({ content: 'Interaction expired. Please rerun `/top100test`.', flags: 64 }).catch(() => {});
     }
   }
 }

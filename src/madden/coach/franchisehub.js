@@ -1,18 +1,19 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { loadRoleMap } from '../staff/staffUtils.js';
+import { loadRoleMapForGuild } from '../staff/staffUtils.js';
 import { buildFranchiseProfileContext, buildFranchiseProfile } from '../franchise_profile.js';
 import { getLegacyOpportunityForTeam, getRecognitionPerkState, getRecognitionGameOfWeek, getRecognitionLeaderboard, getRecognitionPurchaseReceipts, getRecognitionUserSummary, getRecognitionWeeklyOpportunity, inferRecognitionContext, recordRecognitionThreadReply } from '../../shared/league_recognition.js';
 import { formatImpactValue, getSportsbookOpenBetOpportunity, getSportsbookUserCard } from '../../shared/madden_sportsbook.js';
 import { collectParticipation, listThreadStates } from '../../shared/madden_thread_notifier.js';
 import { coachCommandDescription, coachPanelIntro, coachVoiceFooter, coachVoiceTitle, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { formatTeamLabelWithEmoji, RECOGNITION_EMOJIS } from '../../shared/madden_visuals.js';
+import { applyEmbedThumbnailFromAsset, getNflBrandAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
 export const featureKey = 'recognition';
 
 const data = new SlashCommandBuilder()
-  .setName('madden-franchisehub')
+  .setName('franchisehub')
   .setDescription(coachCommandDescription('franchisehub'));
 
 function normalizeName(name = '') {
@@ -27,7 +28,7 @@ function sameTeamLabel(left = '', right = '') {
 }
 
 function findCoachTeam(member, snapshot) {
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(member?.guild?.id);
   const teamInfos = snapshot?.teams?.leagueTeamInfoList || [];
   const teamCandidates = teamInfos.map((team) => ({
     teamId: Number(team.teamId),
@@ -167,7 +168,7 @@ function weeklyChecklistSummary(weekState = {}) {
     `Weekly Activity checklist: ${done.length} of ${total} done`,
     done.length ? `Checked off:\n${done.map((item) => `- ${item}`).join('\n')}` : 'Checked off:\n- none yet',
     open.length ? `Still open this week:\n${open.map((item) => `- ${item}`).join('\n')}` : 'Still open this week:\n- complete',
-    'Use: /madden-gamestrategy, /madden-streamlink, draft/scout tools, and your game thread.',
+    'Use: /gamestrategy, /streamlink, draft/scout tools, and your game thread.',
   ].join('\n');
 }
 
@@ -517,7 +518,7 @@ function currentBetsSummary(card = null) {
       .map((line) => [String(line.gameId), line])
   );
   const lines = bets.slice(0, 2).map((bet) => {
-    const wager = formatImpactValue(Number(bet?.wager || 0)).replace(/\s*<:impact:[^>]+>/, ' impact');
+    const wager = formatImpactValue(Number(bet?.wager || 0));
     const line = linesByGameId.get(String(bet?.gameId || ''));
     const matchupLabel = bet.matchupLabel || (line ? `${line.awayTeam} at ${line.homeTeam}` : 'Unknown game');
     return `- ${matchupLabel} • ${bet.betLabel || `${bet.market} ${bet.selection}`} • ${wager}`;
@@ -529,7 +530,7 @@ function currentBetsSummary(card = null) {
 export async function execute(interaction) {
   await interaction.deferReply({ flags: 64 });
 
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
+  const leagueId = requireLeagueIdForGuild(interaction.guildId);
   if (!leagueId) {
     await interaction.editReply({ content: coachErrorBlurb('noLeague', 'No Madden league is set yet.') });
     return;
@@ -566,6 +567,8 @@ export async function execute(interaction) {
   });
   if (!teamName) {
     const embed = buildSpectatorHubEmbed({ recognition, leagueId, snapshot });
+    let files = [];
+    files = applyEmbedThumbnailFromAsset(embed, files, getNflBrandAsset({ attachmentName: 'nfl.png' }));
     embed.addFields({ name: 'Legacy Leaders', value: legacyLeaderboard });
     const controls = new ActionRowBuilder();
     if (recognition.weekNumber) {
@@ -576,7 +579,7 @@ export async function execute(interaction) {
           .setStyle(ButtonStyle.Primary),
       );
     }
-    await interaction.editReply({ embeds: [embed], components: controls.components.length ? [controls] : [] });
+    await interaction.editReply({ embeds: [embed], components: controls.components.length ? [controls] : [], files });
     return;
   }
 
@@ -618,6 +621,8 @@ export async function execute(interaction) {
   const embed = new EmbedBuilder()
     .setColor(0x00b0f4)
     .setTitle(`${formatTeamLabelWithEmoji(profile.teamName)} — Franchise Hub`);
+  let files = [];
+  files = applyEmbedThumbnailFromAsset(embed, files, getNflTeamLogoAsset(profile.teamName, 'franchisehub_team.png'));
   if (hubIntro) embed.setDescription(hubIntro);
   embed
     .addFields(
@@ -661,7 +666,7 @@ export async function execute(interaction) {
     );
   }
 
-  await interaction.editReply({ embeds: [embed], components: [controls] });
+  await interaction.editReply({ embeds: [embed], components: [controls], files });
 }
 
 function formatNeedLabel(need) {

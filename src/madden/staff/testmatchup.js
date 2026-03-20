@@ -35,7 +35,7 @@ const mascot = (name) => {
 
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-testmatchup')
+  .setName('testmatchup')
   .setDescription('Staff: create a single test matchup thread with full Madden-style embed + mascot buttons')
   .addStringOption(o => o.setName('away').setDescription('Away team name (e.g., Denver Broncos)').setRequired(false))
   .addStringOption(o => o.setName('home').setDescription('Home team name (e.g., Cleveland Browns)').setRequired(false))

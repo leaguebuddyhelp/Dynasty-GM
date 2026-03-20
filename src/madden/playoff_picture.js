@@ -1,14 +1,14 @@
 import fs from 'fs';
-import path from 'path';
+import { EmbedBuilder } from 'discord.js';
 import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
-
-const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
+import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
+import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 
 function loadSnapshot(leagueId) {
-  const file = path.join(process.cwd(), 'data', 'madden', 'leagues', `${leagueId}.json`);
+  const file = getMaddenLeagueSnapshotPath(leagueId);
   const raw = fs.readFileSync(file, 'utf8');
   return JSON.parse(raw);
 }
@@ -16,31 +16,13 @@ function loadSnapshot(leagueId) {
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
 }
-function loadEmojiMap() {
-  try { return JSON.parse(fs.readFileSync(TEAM_EMOJIS_FILE, 'utf8')); } catch { return {}; }
-}
-
-function teamEmoji(name, emojiMap) {
-  if (!name) return '';
-  const target = name.toLowerCase();
-  const mascot = target.split(/\s+/).pop();
-  for (const [key, val] of Object.entries(emojiMap || {})) {
-    const base = key.toLowerCase();
-    if (base === target || base === mascot || target.includes(base) || base.includes(target)) {
-      return `<:${key.replace(/\s+/g, '')}:${val}>`;
-    }
-  }
-  return '';
-}
-
-function teamNameMap(snapshot, emojiMap) {
+function teamNameMap(snapshot) {
   const map = {};
   const list = snapshot?.teams?.leagueTeamInfoList || [];
   list.forEach(t => {
     if (!t.teamId) return;
     const name = getFullTeamName(t, `Team ${t.teamId}`);
-    const emoji = teamEmoji(name, emojiMap);
-    map[t.teamId] = emoji || name || `Team ${t.teamId}`;
+    map[t.teamId] = name || `Team ${t.teamId}`;
   });
   return map;
 }
@@ -77,8 +59,8 @@ function topSeeds(standings, conferenceName, teams) {
   return seeds;
 }
 
-export async function updatePlayoffPicture(client, leagueId) {
-  const guildId = client?.guilds?.cache?.first?.()?.id || null;
+export async function updatePlayoffPicture(client, leagueId, guildId = null) {
+  const resolvedGuildId = guildId || client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const displayWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? 0;
@@ -89,41 +71,68 @@ export async function updatePlayoffPicture(client, leagueId) {
     await resetPlayoffPicture(client);
     return;
   }
-  const emojiMap = loadEmojiMap();
-  const teams = teamNameMap(snapshot, emojiMap);
+  const teams = teamNameMap(snapshot);
 
   const afcSeeds = topSeeds(standings, 'afc', teams);
   const nfcSeeds = topSeeds(standings, 'nfc', teams);
 
-  const channelMap = loadChannelMap(guildId);
+  const channelMap = loadChannelMap(resolvedGuildId);
   const channelId = channelMap['Playoff Picture'];
   if (!channelId) throw new Error('Playoff Picture channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
   if (!channel || !channel.isTextBased()) throw new Error('Playoff Picture channel not accessible');
 
-  const embed = {
-    title: 'Madden Playoff Picture',
-    color: 0x00b0f4,
-    fields: [
-      { name: 'AFC', value: afcSeeds.join('\n'), inline: true },
-      { name: 'NFC', value: nfcSeeds.join('\n'), inline: true },
+  const boardImage = await renderLeagueBoardImage({
+    title: 'Playoff Picture',
+    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • Week ${displayWeek || '?'}`,
+    attachmentName: 'playoff_picture_board.png',
+    accentColor: '#00B0F4',
+    columns: [
+      {
+        title: 'AFC',
+        items: afcSeeds.map((line) => {
+          const match = String(line).match(/^(\d+)\)\s(.+?)\s—\s(.+)$/);
+          if (!match) return { label: line, meta: '', teamLike: null };
+          return {
+            label: `#${match[1]} ${match[2]}`,
+            meta: match[3],
+            teamLike: match[2],
+          };
+        }),
+      },
+      {
+        title: 'NFC',
+        items: nfcSeeds.map((line) => {
+          const match = String(line).match(/^(\d+)\)\s(.+?)\s—\s(.+)$/);
+          if (!match) return { label: line, meta: '', teamLike: null };
+          return {
+            label: `#${match[1]} ${match[2]}`,
+            meta: match[3],
+            teamLike: match[2],
+          };
+        }),
+      },
     ],
-    timestamp: new Date().toISOString(),
-  };
+  });
+  const embed = new EmbedBuilder()
+    .setTitle('Madden Playoff Picture')
+    .setColor(0x00b0f4)
+    .setTimestamp(new Date());
+  if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
 
-  const pinId = getPinId('playoff_picture', guildId);
+  const pinId = getPinId('playoff_picture', resolvedGuildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) {
     console.warn('[playoff_picture] pin not found; skipping create');
     return;
   }
-  await msg.edit({ embeds: [embed], content: null }).catch(() => null);
+  await msg.edit({ embeds: [embed], files: boardImage ? [boardImage] : [], content: null }).catch(() => null);
 }
 
-export async function resetPlayoffPicture(client) {
-  const guildId = client?.guilds?.cache?.first?.()?.id || null;
-  const channelMap = loadChannelMap(guildId);
+export async function resetPlayoffPicture(client, guildId = null) {
+  const resolvedGuildId = guildId || client?.guilds?.cache?.first?.()?.id || null;
+  const channelMap = loadChannelMap(resolvedGuildId);
   const channelId = channelMap['Playoff Picture'];
   if (!channelId) throw new Error('Playoff Picture channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -136,7 +145,7 @@ export async function resetPlayoffPicture(client) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('playoff_picture', guildId);
+  const pinId = getPinId('playoff_picture', resolvedGuildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) {

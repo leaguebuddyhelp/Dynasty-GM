@@ -6,10 +6,11 @@ import { cleanupPendingRumorReviews, getRumorPendingPolicy, queueMaddenContentRe
 import { brandText, brandTitle } from './madden_branding.js';
 import { getRumorFeedbackForGuild } from './madden_rumor_feedback.js';
 import { loadMaddenChannelMap } from './madden_metadata.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const LOG_FILE = path.join(process.cwd(), 'data', 'madden', 'staff_activity_log.json');
-const SCHEDULER_FILE = path.join(process.cwd(), 'data', 'madden', 'story_scheduler.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
+const LOG_FILE = getMaddenDataFilePath('staff_activity_log.json');
+const SCHEDULER_FILE = getMaddenDataFilePath('story_scheduler.json');
 
 function safeReadJSON(file, fallback) {
   try {

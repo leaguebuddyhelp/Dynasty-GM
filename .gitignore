@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*
+cookies.json
 
 # Node modules
 node_modules/

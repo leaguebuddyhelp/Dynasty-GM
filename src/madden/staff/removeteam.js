@@ -1,6 +1,4 @@
 import { SlashCommandBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
 import { updateAvailableTeamsPin } from '../../../madden/available_teams.js';
 import { updateFairSimBoard } from '../../shared/fairsim_board.js';
 import { loadLeagueSnapshot, resolveLeagueIdWithConfig } from '../../../madden/madden_data.js';
@@ -9,10 +7,9 @@ import { resetSportsbookUserSeason } from '../../shared/madden_sportsbook.js';
 import { appendMaddenStaffLog, postMaddenStaffLog } from '../../shared/madden_staff_ops.js';
 import { removeCoachAssignment } from '../../shared/madden_coach_assignments.js';
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
-const ASSIGNABLE = ['Madden Trade Committe', 'Madden Trade Committee'];
+const ASSIGNABLE = ['Trade Committee', 'Ghost Legacy Trade Committee', 'Madden Trade Committee', 'Madden Trade Committe', 'LB Trade Committee', 'LEAGUEbuddy Trade Committee'];
 
 // Founder/test-protection: removing the founder's coach role for testing shouldn't wipe their state.
 // Add IDs here as needed.
@@ -29,21 +26,6 @@ function isProtectedCoachTarget(user) {
   return false;
 }
 
-function loadRoleMap() {
-  try {
-    return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-function hasStaffRole(member, roleMap) {
-  return STAFF_ROLES.some(r => {
-    const id = roleMap[r];
-    return id && member.roles.cache.has(id);
-  });
-}
-
 function coachRoleIds(roleMap) {
   return Object.entries(roleMap)
     .filter(([name]) => / coach$/i.test(name))
@@ -56,15 +38,29 @@ function hasAnyCoachRole(member, roleMap) {
   return ids.some((id) => member.roles.cache.has(id));
 }
 
-const roleChoices = (roleMap) => Object.keys(roleMap)
-  .filter(name =>
-    name.endsWith(' Coach') ||
-    ASSIGNABLE.includes(name)
-  )
-  .map(name => ({ name, value: name }));
+function roleNamePriority(name = '') {
+  if (name === 'LEAGUEbuddy Trade Committee') return 100;
+  if (ASSIGNABLE.includes(name)) return 90;
+  const words = String(name).trim().split(/\s+/).length;
+  return name.endsWith(' Coach') ? words : 0;
+}
+
+const roleChoices = (roleMap) => {
+  const byRoleId = new Map();
+  for (const [name, roleId] of Object.entries(roleMap || {})) {
+    if (!roleId) continue;
+    if (!name.endsWith(' Coach') && !ASSIGNABLE.includes(name)) continue;
+    const key = String(roleId);
+    const existing = byRoleId.get(key);
+    if (!existing || roleNamePriority(name) > roleNamePriority(existing.name)) {
+      byRoleId.set(key, { name, value: name });
+    }
+  }
+  return [...byRoleId.values()].sort((a, b) => a.name.localeCompare(b.name));
+};
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-removerole')
+  .setName('removerole')
   .setDescription('Remove up to two Madden roles (coach or trade committee) from a user (Commish/Co-Commish only).')
   .addUserOption(o => o.setName('user').setDescription('User to update').setRequired(true))
   .addStringOption(o => o.setName('role1').setDescription('First role to remove').setRequired(true).setAutocomplete(true))
@@ -72,11 +68,11 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(null);
 
 export async function execute(interaction) {
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   await interaction.deferReply({ ephemeral: true });
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
-    await interaction.editReply({ content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+    await interaction.editReply({ content: 'Only server admins, LB Commish, or LB Co-Commish can use this command.' });
     return;
   }
   const target = interaction.options.getUser('user');
@@ -146,7 +142,7 @@ export async function execute(interaction) {
         const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
         const snapshot = leagueId ? loadLeagueSnapshot(leagueId) : null;
         const seasonKey = getMaddenSeasonKey(snapshot);
-        const resetReason = `Coach role removed via /madden-removerole (${[r1?.name, r2?.name].filter(Boolean).join(', ')})`;
+        const resetReason = `Coach role removed via /removerole (${[r1?.name, r2?.name].filter(Boolean).join(', ')})`;
         const recognitionReset = resetRecognitionUserSeason({
           guildId: interaction.guildId,
           league: 'madden',
@@ -205,7 +201,7 @@ export async function execute(interaction) {
 
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   const focused = interaction.options.getFocused().toLowerCase();
 
   let filteredRoles = [];

@@ -6,7 +6,7 @@ import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_co
 export const featureKey = 'scouting_draft';
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-bigboard')
+  .setName('bigboard')
   .setDescription(coachCommandDescription('bigboard'));
 
 export async function execute(interaction) {
@@ -17,7 +17,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    const payload = { content: coachErrorBlurb('noLeague', 'No league set. Run /madden-set-league first.') };
+    const payload = { content: coachErrorBlurb('noLeague', 'No league set. Run /set-league first.') };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;

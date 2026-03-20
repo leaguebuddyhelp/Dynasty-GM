@@ -279,7 +279,7 @@ async function execute(interaction) {
 
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    await safeEditReply(interaction, { content: 'No league set. Run /madden-set-league first.' });
+    await safeEditReply(interaction, { content: 'No league set. Run /set-league first.' });
     return;
   }
 
@@ -384,7 +384,7 @@ async function execute(interaction) {
 }
 
 const data = new SlashCommandBuilder()
-  .setName('madden-availableteams')
+  .setName('availableteams')
   .setDescription('List unassigned teams (staff-only).')
   .setDefaultMemberPermissions(null);
 

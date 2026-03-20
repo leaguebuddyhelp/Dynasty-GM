@@ -1,7 +1,7 @@
 import fs from 'fs';
-import path from 'path';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const PICK_FILE = path.join(process.cwd(), 'data', 'madden', 'pick_overrides.json');
+const PICK_FILE = getMaddenDataFilePath('pick_overrides.json');
 
 function loadOverrides() {
   try {

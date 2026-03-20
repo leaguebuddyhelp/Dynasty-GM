@@ -30,6 +30,10 @@ export async function execute(interaction) {
             '**Setup status synced**',
             `Madden overlay: ${maddenOverlayComplete ? '✅ complete' : '❌ incomplete/missing'}`,
             `LEAGUEbuddy setupCompleted: **${rec.setupCompleted ? 'yes' : 'no'}**`,
+            '',
+            rec.setupCompleted
+                ? 'Next: run `/server-check`.'
+                : 'Next: run `/setup-channels`, then `/setup-roles`.',
         ].join('\n'),
     });
 }

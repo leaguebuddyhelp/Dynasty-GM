@@ -3,7 +3,7 @@ import { loadRoleMap, hasStaffRole } from './staffUtils.js';
 import { loadStrikeStore, saveStrikeStore } from '../../shared/madden_strikes.js';
 
 export const data = new SlashCommandBuilder()
-    .setName('madden-clearstrikes')
+    .setName('clearstrikes')
     .setDescription('STAFF: Clear all Madden strike/fairsim totals for a season (DANGEROUS).')
     .addStringOption((opt) =>
         opt

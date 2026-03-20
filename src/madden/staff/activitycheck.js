@@ -25,7 +25,7 @@ function hasStaffRole(member, roleMap) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-activitycheck')
+  .setName('activitycheck')
   .setDescription('Post an activity check to the configured channel (staff only).')
   .setDefaultMemberPermissions(null);
 

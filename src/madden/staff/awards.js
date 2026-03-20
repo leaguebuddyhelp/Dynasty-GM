@@ -4,7 +4,7 @@ import { hasStaffRole, loadRoleMap } from './staffUtils.js';
 import { updateAwards } from '../../../madden/awards.js';
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-awards')
+  .setName('awards')
   .setDescription('View weekly awards (staff-only). Defaults to private; optional public post.')
   .addIntegerOption(opt =>
     opt.setName('week')
@@ -43,7 +43,7 @@ export async function execute(interaction) {
 
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    return interaction.editReply({ content: 'No league set. Run /madden-set-league first.' });
+    return interaction.editReply({ content: 'No league set. Run /set-league first.' });
   }
 
   try {

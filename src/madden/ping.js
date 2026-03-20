@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 
 const data = new SlashCommandBuilder()
-  .setName('madden-ping')
+  .setName('ping')
   .setDescription('Verify Madden commands are live.');
 
 async function execute(interaction) {

@@ -1,24 +1,33 @@
 import http from 'http';
 import url from 'url';
-import fs from 'fs';
-import path from 'path';
-import { EA_LOGIN_URL, CLIENT_SECRET, CLIENT_ID, AUTH_SOURCE, APP_REDIRECT_URL, YEAR } from './ea_constants.js';
+
 import {
-  fetchTokenInfo,
+  APP_REDIRECT_URL,
+  AUTH_SOURCE,
+  CLIENT_ID,
+  CLIENT_SECRET,
+  YEAR,
+} from './ea_constants.js';
+import {
+  exchangePersonaToken,
+  extractValidPersonas,
   fetchEntitlements,
   fetchPersonas,
-  extractValidPersonas,
-  exchangePersonaToken,
+  fetchTokenInfo,
 } from './ea_personas.js';
-import { saveTokens as saveTokensDb } from './madden_db.js';
+import {
+  consumeAuthState,
+  getGuildAuthStartUrl,
+  saveGuildEATokens,
+} from './ea_guild_auth.js';
+import { registerHttpRoute, startHealthcheckServer } from '../leaguebuddy/healthcheck.js';
 
-const TOKEN_FILE = path.join(process.cwd(), 'data', 'madden', 'tokens.json');
 const PORT = Number(process.env.MADDEN_AUTH_PORT || 4001);
+const HOST = process.env.MADDEN_AUTH_HOST || '127.0.0.1';
+const USE_SHARED_HTTP = String(process.env.PORT || '').trim().length > 0;
 
 function html(body) {
-  return `<!doctype html><html><head><title>Madden Auth</title></head><body style="font-family: sans-serif; max-width: 640px; margin: 40px auto;">
-${body}
-</body></html>`;
+  return `<!doctype html><html><head><title>Madden Auth</title></head><body style="font-family: sans-serif; max-width: 680px; margin: 40px auto;">${body}</body></html>`;
 }
 
 async function exchangeCode(code) {
@@ -31,7 +40,7 @@ async function exchangeCode(code) {
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
       'Accept-Encoding': 'gzip',
     },
-    body
+    body,
   });
   const json = await res.json();
   if (!res.ok || !json.access_token) {
@@ -40,14 +49,8 @@ async function exchangeCode(code) {
   return {
     accessToken: json.access_token,
     refreshToken: json.refresh_token,
-    expiry: Date.now() + (json.expires_in || 0) * 1000
+    expiry: Date.now() + (json.expires_in || 0) * 1000,
   };
-}
-
-function saveTokens(tokens) {
-  fs.mkdirSync(path.dirname(TOKEN_FILE), { recursive: true });
-  fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
-  saveTokensDb(tokens);
 }
 
 function chooseBestPersona(personas) {
@@ -55,8 +58,8 @@ function chooseBestPersona(personas) {
     let s = 0;
     const ent = `${p.entitlement || ''}`.toUpperCase();
     const ns = `${p.namespaceName || ''}`.toUpperCase();
-    if (p.systemConsole && p.systemConsole.toLowerCase() === 'ps5') s += 5;
-    if (p.systemConsole && p.systemConsole.toLowerCase() === 'xbsx') s += 4;
+    if (p.systemConsole?.toLowerCase() === 'ps5') s += 5;
+    if (p.systemConsole?.toLowerCase() === 'xbsx') s += 4;
     if (ent.includes('MADDEN_26')) s += 3;
     if (ns.includes('MADDEN')) s += 1;
     return s;
@@ -110,38 +113,48 @@ async function buildPersonaScopedTokens(code) {
 }
 
 export function startAuthServer() {
-  const server = http.createServer(async (req, res) => {
+  const handler = async (req, res) => {
     const parsed = url.parse(req.url, true);
     const pathname = parsed.pathname || '';
 
     if (pathname === '/madden/auth') {
+      const guildId = String(parsed.query.guild_id || '').trim();
       res.writeHead(200, { 'Content-Type': 'text/html' });
+      if (!guildId) {
+        res.end(html('<h2>Missing server</h2><p>No guild_id was provided. Start from <code>/auth</code> inside Discord so LEAGUEbuddy can tie the redirect flow back to the correct server.</p>'));
+        return;
+      }
+      const loginUrl = getGuildAuthStartUrl(guildId);
       res.end(html(`
-        <h2>Madden EA Login</h2>
-        <p>1) Click the link below and sign in to EA (same as Madden Companion).</p>
-        <p>2) You will be redirected back here automatically.</p>
-        <p><a href="${EA_LOGIN_URL}">Login to EA</a></p>
-        <p>If you prefer manual: the redirect URL is ${APP_REDIRECT_URL}</p>
+        <h2>League Account Connection</h2>
+        <p>This redirect flow will be saved for Discord server <strong>${guildId}</strong>.</p>
+        <p><a href="${loginUrl}">Open connection link</a></p>
       `));
       return;
     }
 
     if (pathname === '/madden/callback') {
-      const code = parsed.query.code;
+      const code = String(parsed.query.code || '').trim();
+      const stateId = String(parsed.query.state || '').trim();
       res.writeHead(200, { 'Content-Type': 'text/html' });
       if (!code) {
-        res.end(html(`<h3>Missing code</h3><p>No ?code= found in URL.</p>`));
+        res.end(html('<h3>Missing code</h3><p>No `?code=` value was found in the callback URL.</p>'));
+        return;
+      }
+      const state = consumeAuthState(stateId);
+      if (!state?.guildId) {
+        res.end(html('<h3>Missing auth state</h3><p>This redirect session could not be tied back to a Discord server. Start the flow again from <code>/auth</code> inside the target server.</p>'));
         return;
       }
       try {
         const tokens = await buildPersonaScopedTokens(code);
-        saveTokens(tokens);
+        saveGuildEATokens(state.guildId, tokens);
         res.end(html(`
-          <h3>Tokens saved</h3>
-          <p>Your persona-scoped Madden tokens were stored successfully.</p>
+          <h3>League Connection Saved</h3>
+          <p>Saved successfully for Discord server <strong>${state.guildId}</strong>.</p>
           <p><strong>Console:</strong> ${tokens.console}</p>
           <p><strong>Persona:</strong> ${tokens.personaName} (${tokens.blazeId})</p>
-          <p>You can close this tab and use the bot normally without reauthing again unless EA invalidates the refresh token.</p>
+          <p>You can close this tab and go back to Discord. Run <code>/install-league</code> next.</p>
         `));
       } catch (e) {
         res.end(html(`<h3>Exchange failed</h3><pre>${e.message}</pre>`));
@@ -151,16 +164,24 @@ export function startAuthServer() {
 
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not found');
-  });
+  };
 
-  // Log and swallow listen errors so the bot doesn't crash if the port is blocked
+  if (USE_SHARED_HTTP) {
+    registerHttpRoute({ method: 'GET', path: '/madden/auth', handler });
+    registerHttpRoute({ method: 'GET', path: '/madden/callback', handler });
+    startHealthcheckServer();
+    console.log(`[madden-auth] Registered shared routes for ${APP_REDIRECT_URL}`);
+    return null;
+  }
+
+  const server = http.createServer(handler);
+
   server.on('error', (err) => {
-    console.error(`[madden-auth] Failed to listen on http://127.0.0.1:${PORT}: ${err?.message || err}`);
+    console.error(`[madden-auth] Failed to listen on http://${HOST}:${PORT}: ${err?.message || err}`);
   });
 
-  // Bind to localhost to avoid sandbox/permission issues on 0.0.0.0
-  server.listen(PORT, "127.0.0.1", () => {
-    console.log(`[madden-auth] Listening on http://127.0.0.1:${PORT}/madden/auth`);
+  server.listen(PORT, HOST, () => {
+    console.log(`[madden-auth] Listening on http://${HOST}:${PORT}/madden/auth`);
   });
 
   return server;

@@ -1,8 +1,8 @@
 import fs from 'fs';
-import path from 'path';
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
+import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 
-const SCOUT_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_points.json');
+const SCOUT_PATH = getMaddenDataFilePath('scout_points.json');
 
 function safeReadJSON(file, fallback) {
   try {

@@ -12,20 +12,21 @@ import {
 import { brandTitle } from './madden_branding.js';
 import { awardRecognitionPoints, consumeRecognitionPerk, getRecognitionGameOfWeek, getRecognitionPerkState, hasRecognitionPerk } from './league_recognition.js';
 import { getCoachAssignmentMap } from './madden_coach_assignments.js';
-import { loadLeagueSnapshot, resolveLeagueIdWithConfig } from '../../madden/madden_data.js';
+import { loadLeagueSnapshot, requireLeagueIdForGuild } from '../../madden/madden_data.js';
 import { getMaddenSnapshotContext } from './madden_metadata.js';
 import { loadMaddenChannelMap } from './madden_metadata.js';
 import { getGuildRoleMap } from './madden_guild_config.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const STORE_PATH = path.join(process.cwd(), 'data', 'madden', 'sportsbook.json');
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const WEEKLY_GAME_LOG_FILE = path.join(process.cwd(), 'data', 'madden', 'weekly_game_log.json');
+const STORE_PATH = getMaddenDataFilePath('sportsbook.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
+const WEEKLY_GAME_LOG_FILE = getMaddenDataFilePath('weekly_game_log.json');
 
 const STARTING_BANKROLL = 40;
 const MAX_GAME_MARKETS = 2;
 const SPREAD_PRICE = -110;
 const TOTAL_PRICE = -110;
-const IMPACT_EMOJI = '<:impact:1482989570185363466>';
+const IMPACT_EMOJI = 'impact';
 const GAME_OF_WEEK_BET_BONUS = 2;
 const FIRST_BET_BOOST_MULTIPLIER = 2;
 const FIRST_BET_BOOST_MAX_EXTRA = 10;
@@ -169,8 +170,7 @@ function buildSportsbookIntel(lines = [], gotw = null) {
 function resolveRecognitionSeasonKeyForGuild(guildId, fallbackSeasonKey) {
   if (!guildId) return fallbackSeasonKey;
   try {
-    const leagueId = resolveLeagueIdWithConfig(guildId);
-    if (!leagueId) return fallbackSeasonKey;
+    const leagueId = requireLeagueIdForGuild(guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     const year = snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear
       || snapshot?.info?.calendarYear
@@ -713,8 +713,12 @@ function buildTeamsById(snapshot) {
 }
 
 function getSportsbookContextForGuild(guildId) {
-  const leagueId = resolveLeagueIdWithConfig(guildId);
-  if (!leagueId) return null;
+  let leagueId = null;
+  try {
+    leagueId = requireLeagueIdForGuild(guildId);
+  } catch {
+    return null;
+  }
   let snapshot = null;
   try {
     snapshot = loadLeagueSnapshot(leagueId);
@@ -1066,8 +1070,7 @@ function buildTeamsByIdFromStoreOrSnapshot(lines = [], guildId = null) {
   }
   if (guildId == null) return map;
   try {
-    const leagueId = resolveLeagueIdWithConfig(guildId);
-    if (!leagueId) return map;
+    const leagueId = requireLeagueIdForGuild(guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     for (const team of snapshot?.teams?.leagueTeamInfoList || []) {
       const teamId = Number(team?.teamId);
@@ -1651,7 +1654,7 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
                 })
                 .join('\n'),
               (bets || []).length > 10 ? `\n…and ${bets.length - 10} more slip(s).` : null,
-              `\nOpen **/madden-franchisehub** → **Open Sportsbook** to review the board + your card anytime.`,
+              `\nOpen **/franchisehub** → **Open Sportsbook** to review the board + your card anytime.`,
             ].filter(Boolean).join('\n'),
           )
           .setFooter({ text: 'Private DM • results are reflected in Franchise Hub' })

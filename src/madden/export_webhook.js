@@ -1,12 +1,13 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import { getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 
 const EXPORT_PORT = Number(process.env.MADDEN_EXPORT_PORT || 4010);
-const EXPORT_ENABLED = process.env.MADDEN_EXPORT_WEBHOOK_ENABLED !== 'false' && process.env.MADDEN_EXPORT_WEBHOOK_ENABLED !== '0';
+const EXPORT_ENABLED = String(process.env.MADDEN_EXPORT_WEBHOOK_ENABLED ?? 'false').toLowerCase() === 'true';
 const EXPORT_SECRET = process.env.MADDEN_EXPORT_SECRET || '';
 const MAX_BODY_BYTES = Number(process.env.MADDEN_EXPORT_MAX_BYTES || 2 * 1024 * 1024); // default 2MB
-const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
+const LEAGUE_DIR = getMaddenLeaguesDir();
 const PREVIOUS_DIR = path.join(LEAGUE_DIR, 'previous');
 
 function loadJson(file) {

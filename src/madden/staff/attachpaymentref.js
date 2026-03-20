@@ -7,13 +7,13 @@ export const data = new SlashCommandBuilder()
   .setDescription('Admin-only: attach a manual Stripe/payment reference to a guild record.')
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addStringOption((o) =>
-    o.setName('guild_id')
-      .setDescription('Optional target guild id. Defaults to this server.')
-      .setRequired(false))
-  .addStringOption((o) =>
     o.setName('payment_reference')
       .setDescription('Stripe/payment reference')
       .setRequired(true))
+  .addStringOption((o) =>
+    o.setName('guild_id')
+      .setDescription('Optional target guild id. Defaults to this server.')
+      .setRequired(false))
   .addStringOption((o) =>
     o.setName('payment_source')
       .setDescription('Optional payment source')

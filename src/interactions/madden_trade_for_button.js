@@ -1,13 +1,13 @@
 import { ActionRowBuilder, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
 import fs from 'fs';
-import path from 'path';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { canTrade } from '../shared/madden_trade_utils.js';
 import { saveTradeDraft } from '../shared/trade_draft_store.js';
 import { buildButtons } from './trade_builder_add_assets.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 
 function loadRoleMap() {
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
@@ -86,9 +86,11 @@ export async function execute(interaction) {
   } catch {
     return;
   }
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
-    await interaction.editReply({ content: 'No league set. Run /madden-set-league first.', components: [] });
+  let leagueId = null;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch (error) {
+    await interaction.editReply({ content: error?.message || 'No league is mapped to this server yet. Run /set-league first.', components: [] });
     return;
   }
   if (!canTrade(leagueId)) {

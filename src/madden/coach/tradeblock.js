@@ -1,16 +1,19 @@
-import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { computePlayerValue as computeValueBase } from '../../../madden/madden_trade_modal_submit.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
+import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
+import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
 export const featureKey = 'trades_basic';
 
-const BLOCK_FILE = path.join(process.cwd(), 'data', 'madden', 'trade_block.json');
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+const BLOCK_FILE = getMaddenDataFilePath('trade_block.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
+const DEV_EMOJI_FILE = getMaddenDataFilePath('dev_emojis.json');
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
@@ -116,18 +119,19 @@ async function announce(client, roleMap, channelMap, teamName, cleanLabelText, d
   const room = 90 - base.length; // ensure well under 100
   if (shortLabel.length > room) shortLabel = shortLabel.slice(0, Math.max(5, room));
   const customId = `${base}${encodeURIComponent(shortLabel)}`;
-  const embed = {
-    title: 'New Trade Block Addition',
-    description: `${detailText || cleanLabelText}\nTeam: ${teamName}`,
-    color: 0x00AE86,
-    timestamp: new Date().toISOString(),
-  };
+  const embed = new EmbedBuilder()
+    .setTitle('New Trade Block Addition')
+    .setDescription(`${detailText || cleanLabelText}\nTeam: ${teamName}`)
+    .setColor(0x00AE86)
+    .setTimestamp(new Date());
+  let files = [];
+  files = applyEmbedThumbnailFromAsset(embed, files, getNflTeamLogoAsset(teamName, 'trade_team.png'));
   const btn = new ButtonBuilder()
     .setCustomId(customId)
     .setLabel('Trade For')
     .setStyle(ButtonStyle.Primary);
   const row = new ActionRowBuilder().addComponents(btn);
-  const msg = await target.send({ content: coachTag || null, embeds: [embed], components: [row] }).catch(() => null);
+  const msg = await target.send({ content: coachTag || null, embeds: [embed], components: [row], files }).catch(() => null);
   return msg ? { messageId: msg.id, threadId: thread?.id || null } : null;
 }
 
@@ -151,16 +155,11 @@ function findPlayer(roster, name) {
 
 function formatDev(dev) {
   const map = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
-  const emojiMap = (() => {
-    try { return JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'madden', 'dev_emojis.json'), 'utf8')); } catch { return {}; }
-  })();
-  const emojiId = emojiMap?.[dev] ?? emojiMap?.[String(dev)];
-  if (emojiId) return `<:dev_${dev}:${emojiId}>`;
   return map[dev] || 'Normal';
 }
 
 const data = new SlashCommandBuilder()
-  .setName('madden-tradeblock')
+  .setName('tradeblock')
   .setDescription(coachCommandDescription('tradeblock'))
   .addStringOption(o =>
     o.setName('action')
@@ -219,8 +218,7 @@ async function autocomplete(interaction) {
   try {
     const focused = interaction.options.getFocused(true);
     const roleMap = loadRoleMap(interaction.guildId);
-    const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-    if (!leagueId) throw new Error('no league');
+    const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     const teamId = findCoachTeam(interaction.member, roleMap, snapshot);
     if (!teamId) throw new Error('no team');
@@ -269,8 +267,7 @@ async function execute(interaction) {
     const positionChoice = interaction.options.getString('position');
     const positionFilter = positionChoice === 'ALL' ? null : positionChoice;
     const playerName = interaction.options.getString('player');
-    const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-    if (!leagueId) throw new Error('No league set. Run /madden-set-league first.');
+    const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     const roleMap = loadRoleMap(interaction.guildId);
     const channelMap = loadChannelMap(interaction.guildId);

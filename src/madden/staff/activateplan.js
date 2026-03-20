@@ -2,16 +2,11 @@ import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { PLANS, SUBSCRIPTION_STATUSES } from '../../leaguebuddy/guild_store.js';
 import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
 import { activatePlanManually } from '../../leaguebuddy/manual_billing_service.js';
-import { buildActivationFollowup } from '../../leaguebuddy/upgrade_ux.js';
 
 export const data = new SlashCommandBuilder()
   .setName('activateplan')
   .setDescription('Admin-only: manually activate a guild plan after payment confirmation.')
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-  .addStringOption((o) =>
-    o.setName('guild_id')
-      .setDescription('Optional target guild id. Defaults to this server.')
-      .setRequired(false))
   .addStringOption((o) =>
     o.setName('plan')
       .setDescription('Plan to activate')
@@ -21,6 +16,10 @@ export const data = new SlashCommandBuilder()
         { name: 'Standard', value: PLANS.standard },
         { name: 'Premium', value: PLANS.premium },
       ))
+  .addStringOption((o) =>
+    o.setName('guild_id')
+      .setDescription('Optional target guild id. Defaults to this server.')
+      .setRequired(false))
   .addStringOption((o) =>
     o.setName('subscription_status')
       .setDescription('Optional status override')
@@ -85,7 +84,7 @@ export async function execute(interaction) {
       `Payment reference: ${rec.billing?.paymentReference || '(none)'}`,
       `Payment source: ${rec.billing?.paymentSource || '(none)'}`,
       '',
-      buildActivationFollowup({ guildId, plan: rec.plan }),
+      'Next: run `/auth`.',
     ].join('\n'),
   });
 }

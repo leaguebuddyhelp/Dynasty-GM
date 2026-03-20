@@ -3,6 +3,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  PermissionsBitField,
 } from 'discord.js';
 
 import { PLANS } from './guild_store.js';
@@ -14,7 +15,6 @@ const PLAN_COPY = {
     unlocks: [
       'Core league utilities',
       'Game threads and schedule helpers',
-      'Basic trade workflows',
       'Light stats and pinned content',
     ],
   },
@@ -23,6 +23,7 @@ const PLAN_COPY = {
     summary: 'Adds the draft and scouting layer once the league setup is complete.',
     unlocks: [
       'Everything in Free',
+      'Trade center + committee workflow',
       'Scouting and draft tools',
       'Light staff ops features',
     ],
@@ -52,6 +53,28 @@ function maybeUrl(value) {
   return trimmed ? trimmed : null;
 }
 
+export function inviteLinkFor() {
+  const direct = maybeUrl(process.env.LB_BOT_INVITE_URL);
+  if (direct) return direct;
+  const clientId = maybeUrl(process.env.CLIENT_ID);
+  if (!clientId) return null;
+  const permissions = new PermissionsBitField([
+    PermissionsBitField.Flags.ViewChannel,
+    PermissionsBitField.Flags.SendMessages,
+    PermissionsBitField.Flags.ManageChannels,
+    PermissionsBitField.Flags.ManageRoles,
+    PermissionsBitField.Flags.ManageThreads,
+    PermissionsBitField.Flags.MentionEveryone,
+    PermissionsBitField.Flags.EmbedLinks,
+    PermissionsBitField.Flags.AttachFiles,
+    PermissionsBitField.Flags.ReadMessageHistory,
+    PermissionsBitField.Flags.UseExternalEmojis,
+    PermissionsBitField.Flags.AddReactions,
+  ]).bitfield.toString();
+  const scopes = encodeURIComponent('bot applications.commands');
+  return `https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=${scopes}&permissions=${permissions}`;
+}
+
 function upgradePlansFor(currentPlan = PLANS.free) {
   const plan = asPlan(currentPlan);
   if (plan === PLANS.free) return [PLANS.standard, PLANS.premium];
@@ -70,7 +93,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
   const pricing = new EmbedBuilder()
     .setTitle('LEAGUEbuddy Madden Pricing')
     .setColor(0x5865f2)
-    .setDescription('Choose the tier that matches the league tools you want to unlock. Final activation is still handled manually after payment is confirmed.')
+    .setDescription('Pick a plan, pay with Stripe, invite LEAGUEbuddy to your server, then run `/claim-plan` to unlock access.')
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
         const entry = PLAN_COPY[plan];
@@ -96,16 +119,16 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
   return [pricing];
 }
 
-export function buildPostPaymentEmbed({ guildId = null } = {}) {
+export function buildPostPaymentEmbed() {
   return new EmbedBuilder()
-    .setTitle('After You Pay')
+    .setTitle('After You Buy')
     .setColor(0x57f287)
     .setDescription([
-      '1. Pay using the Stripe payment link.',
-      `2. Send your server id to the admin handling activation${guildId ? `: \`${guildId}\`` : '.'}`,
-      '3. Wait for the plan to be activated manually.',
+      '1. Buy your plan with one of the buttons below.',
+      '2. Invite LEAGUEbuddy to the server you want to activate.',
+      '3. Run `/claim-plan` and paste the payment reference from your Stripe receipt email.',
       '4. Run `/plan` to confirm access.',
-      '5. Run `/madden-setup-check` if setup still needs work.',
+      '5. Run `/setup-check` if the server still needs setup.',
     ].join('\n'));
 }
 
@@ -121,6 +144,16 @@ export function buildPricingLinkRows({ currentPlan = null } = {}) {
         .setURL(url);
     })
     .filter(Boolean);
+
+  const inviteUrl = inviteLinkFor();
+  if (inviteUrl) {
+    buttons.push(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel('Invite LEAGUEbuddy')
+        .setURL(inviteUrl),
+    );
+  }
 
   if (!buttons.length) return [];
   return [new ActionRowBuilder().addComponents(buttons.slice(0, 5))];
@@ -145,10 +178,18 @@ export function buildUpgradeReply({ targetPlan, guildId = null } = {}) {
   const linkRows = targetUrl
     ? [
         new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setStyle(ButtonStyle.Link)
-            .setLabel(plan === PLANS.standard ? 'Open Standard Checkout' : 'Open Premium Checkout')
-            .setURL(targetUrl),
+          ...[
+            new ButtonBuilder()
+              .setStyle(ButtonStyle.Link)
+              .setLabel(plan === PLANS.standard ? 'Open Standard Checkout' : 'Open Premium Checkout')
+              .setURL(targetUrl),
+            inviteLinkFor()
+              ? new ButtonBuilder()
+                  .setStyle(ButtonStyle.Link)
+                  .setLabel('Invite LEAGUEbuddy')
+                  .setURL(inviteLinkFor())
+              : null,
+          ].filter(Boolean),
         ),
       ]
     : [];
@@ -161,7 +202,7 @@ export function buildUpgradeReply({ targetPlan, guildId = null } = {}) {
         '',
         ...PLAN_COPY[plan].unlocks.map((line) => `• ${line}`),
       ].join('\n')),
-    buildPostPaymentEmbed({ guildId }),
+    buildPostPaymentEmbed(),
   ];
 
   const missingLink = !targetUrl;
@@ -187,8 +228,18 @@ export function buildActivationFollowup({ guildId, plan }) {
     `Plan **${plan}** is now active for guild **${guildId}**.`,
     'Next steps for the commissioner:',
     '• Run `/plan` to confirm access.',
-    '• Run `/madden-setup-check` to verify setup state.',
+    '• Run `/setup-check` to verify setup state.',
     '• If setup is incomplete, finish the missing channel/role mapping before using paid features.',
+  ].join('\n');
+}
+
+export function buildClaimInstructions() {
+  return [
+    'How to claim access:',
+    '1. Buy from `/pricing`.',
+    '2. Invite LEAGUEbuddy to your server.',
+    '3. Run `/claim-plan`.',
+    '4. Paste either your one-time claim code or the Stripe payment reference from your receipt email.',
   ].join('\n');
 }
 
@@ -200,4 +251,5 @@ export default {
   buildPlanUpgradeButtons,
   buildUpgradeReply,
   buildActivationFollowup,
+  buildClaimInstructions,
 };

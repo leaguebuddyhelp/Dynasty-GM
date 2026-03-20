@@ -94,7 +94,7 @@ function buildPickPages(startYear, seasonYear, leagueId) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-pickvalue')
+  .setName('pickvalue')
   .setDescription(coachCommandDescription('pickvalue'))
   .addIntegerOption(o =>
     o.setName('start_year')
@@ -116,7 +116,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    const payload = { content: 'No Madden league set. Run /madden-set-league first.' };
+    const payload = { content: 'No league set. Run /set-league first.' };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;

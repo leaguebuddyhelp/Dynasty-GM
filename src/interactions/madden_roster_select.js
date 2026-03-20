@@ -1,6 +1,7 @@
 import { loadLeagueSnapshot, resolveLeagueIdStrict } from '../madden/madden_data.js';
 import { buildRosterEmbeds } from '../madden/coach/roster.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { applyEmbedThumbnailFromAsset } from '../shared/madden_assets.js';
 
 export const customId = 'madden_roster_select';
 
@@ -14,7 +15,7 @@ export async function execute(interaction) {
   try {
     const leagueId = resolveLeagueIdStrict(interaction.guildId);
     if (!leagueId) {
-      await interaction.reply({ content: 'No Madden league is mapped to this server yet. Run /madden-set-league first.', ephemeral: true });
+      await interaction.reply({ content: 'No league is mapped to this server yet. Run /set-league first.', ephemeral: true });
       return;
     }
     const snapshot = loadLeagueSnapshot(leagueId);
@@ -32,7 +33,11 @@ export async function execute(interaction) {
       await interaction.reply({ content: result.error, ephemeral: true });
       return;
     }
-    await interaction.update({ content: null, embeds: result.embeds, components: [] });
+    let files = [];
+    if (result.embeds[0]) {
+      files = applyEmbedThumbnailFromAsset(result.embeds[0], files, result.logoAsset);
+    }
+    await interaction.update({ content: null, embeds: result.embeds, components: [], files });
   } catch (err) {
     console.error('[madden_roster_select] failed:', err);
     if (interaction.deferred || interaction.replied) {

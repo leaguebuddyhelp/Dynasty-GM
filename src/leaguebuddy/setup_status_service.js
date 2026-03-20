@@ -2,13 +2,12 @@ import { FEATURES, getFeature } from './plans.js';
 import { hasFeatureAccess } from './access.js';
 import planRepository from './repositories/guild_plan_repository.js';
 import overlayRepository from './repositories/guild_overlay_repository.js';
+import { getTestingBypassBilling } from './testing_bypass.js';
 
 const REQUIRED_CHANNEL_KEYS = [
   'League Staff',
   'LG Logs',
   'Game threads',
-  'Trade Committee',
-  'Trades',
   'Yearly Awards',
   'Standings',
   'Stat Leaders',
@@ -17,7 +16,6 @@ const REQUIRED_CHANNEL_KEYS = [
   'Top 100',
   'rulesOps',
   'scoutingHub',
-  'tradeSubmit',
   'breakdown',
 ];
 
@@ -68,7 +66,7 @@ function buildFeatureSummary(guildId, packsEnabled = []) {
 }
 
 function buildRecommendedNextAction({ overlayExists, overlayComplete, setupCompleted, syncNeeded, blockedFeatures }) {
-  if (!overlayExists) return 'Run /setup to create the Madden overlay config and baseline channel/role mappings.';
+  if (!overlayExists) return 'Run /setup-channels to create the Madden overlay config, category, channels, and pins.';
   if (!overlayComplete) return 'Complete the Madden overlay setup flow and rerun /syncsetupstatus.';
   if (syncNeeded) return 'Run /syncsetupstatus so LEAGUEbuddy access state matches the completed Madden overlay.';
   if (!setupCompleted) return 'Mark setup complete by syncing setup status after verifying the overlay configuration.';
@@ -81,6 +79,7 @@ function buildRecommendedNextAction({ overlayExists, overlayComplete, setupCompl
 
 export function getSetupStatus(guildId) {
   const rec = planRepository.getGuild(guildId, { createIfMissing: false });
+  const bypass = getTestingBypassBilling(guildId);
   const overlayConfig = overlayRepository.getGuildConfig(guildId);
   const overlayCompleteConfig = overlayRepository.getCompleteGuildConfig(guildId);
   const channelMap = overlayConfig?.compat?.maddenChannelMap || {};
@@ -107,8 +106,8 @@ export function getSetupStatus(guildId) {
     },
     setupCompleted,
     syncNeeded,
-    plan: rec?.plan || 'free',
-    subscriptionStatus: rec?.subscriptionStatus || 'inactive',
+    plan: bypass?.plan || rec?.plan || 'free',
+    subscriptionStatus: bypass?.subscriptionStatus || rec?.subscriptionStatus || 'inactive',
     packsEnabled,
     channels,
     roles,
@@ -129,6 +128,7 @@ export function getSetupStatus(guildId) {
       leaguebuddyRecordFound: !!rec,
       activatedAt: rec?.activatedAt || null,
       setupCompletedAt: rec?.setupCompletedAt || null,
+      testingBypass: !!bypass,
     },
   };
 }

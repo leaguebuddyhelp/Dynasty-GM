@@ -31,7 +31,7 @@ export const FEATURES = /** @type {const} */ ({
     // baseline
     core: { minPlan: PLANS.free, requiresSetup: true, label: 'Core league utilities' },
     threads: { minPlan: PLANS.free, requiresSetup: true, label: 'Game threads / scheduling helpers' },
-    trades_basic: { minPlan: PLANS.free, requiresSetup: true, label: 'Trade workflows (basic)' },
+    trades_basic: { minPlan: PLANS.standard, requiresSetup: true, label: 'Trade center + committee workflow' },
     stats_light: { minPlan: PLANS.free, requiresSetup: true, label: 'Stats + pins (light)' },
 
     scouting_draft: { minPlan: PLANS.standard, requiresSetup: true, label: 'Scouting + draft tools' },

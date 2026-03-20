@@ -4,26 +4,14 @@ import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
 } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
-import { loadLeagueSnapshot, currentWeek, getDefaultLeagueId, requireLeagueIdForGuild } from '../../../madden/madden_data.js';
+import { loadLeagueSnapshot, currentWeek, requireLeagueIdForGuild } from '../../../madden/madden_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadWeeklyGameLog } from '../weekly_game_log.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 
-const TEAM_EMOJIS_PATH = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
-
 export const data = new SlashCommandBuilder()
-  .setName('madden-schedule')
+  .setName('schedule')
   .setDescription(coachCommandDescription('schedule'));
-
-function safeReadJSON(file, fallback) {
-  try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {
-    return fallback;
-  }
-}
 
 function buildTeamMaps(snapshot) {
   const names = new Map();
@@ -57,10 +45,8 @@ function teamShortName(teamName = '') {
   return parts[parts.length - 1] || teamName || 'Team';
 }
 
-function emojiForTeam(teamName, emojiMap) {
-  const mascot = teamShortName(teamName);
-  const id = emojiMap?.[teamName] || emojiMap?.[mascot];
-  return id ? `<:${String(mascot).replace(/[^A-Za-z0-9_]/g, '')}:${id}>` : mascot;
+function labelForTeam(teamName) {
+  return teamShortName(teamName);
 }
 
 function regularSeasonGames(snapshot) {
@@ -199,8 +185,8 @@ function inferredPoints(totals) {
   return ((passingTds + rushingTds + defensiveTds) * 6) + (fieldGoals * 3) + patMade + (safeties * 2) + (twoPoint * 2);
 }
 
-function gameDisplayScores(snapshot, game) {
-    const ledger = loadWeeklyGameLog(leagueId);
+function gameDisplayScores(snapshot, game, leagueId = null) {
+  const ledger = loadWeeklyGameLog(leagueId);
   const logged = ledgerEntryForGame(ledger, game);
   if (logged && (Number(logged.awayScore || 0) > 0 || Number(logged.homeScore || 0) > 0)) {
     return {
@@ -243,13 +229,8 @@ function gameDisplayScores(snapshot, game) {
   return { awayScore, homeScore, inferred: true };
 }
 
-function formatGameSide(emoji, record, score, isWinner) {
-  const side = `${emoji} ${record} ${score}`;
-  return isWinner ? `**${side}**` : side;
-}
-
-function formatMatchupContext(awayEmoji, awayRecord, homeEmoji, homeRecord) {
-  return `${awayEmoji} (${awayRecord}) @ ${homeEmoji} (${homeRecord})`;
+function formatMatchupContext(awayLabel, awayRecord, homeLabel, homeRecord) {
+  return `${awayLabel} (${awayRecord}) @ ${homeLabel} (${homeRecord})`;
 }
 
 function winnerFlagsForScore(scoreView) {
@@ -287,25 +268,25 @@ function formatResultContext({ status, scoreView, ledgerEntry }) {
   return 'Upcoming';
 }
 
-function compactGameLine(snapshot, game, names, standings, emojiMap, ledger = null) {
+function compactGameLine(snapshot, game, names, standings, ledger = null) {
   const awayId = Number(game.awayTeamId);
   const homeId = Number(game.homeTeamId);
   const awayName = names.get(awayId) || 'Away';
   const homeName = names.get(homeId) || 'Home';
-  const awayEmoji = emojiForTeam(awayName, emojiMap);
-  const homeEmoji = emojiForTeam(homeName, emojiMap);
+  const awayLabel = labelForTeam(awayName);
+  const homeLabel = labelForTeam(homeName);
   const awayRecord = formatRecord(standings.get(awayId));
   const homeRecord = formatRecord(standings.get(homeId));
   const ledgerEntry = ledgerEntryForGame(ledger, game);
   const status = ledgerEntry?.played ? (ledgerEntry?.outcomeLabel ? 'played_special' : 'played') : inferredGameStatus(snapshot, game);
-  const scoreView = gameDisplayScores(snapshot, game);
+  const scoreView = gameDisplayScores(snapshot, game, null);
 
   const { awayFlag, homeFlag, awayWon, homeWon } = winnerFlagsForScore(
     ['played', 'played_inferred'].includes(status) ? scoreView : null,
   );
 
-  const awaySide = `${awayEmoji} ${awayFlag} (${awayRecord})`;
-  const homeSide = `${homeEmoji} ${homeFlag} (${homeRecord})`;
+  const awaySide = `${awayLabel} ${awayFlag} (${awayRecord})`;
+  const homeSide = `${homeLabel} ${homeFlag} (${homeRecord})`;
   const matchup = (awayWon === true)
     ? `**${awaySide}** @ ${homeSide}`
     : (homeWon === true)
@@ -325,7 +306,6 @@ function weekMenuOptions(totalWeeks, selectedWeek) {
 
 export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
   const ledger = loadWeeklyGameLog(leagueId);
-  const emojiMap = safeReadJSON(TEAM_EMOJIS_PATH, {});
   const { names } = buildTeamMaps(snapshot);
   const standings = standingsMap(snapshot);
   const totalWeeks = totalRegularWeeks(snapshot);
@@ -356,9 +336,9 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
     .setTitle(`Madden Schedule — Week ${clampedWeek + 1}`)
     .setDescription(
       games.length
-        ? games.map((game) => compactGameLine(snapshot, game, names, standings, emojiMap, ledger)).join('\n')
+        ? games.map((game) => compactGameLine(snapshot, game, names, standings, ledger)).join('\n')
         : (ledgerGames.length
-          ? ledgerGames.map((game) => compactGameLine(snapshot, game, names, standings, emojiMap, ledger)).join('\n')
+          ? ledgerGames.map((game) => compactGameLine(snapshot, game, names, standings, ledger)).join('\n')
           : 'No regular-season games found for this week.'),
     )
     .setFooter({ text: `Regular season only • current league week: ${current}` });
@@ -379,7 +359,7 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
         (playedGames.length ? playedGames : games.slice(0, 1)).map((game) => {
           const awayName = names.get(Number(game.awayTeamId)) || 'Away';
           const homeName = names.get(Number(game.homeTeamId)) || 'Home';
-          const scoreView = gameDisplayScores(snapshot, game);
+          const scoreView = gameDisplayScores(snapshot, game, leagueId);
           const awayScore = scoreView?.awayScore ?? Number(game.awayScore || 0);
           const homeScore = scoreView?.homeScore ?? Number(game.homeScore || 0);
           const label = playedGames.length
@@ -420,7 +400,6 @@ function playerStatLine(row, type) {
 
 export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = null) {
   const ledger = loadWeeklyGameLog(leagueId);
-  const emojiMap = safeReadJSON(TEAM_EMOJIS_PATH, {});
   const { names } = buildTeamMaps(snapshot);
   const standings = standingsMap(snapshot);
   const games = weekGames(snapshot, weekIndex);
@@ -431,18 +410,18 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = 
   const homeId = Number(game.homeTeamId);
   const awayName = names.get(awayId) || 'Away';
   const homeName = names.get(homeId) || 'Home';
-  const awayEmoji = emojiForTeam(awayName, emojiMap);
-  const homeEmoji = emojiForTeam(homeName, emojiMap);
+  const awayLabel = labelForTeam(awayName);
+  const homeLabel = labelForTeam(homeName);
   const awayRecord = formatRecord(standings.get(awayId));
   const homeRecord = formatRecord(standings.get(homeId));
   const awayTotals = teamWeeklyTotals(snapshot, weekIndex, awayId);
   const homeTotals = teamWeeklyTotals(snapshot, weekIndex, homeId);
-  const scoreView = gameDisplayScores(snapshot, game);
+  const scoreView = gameDisplayScores(snapshot, game, leagueId);
   const awayScore = scoreView?.awayScore ?? Number(game.awayScore || 0);
   const homeScore = scoreView?.homeScore ?? Number(game.homeScore || 0);
   const ledgerEntry = ledgerEntryForGame(ledger, game);
   const status = ledgerEntry?.played ? (ledgerEntry?.outcomeLabel ? 'played_special' : 'played') : inferredGameStatus(snapshot, game);
-  const matchupLine = formatMatchupContext(awayEmoji, awayRecord, homeEmoji, homeRecord);
+  const matchupLine = formatMatchupContext(awayLabel, awayRecord, homeLabel, homeRecord);
   const resultLine = formatResultContext({ status, scoreView, ledgerEntry });
 
   const awayScoreNum = Number(awayScore || 0);
@@ -477,7 +456,7 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = 
     ].filter(Boolean).join('\n'))
     .addFields(
       {
-        name: `${awayEmoji} ${teamShortName(awayName)}`,
+        name: teamShortName(awayName),
         value: [
           '📊 **Team totals**',
           teamTotalsLine(awayTotals),
@@ -490,7 +469,7 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = 
         ].join('\n'),
       },
       {
-        name: `${homeEmoji} ${teamShortName(homeName)}`,
+        name: teamShortName(homeName),
         value: [
           '📊 **Team totals**',
           teamTotalsLine(homeTotals),
@@ -520,7 +499,7 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = 
             .map((entry) => {
               const away = names.get(Number(entry.awayTeamId)) || 'Away';
               const home = names.get(Number(entry.homeTeamId)) || 'Home';
-              const scoreView = gameDisplayScores(snapshot, entry);
+              const scoreView = gameDisplayScores(snapshot, entry, leagueId);
               return {
                 label: `${teamShortName(away)} ${scoreView?.awayScore ?? Number(entry.awayScore || 0)} vs ${scoreView?.homeScore ?? Number(entry.homeScore || 0)} ${teamShortName(home)}`.slice(0, 100),
                 value: String(entry.scheduleId || `${weekIndex}:${entry.awayTeamId}:${entry.homeTeamId}`),

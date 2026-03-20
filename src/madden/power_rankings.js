@@ -1,14 +1,14 @@
 import fs from 'fs';
 import path from 'path';
+import { EmbedBuilder } from 'discord.js';
 import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
+import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
-const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
-
 function loadSnapshot(leagueId) {
   const file = path.join(process.cwd(), 'data', 'madden', 'leagues', `${leagueId}.json`);
   const raw = fs.readFileSync(file, 'utf8');
@@ -21,19 +21,6 @@ function loadJson(file) {
 
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
-}
-
-function teamEmoji(name, emojiMap) {
-  if (!name) return '';
-  const target = name.toLowerCase();
-  const mascot = target.split(/\s+/).pop();
-  for (const [key, val] of Object.entries(emojiMap || {})) {
-    const base = key.toLowerCase();
-    if (base === target || base === mascot || target.includes(base) || base.includes(target)) {
-      return `<:${key.replace(/\s+/g, '')}:${val}>`;
-    }
-  }
-  return '';
 }
 
 function teamNameMap(snapshot) {
@@ -173,8 +160,6 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
   }
   const teams = teamNameMap(snapshot);
   const roleMap = loadJson(ROLE_MAP_FILE);
-  const emojiMap = loadJson(TEAM_EMOJIS_FILE);
-
   const ranked = rankTeams(snapshot);
   const prevMap = loadPrevRanks();
   const prev = prevMap[leagueId] || {};
@@ -190,7 +175,6 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
   } else {
     lines = ranked.map((s, idx) => {
       const name = teams[s.teamId] || 'Team';
-      const emoji = teamEmoji(name, emojiMap);
       const rec = formatRecord(s);
       const currentRank = idx + 1;
       const prevRank = prev[s.teamId];
@@ -199,15 +183,14 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
         move = '(new)';
         if (hadPreviousRanks) {
           const mention = teamRoleMention(name, roleMap);
-          newEntrants.push({ mention, name, emoji });
+          newEntrants.push({ mention, name });
         }
       } else {
         const diff = prevRank - currentRank;
         if (diff > 0) move = `(+${diff})`;
         else if (diff < 0) move = `(${diff})`;
       }
-      const prefix = emoji ? `${emoji} ` : '';
-      return `${currentRank}) ${prefix}${name} — ${rec} ${move}`;
+      return `${currentRank}) ${name} — ${rec} ${move}`;
     });
     while (lines.length < 10) lines.push(`${lines.length + 1}) N/A`);
     // Save current ranks for next comparison
@@ -222,12 +205,31 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
   const channel = await client.channels.fetch(channelId).catch(() => null);
   if (!channel || !channel.isTextBased()) throw new Error('Power Rankings channel not accessible');
 
-  const embed = {
-    title: 'Madden Power Rankings',
-    color: 0xffcc00,
-    fields,
-    timestamp: new Date().toISOString(),
-  };
+  const boardImage = await renderLeagueBoardImage({
+    title: 'Power Rankings',
+    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • Week ${displayWeek || '?'}`,
+    attachmentName: 'power_rankings_board.png',
+    accentColor: '#FFCC00',
+    columns: [
+      {
+        title: 'Top 10',
+        items: lines.map((line) => {
+          const match = String(line).match(/^(\d+)\)\s(.+?)\s—\s(.+)$/);
+          if (!match) return { label: line, meta: '', teamLike: null };
+          return {
+            label: `#${match[1]} ${match[2]}`,
+            meta: match[3],
+            teamLike: match[2],
+          };
+        }),
+      },
+    ],
+  });
+  const embed = new EmbedBuilder()
+    .setTitle('Madden Power Rankings')
+    .setColor(0xffcc00)
+    .setTimestamp(new Date());
+  if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
 
   const pinId = getPinId('power_rankings', guildId);
   if (!pinId) return;
@@ -237,14 +239,13 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
     return;
   }
   if (channel?.guild?.id) upsertGuildPin(channel.guild.id, 'power_rankings', msg.id);
-  await msg.edit({ embeds: [embed], content: null }).catch(() => null);
+  await msg.edit({ embeds: [embed], files: boardImage ? [boardImage] : [], content: null }).catch(() => null);
 
   // Tag new entrants separately
   if (newEntrants.length && channel?.isTextBased()) {
     console.log('[power_rankings] new entries detected:', newEntrants.map(e => e.name));
     const lines = newEntrants.map(e => {
-      const logo = e.emoji ? `${e.emoji} ` : '';
-      return `${logo}${e.name || 'Team'} has entered the Top 10!`;
+      return `${e.name || 'Team'} has entered the Top 10!`;
     });
     const roleMentions = newEntrants
       .map(e => (e.mention || '').match(/<@&(\d+)>/))

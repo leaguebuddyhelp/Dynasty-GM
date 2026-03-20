@@ -3,20 +3,16 @@ import fs from 'fs';
 import path from 'path';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { hasStaffRole, loadRoleMap } from './staffUtils.js';
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 import { updateAvailableTeamsPin } from '../../../madden/available_teams.js';
 import { updateFairSimBoard } from '../../shared/fairsim_board.js';
 import { setCoachAssignment } from '../../shared/madden_coach_assignments.js';
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { listThreadStates, hydrateThreadStateFromLiveThread } from '../../shared/madden_thread_notifier.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
+import { loadGuildMaddenConfig, saveGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 
-const LEAGUE_JOIN_INFO = {
-    name: 'Ghost Legacy',
-    password: 'MGL26',
-};
-
-const BASE_LEAGUE_ROLE_NAME = 'Ghost Legacy';
+export const featureKey = 'scouting_draft';
 
 const ONBOARD_TIMEOUTS_MS = {
     threadAdd: 4500,
@@ -74,6 +70,26 @@ function resolveTeamRoleIdFromRoleMap(teamName, roleMap) {
     if (loose) return loose.id;
 
     return null;
+}
+
+async function ensureCoachRole(interaction, roleName) {
+    let role = interaction.guild.roles.cache.find((item) => item.name === roleName) || null;
+    if (!role) {
+        role = await interaction.guild.roles.create({
+            name: roleName,
+            mentionable: false,
+            reason: 'Coach role created on onboarding',
+        });
+    }
+
+    const cfg = loadGuildMaddenConfig(interaction.guildId) || {};
+    cfg.compat = cfg.compat || {};
+    cfg.compat.maddenRoleMap = cfg.compat.maddenRoleMap || {};
+    const baseName = roleName.replace(/ coach$/i, '').trim();
+    cfg.compat.maddenRoleMap[roleName] = role.id;
+    cfg.compat.maddenRoleMap[baseName] = cfg.compat.maddenRoleMap[baseName] || role.id;
+    saveGuildMaddenConfig(interaction.guildId, cfg);
+    return role;
 }
 
 function resolveSnapshotTeamByName(snapshot, teamName) {
@@ -181,10 +197,6 @@ async function sendOnboardingDM({ client, guild, user, teamDisplay, snapshot, ch
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
     const seasonNumber = seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? seasonInfo.calendarYear ?? 'Current';
     const weekNumber = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? (Number.isFinite(Number(seasonInfo.weekIndex)) ? Number(seasonInfo.weekIndex) + 1 : null);
-    const seasonKey = getMaddenSeasonKey(snapshot);
-
-    const myCommandsHint = '1) **/madden-mycommands** — your live command menu (everything you can run).';
-    const franchiseHubHint = '2) **/madden-franchisehub** — your private command center (weekly briefing).';
 
     const channelIdFor = (names = []) => {
         for (const name of names) {
@@ -198,70 +210,53 @@ async function sendOnboardingDM({ client, guild, user, teamDisplay, snapshot, ch
 
     const channelLink = (id) => (id ? `<#${id}>` : null);
 
-    // League-specific channel IDs (requested template). If these change, just update here.
-    const IMPORTANT_CHANNEL_IDS = {
-        rulesOps: '1460394501247074376',
-        breakdown: '1461292850930126868',
-        scoutingHub: '1460288930946482299',
-        tradeSubmit: '1460289106407067813',
-    };
-
-    // Fallback to channel map if an ID is missing (keeps it resilient across servers).
-    const rulesOpsId = IMPORTANT_CHANNEL_IDS.rulesOps || channelIdFor(['Rules', 'rules', 'Rules & Operations', 'rules-ops']);
-    const breakdownId = IMPORTANT_CHANNEL_IDS.breakdown || channelIdFor(['LEAGUEbuddy Breakdown', 'leaguebuddy-breakdown', 'Sportsbook', 'sportsbook']);
-    const scoutingHubId = IMPORTANT_CHANNEL_IDS.scoutingHub || channelIdFor(['Scouting Hub', 'scouting-hub', 'Scouting', 'madden-scouting', 'Front Office', 'front-office']);
-    const tradeSubmitId = IMPORTANT_CHANNEL_IDS.tradeSubmit || channelIdFor(['Submit a Trade', 'submit-a-trade', 'Trades', 'trades', 'trade-block', 'Trade Block', 'madden-tradeblock']);
+    const rulesOpsId = channelIdFor(['rulesOps', 'Rules', 'rules', 'Rules & Operations', 'rules-ops']);
+    const breakdownId = channelIdFor(['breakdown', 'LEAGUEbuddy Breakdown', 'leaguebuddy-breakdown', 'Sportsbook', 'sportsbook']);
+    const scoutingHubId = channelIdFor(['scoutingHub', 'Scouting Hub', 'scouting-hub', 'Scouting', 'madden-scouting', 'Front Office', 'front-office']);
+    const tradeSubmitId = channelIdFor(['tradeSubmit', 'Submit a Trade', 'submit-a-trade', 'Trades', 'trades', 'trade-block', 'Trade Block', 'madden-tradeblock']);
 
     const embed = new EmbedBuilder()
         .setColor(0x5865f2)
-        .setTitle('🏈 Welcome to Ghost Legacy Madden')
+        .setTitle('Welcome to LEAGUEbuddy Madden')
         .setDescription(
             [
                 `You’ve been assigned to **${teamDisplay}** in **${guild?.name || 'the league'}**.`,
-                '',
                 `Season: **${seasonNumber}**${weekNumber ? ` • Week: **${weekNumber}**` : ''}`,
-                '',
-                '🎮 **Join the League (Madden)**',
-                `• League Name: **${LEAGUE_JOIN_INFO.name}**`,
-                `• Password: **${LEAGUE_JOIN_INFO.password}**`,
-                '• Path: **Franchise** → **Cloud** → **Join League** → **Search** → **Enter Password**',
-                '',
-                '🚀 **Start Here**',
-                myCommandsHint,
-                franchiseHubHint,
-                '',
-                '📚 **Important Channels**',
-                channelLink(rulesOpsId) ? channelLink(rulesOpsId) : null,
-                channelLink(breakdownId) ? channelLink(breakdownId) : null,
-                channelLink(scoutingHubId) ? channelLink(scoutingHubId) : null,
-                channelLink(tradeSubmitId) ? channelLink(tradeSubmitId) : null,
-                '',
-                ...(Array.isArray(threadLinks) && threadLinks.length
-                    ? ['🧵 **Your Game Thread**', ...threadLinks.map((link) => `${link}`), '']
-                    : []),
-                '🤖 **What LEAGUEbuddy Does (the good stuff)**',
-                '• **Private Front Office** — Franchise Hub briefing (team state + accountability + recognition)',
-                '• **Weekly Matchup Intel** — Game Strategy briefing with edges/tendencies + learning resources',
-                '• **Draft Room Tools** — Big Board, scouting board, recruiting view, and draft primer support',
-                '• **Trade Desk** — trade block posting + trade values/pick values to keep deals moving',
-                '• **Sportsbook Layer** — weekly board + **Week Breakdown** (best line / popular bet / trap / stay-away + GOTW bonus)',
-                '• **Recognition + Perks** — activity/impact/legacy that ties into weekly league engagement',
-                '• **Game Threads + Reminders** — matchup threads that keep communication organized',
-                '• **Fair Sim Board** — staff board that keeps rules clarity and sim discipline visible',
-                '',
-                '✅ **Weekly Checklist**',
-                '',
-                'Open **/madden-mycommands**',
-                'Open **/madden-franchisehub**',
-                '',
-                'Check your game thread',
-                '',
-                'Complete weekly tasks',
-                '',
-                'Place bets on league games (optional)',
             ].filter(Boolean).join('\n'),
         )
-        .setFooter({ text: 'LEAGUEbuddy • your franchise HQ lives in /madden-franchisehub' })
+        .addFields(
+            {
+                name: 'Start Here',
+                value: [
+                    '• `/mycommands`',
+                    '• `/schedule`',
+                    '• `/roster`',
+                    '• Check your game thread',
+                ].join('\n'),
+            },
+            {
+                name: 'League Join Info',
+                value: 'Your commissioner or server admin handles the league name, password, and rules for this server.',
+            },
+            ...((channelLink(rulesOpsId) || channelLink(breakdownId) || channelLink(scoutingHubId) || channelLink(tradeSubmitId))
+                ? [{
+                    name: 'Useful Channels',
+                    value: [
+                        channelLink(rulesOpsId),
+                        channelLink(breakdownId),
+                        channelLink(scoutingHubId),
+                        channelLink(tradeSubmitId),
+                    ].filter(Boolean).join('\n'),
+                }]
+                : []),
+            ...(Array.isArray(threadLinks) && threadLinks.length
+                ? [{
+                    name: 'Your Game Thread',
+                    value: threadLinks.join('\n'),
+                }]
+                : []),
+        )
+        .setFooter({ text: 'LEAGUEbuddy • ask your server admin for league-specific rules and join details' })
         .setTimestamp();
 
     await user.send({ embeds: [embed] });
@@ -500,7 +495,7 @@ async function getCoachThreadLinks({ client, guild, teamNameForAssignment, snaps
     // (it often includes the coach role ids).
     if (!candidates.length) {
         const normalizedTeam = normalizeLooseTeamKey(teamNameForAssignment);
-        const roleMap = loadRoleMap();
+        const roleMap = loadRoleMapForGuild(guild?.id);
         const roleId = resolveTeamRoleIdFromRoleMap(normalizedTeam, roleMap)
             || resolveTeamRoleIdFromRoleMap(teamNameForAssignment, roleMap);
         if (roleId) {
@@ -562,27 +557,27 @@ async function getCoachThreadLinks({ client, guild, teamNameForAssignment, snaps
 }
 
 export const data = new SlashCommandBuilder()
-    .setName('madden-onboard')
+    .setName('onboard')
     .setDescription('Staff: Assign a coach to a team and DM them an onboarding pack.')
     .addUserOption((o) => o.setName('user').setDescription('Coach to onboard').setRequired(true))
     .addStringOption((o) => o.setName('team').setDescription('Team name (e.g., "Rams")').setRequired(true).setAutocomplete(true))
     .setDefaultMemberPermissions(null);
 
 export async function execute(interaction) {
-    const roleMap = loadRoleMap();
+    const roleMap = loadRoleMapForGuild(interaction.guildId);
     // Defer immediately to avoid the command "thinking" while we fetch roles/snapshot.
     await interaction.deferReply({ ephemeral: true });
     await interaction.editReply({ content: 'Onboarding… (assigning roles + sending DM)' }).catch(() => null);
 
     const staffMember = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
     if (!staffMember || !hasStaffRole(staffMember, roleMap)) {
-        await interaction.editReply({ content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+        await interaction.editReply({ content: 'Only server admins, LB Commish, or LB Co-Commish can use this command.' });
         return;
     }
 
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
     if (!leagueId) {
-        await interaction.editReply({ content: 'No league set. Run /madden-set-league first.' });
+        await interaction.editReply({ content: 'No league set. Run /set-league first.' });
         return;
     }
 
@@ -601,16 +596,14 @@ export async function execute(interaction) {
     const coachRoleId = resolveTeamRoleIdFromRoleMap(teamDisplay, roleMap)
         || resolveTeamRoleIdFromRoleMap(teamInput, roleMap)
         || (team ? resolveTeamRoleIdFromRoleMap(getFullTeamName(team, ''), roleMap) : null);
-
-    if (!coachRoleId) {
-        await interaction.editReply({ content: `Could not resolve a coach role for "${teamInput}". Try the full team name or the mascot (e.g., "Los Angeles Rams" or "Rams").` });
-        return;
-    }
-
-    const coachRole = await interaction.guild.roles.fetch(String(coachRoleId)).catch(() => null);
+    let coachRole = coachRoleId ? await interaction.guild.roles.fetch(String(coachRoleId)).catch(() => null) : null;
     if (!coachRole) {
-        await interaction.editReply({ content: `Role for "${teamDisplay} Coach" was not found in this server.` });
-        return;
+        try {
+            coachRole = await ensureCoachRole(interaction, `${teamDisplay} Coach`);
+        } catch (error) {
+            await interaction.editReply({ content: `Could not create a coach role for "${teamDisplay}". ${error?.message || error}` });
+            return;
+        }
     }
 
     // Hard-block: don't allow onboarding onto an already-claimed team.
@@ -625,20 +618,11 @@ export async function execute(interaction) {
 
     const teamNameForAssignment = coachRole.name.replace(/ coach$/i, '').trim();
 
-    const baseLeagueRoleId = roleMap?.[BASE_LEAGUE_ROLE_NAME] || null;
-    const baseLeagueRole = baseLeagueRoleId
-        ? await interaction.guild.roles.fetch(String(baseLeagueRoleId)).catch(() => null)
-        : null;
-
     try {
         await guildMember.roles.add(coachRole);
     } catch (err) {
         await interaction.editReply({ content: `Failed to assign role "${coachRole.name}": ${err?.message || err}` });
         return;
-    }
-
-    if (baseLeagueRole && !guildMember.roles.cache?.has?.(baseLeagueRole.id)) {
-        await guildMember.roles.add(baseLeagueRole).catch(() => null);
     }
 
     // Add to existing game thread(s) if they already exist (best-effort, but don't stall the command).
@@ -750,7 +734,7 @@ export async function execute(interaction) {
 export async function autocomplete(interaction) {
     if (!interaction.isAutocomplete()) return;
 
-    const roleMap = loadRoleMap();
+    const roleMap = loadRoleMapForGuild(interaction.guildId);
     const focused = String(interaction.options.getFocused() || '').toLowerCase();
 
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
@@ -780,12 +764,7 @@ export async function autocomplete(interaction) {
             || resolveTeamRoleIdFromRoleMap(t?.displayName, roleMap)
             || resolveTeamRoleIdFromRoleMap(t?.nickName, roleMap);
 
-        // If we can't resolve a role, skip (can't onboard reliably)
-        if (!roleId) continue;
-
-        // If we couldn't build counts in time, fail closed: don't show teams we can't verify as open.
-        if (coachRoleCounts == null) continue;
-        const assignedCount = coachRoleCounts?.get?.(String(roleId));
+        const assignedCount = roleId ? coachRoleCounts?.get?.(String(roleId)) : 0;
         const assigned = typeof assignedCount === 'number' ? assignedCount > 0 : false;
         if (assigned) continue;
 

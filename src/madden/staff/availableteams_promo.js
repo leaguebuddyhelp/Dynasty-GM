@@ -137,7 +137,7 @@ function firstRoundOnly(picks = []) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-promo')
+  .setName('promo')
   .setDescription('Staff: Post promo + currently available Madden teams.')
   .addBooleanOption(o =>
     o.setName('link')
@@ -162,7 +162,7 @@ export async function execute(interaction) {
 
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
     if (!leagueId) {
-      await safeEditReply(interaction, { content: 'No league set. Run /madden-set-league first.' });
+      await safeEditReply(interaction, { content: 'No league set. Run /set-league first.' });
       return;
     }
 

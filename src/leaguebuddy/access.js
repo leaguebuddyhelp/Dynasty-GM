@@ -1,10 +1,13 @@
 import { PLANS, SUBSCRIPTION_STATUSES } from './guild_store.js';
 import { getFeature, normalizePlan, planRank } from './plans.js';
 import planRepository from './repositories/guild_plan_repository.js';
+import { getTestingBypassBilling } from './testing_bypass.js';
 
 export const DEFAULT_DENY_MESSAGE = '🔒 This feature is not available on your current plan. Check pricing to upgrade.';
 
 export function getGuildPlan(guildId) {
+    const bypass = getTestingBypassBilling(guildId);
+    if (bypass) return normalizePlan(bypass.plan || PLANS.premium);
     const rec = planRepository.getGuild(guildId, { createIfMissing: false });
     return normalizePlan(rec?.plan || PLANS.free);
 }
@@ -18,6 +21,27 @@ export function getGuildPlan(guildId) {
  * - requiresSetup features require setupCompleted.
  */
 export function hasFeatureAccess(guildId, featureKey, { allowInactiveFree = true } = {}) {
+    const bypass = getTestingBypassBilling(guildId);
+    if (bypass) {
+        const feature = getFeature(featureKey);
+        if (!feature) {
+            return {
+                ok: false,
+                reason: 'unknown_feature',
+                plan: normalizePlan(bypass?.plan || PLANS.premium),
+                feature,
+                testingBypass: true,
+            };
+        }
+        return {
+            ok: true,
+            reason: 'testing_bypass',
+            plan: normalizePlan(bypass.plan || PLANS.premium),
+            feature,
+            testingBypass: true,
+        };
+    }
+
     const rec = planRepository.getGuild(guildId, { createIfMissing: false });
     const feature = getFeature(featureKey);
 

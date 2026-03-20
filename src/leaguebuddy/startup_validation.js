@@ -5,6 +5,7 @@ import {
   getDataRoot,
   getGuildsRoot,
   getLeaguebuddyAuditLogPath,
+  getLeaguebuddyClaimsStorePath,
   getLeaguebuddyDir,
   getLeaguebuddyGuildStorePath,
   getMaddenConfigPath,
@@ -29,6 +30,9 @@ export function validateStartupConfig() {
   const tokenConfigured = configured(process.env.DISCORD_TOKEN || process.env.TOKEN);
   const standardUrlConfigured = configured(process.env.LB_UPGRADE_URL_STANDARD || process.env.LB_UPGRADE_URL);
   const premiumUrlConfigured = configured(process.env.LB_UPGRADE_URL_PREMIUM || process.env.LB_UPGRADE_URL);
+  const botInviteConfigured = configured(process.env.LB_BOT_INVITE_URL) || configured(process.env.CLIENT_ID);
+  const stripeClaimsEnabled = String(process.env.LB_STRIPE_CLAIMS_WEBHOOK_ENABLED || '').toLowerCase() === 'true';
+  const stripeWebhookSecretConfigured = configured(process.env.LB_STRIPE_WEBHOOK_SECRET);
   const dataRoot = getDataRoot();
   const healthEnabled = String(process.env.LB_HEALTHCHECK_ENABLED || '').toLowerCase() === 'true' || configured(process.env.PORT);
 
@@ -37,6 +41,8 @@ export function validateStartupConfig() {
     dataRoot,
     stripeStandardUrl: standardUrlConfigured ? 'configured' : 'missing',
     stripePremiumUrl: premiumUrlConfigured ? 'configured' : 'missing',
+    botInviteUrl: botInviteConfigured ? 'configured' : 'missing',
+    stripeClaimsWebhook: stripeClaimsEnabled ? (stripeWebhookSecretConfigured ? 'enabled' : 'missing_secret') : 'disabled',
     healthcheck: healthEnabled ? 'enabled' : 'disabled',
   });
 
@@ -56,6 +62,7 @@ export function validateStartupConfig() {
   const files = [
     getLeaguebuddyGuildStorePath(),
     getLeaguebuddyAuditLogPath(),
+    getLeaguebuddyClaimsStorePath(),
     getMaddenConfigPath(),
   ];
   for (const filePath of files) ensureParent(filePath);

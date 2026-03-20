@@ -53,6 +53,9 @@ export async function execute(interaction) {
     lines.push('**LEAGUEbuddy Plan**');
     lines.push(`Plan: **${plan}**`);
     lines.push(`Subscription: **${status}**`);
+    if (setupStatus.facts?.testingBypass) {
+        lines.push('Testing bypass: **on for this server**');
+    }
     lines.push(`Setup completed: **${setupCompleted ? 'yes' : 'no'}**`);
     lines.push(`Overlay status: **${setupStatus.overlayStatus.isComplete ? 'complete' : setupStatus.overlayStatus.exists ? 'incomplete' : 'missing'}**`);
     lines.push('');
@@ -86,7 +89,13 @@ export async function execute(interaction) {
     lines.push('');
     lines.push('**Next step**');
     lines.push(setupStatus.recommendedNextAction);
-    lines.push('Run `/pricing` for upgrade links and payment instructions.');
+    if (status === SUBSCRIPTION_STATUSES.inactive && plan === PLANS.free) {
+        lines.push('To unlock paid access: run `/pricing`, buy your plan, invite LEAGUEbuddy, then run `/claim-plan`.');
+    } else if (status !== SUBSCRIPTION_STATUSES.active && status !== SUBSCRIPTION_STATUSES.trialing) {
+        lines.push('If you already paid, run `/claim-plan` with the payment reference from your Stripe receipt.');
+    } else {
+        lines.push('Run `/pricing` for upgrade links or `/setup-check` for setup guidance.');
+    }
 
     if (!canManage) {
         lines.push('');

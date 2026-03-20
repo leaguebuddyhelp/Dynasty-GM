@@ -7,6 +7,7 @@ import { computeWeeklyList } from './top_players.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
+import { applyEmbedThumbnailFromAsset, getNflBrandAsset } from '../shared/madden_assets.js';
 
 const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
 const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
@@ -854,10 +855,12 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       ]),
     )
     .setTimestamp(new Date());
+  let files = [];
+  files = applyEmbedThumbnailFromAsset(embed, files, getNflBrandAsset({ animated: true, attachmentName: 'nfl.gif' }));
 
   if (interaction) {
     const content = isPublic ? coachTag : null;
-    const payload = { content, embeds: [embed], allowedMentions: isPublic && coachTag ? { parse: [], roles: [roleMap['Ghost Legacy']] } : { parse: [] } };
+    const payload = { content, embeds: [embed], files, allowedMentions: isPublic && coachTag ? { parse: [], roles: [roleMap['Ghost Legacy']] } : { parse: [] } };
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(payload);
     } else {
@@ -867,6 +870,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     await targetChannel.send({
       content: coachTag || null,
       embeds: [embed],
+      files,
       allowedMentions: coachTag ? { parse: [], roles: [roleMap['Ghost Legacy']] } : { parse: [] },
     }).catch(() => null);
   }

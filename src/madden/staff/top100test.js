@@ -11,7 +11,7 @@ const DEFAULT_CHANNEL_ID = '1462629502864851069';
 const SEASON_FILE = path.join(process.cwd(), 'data', 'madden', 'top_players.json');
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-top100test')
+  .setName('top100test')
   .setDescription('Post the current Top 100 snapshot (test) to the staff channel.')
   .setDefaultMemberPermissions(null)
   .addStringOption(opt =>
@@ -88,15 +88,15 @@ export async function execute(interaction, options = {}) {
   console.log('[top100test] parsed', parsed, { isButton });
   if (isButton && (parsed.page === undefined || parsed.scope === undefined)) {
     try {
-      await interaction.update({ content: 'Interaction expired. Please rerun `/madden-top100test`.', components: [], embeds: [] });
+      await interaction.update({ content: 'Interaction expired. Please rerun `/top100test`.', components: [], embeds: [] });
     } catch { /* swallow */ }
     return;
   }
   if (parsed.isPublic !== undefined) isPublic = parsed.isPublic;
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    if (!isButton) await interaction.editReply('No league configured. Run /madden-set-league first.');
-    else await interaction.update({ content: 'No league configured. Run /madden-set-league first.', components: [], embeds: [] });
+    if (!isButton) await interaction.editReply('No league configured. Run /set-league first.');
+    else await interaction.update({ content: 'No league configured. Run /set-league first.', components: [], embeds: [] });
     return;
   }
   // Grade all players for the latest week and show a private paginated embed

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getTradeDraft, saveTradeDraft } from '../shared/trade_draft_store.js';
 import { buildButtons } from './trade_builder_add_assets.js';
 import { resolveTeamNameForRoster } from '../shared/rosterUtils.js';
@@ -73,12 +73,16 @@ export async function execute(interaction) {
     await safeMessage(interaction, 'Trade builder expired. Press Start Trade Builder again.');
     return;
   }
-  const leagueId = draft.leagueId || resolveLeagueIdWithConfig(interaction.guildId);
+  let leagueId = draft.leagueId || null;
   let snapshot = null;
   if (draft.mode !== '2k') {
     if (!leagueId) {
-      await safeMessage(interaction, 'No league configured. Run /madden-set-league first.');
-      return;
+      try {
+        leagueId = requireLeagueIdForGuild(interaction.guildId);
+      } catch (error) {
+        await safeMessage(interaction, error?.message || 'No league is mapped to this server yet. Run /set-league first.');
+        return;
+      }
     }
     try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
   }

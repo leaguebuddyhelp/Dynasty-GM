@@ -1,14 +1,9 @@
 // LEAGUEbuddy: Modern Discord bot entry
-import dotenv from 'dotenv';
 import fs, { readdirSync, createWriteStream } from 'fs';
 import { Client, GatewayIntentBits, Collection, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import * as submitScore from './interactions/submit_score.js';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
-import { startAuthServer } from './madden/auth_server.js';
-import { startExportWebhook } from './madden/export_webhook.js';
-import { startAutoSync } from './madden/auto_sync.js';
-import { startLocalSidecar } from './madden/local_sidecar.js';
 import { initNotifier, backfillAndRunPendingThreadReminders } from './shared/madden_thread_notifier.js';
 import { appendMaddenStaffLog, postMaddenStaffLog, initMaddenStoryScheduler } from './shared/madden_staff_ops.js';
 import { updateFairSimBoard } from './shared/fairsim_board.js';
@@ -25,6 +20,25 @@ import { markHealthReady, startHealthcheckServer } from './leaguebuddy/healthche
 // Opt-in when you actually want the extra noise.
 const LB_VERBOSE_LOGS = String(process.env.LB_VERBOSE_LOGS ?? 'false').toLowerCase() === 'true';
 const LB_STAFF_LOGS_ENABLED = String(process.env.LB_STAFF_LOGS_ENABLED ?? 'false').toLowerCase() === 'true';
+
+function envEnabled(name, defaultValue = false) {
+  const raw = process.env[name];
+  if (raw == null || raw === '') return defaultValue;
+  const value = String(raw).toLowerCase();
+  return value !== 'false' && value !== '0' && value !== 'no' && value !== 'off';
+}
+
+async function startOptionalService({ enabled, label, loader }) {
+  if (!enabled) {
+    console.log(`[${label}] Disabled`);
+    return;
+  }
+  try {
+    await loader();
+  } catch (err) {
+    console.warn(`[${label}] Failed to start: ${err?.message || err}`);
+  }
+}
 
 function hasPackEnabled(guildId, featureKey) {
   if (!guildId || !featureKey) return false;
@@ -51,7 +65,14 @@ async function denyInteraction(interaction, message = DEFAULT_DENY_MESSAGE) {
   }
 }
 
-dotenv.config();
+if (process.env.dotenv_config_path) {
+  try {
+    const dotenv = await import('dotenv');
+    dotenv.default.config({ path: process.env.dotenv_config_path });
+  } catch (err) {
+    console.warn(`[startup] dotenv unavailable; skipping ${process.env.dotenv_config_path}: ${err?.message || err}`);
+  }
+}
 validateStartupConfig();
 startHealthcheckServer();
 
@@ -71,30 +92,50 @@ const client = new Client({
 client.commands = new Collection();
 client.interactionHandlers = [];
 
-// Start local Madden auth server (for EA login) unless disabled
-const enableAuthServer = process.env.MADDEN_AUTH_ENABLED !== 'false' && process.env.MADDEN_AUTH_ENABLED !== '0';
-if (enableAuthServer) {
-  try {
+await startOptionalService({
+  enabled: envEnabled('MADDEN_AUTH_ENABLED', false),
+  label: 'madden-auth',
+  loader: async () => {
+    const { startAuthServer } = await import('./madden/auth_server.js');
     startAuthServer();
-  } catch (err) {
-    console.warn(`[madden-auth] Failed to start auth server: ${err.message}`);
-  }
-}
-try {
-  startExportWebhook();
-} catch (err) {
-  console.warn(`[madden-export] Failed to start export webhook: ${err.message}`);
-}
-try {
-  startAutoSync();
-} catch (err) {
-  console.warn(`[madden-auto-sync] Failed to start auto sync: ${err.message}`);
-}
-try {
-  startLocalSidecar();
-} catch (err) {
-  console.warn(`[madden-sidecar] Failed to start local sidecar: ${err.message}`);
-}
+  },
+});
+
+await startOptionalService({
+  enabled: envEnabled('MADDEN_EXPORT_WEBHOOK_ENABLED', false),
+  label: 'madden-export',
+  loader: async () => {
+    const { startExportWebhook } = await import('./madden/export_webhook.js');
+    startExportWebhook();
+  },
+});
+
+await startOptionalService({
+  enabled: envEnabled('MADDEN_AUTO_SYNC_ENABLED', false),
+  label: 'madden-auto-sync',
+  loader: async () => {
+    const { startAutoSync } = await import('./madden/auto_sync.js');
+    startAutoSync();
+  },
+});
+
+await startOptionalService({
+  enabled: envEnabled('SNALLA_SIDECAR_AUTOSTART', false),
+  label: 'madden-sidecar',
+  loader: async () => {
+    const { startLocalSidecar } = await import('./madden/local_sidecar.js');
+    startLocalSidecar();
+  },
+});
+
+await startOptionalService({
+  enabled: envEnabled('LB_STRIPE_CLAIMS_WEBHOOK_ENABLED', false),
+  label: 'stripe-claims',
+  loader: async () => {
+    const { startStripeClaimsWebhook } = await import('./leaguebuddy/stripe_claims_webhook.js');
+    startStripeClaimsWebhook();
+  },
+});
 
 // Register startseason_confirm button handler
 import * as startseasonConfirm from './interactions/startseason_confirm.js';
@@ -478,8 +519,6 @@ client.once('clientReady', (readyClient) => {
   try { backfillAndRunPendingThreadReminders(client).catch(() => null); } catch (e) { console.warn('[notifier] startup backfill failed', e?.message || e); }
   try { initMaddenStoryScheduler(client); } catch (e) { console.warn('[story scheduler] init failed', e?.message || e); }
   for (const guild of readyClient.guilds.cache.values()) {
-    appendMaddenStaffLog({ type: 'lifecycle', guildId: guild.id, state: 'online' });
-    postMaddenStaffLog(client, guild.id, 'Bot Online', 'LEAGUEbuddy Madden services are online.').catch(() => null);
     updateFairSimBoard(client, guild.id).catch((e) => {
       console.warn('[fairsim_board] startup refresh failed', guild.id, e?.message || e);
     });
@@ -518,16 +557,18 @@ async function loadCommands() {
       if (!fs.existsSync(commandsPath)) continue;
       const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.js'));
       for (const file of commandFiles) {
-        const filePath = join(commandsPath, file);
-        const fileURL = pathToFileURL(filePath).href;
-        try {
-          const commandModule = await import(fileURL);
-          const cmd = commandModule.default;
-          if (cmd && cmd.data && cmd.execute) {
-            client.commands.set(cmd.data.name, cmd);
-          }
-        } catch (err) {
-          console.error(`❌ Error importing ${file}:`, err);
+      const filePath = join(commandsPath, file);
+      const fileURL = pathToFileURL(filePath).href;
+      try {
+        const commandModule = await import(fileURL);
+        const cmd = commandModule.default
+          ? { ...commandModule, ...commandModule.default }
+          : commandModule;
+        if (cmd && cmd.data && cmd.execute) {
+          client.commands.set(cmd.data.name, cmd);
+        }
+      } catch (err) {
+        console.error(`❌ Error importing ${file}:`, err);
         }
       }
     }
@@ -572,10 +613,7 @@ async function handleImageOCR(message) {
 })();
 
 async function logLifecycle(state) {
-  for (const guild of client.guilds.cache.values()) {
-    appendMaddenStaffLog({ type: 'lifecycle', guildId: guild.id, state });
-    await postMaddenStaffLog(client, guild.id, state === 'offline' ? 'Bot Offline' : 'Bot Lifecycle', `LEAGUEbuddy Madden services marked \`${state}\`.`).catch(() => null);
-  }
+  console.log(`[lifecycle] ${state}`);
 }
 
 process.on('SIGINT', () => {

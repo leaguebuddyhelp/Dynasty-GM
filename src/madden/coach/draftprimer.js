@@ -1,22 +1,25 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { deriveTeamNeeds, loadTeamEmojis, formatTeamEmoji, draftOrder, applyPickTrades } from './mockdraft.js';
 import { computeSeasonTop100FromHistory } from '../top_players.js';
-import { buildLiveDraftContext, loadLatestLeagueSnapshot, getSeasonPhaseContext } from './draft_live_data.js';
+import { buildLiveDraftContext, getSeasonPhaseContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
+import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 
 // Plan gating (LEAGUEbuddy packsEnabled / plan enforcement)
 export const featureKey = 'scouting_draft';
 
-const ROLE_MAP_PATH = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const SCOUT_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_points.json');
-const SCOUT_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_log.json');
-const DRAFT_PRIMER_HISTORY_PATH = path.join(process.cwd(), 'data', 'madden', 'draft_primer_history.json');
+const ROLE_MAP_PATH = getMaddenDataFilePath('madden_role_ids.json');
+const SCOUT_PATH = getMaddenDataFilePath('scout_points.json');
+const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
+const DRAFT_PRIMER_HISTORY_PATH = getMaddenDataFilePath('draft_primer_history.json');
+const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const CURRENT_CLASS_ID = 'CUS02';
 const POS_ALIAS = { EDGE: 'REDG', REDGE: 'REDG', LEDGE: 'LEDG' };
 const POSITION_NEEDS = {
@@ -779,7 +782,7 @@ function qbDepthStatus(teamName, league) {
 }
 
 function loadDraftClass() {
-    const dir = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
+    const dir = DRAFT_CLASS_DIR;
     if (!fs.existsSync(dir)) return [];
     const files = fs.readdirSync(dir)
         .filter(f => f.toLowerCase().includes(CURRENT_CLASS_ID.toLowerCase()) && f.toLowerCase().includes('big board') && f.endsWith('.json'))
@@ -800,7 +803,7 @@ function seededRand(teamName, round, max) {
 }
 
 export const data = new SlashCommandBuilder()
-    .setName('madden-draftprimer')
+    .setName('draftprimer')
     .setDescription(coachCommandDescription('draftprimer'))
     .setDMPermission(false);
 
@@ -819,15 +822,16 @@ export async function execute(interaction) {
             throw err;
         }
     }
-    const latestSnapshot = loadLatestLeagueSnapshot();
-    const leagueFile = latestSnapshot?.file || null;
-    if (!leagueFile || !latestSnapshot?.league) {
-        if (interaction.deferred || interaction.replied) await interaction.editReply({ content: 'No league snapshot found.', embeds: [], components: [] });
-        else await interaction.reply({ content: 'No league snapshot found.', flags: 64 });
+    let leagueId = null;
+    try {
+        leagueId = requireLeagueIdForGuild(interaction.guildId);
+    } catch (error) {
+        const message = error?.message || 'No league is mapped to this server yet. Run /set-league first.';
+        if (interaction.deferred || interaction.replied) await interaction.editReply({ content: message, embeds: [], components: [] });
+        else await interaction.reply({ content: message, flags: 64 });
         return;
     }
-    const league = latestSnapshot.league;
-    const leagueId = league?.info?.leagueId || league?.leagueId || league?.info?.leagueInfo?.leagueId || 'default';
+    const league = loadLeagueSnapshot(leagueId);
 
     // Resolve teamId early (used throughout)
     const leagueTeamsAll = league?.teams?.leagueTeamInfoList || [];
@@ -988,8 +992,7 @@ export async function execute(interaction) {
 
     let qbChoice = needs.includes('QB') ? chooseQBForTeam(needs) : null;
     let qbTargetRound = qbChoice?.projRound;
-    const emojis = loadTeamEmojis();
-    const teamEmoji = formatTeamEmoji(teamName, emojis);
+    const teamEmoji = '';
 
     // --- QB de-prioritize BEFORE picks (needs) so picks reflect it ---
     const qbDeprioritizeEarly = () => {

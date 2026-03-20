@@ -30,7 +30,7 @@ import { getCoachAssignmentMap, setCoachAssignment } from '../../shared/madden_c
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 
-export const featureKey = 'ops_full';
+export const featureKey = 'core';
 
 const POWER_RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
 const SCOUT_POINTS_FILE = path.join(process.cwd(), 'data', 'madden', 'scout_points.json');
@@ -454,14 +454,14 @@ async function buildRecognitionBackfillPayload({
     if (Number(entry?.ts || 0) < seasonStartTs) continue;
     const userId = String(entry?.userId || '');
     const command = String(entry?.command || '');
-    if (!command.startsWith('madden-')) continue;
-    if (command === 'madden-weeklyupdate') continue;
+    const trackedCommands = new Set(['gamestrategy', 'streamlink', 'scout', 'myscouts', 'draftprimer', 'franchisehub', 'recruiting', 'tradeblock', 'mockdraft']);
+    if (!trackedCommands.has(command)) continue;
     knownCoachUserIds.add(userId);
     const current = commandStats.get(userId) || { total: 0, strategy: 0, stream: 0, frontOffice: 0 };
     current.total += 1;
-    if (command === 'madden-gamestrategy') current.strategy += 1;
-    if (command === 'madden-streamlink') current.stream += 1;
-    if (['madden-scout', 'madden-myscouts', 'madden-draftprimer', 'madden-franchisehub', 'madden-recruiting', 'madden-tradeblock', 'madden-mockdraft'].includes(command)) {
+    if (command === 'gamestrategy') current.strategy += 1;
+    if (command === 'streamlink') current.stream += 1;
+    if (['scout', 'myscouts', 'draftprimer', 'franchisehub', 'recruiting', 'tradeblock', 'mockdraft'].includes(command)) {
       current.frontOffice += 1;
     }
     commandStats.set(userId, current);
@@ -487,14 +487,14 @@ async function buildRecognitionBackfillPayload({
     if (ts < priorSeasonStartTs || ts >= currentSeasonStartTs) continue;
     const userId = String(entry?.userId || '');
     const command = String(entry?.command || '');
-    if (!command.startsWith('madden-')) continue;
-    if (command === 'madden-weeklyupdate') continue;
+    const trackedCommands = new Set(['gamestrategy', 'streamlink', 'scout', 'myscouts', 'draftprimer', 'franchisehub', 'recruiting', 'tradeblock', 'mockdraft']);
+    if (!trackedCommands.has(command)) continue;
     knownCoachUserIds.add(userId);
     const current = priorCommandStats.get(userId) || { total: 0, strategy: 0, stream: 0, frontOffice: 0 };
     current.total += 1;
-    if (command === 'madden-gamestrategy') current.strategy += 1;
-    if (command === 'madden-streamlink') current.stream += 1;
-    if (['madden-scout', 'madden-myscouts', 'madden-draftprimer', 'madden-franchisehub', 'madden-recruiting', 'madden-tradeblock', 'madden-mockdraft'].includes(command)) {
+    if (command === 'gamestrategy') current.strategy += 1;
+    if (command === 'streamlink') current.stream += 1;
+    if (['scout', 'myscouts', 'draftprimer', 'franchisehub', 'recruiting', 'tradeblock', 'mockdraft'].includes(command)) {
       current.frontOffice += 1;
     }
     priorCommandStats.set(userId, current);
@@ -849,7 +849,7 @@ async function buildRecognitionBackfillPayload({
 }
 
 const data = new SlashCommandBuilder()
-  .setName('madden-weeklyupdate')
+  .setName('weeklyupdate')
   .setDescription('Run after each advance. Use rebuild mode only when fixing a specific week.')
   .addStringOption(o => o
     .setName('mode')
@@ -910,7 +910,7 @@ async function execute(interaction) {
     }
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
     if (!leagueId) {
-      await interaction.editReply({ content: 'No league set. Run /madden-set-league first.' });
+      await interaction.editReply({ content: 'No league set. Run /set-league first.' });
       return;
     }
     const provider = new SnallabotProvider();
@@ -1631,13 +1631,13 @@ async function execute(interaction) {
     let guidance = 'Try again shortly.';
     if (lower.includes('no local ea tokens')) {
       shortType = 'Tokens missing';
-      guidance = 'Run `/madden-auth` (or `/madden-auth reset` then `/madden-auth`), then rerun `/madden-weeklyupdate`.';
+      guidance = 'Run `/auth` (or `/auth reset` then `/auth`), then rerun `/weeklyupdate`.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
       shortType = 'Auth/session';
-      guidance = 'Tokens look bad. Run `/madden-auth reset` then `/madden-auth` (PS5 Madden 2026 account), ensure `EA_CONSOLE=ps5` / `EA_GAME_YEAR=2026`, then rerun `/madden-weeklyupdate`.';
+      guidance = 'Tokens look bad. Run `/auth reset` then `/auth` (PS5 Madden 2026 account), ensure `EA_CONSOLE=ps5` / `EA_GAME_YEAR=2026`, then rerun `/weeklyupdate`.';
     } else if (lower.includes('deleted') || lower.includes('league')) {
       shortType = 'League ID';
-      guidance = 'Check the league ID. Run `/madden-set-league <your_league_id>` then rerun `/madden-weeklyupdate`.';
+      guidance = 'Check the league ID. Run `/set-league <your_league_id>` then rerun `/weeklyupdate`.';
     }
     const shortMsg = shortType;
     const embed = new EmbedBuilder()

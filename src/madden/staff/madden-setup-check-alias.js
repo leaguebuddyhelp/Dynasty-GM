@@ -10,4 +10,4 @@ export async function execute(interaction) {
     return setupCheckExecute(interaction);
 }
 
-export default { data, execute };
+export default { data, execute, skipDeploy: true };

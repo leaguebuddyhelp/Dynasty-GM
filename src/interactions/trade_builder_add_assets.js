@@ -761,7 +761,7 @@ export async function execute(interaction) {
       return;
     }
     if (!leagueId) {
-      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league configured. Run /madden-set-league first.' }));
+      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league configured. Run /set-league first.' }));
       return;
     }
     const snapshot = loadLeagueSnapshot(leagueId);

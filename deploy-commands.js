@@ -13,6 +13,71 @@ const commands = [];
 const DEPLOY_SCOPE = String(process.env.DEPLOY_SCOPE || 'guild').toLowerCase();
 const MADDEN_ONLY = String(process.env.MADDEN_ONLY ?? 'true').toLowerCase() !== 'false';
 const APP_ENV = String(process.env.APP_ENV || process.env.NODE_ENV || '').toLowerCase();
+const DEPLOY_PROFILE = String(process.env.LB_DEPLOY_PROFILE || 'beta').toLowerCase();
+
+const BETA_MADDEN_COMMANDS = new Set([
+  'auth',
+  'leagues',
+  'sync',
+  'ping',
+  'plan',
+  'pricing',
+  'claim-plan',
+  'start-here',
+  'install-league',
+  'setup-check',
+  'mycommands',
+  'franchisehub',
+  'myscouts',
+  'draftprimer',
+  'mockdraft',
+  'gamestrategy',
+  'streamlink',
+  'schedule',
+  'roster',
+  'playersearch',
+  'bigboard',
+  'scout',
+  'tradeblock',
+  'tradevalue',
+  'pickvalue',
+  'server-check',
+  'set-league',
+  'setup-channels',
+  'setup-pins',
+  'setup-roles',
+  'setup-reset',
+  'member',
+  'assignrole',
+  'removerole',
+  'syncsetupstatus',
+  'activateplan',
+  'deactivateplan',
+  'attachpaymentref',
+  'viewbilling',
+  'create-threads',
+  'delete-threads',
+  'weeklyupdate',
+]);
+
+function parseGuildIds() {
+  const raw = [
+    process.env.GUILD_IDS,
+    process.env.LB_DEPLOY_GUILD_IDS,
+    process.env.GUILD_ID || process.env.SERVER_ID,
+  ]
+    .filter(Boolean)
+    .join(',');
+
+  return Array.from(
+    new Set(
+      raw
+        .split(',')
+        .map(value => value.trim())
+        .filter(Boolean),
+    ),
+  );
+}
 
 async function loadCommandsForDeployment() {
   const commandFolders = MADDEN_ONLY
@@ -69,6 +134,10 @@ async function loadCommandsForDeployment() {
             console.log(`⏭️  Skipping ${label}/${file} (skipDeploy=true)`);
             continue;
           }
+          if (MADDEN_ONLY && DEPLOY_PROFILE !== 'full' && !BETA_MADDEN_COMMANDS.has(commandName)) {
+            console.log(`⏭️  Skipping ${label}/${file} (not in beta command profile)`);
+            continue;
+          }
           commands.push(command.data.toJSON());
           loadedNames.add(commandName);
           console.log(`✅ Loaded ${commandName} (${label}/${file})`);
@@ -83,6 +152,7 @@ async function loadCommandsForDeployment() {
 async function deployCommands() {
   try {
     console.log('🔄 Loading LEAGUEbuddy commands for deployment...');
+    console.log(`🧭 Command deploy profile: ${DEPLOY_PROFILE}`);
     await loadCommandsForDeployment();
 
     console.log(`📊 Loaded ${commands.length} commands total`);
@@ -99,14 +169,23 @@ async function deployCommands() {
     if (DEPLOY_SCOPE === 'global') {
       route = Routes.applicationCommands(process.env.CLIENT_ID);
       console.log('🌐 Deploy scope: GLOBAL (all servers)');
-    } else {
-      route = Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID || process.env.SERVER_ID);
-      console.log('🏠 Deploy scope: GUILD (test server only)');
+      const data = await rest.put(route, { body: commands });
+      console.log(`✅ Successfully registered ${data.length} application commands!`);
+      console.log('🏀 LEAGUEbuddy commands are ready to use!');
+      return;
+    }
+    
+    const guildIds = parseGuildIds();
+    if (!guildIds.length) {
+      throw new Error('DEPLOY_SCOPE=guild requires GUILD_ID, SERVER_ID, GUILD_IDS, or LB_DEPLOY_GUILD_IDS.');
     }
 
-    const data = await rest.put(route, { body: commands });
-
-    console.log(`✅ Successfully registered ${data.length} application commands!`);
+    console.log(`🏠 Deploy scope: GUILD (${guildIds.length} target server${guildIds.length === 1 ? '' : 's'})`);
+    for (const guildId of guildIds) {
+      route = Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId);
+      const data = await rest.put(route, { body: commands });
+      console.log(`✅ Registered ${data.length} commands for guild ${guildId}`);
+    }
     console.log('🏀 LEAGUEbuddy commands are ready to use!');
 
   } catch (error) {

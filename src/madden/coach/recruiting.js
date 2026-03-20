@@ -3,7 +3,7 @@ import { safeLoadRecruiting, buildRecruitingEmbed } from '../../../madden/helper
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-recruiting')
+  .setName('recruiting')
   .setDescription(coachCommandDescription('recruiting'))
   .setDMPermission(false);
 

@@ -1,24 +1,11 @@
-import fs from 'fs';
-import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { computePlayerValue } from '../../../madden/madden_trade_modal_submit.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
+import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
-const DEV_EMOJI_PATH = path.join(process.cwd(), 'data', 'madden', 'dev_emojis.json');
-
-function safeReadJSON(file, fallback) {
-  try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {
-    return fallback;
-  }
-}
-
-function devLabel(dev, emojis) {
-  const emojiId = emojis?.[dev] ?? emojis?.[String(dev)];
-  if (emojiId) return `<:dev_${dev}:${emojiId}>`;
+function devLabel(dev) {
   const map = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
   return map[dev] || 'Normal';
 }
@@ -32,7 +19,7 @@ function heightToFeetInches(h) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-playersearch')
+  .setName('playersearch')
   .setDescription(coachCommandDescription('playersearch'))
   .addStringOption(o =>
     o.setName('team')
@@ -113,7 +100,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    await interaction.reply({ content: coachErrorBlurb('noLeague', 'No league set. Run /madden-setleague first.'), ephemeral: true });
+    await interaction.reply({ content: coachErrorBlurb('noLeague', 'No league set. Run /set-league first.'), ephemeral: true });
     return;
   }
   const teamInput = interaction.options.getString('team');
@@ -139,8 +126,6 @@ export async function execute(interaction) {
   const teamName = getFullTeamName(teamMatch, 'Unknown');
   const roster = (snapshot?.rosters?.teams?.[teamId]?.rosterInfoList) || [];
   const rosters = snapshot?.rosters?.teams || {};
-  const devEmojis = safeReadJSON(DEV_EMOJI_PATH, {});
-
   const matches = roster.filter(p => {
     const full = `${p.firstName || ''} ${p.lastName || ''}`.trim().toLowerCase();
     const posOk = !positionInput || (p.position || '').toLowerCase() === positionInput.toLowerCase();
@@ -153,7 +138,7 @@ export async function execute(interaction) {
   }
 
   const p = matches[0];
-  const dev = devLabel(p.devTrait, devEmojis);
+  const dev = devLabel(p.devTrait);
   const ht = heightToFeetInches(p.height);
   const wt = p.weight ? `${p.weight} lbs` : 'N/A';
   const years = Number.isFinite(p.yearsPro) ? `${p.yearsPro}` : 'N/A';
@@ -171,8 +156,10 @@ export async function execute(interaction) {
     .setTitle(`${p.position || ''} ${p.firstName || ''} ${p.lastName || ''}`.trim())
     .setDescription(desc)
     .setColor(0x1e90ff);
+  let files = [];
+  files = applyEmbedThumbnailFromAsset(embed, files, getNflTeamLogoAsset(teamMatch));
 
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed], files });
 }
 
 export default { data, execute, autocomplete };

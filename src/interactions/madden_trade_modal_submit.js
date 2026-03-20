@@ -1,16 +1,16 @@
 import fs from 'fs';
-import path from 'path';
 import { resolveOriginalPickOwner } from '../madden/pick_overrides_store.js';
 import { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { canTrade, loadTradeCounts } from '../shared/madden_trade_utils.js';
 import { saveTradeDraft } from '../shared/trade_draft_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
+const CHANNEL_MAP_FILE = getMaddenDataFilePath('madden_channel_ids.json');
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
@@ -520,9 +520,11 @@ export { parseAssets, buildValueMap, buildTradeEmbed, formatValueSummary, parseP
 
 export async function execute(interaction) {
   if (!interaction.isModalSubmit() || interaction.customId !== customId) return;
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
-    await interaction.reply({ content: 'No league set. Run /madden-set-league first.', ephemeral: true });
+  let leagueId = null;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch (error) {
+    await interaction.reply({ content: error?.message || 'No league is mapped to this server yet. Run /set-league first.', ephemeral: true });
     return;
   }
   if (!canTrade(leagueId)) {

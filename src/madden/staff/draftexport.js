@@ -67,7 +67,7 @@ function collectDraft(snapshot) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-draftexport')
+  .setName('draftexport')
   .setDescription('Export the current draft class (rookies) as JSON (staff-only).')
   .setDefaultMemberPermissions(null);
 
@@ -81,13 +81,13 @@ async function execute(interaction) {
   }
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    await interaction.editReply({ content: 'No league set. Run /madden-set-league first.' });
+    await interaction.editReply({ content: 'No league set. Run /set-league first.' });
     return;
   }
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
     if (!snapshot) {
-      await interaction.editReply({ content: 'No snapshot found. Run /madden-weeklyupdate first.' });
+      await interaction.editReply({ content: 'No snapshot found. Run /weeklyupdate first.' });
       return;
     }
     const draft = collectDraft(snapshot);

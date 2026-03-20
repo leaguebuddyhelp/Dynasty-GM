@@ -2,7 +2,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
 
 export const data = new SlashCommandBuilder()
-    .setName('madden-setup-check')
+    .setName('setup-check')
     .setDescription('View your server setup, plan, and unlocked Madden features.');
 
 export async function execute(interaction) {
@@ -13,6 +13,15 @@ export async function execute(interaction) {
     }
 
     const status = getSetupStatus(guildId);
+    const setupSummary = status.syncNeeded && status.overlayStatus.isComplete
+        ? 'One fix left: run `/syncsetupstatus` so LEAGUEbuddy access matches the completed overlay setup.'
+        : [
+            `Overlay setup: ${status.overlayStatus.isComplete ? '✅ complete' : status.overlayStatus.exists ? '⚠️ incomplete' : '❌ not started'}`,
+            `LEAGUEbuddy access setup: ${status.setupCompleted ? '✅ complete' : '❌ incomplete'}`,
+            `Plan: **${status.plan}**`,
+            `Subscription: **${status.subscriptionStatus}**`,
+            `Packs: ${status.packsEnabled.length ? status.packsEnabled.join(', ') : '(none)'}`,
+        ].join('\n');
     const unlockedNow = status.unlockedFeatures.map((item) => `• ${item.label}`).join('\n') || '• None yet';
     const blockedNow = status.blockedFeatures
         .map((item) => `• ${item.label} (${item.reason === 'plan_too_low' ? 'upgrade required' : item.reason === 'setup_incomplete' ? 'finish setup' : item.reason === 'subscription_inactive' ? 'subscription inactive' : item.reason})`)
@@ -21,21 +30,15 @@ export async function execute(interaction) {
     const embed = new EmbedBuilder()
         .setTitle('Madden Setup Check')
         .setColor(status.syncNeeded ? 0xf1c40f : status.overlayStatus.isComplete && status.setupCompleted ? 0x57f287 : 0x5865f2)
-        .setDescription([
-            `Overlay setup: ${status.overlayStatus.isComplete ? '✅ complete' : status.overlayStatus.exists ? '⚠️ incomplete' : '❌ not started'}`,
-            `LEAGUEbuddy access setup: ${status.setupCompleted ? '✅ complete' : '❌ incomplete'}`,
-            `Plan: **${status.plan}**`,
-            `Subscription: **${status.subscriptionStatus}**`,
-            `Packs: ${status.packsEnabled.length ? status.packsEnabled.join(', ') : '(none)'}`,
-        ].join('\n'))
+        .setDescription(setupSummary)
         .addFields(
             {
-                name: 'Checklist',
+                name: 'Status',
                 value: [
                     `${status.overlayStatus.exists ? '✅' : '❌'} Overlay config exists`,
                     `${status.overlayStatus.isComplete ? '✅' : '❌'} Overlay setup is complete`,
-                    `${status.setupCompleted ? '✅' : '❌'} LEAGUEbuddy setup is complete`,
-                    `${status.syncNeeded ? '❌' : '✅'} Setup states are in sync`,
+                    `${status.setupCompleted ? '✅' : '❌'} Access setup is complete`,
+                    `${status.syncNeeded ? '❌' : '✅'} Overlay and access states match`,
                 ].join('\n'),
             },
             {

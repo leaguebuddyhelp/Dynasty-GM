@@ -1,14 +1,14 @@
 import fs from 'fs';
-import path from 'path';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from './madden_staff_ops.js';
 import { sendCoachReceipt } from './madden_coach_receipts.js';
 import { getMaddenSnapshotContext, loadMaddenChannelMap } from './madden_metadata.js';
 import { getGuildRoleMap } from './madden_guild_config.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'thread_reminders.json');
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+const STATE_FILE = getMaddenDataFilePath('thread_reminders.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 const TWELVE_HOURS = 12 * 60 * 60 * 1000;
 const SIX_HOURS = 6 * 60 * 60 * 1000;
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getTradeDraft } from '../shared/trade_draft_store.js';
 import { rosterForTeam, buildButtons } from './trade_builder_add_assets.js';
 import { readRoster, normalizeName, resolveTeamNameForRoster } from '../shared/rosterUtils.js';
@@ -53,10 +53,14 @@ export async function execute(interaction) {
     return;
   }
 
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
+  let leagueId = draft.leagueId || null;
   if (!leagueId) {
-    await interaction.reply({ content: 'No league configured.', ephemeral: true });
-    return;
+    try {
+      leagueId = requireLeagueIdForGuild(interaction.guildId);
+    } catch (error) {
+      await interaction.reply({ content: error?.message || 'No league is mapped to this server yet. Run /set-league first.', ephemeral: true });
+      return;
+    }
   }
   const snapshot = loadLeagueSnapshot(leagueId);
   const teamId = side === 'yours' ? draft.yourTeamId : draft.otherTeamId;

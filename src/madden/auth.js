@@ -1,66 +1,102 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import path from 'path';
-import fs from 'fs';
-import { EA_LOGIN_URL, YEAR, ConsoleOverride } from '../../madden/ea_constants.js';
-import { exchangeLoginCode, fetchTokenInfo, fetchEntitlements, fetchPersonas, extractValidPersonas, exchangePersonaToken } from '../../madden/ea_personas.js';
-import { saveTokens as saveTokensDb, deleteTokens as deleteTokensDb } from '../../madden/madden_db.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+
+import { YEAR, ConsoleOverride } from './ea_constants.js';
+import {
+  exchangeLoginCode,
+  exchangePersonaToken,
+  extractValidPersonas,
+  fetchEntitlements,
+  fetchPersonas,
+  fetchTokenInfo,
+} from './ea_personas.js';
+import {
+  deleteGuildEATokens,
+  getGuildAuthStartUrl,
+  saveGuildEATokens,
+} from './ea_guild_auth.js';
 
 const data = new SlashCommandBuilder()
-  .setName('madden-auth')
-  .setDescription('Link your EA account for Madden sync.')
-  .addStringOption(option =>
-    option.setName('redirect_url')
-      .setDescription('Paste the EA callback URL from 127.0.0.1:4001/madden/callback')
-      .setRequired(false)
+  .setName('auth')
+  .setDescription('Start the required redirect-link account connection flow for this server.')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .addStringOption((option) =>
+    option
+      .setName('redirect_url')
+      .setDescription('Paste the full callback URL to finish the same redirect flow manually')
+      .setRequired(false),
   )
-  .addBooleanOption(option =>
-    option.setName('reset')
-      .setDescription('Clear saved Madden tokens before authenticating again')
-      .setRequired(false)
+  .addBooleanOption((option) =>
+    option
+      .setName('reset')
+      .setDescription('Clear the saved league connection for this server before relinking')
+      .setRequired(false),
   );
 
-const TOKEN_FILE = path.join(process.cwd(), 'data', 'madden', 'tokens.json');
-
-function ensureTokenDir() {
-  fs.mkdirSync(path.dirname(TOKEN_FILE), { recursive: true });
-}
-
-function saveTokens(tokens) {
-  ensureTokenDir();
-  fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
-  saveTokensDb(tokens);
+function pickBestPersona(personas = []) {
+  const score = (persona) => {
+    let value = 0;
+    const ent = `${persona.entitlement || ''}`.toUpperCase();
+    const ns = `${persona.namespaceName || ''}`.toUpperCase();
+    if (persona.systemConsole?.toLowerCase() === 'ps5') value += 5;
+    if (persona.systemConsole?.toLowerCase() === 'xbsx') value += 4;
+    if (ent.includes('MADDEN_26')) value += 3;
+    if (ns.includes('MADDEN')) value += 1;
+    return value;
+  };
+  return [...personas].sort((a, b) => score(b) - score(a))[0] || null;
 }
 
 async function execute(interaction) {
   await interaction.deferReply();
+
+  if (!interaction.guildId) {
+    await interaction.editReply({ content: 'This command can only be used in a server.' });
+    return;
+  }
+
   const redirectUrl = interaction.options.getString('redirect_url');
   const doReset = interaction.options.getBoolean('reset');
-  const consoleOverride = ConsoleOverride.NONE;
+  const loginUrl = getGuildAuthStartUrl(interaction.guildId);
 
   if (doReset) {
-    try { fs.unlinkSync(TOKEN_FILE); } catch { }
-    deleteTokensDb();
+    deleteGuildEATokens(interaction.guildId);
     if (!redirectUrl) {
-      const embed = new EmbedBuilder()
-        .setTitle('Madden Tokens Reset')
-        .setDescription('Saved Madden tokens cleared. Run /madden-auth with redirect_url to relink.')
-        .setColor(0xffcc00);
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('EA Auth Reset')
+            .setDescription('The saved league connection for this server was cleared. Run `/auth` again to reconnect it.')
+            .setColor(0xffcc00),
+        ],
+      });
       return;
     }
   }
 
   if (!redirectUrl) {
-    const embed = new EmbedBuilder()
-      .setTitle('Madden EA Login')
-      .setDescription('Link your EA account so the bot can sync your league.')
-      .addFields(
-        { name: 'Step 1', value: `Click and sign in: ${EA_LOGIN_URL}` },
-        { name: 'Step 2', value: 'You will land on a page at http://127.0.0.1:4001/madden/callback?... Copy that entire URL.' },
-        { name: 'Step 3', value: 'Run /madden-auth again and paste the URL into redirect_url. Tokens will be saved locally.' }
-      )
-      .setColor(0x5865f2);
-    await interaction.editReply({ embeds: [embed] });
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel('Open Connection Link')
+        .setURL(loginUrl),
+    );
+
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle('Connect League Account')
+          .setDescription('The only supported way to connect a league account for this server is the redirect link flow.')
+          .addFields(
+            { name: 'Step 1', value: 'Tap **Open Connection Link** below.' },
+            { name: 'Step 2', value: 'Finish the browser sign-in and redirect flow.' },
+            { name: 'Step 3', value: 'If the callback page says the connection was saved for this server, run `/install-league`.' },
+            { name: 'If The Callback Page Does Not Save It', value: 'Copy the full callback URL from the browser address bar, then run `/auth redirect_url:<paste-full-callback-url>` in Discord to finish the same redirect flow manually.' },
+            { name: 'Next', value: 'After the redirect flow is saved, run `/install-league`.' },
+          )
+          .setColor(0x5865f2),
+      ],
+      components: [row],
+    });
     return;
   }
 
@@ -69,60 +105,72 @@ async function execute(interaction) {
     const tokenInfo = await fetchTokenInfo(loginTokens.access_token);
     const pid = tokenInfo?.pid_id;
     if (!pid) throw new Error('No pid_id returned from tokeninfo.');
+
     const entRes = await fetchEntitlements(pid, loginTokens.access_token);
     const entitlements = entRes?.entitlements?.entitlement || [];
-    const personaResponses = await Promise.all(entitlements.map(async ent => ({ ent, personas: await fetchPersonas(ent.pidUri, loginTokens.access_token) })));
-    const personas = extractValidPersonas(entRes, personaResponses, consoleOverride);
+    const personaResponses = await Promise.all(
+      entitlements.map(async (ent) => ({
+        ent,
+        personas: await fetchPersonas(ent.pidUri, loginTokens.access_token),
+      })),
+    );
+    const personas = extractValidPersonas(entRes, personaResponses, ConsoleOverride.NONE);
     if (!personas.length) {
-      throw new Error('No Madden personas found for this EA account (check entitlements and platform).');
+      throw new Error('No Madden personas found for this EA account.');
     }
-    const pickPersona = () => {
-      // Prefer PS5 or next-gen Madden 26 entitlements if present.
-      const score = p => {
-        let s = 0;
-        const ent = `${p.entitlement || ''}`.toUpperCase();
-        const ns = `${p.namespaceName || ''}`.toUpperCase();
-        if (p.systemConsole && p.systemConsole.toLowerCase() === 'ps5') s += 5;
-        if (p.systemConsole && p.systemConsole.toLowerCase() === 'xbsx') s += 4;
-        if (ent.includes('MADDEN_26')) s += 3;
-        if (ns.includes('MADDEN')) s += 1;
-        return s;
-      };
-      const sorted = [...personas].sort((a, b) => score(b) - score(a));
-      return sorted[0];
-    };
-    const chosen = pickPersona();
-    const personaToken = await exchangePersonaToken(loginTokens.access_token, chosen.personaId, chosen.namespaceName);
-    const tokens = {
+
+    const chosen = pickBestPersona(personas);
+    if (!chosen) {
+      throw new Error('Could not resolve a usable Madden persona.');
+    }
+
+    const personaToken = await exchangePersonaToken(
+      loginTokens.access_token,
+      chosen.personaId,
+      chosen.namespaceName,
+    );
+
+    const tokens = saveGuildEATokens(interaction.guildId, {
       accessToken: personaToken.access_token,
       refreshToken: personaToken.refresh_token,
       expiry: Date.now() + (personaToken.expires_in || 0) * 1000,
       console: chosen.systemConsole || process.env.EA_CONSOLE || 'ps5',
       blazeId: `${chosen.personaId}`,
       gameYear: YEAR,
-    };
-    saveTokens(tokens);
+      personaName: chosen.displayName,
+      entitlement: chosen.entitlement,
+      namespace: chosen.namespaceName,
+    });
 
-    const embed = new EmbedBuilder()
-      .setTitle('Madden Auth Complete')
-      .setDescription('Tokens saved. You can now run /madden-sync.')
-      .addFields(
-        { name: 'Expires', value: new Date(tokens.expiry).toISOString(), inline: true },
-        { name: 'Console', value: tokens.console, inline: true },
-        { name: 'Persona', value: `${chosen.displayName} (${chosen.personaId})`, inline: false },
-        { name: 'Entitlement', value: chosen.entitlement, inline: false },
-        { name: 'Namespace', value: chosen.namespaceName, inline: false },
-        { name: 'Stored at', value: TOKEN_FILE, inline: false },
-        { name: 'Game Year', value: `${YEAR}`, inline: true }
-      )
-      .setColor(0x00cc66);
-    await interaction.editReply({ embeds: [embed] });
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle('League Account Connected')
+          .setDescription('The league connection was saved for this server. You can run `/install-league` now.')
+          .addFields(
+            { name: 'Console', value: tokens.console || 'unknown', inline: true },
+            { name: 'Game Year', value: `${tokens.gameYear || YEAR}`, inline: true },
+            { name: 'Persona', value: `${chosen.displayName} (${chosen.personaId})`, inline: false },
+            { name: 'Next', value: 'Run `/install-league`.', inline: false },
+          )
+          .setColor(0x57f287),
+      ],
+    });
   } catch (err) {
-    const embed = new EmbedBuilder()
-      .setTitle('Madden Auth Failed')
-      .setDescription(err.message || 'Unknown error')
-      .setColor(0xcc0000);
-    await interaction.editReply({ embeds: [embed] });
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle('EA Auth Failed')
+          .setDescription([
+            err?.message || 'Unknown error',
+            '',
+            'This server must use the redirect link flow.',
+            'Next: rerun `/auth` and use the connection link again.',
+            'If the callback page does not save automatically, copy the full callback URL and run `/auth redirect_url:<paste-full-callback-url>` to finish that same redirect flow manually.',
+          ].join('\n'))
+          .setColor(0xed4245),
+      ],
+    });
   }
 }
 

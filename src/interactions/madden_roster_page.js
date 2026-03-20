@@ -2,6 +2,7 @@ import { ButtonInteraction } from 'discord.js';
 import { loadLeagueSnapshot } from '../madden/madden_data.js';
 import { buildRosterEmbeds } from '../madden/coach/roster.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { applyEmbedThumbnailFromAsset } from '../shared/madden_assets.js';
 
 export const customId = /^madden_roster_page_(\d+)_([0-9]+)_([0-9]+)$/;
 
@@ -30,6 +31,8 @@ export async function execute(interaction) {
     }
     const embeds = result.embeds;
     page = Math.max(0, Math.min(page, embeds.length - 1));
+    let files = [];
+    files = applyEmbedThumbnailFromAsset(embeds[page], files, result.logoAsset);
     const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = await import('discord.js');
     const baseId = `madden_roster_page_${leagueId}_${teamId}`;
     const row = embeds.length > 1
@@ -46,7 +49,7 @@ export async function execute(interaction) {
             .setDisabled(page >= embeds.length - 1)
         )
       : null;
-    await interaction.update({ embeds: [embeds[page]], components: row ? [row] : [] });
+    await interaction.update({ embeds: [embeds[page]], components: row ? [row] : [], files });
   } catch (err) {
     console.error('[madden_roster_page] failed:', err);
     try {

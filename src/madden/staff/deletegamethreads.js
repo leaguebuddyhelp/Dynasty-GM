@@ -1,33 +1,11 @@
 import { SlashCommandBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
-import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
-
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
-
-function loadJson(file) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
-}
-
-function loadRoleMap(guildId = null) {
-  const overlay = getGuildRoleMap(guildId);
-  if (overlay && Object.keys(overlay).length) return overlay;
-  const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-  return loadJson(ROLE_MAP_FILE);
-}
-
-function hasStaffRole(member, roleMap) {
-  return STAFF_ROLES.some(r => {
-    const id = roleMap[r];
-    return id && member.roles.cache.has(id);
-  });
-}
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-deletegamethreads')
-  .setDescription('Delete game threads for a given week (staff-only).')
+  .setName('delete-threads')
+  .setDescription('Delete the current week or playoff game threads for this server.')
   .addIntegerOption(o => o.setName('week').setDescription('Week number to delete (optional, defaults to current week)').setRequired(false))
   .addStringOption(o =>
     o.setName('playoff_round')
@@ -44,11 +22,11 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   await interaction.deferReply({ ephemeral: true });
-  const roleMap = loadRoleMap(interaction.guildId);
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   const channelMap = loadMaddenChannelMap(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
-    await interaction.editReply({ content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+    await interaction.editReply({ content: 'Only server admins, LB Commish, or LB Co-Commish can use this command.' });
     return;
   }
   const playoffRound = interaction.options.getString('playoff_round');

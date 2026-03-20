@@ -4,9 +4,10 @@ import { resolveLeagueIdWithConfig } from '../../madden/madden_data.js';
 import { getSeasonState } from './seasonUtils.js';
 import { getCoachAssignmentMap } from './madden_coach_assignments.js';
 import { getMaddenSnapshotContext } from './madden_metadata.js';
+import { getLeaguebuddyRecognitionStorePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 
-const STORE_PATH = path.join(process.cwd(), 'data', 'leaguebuddy_recognition.json');
-const MADDEN_SNAPSHOT_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
+const STORE_PATH = getLeaguebuddyRecognitionStorePath();
+const MADDEN_SNAPSHOT_DIR = getMaddenLeaguesDir();
 
 export const RECOGNITION_ECONOMY = {
   points: {
@@ -85,12 +86,12 @@ export function getRecognitionPerksByTier() {
 }
 
 const FRONT_OFFICE_COMMANDS = new Set([
-  'madden-scout',
-  'madden-myscouts',
-  'madden-draftprimer',
-  'madden-franchisehub',
-  'madden-recruiting',
-  'madden-tradeblock',
+  'scout',
+  'myscouts',
+  'draftprimer',
+  'franchisehub',
+  'recruiting',
+  'tradeblock',
   '2k-scout',
   '2k-myscouts',
   '2k-recruiting',
@@ -99,11 +100,11 @@ const FRONT_OFFICE_COMMANDS = new Set([
 ]);
 
 const STRATEGY_COMMANDS = new Set([
-  'madden-gamestrategy',
+  'gamestrategy',
 ]);
 
 const STREAM_COMMANDS = new Set([
-  'madden-streamlink',
+  'streamlink',
   '2k-streamlink',
 ]);
 

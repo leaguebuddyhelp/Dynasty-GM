@@ -1,38 +1,90 @@
 import { SlashCommandBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
 import { updateAvailableTeamsPin } from '../../../madden/available_teams.js';
 import { updateFairSimBoard } from '../../shared/fairsim_board.js';
 import { setCoachAssignment } from '../../shared/madden_coach_assignments.js';
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
+import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { getFullTeamName } from '../../shared/madden_team_names.js';
+import { saveGuildMaddenConfig, loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
-const ASSIGNABLE = ['Ghost Legacy Trade Committee', 'Ghost Legacy'];
+const ASSIGNABLE = ['Trade Committee', 'Ghost Legacy Trade Committee', 'Madden Trade Committee', 'LB Trade Committee', 'LEAGUEbuddy Trade Committee'];
 
-function loadRoleMap() {
-  try {
-    return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8'));
-  } catch {
-    return {};
-  }
+function normalizeKey(value = '') {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function hasStaffRole(member, roleMap) {
-  return STAFF_ROLES.some(r => {
-    const id = roleMap[r];
-    return id && member.roles.cache.has(id);
+function buildCoachRoleNamesFromSnapshot(snapshot) {
+  const teams = snapshot?.teams?.leagueTeamInfoList || [];
+  return teams.map((team) => {
+    const fullName = getFullTeamName(team, '').trim();
+    return fullName ? `${fullName} Coach` : null;
+  }).filter(Boolean);
+}
+
+async function ensureCoachRole(interaction, roleName) {
+  let role = interaction.guild.roles.cache.find((item) => item.name === roleName) || null;
+  if (!role) {
+    role = await interaction.guild.roles.create({
+      name: roleName,
+      mentionable: false,
+      reason: 'Coach role created on assignment',
+    });
+  }
+
+  const cfg = loadGuildMaddenConfig(interaction.guildId) || {};
+  cfg.compat = cfg.compat || {};
+  cfg.compat.maddenRoleMap = cfg.compat.maddenRoleMap || {};
+  const baseName = roleName.replace(/ coach$/i, '').trim();
+  cfg.compat.maddenRoleMap[roleName] = role.id;
+  cfg.compat.maddenRoleMap[baseName] = cfg.compat.maddenRoleMap[baseName] || role.id;
+  saveGuildMaddenConfig(interaction.guildId, cfg);
+  return role;
+}
+
+function roleNamePriority(name = '') {
+  if (name === 'LEAGUEbuddy Trade Committee') return 100;
+  if (ASSIGNABLE.includes(name)) return 90;
+  const words = String(name).trim().split(/\s+/).length;
+  return name.endsWith(' Coach') ? words : 0;
+}
+
+const roleChoices = (roleMap) => {
+  const byRoleId = new Map();
+  for (const [name, roleId] of Object.entries(roleMap || {})) {
+    if (!roleId) continue;
+    if (!name.endsWith(' Coach') && !ASSIGNABLE.includes(name)) continue;
+    const key = String(roleId);
+    const existing = byRoleId.get(key);
+    if (!existing || roleNamePriority(name) > roleNamePriority(existing.name)) {
+      byRoleId.set(key, { name, value: name });
+    }
+  }
+  return [...byRoleId.values()].sort((a, b) => a.name.localeCompare(b.name));
+};
+
+function coachChoicesFromSnapshot(interaction, roleMap) {
+  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
+  if (!leagueId) return [];
+  let snapshot = null;
+  try {
+    snapshot = loadLeagueSnapshot(leagueId);
+  } catch {
+    return [];
+  }
+  const names = buildCoachRoleNamesFromSnapshot(snapshot);
+  return names.map((name) => {
+    const mappedId = roleMap[name];
+    const existingRole = mappedId ? interaction.guild.roles.cache.get(mappedId) : interaction.guild.roles.cache.find((role) => role.name === name);
+    return {
+      name,
+      value: name,
+      existing: !!existingRole,
+    };
   });
 }
 
-const roleChoices = (roleMap) => Object.keys(roleMap)
-  .filter(name =>
-    name.endsWith(' Coach') ||
-    ASSIGNABLE.includes(name)
-  )
-  .map(name => ({ name, value: name }));
-
 export const data = new SlashCommandBuilder()
-  .setName('madden-assignrole')
+  .setName('assignrole')
   .setDescription('Assign up to two Madden roles (coach or trade committee) to a user (Commish/Co-Commish only).')
   .addUserOption(o => o.setName('user').setDescription('User to assign').setRequired(true))
   .addStringOption(o => o.setName('role1').setDescription('First role to assign').setRequired(true).setAutocomplete(true))
@@ -40,11 +92,11 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(null);
 
 export async function execute(interaction) {
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   await interaction.deferReply({ ephemeral: true });
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
-    await interaction.editReply({ content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+    await interaction.editReply({ content: 'Only server admins, LB Commish, or LB Co-Commish can use this command.' });
     return;
   }
   const target = interaction.options.getUser('user');
@@ -59,10 +111,14 @@ export async function execute(interaction) {
 
   const resolveRole = (name) => {
     const id = roleMap[name];
-    return id ? interaction.guild.roles.cache.get(id) : null;
+    if (id) return interaction.guild.roles.cache.get(id) || null;
+    return interaction.guild.roles.cache.find((role) => role.name === name) || null;
   };
 
-  const r1 = resolveRole(roleName1);
+  let r1 = resolveRole(roleName1);
+  if (!r1 && / coach$/i.test(roleName1)) {
+    r1 = await ensureCoachRole(interaction, roleName1);
+  }
   if (!r1) {
     await interaction.editReply({ content: `Role "${roleName1}" not found.` });
     return;
@@ -70,6 +126,9 @@ export async function execute(interaction) {
   let r2 = null;
   if (roleName2) {
     r2 = resolveRole(roleName2);
+    if (!r2 && / coach$/i.test(roleName2)) {
+      r2 = await ensureCoachRole(interaction, roleName2);
+    }
     if (!r2) {
       await interaction.editReply({ content: `Role "${roleName2}" not found.` });
       return;
@@ -115,9 +174,10 @@ export async function execute(interaction) {
 
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   const focused = interaction.options.getFocused().toLowerCase();
-  const options = roleChoices(roleMap)
+  const options = [...roleChoices(roleMap), ...coachChoicesFromSnapshot(interaction, roleMap)]
+    .filter((item, index, arr) => arr.findIndex((other) => normalizeKey(other.name) === normalizeKey(item.name)) === index)
     .filter(r => r.name.toLowerCase().includes(focused))
     .slice(0, 25);
   try {

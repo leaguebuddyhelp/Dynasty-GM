@@ -1,6 +1,7 @@
 import { PLANS, SUBSCRIPTION_STATUSES } from './guild_store.js';
 import { normalizePlan } from './plans.js';
 import planRepository from './repositories/guild_plan_repository.js';
+import { getTestingBypassBilling } from './testing_bypass.js';
 import auditRepository from './repositories/audit_log_repository.js';
 import {
   ensureGuildActivated,
@@ -151,6 +152,8 @@ export function attachPaymentReference(guildId, {
 }
 
 export function getBillingSummary(guildId) {
+  const bypass = getTestingBypassBilling(guildId);
+  if (bypass) return bypass;
   const rec = planRepository.getGuild(guildId, { createIfMissing: false });
   return {
     guildId: String(guildId),
@@ -158,6 +161,7 @@ export function getBillingSummary(guildId) {
     subscriptionStatus: rec?.subscriptionStatus || SUBSCRIPTION_STATUSES.inactive,
     activatedAt: rec?.activatedAt || null,
     billing: rec?.billing || null,
+    testingBypass: false,
   };
 }
 

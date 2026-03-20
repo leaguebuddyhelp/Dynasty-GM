@@ -34,6 +34,18 @@ function persistTokens(token) {
   }
 }
 
+function persistTokensToTarget(token, persistTokenUpdate) {
+  if (typeof persistTokenUpdate === 'function') {
+    try {
+      persistTokenUpdate(token);
+      return;
+    } catch (e) {
+      console.warn('[ea_client] custom token persist failed:', e?.message || e);
+    }
+  }
+  persistTokens(token);
+}
+
 // TokenInformation / SessionInformation shapes (JS version)
 // token: { accessToken, refreshToken, expiry: Date, console: 'ps5'|'xbsx'|..., blazeId }
 // session: { blazeId: number, sessionKey: string, requestId: number }
@@ -48,7 +60,7 @@ const headers = (t) => ({
   "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 13; sdk_gphone_x86_64 Build/TE1A.220922.031)",
 });
 
-async function refreshToken(token) {
+async function refreshToken(token, persistTokenUpdate) {
   const expiryMs = token?.expiry instanceof Date
     ? token.expiry.getTime()
     : Number(token?.expiry || 0);
@@ -82,7 +94,7 @@ async function refreshToken(token) {
     productOverride: token.productOverride,
     gameYear: token.gameYear || YEAR,
   };
-  persistTokens(refreshed);
+  persistTokensToTarget(refreshed, persistTokenUpdate);
   return refreshed;
 }
 
@@ -219,7 +231,7 @@ async function getExportData(token, session, exportType, body) {
   }
 }
 
-export async function createEAClientFromEnv(env) {
+export async function createEAClientFromEnv(env, options = {}) {
   const consoleValue = env.EA_CONSOLE || 'ps5';
   const expiry = env.EA_ACCESS_TOKEN_EXPIRES_AT
     ? new Date(Number(env.EA_ACCESS_TOKEN_EXPIRES_AT))
@@ -238,10 +250,10 @@ export async function createEAClientFromEnv(env) {
     throw new Error('Missing EA_ACCESS_TOKEN or EA_REFRESH_TOKEN in environment');
   }
   if (env.EA_GAME_YEAR && `${env.EA_GAME_YEAR}` !== `${YEAR}`) {
-    throw new Error(`Cached tokens are for game year ${env.EA_GAME_YEAR}, current YEAR=${YEAR}. Please re-auth with /madden-auth.`);
+    throw new Error(`Cached tokens are for game year ${env.EA_GAME_YEAR}, current YEAR=${YEAR}. Please re-auth with /auth.`);
   }
 
-  const freshToken = await refreshToken(token);
+  const freshToken = await refreshToken(token, options.persistTokenUpdate);
   const session = await retrieveBlazeSession(freshToken);
   return await ephemeralClientFromToken({ ...freshToken, gameYear: env.EA_GAME_YEAR || YEAR }, session);
 }

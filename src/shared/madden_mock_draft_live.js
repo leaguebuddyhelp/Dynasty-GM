@@ -9,7 +9,8 @@ import {
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
 import { loadRoleMap } from '../madden/staff/staffUtils.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import {
   applyPickTrades,
   draftOrder,
@@ -23,8 +24,8 @@ import {
 
 const CONFIG_FILE = path.join(process.cwd(), 'data', 'config.json');
 
-const STORE_FILE = path.join(process.cwd(), 'data', 'madden', 'mock_draft_sessions.json');
-const AVP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_avp.json');
+const STORE_FILE = getMaddenDataFilePath('mock_draft_sessions.json');
+const AVP_FILE = getMaddenDataFilePath('madden_avp.json');
 const MAX_SELECT_OPTIONS = 25;
 const SESSION_MAX_IDLE_MS = 1000 * 60 * 60 * 6;
 
@@ -1425,7 +1426,7 @@ export function createMockDraftSession({ guildId, channelId, hostId }) {
 }
 
 export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roomType = 'private_inline', originalChannelId = channelId }) {
-  const leagueId = resolveLeagueIdWithConfig(guildId);
+  const leagueId = requireLeagueIdForGuild(guildId);
   const league = leagueId ? loadLeagueSnapshot(leagueId) : null;
   if (!league) throw new Error('League snapshot is not ready.');
   const draftYear = currentDraftYear(league);

@@ -1,19 +1,20 @@
 import fs from 'fs';
 import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { deriveTeamNeeds } from './mockdraft.js';
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
+import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 
 export const featureKey = 'scouting_draft';
 
-const SCOUT_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_log.json');
-const DEV_EMOJI_PATH = path.join(process.cwd(), 'data', 'madden', 'dev_emojis.json');
-const DRAFT_DIR = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
+const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
+const DEV_EMOJI_PATH = getMaddenDataFilePath('dev_emojis.json');
+const DRAFT_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
-const COACH_MAP_PATH = path.join(process.cwd(), 'data', 'coachRoleMap.json');
+const COACH_MAP_PATH = getDataFilePath('coachRoleMap.json');
 const POINTS_PER_WEEK = 60;
 const REVEAL_ORDER = ['arch', 'ovr', 'dev'];
 const MAX_WEEKLY_POINTS = 120;
@@ -287,8 +288,6 @@ function loadDraftClass(classId) {
 }
 
 function formatDev(dev, emojis) {
-  const emojiId = emojis?.[dev] ?? emojis?.[String(dev)];
-  if (emojiId) return `<:dev_${dev}:${emojiId}>`;
   const map = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
   return map[dev] || 'Normal';
 }
@@ -399,8 +398,12 @@ export function updateBoardUiState(userId, classKey, patch = {}, seasonKey) {
 }
 
 function buildPagesForUser(userId, guildId) {
-  const leagueId = resolveLeagueIdWithConfig(guildId);
-  if (!leagueId) return { error: 'No league set. Run /madden-setleague first.' };
+  let leagueId = null;
+  try {
+    leagueId = requireLeagueIdForGuild(guildId);
+  } catch (error) {
+    return { error: error?.message || 'No league set. Run /set-league first.' };
+  }
   const snapshot = loadLeagueSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const calendarYear = seasonInfo?.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear;
@@ -410,7 +413,7 @@ function buildPagesForUser(userId, guildId) {
   const recognitionContext = inferRecognitionContext('madden', guildId);
 
   const scoutData = loadScoutData();
-  const devEmojis = safeReadJSON(DEV_EMOJI_PATH, {});
+  const devEmojis = {};
   const userData = getSeasonScoutUser(scoutData, userId, seasonKey);
   const perkState = recognitionContext?.seasonKey
     ? getRecognitionPerkState({
@@ -524,8 +527,8 @@ function buildPagesForUser(userId, guildId) {
 
   classPages.forEach((lines, idx) => {
     const suggestedText = perkState?.perks?.scoutRecommendation
-      ? '**Scout Recommendation:** Active in `/madden-draftprimer`. Open that command for the 7-name recommendation board, then come back here to spend scout points.'
-      : '**Scout Recommendation:** Buy it in Franchise Hub, then use `/madden-draftprimer` to unlock the board-aware 7-name scout lane.';
+      ? '**Scout Recommendation:** Active in `/draftprimer`. Open that command for the 7-name recommendation board, then come back here to spend scout points.'
+      : '**Scout Recommendation:** Buy it in Franchise Hub, then use `/draftprimer` to unlock the board-aware 7-name scout lane.';
     const fullyScouted = entries.filter(([, unlocked]) => Array.isArray(unlocked) && unlocked.length >= REVEAL_ORDER.length).length;
     const bonusLine = isOffseason ? '' : `\n**Weekly Bonus:** +${seasonBonus} (cap ${allowance}/${MAX_WEEKLY_POINTS})`;
     const selectedText = boardUi.activeName ? `\n**Selected:** ${boardUi.activeName}` : '';
@@ -577,7 +580,7 @@ export function buildMyScoutsComponents(pageIdx, pages, userId, classKey, active
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-myscouts')
+  .setName('myscouts')
   .setDescription(coachCommandDescription('myscouts'))
   .setDMPermission(false);
 

@@ -20,7 +20,14 @@ function isDeletableTextChannel(ch) {
 
 function isDeletableRole(role) {
     if (!role) return false;
-    return role.name === 'LB Commish' || role.name === 'LB Co-Commish';
+    return role.name === 'LB Commish' || role.name === 'LB Co-Commish' || role.name === 'LB Trade Committee' || role.name === 'LEAGUEbuddy Trade Committee' || / Coach$/i.test(role.name);
+}
+
+function findFallbackCategory(guild) {
+    return guild.channels.cache.find((channel) =>
+        channel?.type === ChannelType.GuildCategory &&
+        String(channel.name || '').toLowerCase() === 'leaguebuddy madden'
+    ) || null;
 }
 
 export const data = new SlashCommandBuilder()
@@ -29,11 +36,11 @@ export const data = new SlashCommandBuilder()
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addBooleanOption(o =>
         o.setName('delete_channels')
-            .setDescription('Delete LEAGUEbuddy channels created by /setup (lb-*)')
+            .setDescription('Delete LEAGUEbuddy channels created by /setup-channels (lb-*)')
             .setRequired(false))
     .addBooleanOption(o =>
         o.setName('delete_roles')
-            .setDescription('Delete LEAGUEbuddy roles created by /setup (LB Commish/Co-Commish)')
+            .setDescription('Delete LEAGUEbuddy roles created by /setup-roles (LB roles + coach roles)')
             .setRequired(false))
     .addBooleanOption(o =>
         o.setName('delete_category')
@@ -63,6 +70,8 @@ export async function execute(interaction) {
         category: false,
     };
     const errors = [];
+    const notes = [];
+    const activeChannelId = interaction.channelId || null;
 
     // Delete overlay config file
     try {
@@ -75,36 +84,66 @@ export async function execute(interaction) {
         errors.push(`overlay: ${e?.message || String(e)}`);
     }
 
-    // Delete channels (only lb-* text channels referenced by overlay)
-    if (deleteChannels && cfg?.compat?.maddenChannelMap) {
+    // Delete channels (prefer overlay map, otherwise fall back to scanning lb-* channels)
+    if (deleteChannels) {
+        const channelsToDelete = [];
         const seen = new Set();
-        for (const channelId of Object.values(cfg.compat.maddenChannelMap)) {
-            if (!channelId || seen.has(channelId)) continue;
-            seen.add(channelId);
-            const ch = guild.channels.cache.get(channelId);
-            if (!isDeletableTextChannel(ch)) continue;
+
+        if (cfg?.compat?.maddenChannelMap) {
+            for (const channelId of Object.values(cfg.compat.maddenChannelMap)) {
+                if (!channelId || seen.has(channelId)) continue;
+                seen.add(channelId);
+                const channel = guild.channels.cache.get(channelId);
+                if (isDeletableTextChannel(channel)) channelsToDelete.push(channel);
+            }
+        }
+        for (const channel of guild.channels.cache.values()) {
+            if (!isDeletableTextChannel(channel)) continue;
+            if (seen.has(channel.id)) continue;
+            seen.add(channel.id);
+            channelsToDelete.push(channel);
+        }
+
+        for (const ch of channelsToDelete) {
+            if (activeChannelId && ch.id === activeChannelId) {
+                notes.push(`Skipped deleting the current channel (${ch?.name || ch.id}) so the command reply could finish. Run this command from a non-LEAGUEbuddy channel if you want that channel deleted too.`);
+                continue;
+            }
             try {
                 await ch.delete('Madden v2 setup reset');
                 deleted.channels += 1;
             } catch (e) {
-                errors.push(`channel ${ch?.name || channelId}: ${e?.message || String(e)}`);
+                errors.push(`channel ${ch?.name || ch.id}: ${e?.message || String(e)}`);
             }
         }
     }
 
-    // Delete roles
-    if (deleteRoles && cfg?.compat?.maddenRoleMap) {
+    // Delete roles (prefer overlay map, otherwise fall back to scanning matching roles)
+    if (deleteRoles) {
+        const rolesToDelete = [];
         const seen = new Set();
-        for (const roleId of Object.values(cfg.compat.maddenRoleMap)) {
-            if (!roleId || seen.has(roleId)) continue;
-            seen.add(roleId);
-            const role = guild.roles.cache.get(roleId);
+
+        if (cfg?.compat?.maddenRoleMap) {
+            for (const roleId of Object.values(cfg.compat.maddenRoleMap)) {
+                if (!roleId || seen.has(roleId)) continue;
+                seen.add(roleId);
+                const role = guild.roles.cache.get(roleId);
+                if (isDeletableRole(role)) rolesToDelete.push(role);
+            }
+        }
+        for (const role of guild.roles.cache.values()) {
             if (!isDeletableRole(role)) continue;
+            if (seen.has(role.id)) continue;
+            seen.add(role.id);
+            rolesToDelete.push(role);
+        }
+
+        for (const role of rolesToDelete) {
             try {
                 await role.delete('Madden v2 setup reset');
                 deleted.roles += 1;
             } catch (e) {
-                errors.push(`role ${role?.name || roleId}: ${e?.message || String(e)}`);
+                errors.push(`role ${role?.name || role?.id}: ${e?.message || String(e)}`);
             }
         }
     }
@@ -113,14 +152,16 @@ export async function execute(interaction) {
     if (deleteCategory) {
         try {
             const categoryId = cfg?.compat?.maddenChannelMap?.['LB Madden'];
-            if (categoryId) {
-                const cat = guild.channels.cache.get(categoryId);
-                if (cat && cat.type === ChannelType.GuildCategory) {
-                    const children = guild.channels.cache.filter(c => c.parentId === cat.id);
-                    if (children.size === 0) {
-                        await cat.delete('Madden v2 setup reset');
-                        deleted.category = true;
-                    }
+            const cat = categoryId
+                ? guild.channels.cache.get(categoryId)
+                : findFallbackCategory(guild);
+            if (cat && cat.type === ChannelType.GuildCategory) {
+                const children = guild.channels.cache.filter(c => c.parentId === cat.id && (!activeChannelId || c.id !== activeChannelId));
+                if (children.size === 0) {
+                    await cat.delete('Madden v2 setup reset');
+                    deleted.category = true;
+                } else {
+                    notes.push(`Category not deleted because ${children.size} LEAGUEbuddy channel(s) still remain inside it.`);
                 }
             }
         } catch (e) {
@@ -135,9 +176,15 @@ export async function execute(interaction) {
     lines.push(`Roles deleted: ${deleted.roles}`);
     lines.push(`Category deleted: ${fmtBool(deleted.category)}`);
 
+    if (notes.length) {
+        lines.push('');
+        lines.push('**Notes**');
+        for (const note of notes) lines.push(`• ${note}`);
+    }
+
     if (cfg && !deleteChannels && !deleteRoles) {
         lines.push('');
-        lines.push('Tip: re-run `/setup` right after this to test tiers quickly.');
+        lines.push('Tip: re-run `/setup-channels`, then `/setup-roles` right after this to test tiers quickly.');
         lines.push('Optional: run `/setup-reset delete_channels:true delete_roles:true` to cleanup Discord artifacts too.');
     }
 
@@ -148,7 +195,16 @@ export async function execute(interaction) {
         if (errors.length > 12) lines.push(`• …and ${errors.length - 12} more`);
     }
 
-    await interaction.editReply({ content: lines.join('\n') });
+    try {
+        await interaction.editReply({ content: lines.join('\n') });
+    } catch (error) {
+        console.warn('[setup-reset] final editReply failed:', error?.message || error);
+        try {
+            await interaction.followUp({ content: lines.join('\n'), ephemeral: true });
+        } catch {
+            // ignore
+        }
+    }
 }
 
 export default { data, execute };

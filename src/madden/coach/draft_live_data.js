@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
+import { getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 
 function normalizeName(name = '') {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -11,7 +12,7 @@ function getMetricOvr(player) {
 }
 
 export function loadLatestLeagueSnapshot() {
-  const dir = path.join(process.cwd(), 'data', 'madden', 'leagues');
+  const dir = getMaddenLeaguesDir();
   if (!fs.existsSync(dir)) return null;
   const files = fs.readdirSync(dir)
     .filter((file) => file.endsWith('.json'))

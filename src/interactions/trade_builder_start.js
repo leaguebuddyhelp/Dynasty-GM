@@ -1,7 +1,7 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { saveTradeDraft, deleteDraftsForUser } from '../utils/trade_draft_store.js';
 import { normalizeName } from '../shared/rosterUtils.js';
 import { resolveTeamNameForRoster } from '../shared/rosterUtils.js';
@@ -22,7 +22,15 @@ export async function execute(interaction) {
   if (!interaction.isButton()) return;
   if (!customId.test(interaction.customId)) return;
   const forceMode2k = interaction.customId.endsWith('_2k');
-  const leagueId = forceMode2k ? null : resolveLeagueIdWithConfig(interaction.guildId);
+  let leagueId = null;
+  if (!forceMode2k) {
+    try {
+      leagueId = requireLeagueIdForGuild(interaction.guildId);
+    } catch (error) {
+      await safeReply(interaction, { content: error?.message || 'No league is mapped to this server yet. Run /set-league first.', flags: 64 });
+      return;
+    }
+  }
 
   // ---------- NBA (2K) fallback ----------
   const east = [
@@ -108,10 +116,11 @@ export async function execute(interaction) {
 
   // Try Madden first; if not configured or empty snapshot, switch to NBA mode
   let snapshot = null;
+  let teams = [];
   let mode = forceMode2k ? '2k' : 'madden';
   if (!forceMode2k && leagueId) {
     try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
-    const teams = snapshot?.teams?.leagueTeamInfoList || [];
+    teams = snapshot?.teams?.leagueTeamInfoList || [];
     if (!teams.length) mode = '2k';
   } else {
     mode = '2k';

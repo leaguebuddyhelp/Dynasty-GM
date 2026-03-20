@@ -6,7 +6,7 @@ import { getMaddenSnapshotContext, loadMaddenChannelMap } from '../../shared/mad
 import { formatTeamEmoji, loadTeamEmojis } from '../coach/mockdraft.js';
 
 const data = new SlashCommandBuilder()
-  .setName('madden-matchuppicture')
+  .setName('matchuppicture')
   .setDescription('Show the current weekly matchup and strike picture (staff only).')
   .setDefaultMemberPermissions(null);
 

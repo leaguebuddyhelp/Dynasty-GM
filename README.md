@@ -10,7 +10,7 @@ Repo layout (high level):
 Node version: `.nvmrc` set to 21 to satisfy Snallabot; use `nvm use`.
 
 ## Madden EA sync (Snallabot-style)
-- Commands: `/madden-sync league_id:<id>` pulls from EA and saves to `src/data/madden/leagues/<id>.json`. `/madden-ping` checks the module.
+- Commands: `/sync league_id:<id>` pulls from EA and saves to `data/madden/leagues/<id>.json`, or under `LB_DATA_ROOT` when that env var is set. `/ping` checks the module.
 - Env required: `EA_ACCESS_TOKEN`, `EA_REFRESH_TOKEN`, optional `EA_ACCESS_TOKEN_EXPIRES_AT` (ms epoch), `EA_CONSOLE` (ps5/xbsx/xone/pc/ps4/stadia), `EA_BLAZE_ID` (persona id if known). Tokens expire ~4h; refresh token ~10 days.
 
 ## 2K note
@@ -31,6 +31,7 @@ npm run dev
 - Customer-facing commands:
   - `/pricing` shows Free, Standard, and Premium plus Stripe checkout buttons when configured.
   - `/plan` shows current plan, setup state, packs enabled, blocked features, and next steps.
+  - `/claim-plan` lets a server manager claim a paid plan after Stripe checkout.
 - Admin billing commands:
   - `/activateplan`
   - `/deactivateplan`
@@ -40,28 +41,82 @@ npm run dev
   - `LB_UPGRADE_URL_STANDARD`
   - `LB_UPGRADE_URL_PREMIUM`
   - optional fallback: `LB_UPGRADE_URL`
+- Bot invite is configured with:
+  - `LB_BOT_INVITE_URL`
+  - or falls back to `CLIENT_ID`
 - Current sales flow is manual by design:
   1. Customer runs `/pricing`
   2. Customer pays through the Stripe link
-  3. Customer provides the Discord server id if needed
-  4. Admin runs `/activateplan`
-  5. Customer runs `/plan` and `/madden-setup-check`
+  3. Customer invites LEAGUEbuddy to the target server
+  4. Customer runs `/claim-plan`
+  5. Customer runs `/plan` and `/setup-check`
 - No Stripe webhook automation is implemented in this flow.
+
+## Optional Stripe claim webhook
+- For a self-serve claim flow, enable:
+  - `LB_STRIPE_CLAIMS_WEBHOOK_ENABLED=true`
+  - `LB_STRIPE_WEBHOOK_SECRET`
+- Stripe webhook endpoint:
+  - `POST /stripe/webhook`
+- Plan inference is supported from:
+  - `session.metadata.lb_plan` or `session.metadata.plan`
+  - `client_reference_id` like `lb_plan:standard`
+  - `LB_STRIPE_PAYMENT_LINK_ID_STANDARD`
+  - `LB_STRIPE_PAYMENT_LINK_ID_PREMIUM`
+  - optional amount fallbacks:
+    - `LB_STRIPE_STANDARD_AMOUNT_CENTS`
+    - `LB_STRIPE_PREMIUM_AMOUNT_CENTS`
+- The webhook creates a one-time claim record. Customers can claim with:
+  - a generated claim code
+  - or the Stripe payment reference from their receipt
 
 ## Self-hosting checklist
 1. Configure `DISCORD_TOKEN` and the Discord app ids in your env file.
 2. Configure `LB_UPGRADE_URL_STANDARD` and `LB_UPGRADE_URL_PREMIUM` if you want live customer upgrade links.
-3. Start the bot and run `/madden-set-league` in the target server.
-4. Run `/setup` to create the Madden overlay config and channel/role mappings.
-5. Run `/plan` to verify customer-facing access state.
-6. Run `/madden-setup-check` to verify setup completion.
-7. Run `/operator-check` as an admin to confirm env, league mapping, setup, and billing status.
+3. Start the bot and run `/set-league` in the target server before using customer-facing Madden commands.
+4. Run `/setup-channels` to create the Madden overlay config, category, channels, and the first pin pass.
+5. If that reply says some pins missed, run `/setup-pins` to retry only the pins.
+6. Run `/setup-roles` to create the staff, trade, and coach roles.
+7. Run `/plan` to verify customer-facing access state.
+8. Run `/setup-check` to verify setup completion.
+9. Run `/server-check` as an admin to confirm the server is ready.
+10. Run `/create-threads` when you are ready to open the current week or playoff matchup threads.
+
+## Start Here
+- The clean commissioner flow inside Discord is:
+  1. `/pricing`
+  2. `/activateplan`
+  3. `/auth`
+  4. `/install-league`
+  5. `/sync`
+  6. `/setup-channels`
+  7. If pins missed: `/setup-pins`
+  8. `/setup-roles`
+  9. `/syncsetupstatus`
+  10. `/server-check`
+  11. `/create-threads`
+- The admin summary command for this flow is:
+  - `/start-here`
+
+## Command deploy model
+- Development uses guild command deploys so updates appear quickly in your test servers.
+- Production should use global command deploys so customers can invite the bot and use commands without you doing anything per server.
+- The intended split is:
+  - Dev bot: `npm run deploy:dev`
+  - Prod bot: `npm run deploy:prod`
+- `deploy:dev` can now target multiple test servers with `GUILD_IDS=id1,id2,...` in `.env.dev`.
+- `deploy:prod` registers global commands for the production application, which is the self-serve customer path.
 
 ## Railway notes
 - Set env vars in Railway instead of relying on local `.env` files.
 - Mount a persistent volume for runtime data.
 - Set `LB_DATA_ROOT` to the mounted path, for example `/data`.
 - When `LB_DATA_ROOT` is unset, the bot keeps using the local `./data` directory.
+- Hosted-safe defaults now keep local helper services off unless explicitly enabled:
+  - `MADDEN_AUTH_ENABLED=false`
+  - `MADDEN_EXPORT_WEBHOOK_ENABLED=false`
+  - `MADDEN_AUTO_SYNC_ENABLED=false`
+  - `SNALLA_SIDECAR_AUTOSTART=false`
 - Keep using the current manual Stripe-link env vars:
   - `LB_UPGRADE_URL_STANDARD`
   - `LB_UPGRADE_URL_PREMIUM`

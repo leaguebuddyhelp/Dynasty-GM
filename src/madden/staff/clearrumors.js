@@ -4,7 +4,7 @@ import { clearMaddenRumorState } from '../../shared/madden_rumor_admin.js';
 import { brandTitle } from '../../shared/madden_branding.js';
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-clearrumors')
+  .setName('clearrumors')
   .setDescription('Clear pending rumor reviews, rumor history, and rumor feedback for this league.')
   .setDefaultMemberPermissions(null);
 

@@ -15,7 +15,7 @@ const STAFF_ACTIVITY_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'staf
 const ROLE_MAP_PATH = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-health')
+  .setName('health')
   .setDescription('Show league health across staffing, engagement, execution, and ops.')
   .setDefaultMemberPermissions(null);
 

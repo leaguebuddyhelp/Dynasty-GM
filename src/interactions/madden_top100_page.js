@@ -13,7 +13,7 @@ export async function execute(interaction) {
     const newPage = dir === 'prev'
       ? Math.max(1, currentPage - 1)
       : Math.min(totalPages, currentPage + 1);
-    const { embed, totalPages: freshTotal } = getTop100Page(leagueId, newPage);
+    const { embed, files, totalPages: freshTotal } = getTop100Page(leagueId, newPage);
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`madden_top100|prev|${newPage}|${freshTotal}|${leagueId}`)
@@ -26,7 +26,7 @@ export async function execute(interaction) {
         .setStyle(ButtonStyle.Primary)
         .setDisabled(newPage >= freshTotal)
     );
-    await interaction.update({ embeds: [embed], components: [row] });
+    await interaction.update({ embeds: [embed], components: [row], files });
   } catch (err) {
     console.error('[madden_top100_page] Failed to page:', err);
     try {

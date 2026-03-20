@@ -58,7 +58,7 @@ export function resolveLeagueIdStrict(guildId) {
 
 export function requireLeagueIdForGuild(guildId) {
   const leagueId = resolveLeagueIdStrict(guildId);
-  if (!leagueId) throw new Error('No Madden league is mapped to this server yet. Run /madden-set-league first.');
+  if (!leagueId) throw new Error('No league is mapped to this server yet. Run /set-league first.');
   return leagueId;
 }
 

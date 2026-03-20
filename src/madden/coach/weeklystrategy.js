@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadRoleMap } from '../staff/staffUtils.js';
@@ -15,7 +15,7 @@ import {
 } from '../../shared/madden_learning_resources.js';
 
 const data = new SlashCommandBuilder()
-  .setName('madden-gamestrategy')
+  .setName('gamestrategy')
   .setDescription(coachCommandDescription('gamestrategy'));
 
 function normalizeName(name = '') {
@@ -2584,8 +2584,7 @@ function buildOpponentTendencyReport({
 async function execute(interaction) {
   await interaction.deferReply({ flags: 64 });
   try {
-    const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-    if (!leagueId) throw new Error('No Madden league is configured for this server.');
+    const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     const ownTeam = findCoachTeam(interaction.member, snapshot);
     if (!ownTeam) throw new Error('Could not determine your team from your coach role.');

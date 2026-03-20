@@ -7,7 +7,6 @@ import { upsertGuildPin } from './madden_guild_config.js';
 
 const ACTIVE_TRADES_FILE = path.join(process.cwd(), 'data', 'madden', 'active_trades.json');
 const TRADE_COUNTS_FILE = path.join(process.cwd(), 'data', 'madden', 'trade_counts.json');
-const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const TRADE_COUNT_MESSAGE_ID = '1460405214032035891';
 
@@ -79,22 +78,17 @@ export async function updateTradeCountsEmbed(client, channelMap, counts, { guild
   const channel = await client.channels.fetch(channelId).catch(() => null);
   if (!channel || !channel.isTextBased()) return;
 
-  const teamEmojis = (() => {
-    try { return JSON.parse(fs.readFileSync(TEAM_EMOJIS_FILE, 'utf8')); } catch { return {}; }
-  })();
   const roleMap = (() => {
     try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
   })();
   // Build full list with zeros for all teams we know
-  const keys = Object.keys(teamEmojis).length ? Object.keys(teamEmojis) : Object.keys(counts || {});
+  const keys = Object.keys(counts || {});
   const allTeams = Array.from(new Set(keys));
   allTeams.sort((a, b) => (a || '').localeCompare(b || ''));
 
   const lines = allTeams.map(team => {
     const cnt = counts[team] || 0;
-    const emojiId = teamEmojis[team];
-    const emoji = emojiId ? `<:${team.replace(/\s+/g, '')}:${emojiId}>` : '';
-    return `${emoji ? emoji + ' ' : ''}${team}: ${cnt}`;
+    return `${team}: ${cnt}`;
   });
 
   const embed = new EmbedBuilder()

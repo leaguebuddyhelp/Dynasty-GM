@@ -1,23 +1,19 @@
 import fs from 'fs';
-import path from 'path';
+import { EmbedBuilder } from 'discord.js';
 import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
-
-const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
+import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
+import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 
 function loadSnapshot(leagueId) {
-  const file = path.join(process.cwd(), 'data', 'madden', 'leagues', `${leagueId}.json`);
+  const file = getMaddenLeagueSnapshotPath(leagueId);
   const raw = fs.readFileSync(file, 'utf8');
   return JSON.parse(raw);
 }
 
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
-}
-
-function loadEmojiMap() {
-  try { return JSON.parse(fs.readFileSync(TEAM_EMOJIS_FILE, 'utf8')); } catch { return {}; }
 }
 
 function formatRecord(team) {
@@ -27,27 +23,13 @@ function formatRecord(team) {
   return t ? `${w}-${l}-${t}` : `${w}-${l}`;
 }
 
-function teamEmoji(name, emojiMap) {
-  if (!name) return '';
-  const target = name.toLowerCase();
-  const mascot = target.split(/\s+/).pop();
-  for (const [key, val] of Object.entries(emojiMap || {})) {
-    const base = key.toLowerCase();
-    if (base === target || base === mascot || target.includes(base) || base.includes(target)) {
-      return `<:${key.replace(/\s+/g, '')}:${val}>`;
-    }
-  }
-  return '';
-}
-
-function teamNameMap(snapshot, emojiMap) {
+function teamNameMap(snapshot) {
   const map = {};
   const list = snapshot?.teams?.leagueTeamInfoList || [];
   list.forEach(t => {
     if (!t.teamId) return;
     const name = getFullTeamName(t, `Team ${t.teamId}`);
-    const emoji = teamEmoji(name, emojiMap);
-    map[t.teamId] = emoji || name || `Team ${t.teamId}`;
+    map[t.teamId] = name || `Team ${t.teamId}`;
   });
   return map;
 }
@@ -96,8 +78,8 @@ function sortDivision(list) {
   );
 }
 
-export async function updateStandings(client, leagueId) {
-  const guildId = client?.guilds?.cache?.first?.()?.id || null;
+export async function updateStandings(client, leagueId, guildId = null) {
+  const resolvedGuildId = guildId || client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const seasonWeekType = seasonInfo.seasonWeekType;
@@ -110,8 +92,7 @@ export async function updateStandings(client, leagueId) {
     return;
   }
   const divisions = groupByDivision(snapshot);
-  const emojiMap = loadEmojiMap();
-  const teams = teamNameMap(snapshot, emojiMap);
+  const teams = teamNameMap(snapshot);
 
   const afcDivs = {};
   const nfcDivs = {};
@@ -137,48 +118,66 @@ export async function updateStandings(client, leagueId) {
   const orderAfc = ['AFC East', 'AFC North', 'AFC South', 'AFC West'];
   const orderNfc = ['NFC East', 'NFC North', 'NFC South', 'NFC West'];
 
-  function buildConferenceBlock(divOrder, divMap) {
-    const blocks = divOrder.map(d => {
-      const body = divMap[d] || 'N/A';
-      return `**${d}**\n${body}`;
-    });
-    return blocks.join('\n\n');
+  function buildConferenceItems(divOrder, divisionsMap) {
+    const items = [];
+    for (const divisionName of divOrder) {
+      items.push({ type: 'section', title: divisionName });
+      const divisionTeams = divisions.get(divisionName) || [];
+      const sorted = sortDivision([...divisionTeams]);
+      const allZero = sorted.every(t => (t.totalWins ?? 0) === 0 && (t.totalLosses ?? 0) === 0 && (t.totalTies ?? 0) === 0);
+      const sortedWithNames = allZero
+        ? [...sorted].sort((a, b) => (teams[a.teamId] || '').localeCompare(teams[b.teamId] || ''))
+        : sorted;
+      if (!sortedWithNames.length) {
+        items.push({ label: 'No teams', meta: 'No synced standings yet.', teamLike: null });
+        continue;
+      }
+      for (const team of sortedWithNames) {
+        items.push({
+          label: teams[team.teamId] || 'Team',
+          meta: formatRecord(team),
+          teamLike: teams[team.teamId] || 'Team',
+        });
+      }
+    }
+    return items;
   }
 
-  const afcBlock = buildConferenceBlock(orderAfc, afcDivs);
-  const nfcBlock = buildConferenceBlock(orderNfc, nfcDivs);
-
-  const fields = [
-    { name: 'AFC', value: afcBlock, inline: true },
-    { name: 'NFC', value: nfcBlock, inline: true },
-  ];
-
-  const channelMap = loadChannelMap(guildId);
+  const channelMap = loadChannelMap(resolvedGuildId);
   const channelId = channelMap['Standings'];
   if (!channelId) throw new Error('Standings channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
   if (!channel || !channel.isTextBased()) throw new Error('Standings channel not accessible');
 
-  const embed = {
-    title: 'Madden Standings',
-    color: 0x00b0f4,
-    fields,
-    timestamp: new Date().toISOString(),
-  };
+  const boardImage = await renderLeagueBoardImage({
+    title: 'Standings',
+    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • Week ${displayWeek || '?'}`,
+    attachmentName: 'standings_board.png',
+    accentColor: '#00B0F4',
+    columns: [
+      { title: 'AFC', items: buildConferenceItems(orderAfc, afcDivs) },
+      { title: 'NFC', items: buildConferenceItems(orderNfc, nfcDivs) },
+    ],
+  });
+  const embed = new EmbedBuilder()
+    .setTitle('Madden Standings')
+    .setColor(0x00b0f4)
+    .setTimestamp(new Date());
+  if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
 
-  const pinId = getPinId('standings', guildId);
+  const pinId = getPinId('standings', resolvedGuildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) {
     console.warn('[standings] pin not found; skipping create');
     return;
   }
-  await msg.edit({ embeds: [embed], content: null }).catch(() => null);
+  await msg.edit({ embeds: [embed], files: boardImage ? [boardImage] : [], content: null }).catch(() => null);
 }
 
-export async function resetStandings(client) {
-  const guildId = client?.guilds?.cache?.first?.()?.id || null;
-  const channelMap = loadChannelMap(guildId);
+export async function resetStandings(client, guildId = null) {
+  const resolvedGuildId = guildId || client?.guilds?.cache?.first?.()?.id || null;
+  const channelMap = loadChannelMap(resolvedGuildId);
   const channelId = channelMap['Standings'];
   if (!channelId) throw new Error('Standings channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -191,7 +190,7 @@ export async function resetStandings(client) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('standings', guildId);
+  const pinId = getPinId('standings', resolvedGuildId);
   if (!pinId) return;
   const msg = await channel.messages.fetch(pinId).catch(() => null);
   if (!msg) return;

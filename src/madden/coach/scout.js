@@ -8,11 +8,11 @@ import { loadRoleMap } from '../staff/staffUtils.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
+import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getNflBrandAsset } from '../../shared/madden_assets.js';
 
 export const featureKey = 'scouting_draft';
 
 const SCOUT_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_log.json');
-const DEV_EMOJI_PATH = path.join(process.cwd(), 'data', 'madden', 'dev_emojis.json');
 const DRAFT_DIR = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
 const POINTS_PER_WEEK = 60; // regular & postseason
@@ -151,9 +151,7 @@ function uniqPositions(draftData) {
   return [...ordered, ...leftovers];
 }
 
-function formatDev(dev, emojis) {
-  const emojiId = emojis?.[dev] ?? emojis?.[String(dev)];
-  if (emojiId) return `<:dev_${dev}:${emojiId}>`;
+function formatDev(dev) {
   const map = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
   return map[dev] || 'Normal';
 }
@@ -174,7 +172,7 @@ function getSchoolLogo(school) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-scout')
+  .setName('scout')
   .setDescription(coachCommandDescription('scout'))
   .addStringOption(o => o.setName('position').setDescription('Position to filter').setRequired(true).setAutocomplete(true))
   .addStringOption(o => o.setName('name').setDescription('Optional name filter').setRequired(false).setAutocomplete(true))
@@ -233,7 +231,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    const payload = { content: 'No league set. Run /madden-setleague first.' };
+    const payload = { content: 'No league set. Run /set-league first.' };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;
@@ -387,7 +385,6 @@ export async function execute(interaction) {
     suggestedScoutHit,
   });
 
-  const devEmojis = safeReadJSON(DEV_EMOJI_PATH, {});
   const logo = getSchoolLogo(player.school);
   const hasLogo = Boolean(logo);
   const fields = [];
@@ -396,7 +393,7 @@ export async function execute(interaction) {
     if (newUnlocked.includes(cat)) {
       if (cat === 'arch') fields.push(`**Archetype:** ${player.archetype_1 || player.archetype_2 || 'N/A'}`);
       if (cat === 'ovr') fields.push(`**Overall:** ${player.overall ?? 'N/A'}`);
-      if (cat === 'dev') fields.push(`**Dev Trait:** ${formatDev(player.dev_trait, devEmojis)}`);
+      if (cat === 'dev') fields.push(`**Dev Trait:** ${formatDev(player.dev_trait)}`);
     }
   });
   const yearLabel = player.year ? ` • ${player.year}` : '';
@@ -431,6 +428,10 @@ export async function execute(interaction) {
   if (metaFields.length) embed.addFields(metaFields);
 
   const files = [];
+  const thumbnailAsset = newUnlocked.includes('dev')
+    ? getDevTraitAsset(player.dev_trait, `dev_${player.dev_trait ?? 'hidden'}`)
+    : getNflBrandAsset({ attachmentName: 'nfl.png' });
+  applyEmbedThumbnailFromAsset(embed, files, thumbnailAsset);
   if (logo) {
     files.push({ attachment: logo.attachment, name: logo.name });
     embed.setImage(`attachment://${logo.name}`);

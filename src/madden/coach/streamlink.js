@@ -1,13 +1,14 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getMaddenSnapshotContext, loadMaddenChannelMap } from '../../shared/madden_metadata.js';
-import { loadRoleMap } from '../staff/staffUtils.js';
+import { loadRoleMapForGuild } from '../staff/staffUtils.js';
 import { getLegacyOpportunityForTeam, getRecognitionPerkState, getRecognitionStreamTotal } from '../../shared/league_recognition.js';
 import { getSportsbookLineForMatchup } from '../../shared/madden_sportsbook.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { formatTeamLabelWithEmoji, RECOGNITION_EMOJIS } from '../../shared/madden_visuals.js';
+import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
 export const featureKey = 'recognition';
 
@@ -819,7 +820,7 @@ function buildHeadToHeadStatLine(line, ownTeam, oppTeam) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-streamlink')
+  .setName('streamlink')
   .setDescription(coachCommandDescription('streamlink'))
   .addStringOption((o) => o.setName('link').setDescription('Streaming URL').setRequired(true))
   .addRoleOption((o) => o.setName('opponent_coach').setDescription('Opponent coach role for this stream post').setRequired(false))
@@ -827,16 +828,18 @@ export const data = new SlashCommandBuilder()
   .setDMPermission(false);
 
 export async function execute(interaction) {
-  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  if (!leagueId) {
-    await interaction.reply({ content: 'No league set. Run /madden-setleague first.', flags: 64 });
+  let leagueId = null;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch (error) {
+    await interaction.reply({ content: error?.message || 'No league set. Run /set-league first.', flags: 64 });
     return;
   }
 
   const snapshot = loadLeagueSnapshot(leagueId);
   const meta = getMaddenSnapshotContext(interaction.guildId, { leagueId, snapshot });
-  const channelMap = loadMaddenChannelMap();
-  const roleMap = loadRoleMap();
+  const channelMap = loadMaddenChannelMap(interaction.guildId);
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   const streamingChannelId = channelMap['Streaming links'];
   const ghostRoleId = roleMap['Ghost Legacy'];
   const channel = streamingChannelId ? await interaction.client.channels.fetch(streamingChannelId).catch(() => null) : null;
@@ -1033,6 +1036,8 @@ export async function execute(interaction) {
         : `${interaction.user.tag} | ${meta?.seasonKey || 'season'} | ${meta?.weekKey || 'week'}`,
     })
     .setTimestamp(new Date());
+  let files = [];
+  files = applyEmbedThumbnailFromAsset(embed, files, getNflTeamLogoAsset(ownTeam, 'stream_team.png'));
 
   const roleMentions = [ghostRoleId, opponentRole?.id].filter(Boolean);
   const mentionParts = [
@@ -1043,6 +1048,7 @@ export async function execute(interaction) {
   await channel.send({
     content: mentionParts.join(' '),
     embeds: [embed],
+    files,
     allowedMentions: {
       parse: [],
       roles: roleMentions,

@@ -1,40 +1,61 @@
 import fs from 'fs';
-import path from 'path';
-import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
+import { getMaddenLeagueSnapshotPath } from '../../leaguebuddy/paths.js';
 import { getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
-import { getLeagueForGuild } from '../../../madden/madden_config.js';
-
-const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
+import { getLeagueForGuild } from '../madden_config.js';
 
 function configured(value) {
   return String(value || '').trim().length > 0;
 }
 
-function yesNo(flag) {
-  return flag ? 'configured' : 'missing';
+function readyMissing(flag, ready = 'ready', missing = 'missing') {
+  return flag ? ready : missing;
+}
+
+function icon(flag) {
+  return flag ? '✅' : '❌';
 }
 
 function snapshotExists(leagueId) {
   if (!leagueId) return false;
-  return fs.existsSync(path.join(LEAGUE_DIR, `${leagueId}.json`));
+  return fs.existsSync(getMaddenLeagueSnapshotPath(leagueId));
 }
 
 function nextSteps({ tokenOk, stripeStandardOk, stripePremiumOk, leagueId, setupStatus, billing }) {
-  if (!tokenOk) return 'Set `DISCORD_TOKEN` before running the bot.';
-  if (!stripeStandardOk || !stripePremiumOk) return 'Set `LB_UPGRADE_URL_STANDARD` and `LB_UPGRADE_URL_PREMIUM` for the customer upgrade flow.';
-  if (!leagueId) return 'Run `/madden-set-league` in this server.';
-  if (!setupStatus.overlayStatus.exists) return 'Run `/setup` to create the Madden overlay config.';
-  if (!setupStatus.overlayStatus.isComplete || !setupStatus.setupCompleted) return 'Finish setup and run `/madden-setup-check` plus `/syncsetupstatus`.';
-  if ((billing?.plan || 'free') === 'free') return 'Run `/pricing` to verify upgrade links or keep the guild on the free tier.';
-  if (!['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'))) return 'Activate the plan with `/activateplan` after payment is confirmed.';
-  return 'Run `/plan` and `/madden-setup-check` to verify the final customer-facing state.';
+  if (!leagueId) return 'Run `/set-league`.';
+  if (!snapshotExists(leagueId)) return 'Run `/auth`, then `/sync`.';
+  if (!setupStatus.overlayStatus.exists) return 'Run `/setup-channels`.';
+  if (setupStatus.syncNeeded) return 'Run `/syncsetupstatus`.';
+  if (!setupStatus.overlayStatus.isComplete || !setupStatus.setupCompleted) return 'Run `/setup-roles`, then `/syncsetupstatus`.';
+  if ((billing?.plan || 'free') === 'free') return 'Stay on free or test `/pricing`.';
+  if (!['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'))) return 'Run `/activateplan`.';
+  return 'Ready. Run `/plan` to verify the customer view.';
+}
+
+function buildReadyLines({ leagueId, snapshotOk, setupOk, billingOk }) {
+  return [
+    `${icon(!!leagueId)} League connected`,
+    `${icon(snapshotOk)} League synced`,
+    `${icon(setupOk)} Setup finished`,
+    `${icon(billingOk)} Paid access active`,
+  ].join('\n');
+}
+
+function buildQuickStatus({ leagueId, setupStatus, billing }) {
+  return [
+    `League: **${leagueId || 'not set'}**`,
+    `Setup: **${setupStatus.syncNeeded ? 'needs sync' : setupStatus.setupCompleted ? 'done' : 'not done'}**`,
+    `Plan: **${billing?.plan || 'free'}**`,
+    `Billing: **${billing?.subscriptionStatus || 'inactive'}**`,
+    ...(billing?.testingBypass ? ['Testing bypass: **on**'] : []),
+  ].join('\n');
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('operator-check')
-  .setDescription('Admin-only: show self-hosting setup status for this server.')
+  .setName('server-check')
+  .setDescription('Admin-only: quick server readiness check.')
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export const deferOnDispatch = { flags: 64 };
@@ -52,44 +73,39 @@ export async function execute(interaction) {
   const leagueId = getLeagueForGuild(guildId) || null;
   const billing = getBillingSummary(guildId);
   const setupStatus = getSetupStatus(guildId);
+  const snapshotOk = snapshotExists(leagueId);
+  const setupOk = setupStatus.overlayStatus.exists && setupStatus.overlayStatus.isComplete && setupStatus.setupCompleted && !setupStatus.syncNeeded;
+  const billingOk = ['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'));
 
-  await interaction.editReply({
-    content: [
-      '**Operator Check**',
-      `Guild: **${guildId}**`,
-      '',
-      '**Environment**',
-      `Bot token: **${yesNo(tokenOk)}**`,
-      `Stripe Standard URL: **${yesNo(stripeStandardOk)}**`,
-      `Stripe Premium URL: **${yesNo(stripePremiumOk)}**`,
-      '',
-      '**League Mapping**',
-      `Mapped league: **${leagueId || '(not set)'}**`,
-      `League snapshot: **${yesNo(snapshotExists(leagueId))}**`,
-      '',
-      '**Setup State**',
-      `Overlay exists: **${setupStatus.overlayStatus.exists ? 'yes' : 'no'}**`,
-      `Overlay complete: **${setupStatus.overlayStatus.isComplete ? 'yes' : 'no'}**`,
-      `LEAGUEbuddy setupCompleted: **${setupStatus.setupCompleted ? 'yes' : 'no'}**`,
-      `Sync needed: **${setupStatus.syncNeeded ? 'yes' : 'no'}**`,
-      '',
-      '**Billing / Access**',
-      `Plan: **${billing?.plan || 'free'}**`,
-      `Subscription: **${billing?.subscriptionStatus || 'inactive'}**`,
-      `packsEnabled: **${setupStatus.packsEnabled.length ? setupStatus.packsEnabled.join(', ') : '(none)'}**`,
-      '',
-      '**Operator Checklist**',
-      '1. Configure bot token',
-      '2. Configure Stripe links',
-      '3. Run `/madden-set-league`',
-      '4. Run `/setup`',
-      '5. Run `/plan`',
-      '6. Run `/madden-setup-check`',
-      '',
-      '**Next step**',
-      nextSteps({ tokenOk, stripeStandardOk, stripePremiumOk, leagueId, setupStatus, billing }),
-    ].join('\n'),
-  });
+  const statusColor = !leagueId || !snapshotOk || setupStatus.syncNeeded
+    ? 0xf39c12
+    : billingOk
+      ? 0x2ecc71
+      : 0x5865f2;
+
+  const embed = new EmbedBuilder()
+    .setColor(statusColor)
+    .setTitle('Server Check')
+    .setDescription('Quick server check for the owner or commissioner.')
+    .addFields(
+      {
+        name: 'Ready?',
+        value: buildReadyLines({ leagueId, snapshotOk, setupOk, billingOk }),
+        inline: false,
+      },
+      {
+        name: 'Current',
+        value: buildQuickStatus({ leagueId, setupStatus, billing }),
+        inline: false,
+      },
+      {
+        name: 'Do This Next',
+        value: nextSteps({ tokenOk, stripeStandardOk, stripePremiumOk, leagueId, setupStatus, billing }),
+        inline: false,
+      },
+    );
+
+  await interaction.editReply({ embeds: [embed], content: '' });
 }
 
 export default { data, execute };

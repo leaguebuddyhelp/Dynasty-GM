@@ -1,10 +1,10 @@
 import http from 'http';
 import fs from 'fs';
-import path from 'path';
+import { getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 
-const ENABLED = (process.env.SNALLA_SIDECAR_AUTOSTART ?? 'true').toLowerCase() !== 'false';
+const ENABLED = String(process.env.SNALLA_SIDECAR_AUTOSTART ?? 'false').toLowerCase() === 'true';
 const PORT = Number(process.env.SNALLA_SIDECAR_PORT || 8090);
-const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
+const LEAGUE_DIR = getMaddenLeaguesDir();
 
 function loadLeague(leagueId) {
   try {

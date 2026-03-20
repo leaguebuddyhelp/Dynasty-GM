@@ -1,21 +1,22 @@
 import fs from 'fs';
 import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { getEffectiveFirstRoundOverrides } from '../pick_overrides_store.js';
 import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
+import { getDataFilePath, getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 
 export const featureKey = 'scouting_draft';
 
 let currentCalendarYear = 2025;
-const DRAFT_CLASS_DIR = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
-const DRAFT_ORDER_OVERRIDES_FILE = path.join(process.cwd(), 'data', 'madden', 'draft_order_overrides.json');
+const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
+const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
 const CURRENT_CLASS_ID = 'CUS02';
 // Utility: pick latest league snapshot
 function getLatestLeagueFile() {
-  const dir = path.join(process.cwd(), 'data', 'madden', 'leagues');
+  const dir = getMaddenLeaguesDir();
   if (!fs.existsSync(dir)) return null;
   const files = fs.readdirSync(dir)
     .filter(f => f.endsWith('.json'))
@@ -236,7 +237,7 @@ function computeSeedsByConference(standings) {
 }
 
 function loadPersistedPlayoffBuckets(league) {
-  const file = path.join(process.cwd(), 'data', 'madden', 'playoff_results.json');
+  const file = getMaddenDataFilePath('playoff_results.json');
   if (!fs.existsSync(file)) return null;
   let raw;
   try { raw = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
@@ -626,7 +627,7 @@ function normalizeTeamKey(name = '') {
 }
 
 function loadPickOverridesList(seasonYear) {
-  const file = path.join(process.cwd(), 'data', 'madden', 'pick_overrides.json');
+  const file = getMaddenDataFilePath('pick_overrides.json');
   try {
     const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
     const list = Array.isArray(raw?.overrides) ? raw.overrides : [];
@@ -808,38 +809,11 @@ function resolveTeamNeedProfileMock(teamName, profileMap, altName) {
 }
 
 function loadTeamEmojis() {
-  const file = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
-  if (!fs.existsSync(file)) return {};
-  try {
-    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k.toLowerCase(), v]));
-  } catch {
-    return {};
-  }
+  return {};
 }
 
 function formatTeamEmoji(teamName, emojiMap) {
-  const parts = (teamName || '').toLowerCase().split(' ');
-  const mascot = parts[parts.length - 1];
-  const nick = parts.slice(1).join(' '); // handles things like "Green Bay Pack"
-  const aliasMap = {
-    'bolts': 'chargers',
-    'phins': 'dolphins',
-    'pack': 'packers',
-    'jags': 'jaguars'
-  };
-  const keyList = [
-    mascot,
-    teamName?.toLowerCase(),
-    nick,
-    nick.replace(/\s+/g, ''),
-    aliasMap[mascot],
-    aliasMap[nick]
-  ];
-  const id = keyList.map(k => k && emojiMap[k]).find(Boolean);
-  if (!id) return '';
-  const name = mascot.replace(/[^a-z0-9]/g, '');
-  return `<:${name}:${id}>`;
+  return '';
 }
 
 // --- Team needs heuristics ---
@@ -1274,7 +1248,7 @@ function premiumPositionValue(group) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-mockdraft')
+  .setName('mockdraft')
   .setDescription(coachCommandDescription('mockdraft'));
 
 export const deferOnDispatch = { flags: 64 };
@@ -1283,13 +1257,15 @@ export async function execute(interaction) {
   if (!interaction.deferred && !interaction.replied) {
     await interaction.deferReply({ flags: 64 });
   }
-  const leagueFile = getLatestLeagueFile();
-  if (!leagueFile) {
-    const payload = { content: coachErrorBlurb('noSnapshot', 'No league snapshot found in data/madden/leagues.') };
+  let leagueId = null;
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch (error) {
+    const payload = { content: error?.message || 'No league is mapped to this server yet. Run /set-league first.' };
     await interaction.editReply(payload);
     return;
   }
-  const league = JSON.parse(fs.readFileSync(leagueFile, 'utf8'));
+  const league = loadLeagueSnapshot(leagueId);
   currentCalendarYear = league?.info?.careerHubInfo?.seasonInfo?.calendarYear
     || league?.info?.calendarYear
     || league?.calendarYear
@@ -1527,7 +1503,7 @@ export async function execute(interaction) {
     .setTitle('Madden Mock Draft (Picks 1–32)')
     .setDescription(picks.join('\n'))
     .setColor(0x1e90ff)
-    .setFooter({ text: `${coachVoiceFooter('mockdraft', 'Live board, live order, live class')} • ${path.basename(leagueFile)}` });
+    .setFooter({ text: `${coachVoiceFooter('mockdraft', 'Live board, live order, live class')} • league ${leagueId}` });
 
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()

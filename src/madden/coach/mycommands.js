@@ -6,7 +6,7 @@ import { coachCommandDescription, coachPanelIntro, coachVoiceFooter, coachVoiceT
 const ROLE_MAP_PATH = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 
 const data = new SlashCommandBuilder()
-  .setName('madden-mycommands')
+  .setName('mycommands')
   .setDescription(coachCommandDescription('mycommands'));
 
 function isStaff(member) {
@@ -31,56 +31,74 @@ async function execute(interaction) {
 
   const staffEmbed = new EmbedBuilder()
     .setColor(0xffd700)
-    .setTitle(coachVoiceTitle('staffCommands', 'Madden Staff Commands'))
-    .setDescription(coachPanelIntro('staffCommands'))
+    .setTitle(coachVoiceTitle('staffCommands', 'Admin Commands'))
+    .setDescription('Use this exact order when setting up a server.')
     .addFields(
-      { name: '/madden-mycommands', value: 'Show this menu' },
-      { name: '/madden-set-league', value: 'Set or reset the active Madden league' },
-      { name: '/madden-weeklyupdate', value: 'Refresh league data, pins, logs, and weekly content' },
-      { name: '/madden-auth', value: 'Link EA account for league data' },
-      { name: '/madden-activitycheck', value: 'Post activity check with countdown' },
-      { name: '/madden-leagues', value: 'List linked leagues' },
-      { name: '/madden-onboard', value: 'Assign a coach to a team + DM onboarding pack' },
-      { name: '/madden-assignrole', value: 'Assign a Madden coach role' },
-      { name: '/madden-removerole', value: 'Remove a Madden coach role' },
-      { name: '/madden-availableteams', value: 'Show and refresh the available teams board' },
-      { name: '/madden-promo', value: 'Post the recruiting / open teams promo' },
-      { name: '/madden-creategamethreads', value: 'Create weekly/playoff game threads' },
-      { name: '/madden-deletegamethreads', value: 'Delete weekly/playoff game threads' },
-      { name: '/madden-awards', value: 'Run or post weekly awards' },
-      { name: '/madden-draftexport', value: 'Export the draft results file' },
-      { name: '/madden-matchuppicture', value: 'Post the weekly matchup picture' },
-      { name: '/madden-clearstrikes', value: 'Clear strike tracking (staff utility)' },
-      { name: '/madden-clearrumors', value: 'Clear rumor data (staff utility)' },
-      { name: '/madden-health', value: 'Bot/league health check (staff utility)' },
-      { name: '/madden-allprotest', value: 'All-pro test/tooling (staff utility)' },
-      { name: '/madden-testmatchup', value: 'Create a single test matchup thread (staff utility)' }
+      {
+        name: 'Main Setup Flow',
+        value: [
+          '1. `/activateplan`',
+          '2. `/auth`',
+          '3. `/install-league`',
+          '4. `/sync`',
+          '5. `/setup-channels`',
+          'If that reply says pins missed: `/setup-pins`',
+          '6. `/setup-roles`',
+          '7. `/syncsetupstatus`',
+          '8. `/server-check`',
+          '9. `/create-threads`',
+          '10. `/weeklyupdate`',
+        ].join('\n'),
+      },
+      {
+        name: 'Coach Staffing',
+        value: [
+          '`/member assign`',
+          '`/member remove`',
+          '`/member onboard` for Standard/Premium',
+        ].join('\n'),
+      },
+      {
+        name: 'Billing Support',
+        value: [
+          '`/pricing`',
+          '`/claim-plan`',
+          '`/viewbilling`',
+          '`/deactivateplan`',
+          '`/attachpaymentref`',
+        ].join('\n'),
+      },
     )
-    .setFooter({ text: coachVoiceFooter('staffOnly', 'Testing and maintenance-only commands are hidden from this menu.') });
+    .setFooter({ text: coachVoiceFooter('staffOnly', 'Advanced maintenance and test commands are intentionally hidden in beta.') });
 
   const coachEmbed = new EmbedBuilder()
     .setColor(0x1e90ff)
-    .setTitle(coachVoiceTitle('coachCommands', 'Madden Coach Commands'))
-    .setDescription(coachPanelIntro('coachCommands'))
+    .setTitle(coachVoiceTitle('coachCommands', 'Coach Commands'))
+    .setDescription('This menu shows the customer commands that matter for the current league tier.')
     .addFields(
-      { name: '/madden-mycommands', value: 'Show this menu' },
-      { name: '/madden-schedule', value: 'View your schedule' },
-      { name: '/madden-roster [team]', value: 'View a team roster' },
-      { name: '/madden-playersearch name', value: 'Search any player and view a card' },
-      { name: '/madden-franchisehub', value: 'Private hub for your team state, accountability, and front-office direction' },
-      { name: '/madden-gamestrategy', value: 'Private matchup strategy for your current opponent' },
-      { name: '/madden-draftprimer [team]', value: 'Get a strategic draft primer' },
-      { name: '/madden-mockdraft', value: 'Generate the current mock draft' },
-      { name: '/madden-bigboard', value: 'View the active draft class big board' },
-      { name: '/madden-tradeblock add|remove', value: 'Manage your trade block' },
-      { name: '/madden-tradevalue', value: 'Check player trade values' },
-      { name: '/madden-pickvalue', value: 'Check pick trade values' },
-      { name: '/madden-streamlink', value: 'Post your streaming link to the channel' },
-      { name: '/madden-scout', value: 'Scout draft prospects' },
-      { name: '/madden-myscouts', value: 'View and move your scouting board' },
-      { name: '/madden-recruiting', value: 'View recruiting data' }
+      {
+        name: 'Every Tier',
+        value: [
+          '`/pricing`, `/plan`, `/setup-check`',
+          '`/schedule`, `/roster`, `/playersearch`, `/tradevalue`, `/pickvalue`, `/streamlink`',
+        ].join('\n'),
+      },
+      {
+        name: 'Standard Adds',
+        value: [
+          '`/tradeblock`',
+          '`/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`',
+        ].join('\n'),
+      },
+      {
+        name: 'Premium Adds',
+        value: [
+          '`/franchisehub`',
+          '`/gamestrategy`',
+        ].join('\n'),
+      },
     )
-    .setFooter({ text: coachVoiceFooter('coachOnly', 'Coach access only') });
+    .setFooter({ text: coachVoiceFooter('coachOnly', 'Only the customer-facing beta commands are shown here.') });
 
   await interaction.editReply({ embeds: [staffView ? staffEmbed : coachEmbed] });
 }

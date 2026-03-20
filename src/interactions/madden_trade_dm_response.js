@@ -168,7 +168,13 @@ export async function execute(interaction) {
 
   const channelMap = loadChannelMap(interaction.guildId);
   const roleMap = loadRoleMap(interaction.guildId);
-  const committeeRoleId = '1460399406737002579';
+  const committeeRoleId = roleMap['Trade Committee']
+    || roleMap['Ghost Legacy Trade Committee']
+    || roleMap['Madden Trade Committee']
+    || roleMap['Madden Trade Committe']
+    || roleMap['LB Trade Committee']
+    || roleMap['LEAGUEbuddy Trade Committee']
+    || null;
   const committeeMention = `<@&${committeeRoleId}> `;
   // Only ping Trade Committee for voting; do not tag Ghost Legacy here
   const ghostRoleId = null;

@@ -9,10 +9,9 @@ import { setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
 import { postSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
+import { hasStaffRole as hasGuildStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
 export const featureKey = 'threads';
-
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 const PLAYOFF_RESULTS_FILE = path.join(process.cwd(), 'data', 'madden', 'playoff_results.json');
 
 function loadJson(file) {
@@ -76,13 +75,6 @@ function normalizeName(name) {
   if (lower === 'pats' || lower === 'patriots') return 'Patriots';
   if (lower === 'bolts' || lower === 'chargers') return 'Chargers';
   return name;
-}
-
-function hasStaffRole(member, roleMap) {
-  return STAFF_ROLES.some(r => {
-    const id = roleMap[r];
-    return id && member.roles.cache.has(id);
-  });
 }
 
 function teamMap(snapshot) {
@@ -209,7 +201,7 @@ function teamMentions(game, teams, roleMap) {
     }
   }
   // Always tag commish/co-commish if available
-  const commishIds = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish']
+  const commishIds = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish']
     .map(name => roleMap?.[name])
     .filter(Boolean);
   ids.push(...commishIds);
@@ -684,17 +676,17 @@ function pairFromSeeds(seeds, roundName) {
 
 async function execute(interaction) {
   await interaction.deferReply({ flags: 64 });
-  const roleMap = loadRoleMap(interaction.guildId);
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   const channelMap = loadMaddenChannelMap(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
-  if (!hasStaffRole(member, roleMap)) {
-    await safeEditReply(interaction, { content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+  if (!hasGuildStaffRole(member, roleMap)) {
+    await safeEditReply(interaction, { content: 'Only server admins, LB Commish, or LB Co-Commish can use this command.' });
     return;
   }
 
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    await safeEditReply(interaction, { content: 'No league set. Run /madden-set-league first.' });
+    await safeEditReply(interaction, { content: 'No league set. Run /set-league first.' });
     return;
   }
 
@@ -1020,8 +1012,8 @@ async function execute(interaction) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-creategamethreads')
-  .setDescription('Create game threads for a given week (regular season or playoffs) (staff-only).')
+  .setName('create-threads')
+  .setDescription('Create the current week or playoff game threads for this server.')
   .addIntegerOption(o => o.setName('week').setDescription('Regular-season week number (defaults to current)').setRequired(false))
   .addStringOption(o =>
     o.setName('playoff_round')

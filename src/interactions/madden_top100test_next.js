@@ -21,10 +21,10 @@ export async function execute(interaction) {
     console.error('[madden_top100test_next] failed:', err);
     try {
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: 'Interaction expired. Please run `/madden-top100test` again.', flags: 64 });
+        await interaction.reply({ content: 'Interaction expired. Please run `/top100test` again.', flags: 64 });
         console.log('[madden_top100test_next] Sent reply for expired interaction.');
       } else {
-        await interaction.followUp({ content: 'Interaction expired. Please run `/madden-top100test` again.', flags: 64 });
+        await interaction.followUp({ content: 'Interaction expired. Please run `/top100test` again.', flags: 64 });
         console.log('[madden_top100test_next] Sent followUp for expired interaction.');
       }
     } catch (e2) {

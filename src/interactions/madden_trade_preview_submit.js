@@ -1,6 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import fs from 'fs';
-import path from 'path';
 import {
   canTrade,
   loadTradeCounts,
@@ -8,7 +7,7 @@ import {
   saveActiveTrades,
 } from '../shared/madden_trade_utils.js';
 import {
-  resolveLeagueIdWithConfig,
+  requireLeagueIdForGuild,
   loadLeagueSnapshot,
 } from '../madden/madden_data.js';
 import {
@@ -23,8 +22,9 @@ import {
   getTradeDraft,
   deleteTradeDraft,
 } from '../shared/trade_draft_store.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 
 function loadRoleMap() {
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
@@ -128,12 +128,16 @@ export async function execute(interaction) {
     return;
   }
 
-  const leagueId = draft.leagueId || resolveLeagueIdWithConfig(interaction.guildId);
+  let leagueId = draft.leagueId || null;
   if (!leagueId) {
-    await interaction.reply(interaction.inGuild()
-      ? { content: 'No league configured. Run /madden-set-league first.', flags: 64 }
-      : { content: 'No league configured. Run /madden-set-league first.' });
-    return;
+    try {
+      leagueId = requireLeagueIdForGuild(interaction.guildId);
+    } catch (error) {
+      await interaction.reply(interaction.inGuild()
+        ? { content: error?.message || 'No league is mapped to this server yet. Run /set-league first.', flags: 64 }
+        : { content: error?.message || 'No league is mapped to this server yet. Run /set-league first.' });
+      return;
+    }
   }
   if (!canTrade(leagueId)) {
     await interaction.reply(interaction.inGuild()

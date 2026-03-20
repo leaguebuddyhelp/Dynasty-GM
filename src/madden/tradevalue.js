@@ -33,7 +33,7 @@ function findPlayers(index, input) {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('madden-tradevalue')
+  .setName('tradevalue')
   .setDescription('Quickly total trade value (OVR) for two sides of a trade (comma-separated names).')
   .addStringOption(o => o.setName('team_a').setDescription('Players for Team A (comma-separated names)').setRequired(true))
   .addStringOption(o => o.setName('team_b').setDescription('Players for Team B (comma-separated names)').setRequired(true))

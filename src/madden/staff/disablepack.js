@@ -60,7 +60,7 @@ export async function execute(interaction) {
 
     const beforeCfg = loadGuildMaddenConfig(guildId);
     if (!beforeCfg) {
-        await interaction.editReply({ content: 'No Madden overlay config found. Run `/madden-setup` first.' });
+        await interaction.editReply({ content: 'No Madden overlay config found. Run `/setup-channels` first.' });
         return;
     }
 

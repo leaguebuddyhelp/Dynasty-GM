@@ -23,16 +23,16 @@ function tierForPerk(perkKey) {
 
 function perkUsageHint(perkKey) {
   if (perkKey === 'offensiveGamePlan' || perkKey === 'defensiveGamePlan' || perkKey === 'allGamePlanBundle' || perkKey === 'tendencyBreakdown') {
-    return 'Next: run /madden-gamestrategy this week to see the premium game-plan section you just unlocked.';
+    return 'Next: run /gamestrategy this week to see the premium game-plan section you just unlocked.';
   }
   if (perkKey === 'draftWarRoomIntel' || perkKey === 'classTrendIntel') {
-    return 'Next: run /madden-draftprimer this week to use the draft intel you just unlocked.';
+    return 'Next: run /draftprimer this week to use the draft intel you just unlocked.';
   }
   if (perkKey === 'scoutRecommendation') {
-    return 'Next: open /madden-myscouts this week to see the suggested premium scout target for your current class.';
+    return 'Next: open /myscouts this week to see the suggested premium scout target for your current class.';
   }
   if (perkKey === 'scoutingFocusPack') {
-    return 'Next: run /madden-scout this week. Every reveal is discounted, and your top need lanes get the cheapest scout price.';
+    return 'Next: run /scout this week. Every reveal is discounted, and your top need lanes get the cheapest scout price.';
   }
   if (perkKey === 'streakShield' || perkKey === 'strikeCushion' || perkKey === 'fairSimCredit') {
     return 'Next: nothing to click right now. This protection sits live on your account for this week if that situation comes up.';
@@ -48,13 +48,13 @@ function perkUsageHint(perkKey) {
 
 function perkUsageLocation(perkKey) {
   if (perkKey === 'offensiveGamePlan' || perkKey === 'defensiveGamePlan' || perkKey === 'allGamePlanBundle' || perkKey === 'tendencyBreakdown') {
-    return '/madden-gamestrategy';
+    return '/gamestrategy';
   }
   if (perkKey === 'draftWarRoomIntel' || perkKey === 'classTrendIntel' || perkKey === 'scoutRecommendation') {
-    return '/madden-draftprimer';
+    return '/draftprimer';
   }
   if (perkKey === 'scoutingFocusPack') {
-    return '/madden-scout';
+    return '/scout';
   }
   if (perkKey === 'betBuyout') {
     return 'Sportsbook My Card';

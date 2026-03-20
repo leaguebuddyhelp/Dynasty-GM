@@ -10,14 +10,14 @@ import {
   completionRate,
   communicationSummary,
 } from './madden_strikes.js';
-import { getMaddenSeasonKey } from './madden_metadata.js';
+import { getMaddenSeasonKey, loadMaddenChannelMap } from './madden_metadata.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const BOARD_FILE = path.join(process.cwd(), 'data', 'madden', 'fairsim_board.json');
-const CHANNEL_ID = '1481327206457413712';
-const TEAM_EMOJI_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
+const BOARD_FILE = getMaddenDataFilePath('fairsim_board.json');
+const TEAM_EMOJI_FILE = getMaddenDataFilePath('team_emojis.json');
 
 const normalize = (s = '') => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -25,6 +25,39 @@ function loadJson(file, fallback = {}) {
 function saveJson(file, data) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+function loadBoardState() {
+  const state = loadJson(BOARD_FILE, {});
+  return state && typeof state === 'object' ? state : {};
+}
+
+function saveBoardState(state) {
+  saveJson(BOARD_FILE, state || {});
+}
+
+function getGuildBoardState(guildId) {
+  const state = loadBoardState();
+  return state?.[guildId] && typeof state[guildId] === 'object' ? state[guildId] : {};
+}
+
+function setGuildBoardState(guildId, next) {
+  const state = loadBoardState();
+  if (!guildId) return;
+  state[guildId] = next || {};
+  saveBoardState(state);
+}
+
+function clearGuildBoardState(guildId) {
+  const state = loadBoardState();
+  if (!guildId || !state[guildId]) return;
+  delete state[guildId];
+  saveBoardState(state);
+}
+
+function resolveBoardChannelId(guildId) {
+  const channelMap = loadMaddenChannelMap(guildId);
+  return channelMap?.['League Staff'] || channelMap?.['LG Logs'] || null;
 }
 
 async function buildLines(snapshot, fairData, season, guild) {
@@ -86,13 +119,16 @@ async function buildLines(snapshot, fairData, season, guild) {
   };
 }
 
-async function upsertBoardMessage(client, content) {
-  const state = loadJson(BOARD_FILE, {});
-  const channel = await client.channels.fetch(CHANNEL_ID).catch((e) => {
-    console.warn('[fairsim_board] fetch channel failed', e?.message || e);
-    return null;
-  });
-  if (!channel || !channel.isTextBased()) throw new Error('Channel not found or not text-based');
+async function upsertBoardMessage(client, guildId, content) {
+  const state = getGuildBoardState(guildId);
+  const channelId = resolveBoardChannelId(guildId) || state.channelId || null;
+  if (!channelId) return false;
+
+  const channel = await client.channels.fetch(channelId).catch(() => null);
+  if (!channel || !channel.isTextBased()) {
+    clearGuildBoardState(guildId);
+    return false;
+  }
 
   if (state.messageId) {
     const msg = await channel.messages.fetch(state.messageId).catch(() => null);
@@ -100,7 +136,8 @@ async function upsertBoardMessage(client, content) {
       try {
         await msg.edit(content);
         if (!msg.pinned) { try { await msg.pin(); } catch (e) { console.warn('[fairsim_board] pin failed (edit)', e?.message || e); } }
-        return;
+        setGuildBoardState(guildId, { channelId: channel.id, messageId: msg.id });
+        return true;
       } catch (e) {
         console.warn('[fairsim_board] edit failed, will resend', e?.message || e);
         state.messageId = null;
@@ -109,8 +146,8 @@ async function upsertBoardMessage(client, content) {
   }
   const sent = await channel.send(content);
   try { await sent.pin(); } catch (e) { console.warn('[fairsim_board] pin failed (new)', e?.message || e); }
-  state.messageId = sent.id;
-  saveJson(BOARD_FILE, state);
+  setGuildBoardState(guildId, { channelId: channel.id, messageId: sent.id });
+  return true;
 }
 
 export async function updateFairSimBoard(client, guildId) {
@@ -162,8 +199,9 @@ export async function updateFairSimBoard(client, guildId) {
     timestamp: new Date().toISOString(),
   };
 
-  console.log('[fairsim_board] update', { guildId, season, messageId: loadJson(BOARD_FILE, {}).messageId });
-  await upsertBoardMessage(client, { embeds: [embed] });
+  const boardState = getGuildBoardState(guildId);
+  console.log('[fairsim_board] update', { guildId, season, messageId: boardState.messageId || null });
+  return upsertBoardMessage(client, guildId, { embeds: [embed] });
 }
 
 export default { updateFairSimBoard };

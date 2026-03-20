@@ -8,6 +8,7 @@ import { YEAR } from './ea_constants.js';
 import { resolveLeagueIdWithConfig } from './madden_data.js';
 import { loadTokens as loadTokensDb } from './madden_db.js';
 import { SnallabotProvider } from './providers/SnallabotProvider.js';
+import { getGuildEATokens, saveGuildEATokens } from './ea_guild_auth.js';
 
 const leagueDir = path.join(process.cwd(), 'data', 'madden', 'leagues');
 const prevDir = path.join(leagueDir, 'previous');
@@ -16,13 +17,22 @@ const snapshotsDir = leagueDir;
 const useSnallabot = (process.env.MADDEN_SYNC_USE_SNALLABOT ?? 'true').toLowerCase() !== 'false';
 
 const data = new SlashCommandBuilder()
-  .setName('madden-sync')
+  .setName('sync')
   .setDescription('Pull Madden data directly from EA and save locally.')
   .addStringOption(option =>
     option.setName('league_id')
       .setDescription('Madden league ID (optional; defaults to saved/latest)')
       .setRequired(false)
   );
+
+async function emitProgress(options, phase, detail) {
+  if (typeof options?.onProgress !== 'function') return;
+  try {
+    await options.onProgress(phase, detail);
+  } catch {
+    // ignore progress update errors
+  }
+}
 
 async function ensureDir() {
   await fs.mkdir(leagueDir, { recursive: true });
@@ -68,7 +78,11 @@ function buildPlayerTotals(week) {
   return Array.from(agg.values());
 }
 
-async function loadTokens() {
+async function loadTokens(guildId = null) {
+  if (guildId) {
+    const guildTokens = getGuildEATokens(guildId);
+    if (guildTokens?.accessToken && guildTokens?.refreshToken) return guildTokens;
+  }
   const dbTokens = loadTokensDb();
   if (dbTokens && dbTokens.accessToken && dbTokens.refreshToken) return dbTokens;
   try {
@@ -105,6 +119,7 @@ export async function runSync(leagueId, provider, options = {}) {
     }
   };
   try {
+    await emitProgress(options, 'Preparing sync', 'Setting up storage and loading any existing snapshot.');
     await ensureDir();
     // Load existing snapshot (if any) so we can merge/retain weekly stats
     let existingSnapshot = null;
@@ -114,11 +129,15 @@ export async function runSync(leagueId, provider, options = {}) {
       existingSnapshot = JSON.parse(existing);
     } catch { /* no prior snapshot */ }
 
-    const tokens = await loadTokens();
+    await emitProgress(options, 'Checking account connection', 'Loading the saved league connection for this server.');
+    const tokens = await loadTokens(options.guildId);
     if (!tokens || !tokens.accessToken || !tokens.refreshToken) {
-      throw new Error('No local EA tokens found. Run /madden-auth, log in, and then retry.');
+      throw new Error('No EA auth was found for this server. Run /auth, then retry.');
     }
-    const client = await createEAClientFromEnv({ ...process.env, EA_ACCESS_TOKEN: tokens.accessToken, EA_REFRESH_TOKEN: tokens.refreshToken, EA_ACCESS_TOKEN_EXPIRES_AT: tokens.expiry, EA_CONSOLE: tokens.console, EA_BLAZE_ID: tokens.blazeId, EA_GAME_YEAR: tokens.gameYear });
+    await emitProgress(options, 'Opening league session', 'Refreshing the saved connection and opening the Madden session.');
+    const client = await createEAClientFromEnv({ ...process.env, EA_ACCESS_TOKEN: tokens.accessToken, EA_REFRESH_TOKEN: tokens.refreshToken, EA_ACCESS_TOKEN_EXPIRES_AT: tokens.expiry, EA_CONSOLE: tokens.console, EA_BLAZE_ID: tokens.blazeId, EA_GAME_YEAR: tokens.gameYear }, {
+      persistTokenUpdate: options.guildId ? (updatedTokens) => saveGuildEATokens(options.guildId, updatedTokens) : undefined,
+    });
     let info = null;
     let seasonInfo = null;
     let currentWeek = null;
@@ -166,12 +185,14 @@ export async function runSync(leagueId, provider, options = {}) {
     if (currentWeek === null || currentWeek === undefined) currentWeek = 0;
     if (weekOverride) currentWeek = weekOverride;
 
+    await emitProgress(options, 'Loading league overview', 'Fetching teams, standings, and current league context.');
     const [teams, standings] = await Promise.all([
       client.getTeams(Number(leagueId)),
       client.getStandings(Number(leagueId)),
     ]);
 
     // Schedule fetch: try provider first, then EA across all relevant weeks.
+    await emitProgress(options, 'Loading schedule', 'Pulling the full schedule for the connected league.');
     let schedule = { schedules: [] };
     if (provider) {
       try {
@@ -225,6 +246,7 @@ export async function runSync(leagueId, provider, options = {}) {
     }
 
     // Fetch rosters (all teams + free agents)
+    await emitProgress(options, 'Loading rosters', 'Fetching team rosters and free agents.');
     const rosters = {};
     const teamList = teams?.leagueTeamInfoList || [];
     await Promise.all(teamList.map(async (team, idx) => {
@@ -243,6 +265,7 @@ export async function runSync(leagueId, provider, options = {}) {
     }
 
     // Fetch weekly stats for all weeks up to currentWeek (season) and preseason weeks 0-3
+    await emitProgress(options, 'Loading weekly stats', 'Pulling weekly stat buckets and merging them into the current snapshot.');
     const weeklyStats = [];
     const maxSeasonWeek = Math.max(1, currentWeek ?? 1);
     const isWeekComplete = (entry) => {
@@ -413,6 +436,7 @@ export async function runSync(leagueId, provider, options = {}) {
 
     const incompleteWeeks = mergedWeekly.filter(w => w.isIncomplete || (w.playerCount ?? 0) === 0);
 
+    await emitProgress(options, 'Saving snapshot', 'Writing the updated league snapshot to disk.');
     const prevPath = path.join(prevDir, `${leagueId}.json`);
     // Save previous snapshot for diffing (transactions, etc.)
     try {
@@ -461,7 +485,7 @@ export async function runSync(leagueId, provider, options = {}) {
         lower.includes('please re-auth') ||
         lower.includes('invalid_grant') ||
         lower.includes('token')) {
-      await notify('Madden EA re-auth needed', `${msg}\nRun /madden-auth, then rerun the command.`);
+      await notify('Madden EA re-auth needed', `${msg}\nRun /auth, then rerun the command.`);
     }
     throw err;
   }
@@ -471,22 +495,32 @@ async function execute(interaction) {
   const leagueId = interaction.options.getString('league_id') || resolveLeagueIdWithConfig(interaction.guildId);
   await interaction.deferReply({ ephemeral: true });
 
+  const renderProgressEmbed = (phase, detail) => new EmbedBuilder()
+    .setTitle('League Sync')
+    .setColor(0x5865f2)
+    .setDescription(`**${phase}**\n${detail}`);
+
   try {
     if (!leagueId) {
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
             .setTitle('Madden Sync')
-            .setDescription('No league set. Run /madden-set-league or provide league_id.')
+            .setDescription('No league set. Run /set-league or provide league_id.')
             .setColor(0xffcc00)
         ]
       });
       return;
     }
     const provider = useSnallabot ? new SnallabotProvider() : null;
+    await interaction.editReply({ embeds: [renderProgressEmbed('Preparing sync', 'Starting the league sync for this server.')] });
     const summary = await runSync(leagueId, provider, {
+      guildId: interaction.guildId,
       client: interaction.client,
       notifyChannelId: '1460287771838255350',
+      onProgress: async (phase, detail) => {
+        await interaction.editReply({ embeds: [renderProgressEmbed(phase, detail)] });
+      },
     });
     const weekLabel = summary.currentWeek === null || summary.currentWeek === undefined
       ? 'unknown'
@@ -502,7 +536,8 @@ async function execute(interaction) {
         { name: 'Games', value: String(summary.gamesCount), inline: true },
         { name: 'Rosters', value: `${summary.rosterCount} teams${summary.hasFreeAgents ? ' + FA' : ''}`, inline: true },
         { name: 'Stats Weeks', value: String(summary.statsWeeks), inline: true },
-        { name: 'Saved', value: summary.outPath, inline: false }
+        { name: 'Saved', value: summary.outPath, inline: false },
+        { name: 'Next', value: 'Run `/setup-channels`.', inline: false }
       );
 
     await interaction.editReply({ embeds: [embed] });
@@ -511,11 +546,11 @@ async function execute(interaction) {
     const lower = msg.toLowerCase();
     let guidance = 'Try again shortly.';
     if (lower.includes('no local ea tokens')) {
-      guidance = 'Run `/madden-auth` (or `/madden-auth reset` then `/madden-auth`), then rerun the sync.';
+      guidance = 'Run `/auth` (or `/auth reset` then `/auth`), then rerun the sync.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
-      guidance = 'Tokens look bad. Run `/madden-auth reset` then `/madden-auth` (PS5 Madden 2026 account), ensure `EA_CONSOLE=ps5` / `EA_GAME_YEAR=2026`, then rerun.';
+      guidance = 'Tokens look bad. Run `/auth reset` then `/auth` (PS5 Madden 2026 account), ensure `EA_CONSOLE=ps5` / `EA_GAME_YEAR=2026`, then rerun.';
     } else if (lower.includes('deleted') || lower.includes('league')) {
-      guidance = 'Check the league ID. Run `/madden-set-league <your_league_id>` then rerun.';
+      guidance = 'Check the league ID. Run `/set-league <your_league_id>` then rerun.';
     }
     const shortMsg = msg.length > 3000 ? `${msg.slice(0, 2997)}...` : msg;
     await interaction.editReply({
@@ -530,4 +565,4 @@ async function execute(interaction) {
   }
 }
 
-export default { data, execute, skipDeploy: true };
+export default { data, execute };

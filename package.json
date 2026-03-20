@@ -9,9 +9,9 @@
   "scripts": {
     "start": "node app.js",
     "deploy-commands": "node deploy-commands.js",
-    "start:dev": "NODE_ENV=development APP_ENV=dev MADDEN_ONLY=true node -r dotenv/config app.js dotenv_config_path=.env.dev",
+    "start:dev": "NODE_ENV=development APP_ENV=dev MADDEN_ONLY=true dotenv_config_path=.env.dev node app.js",
     "deploy:dev": "NODE_ENV=development APP_ENV=dev MADDEN_ONLY=true DEPLOY_SCOPE=guild node -r dotenv/config deploy-commands.js dotenv_config_path=.env.dev",
-    "start:prod": "NODE_ENV=production APP_ENV=prod MADDEN_ONLY=true node -r dotenv/config app.js dotenv_config_path=.env.prod",
+    "start:prod": "NODE_ENV=production APP_ENV=prod MADDEN_ONLY=true node app.js",
     "deploy:prod": "NODE_ENV=production APP_ENV=prod MADDEN_ONLY=true DEPLOY_SCOPE=global node -r dotenv/config deploy-commands.js dotenv_config_path=.env.prod",
     "madden:avp": "node scripts/generate-madden-avp.js",
     "madden:sync": "node scripts/madden-import.js",
@@ -22,6 +22,9 @@
     "node": ">=21.0.0"
   },
   "dependencies": {
+    "discord.js": "^14.25.1",
+    "dotenv": "^16.6.1",
+    "node-fetch": "^3.3.2",
     "puppeteer": "^24.37.3",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",

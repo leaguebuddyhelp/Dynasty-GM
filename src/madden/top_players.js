@@ -7,6 +7,7 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadLeagueSnapshot } from './madden_data.js';
 import { getPinId, setPinId } from './pins_store.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
+import { applyEmbedThumbnailFromAsset, getNflBrandAsset } from '../shared/madden_assets.js';
 
 const TOP_FILE = path.join(process.cwd(), 'data', 'madden', 'top_players.json');
 const TOP_HISTORY_DIR = path.join(process.cwd(), 'data', 'madden', 'top_players_history');
@@ -1771,27 +1772,19 @@ function buildPageEmbed(list, page, leagueId, meta = {}) {
   const slice = list.slice(start, start + perPage);
   const titleLabel = meta.label || 'Top 100';
 
-  const teamEmoji = (team) => {
-    if (!team) return '';
-    const mascot = team.trim().split(/\s+/).pop();
-    const id = TEAM_EMOJIS[mascot];
-    if (!id) return '';
-    const emojiName = mascot.replace(/[^A-Za-z0-9]/g, '');
-    return `<:${emojiName}:${id}>`;
-  };
-
   const lines = slice.map((p, idx) => {
     const rank = start + idx + 1;
     const gradeRaw = p.seasonGrade ?? p.grade ?? p.weeklyGrade ?? p.score ?? 0;
     const grade = Number(gradeRaw).toFixed(2);
-    const em = teamEmoji(p.team);
-    return `${rank}. ${p.name} (${p.position}, ${p.team}) ${em ? em + ' ' : ''}— ${grade}`;
+    return `${rank}. ${p.name} (${p.position}, ${p.team}) — ${grade}`;
   });
   const embed = new EmbedBuilder()
     .setTitle(`Madden Player Grades — ${titleLabel}`)
     .setDescription(lines.join('\n') || 'No players available.')
     .setFooter({ text: `Page ${safePage}/${totalPages} • League ${leagueId}` });
-  return { embed, totalPages, page: safePage };
+  let files = [];
+  files = applyEmbedThumbnailFromAsset(embed, files, getNflBrandAsset({ animated: true, attachmentName: 'nfl.gif' }));
+  return { embed, files, totalPages, page: safePage };
 }
 
 function shouldDisplaySeasonTop100(snapshot, currentWeek) {
@@ -1868,7 +1861,7 @@ async function findExistingTop100Message(client, preferredChannelId, pinId) {
 
 async function postTop100(client, leagueId, list, channelId, meta = {}) {
   try {
-    const { embed, totalPages, page } = buildPageEmbed(list, 1, leagueId, meta);
+    const { embed, files, totalPages, page } = buildPageEmbed(list, 1, leagueId, meta);
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`madden_top100|prev|${page}|${totalPages}|${leagueId}`)
@@ -1887,10 +1880,10 @@ async function postTop100(client, leagueId, list, channelId, meta = {}) {
     const { channel: resolvedChannel, message } = await findExistingTop100Message(client, channelId, pinId);
     if (!resolvedChannel || !resolvedChannel.isTextBased()) return;
     if (message) {
-      await message.edit({ embeds: [embed], components: [row] });
+      await message.edit({ embeds: [embed], components: [row], files });
       return;
     }
-    const sent = await resolvedChannel.send({ embeds: [embed], components: [row] });
+    const sent = await resolvedChannel.send({ embeds: [embed], components: [row], files });
     if (sent?.id) {
       if (guildId) upsertGuildPin(guildId, 'top100', sent.id);
       setPinId('top100', sent.id);

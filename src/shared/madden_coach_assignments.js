@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const STORE_PATH = path.join(process.cwd(), 'data', 'madden', 'coach_assignments.json');
+const STORE_PATH = getMaddenDataFilePath('coach_assignments.json');
 
 function safeReadJSON(file, fallback = {}) {
   try {
@@ -130,4 +131,3 @@ export function getCoachAssignmentMap({ guildId }) {
   }
   return { teamToUserIds, userToTeams };
 }
-
