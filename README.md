@@ -45,11 +45,12 @@ npm run dev
   - `LB_BOT_INVITE_URL`
   - or falls back to `CLIENT_ID`
 - Current sales flow is manual by design:
-  1. Customer runs `/pricing`
-  2. Customer pays through the Stripe link
-  3. Customer invites LEAGUEbuddy to the target server
-  4. Customer runs `/claim-plan`
-  5. Customer runs `/plan` and `/setup-check`
+  1. Customer invites LEAGUEbuddy to the target server
+  2. Customer runs `/start-here`
+  3. If they still need plan info, they run `/pricing`
+  4. Customer pays through the Stripe link
+  5. Customer runs `/claim-plan`
+  6. Customer runs `/plan` and `/setup-check`
 - No Stripe webhook automation is implemented in this flow.
 
 ## Optional Stripe claim webhook
@@ -84,17 +85,19 @@ npm run dev
 
 ## Start Here
 - The clean commissioner flow inside Discord is:
-  1. `/pricing`
-  2. `/activateplan`
-  3. `/auth`
-  4. `/install-league`
-  5. `/sync`
-  6. `/setup-channels`
-  7. If pins missed: `/setup-pins`
-  8. `/setup-roles`
-  9. `/syncsetupstatus`
-  10. `/server-check`
-  11. `/create-threads`
+  1. Invite the bot
+  2. `/start-here`
+  3. If needed: `/pricing`
+  4. `/activateplan`
+  5. `/auth`
+  6. `/install-league`
+  7. `/sync`
+  8. `/setup-channels`
+  9. If pins missed: `/setup-pins`
+  10. `/setup-roles`
+  11. `/syncsetupstatus`
+  12. `/server-check`
+  13. `/create-threads`
 - The admin summary command for this flow is:
   - `/start-here`
 

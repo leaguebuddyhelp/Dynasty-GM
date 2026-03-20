@@ -11,12 +11,13 @@ export async function execute(interaction) {
   const embed = new EmbedBuilder()
     .setColor(0x1e90ff)
     .setTitle('Start Here')
-    .setDescription('Use this when you are setting up LEAGUEbuddy in a new server. There is one main flow.')
+    .setDescription('Use this first after inviting LEAGUEbuddy to a new server. This is the main setup flow.')
     .addFields(
       {
         name: 'Commissioner Flow',
         value: [
           '1. Turn on the package: `/activateplan`',
+          'If you still need plan info first, check `/pricing`.',
           '2. Start the account connection flow: `/auth`',
           '3. Connect the league: `/install-league`',
           '4. Pull the league data: `/sync`',
@@ -53,7 +54,7 @@ export async function execute(interaction) {
         ].join('\n'),
       },
     )
-    .setFooter({ text: 'Main path: /activateplan -> /auth -> /install-league -> /sync -> /setup-channels -> /setup-roles -> /syncsetupstatus -> /server-check -> /create-threads' });
+    .setFooter({ text: 'Install entry: invite bot -> /start-here. Main path: /activateplan -> /auth -> /install-league -> /sync -> /setup-channels -> /setup-roles -> /syncsetupstatus -> /server-check -> /create-threads' });
 
   await interaction.editReply({ embeds: [embed] });
 }
