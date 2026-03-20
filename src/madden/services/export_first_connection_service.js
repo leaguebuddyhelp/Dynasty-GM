@@ -26,6 +26,40 @@ function isHttpUrl(value) {
   }
 }
 
+function parseUrl(value) {
+  try {
+    return new URL(String(value));
+  } catch {
+    return null;
+  }
+}
+
+function isPrivateHost(hostname) {
+  const host = String(hostname || '').trim().toLowerCase();
+  if (!host) return true;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') return true;
+  if (host === '::1') return true;
+  if (host.endsWith('.local')) return true;
+  if (/^10\.\d+\.\d+\.\d+$/.test(host)) return true;
+  if (/^192\.168\.\d+\.\d+$/.test(host)) return true;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/.test(host)) return true;
+  return false;
+}
+
+function getExportUrlReachabilityError(value) {
+  const parsed = parseUrl(value);
+  if (!parsed) {
+    return 'Export URL must be a real http:// or https:// link.';
+  }
+  if (!(parsed.protocol === 'http:' || parsed.protocol === 'https:')) {
+    return 'Export URL must be a real http:// or https:// link.';
+  }
+  if (isPrivateHost(parsed.hostname)) {
+    return 'This link points to your local or private network. LEAGUEbuddy runs on Railway and can only import from public internet-reachable URLs.';
+  }
+  return null;
+}
+
 function isPlaceholderUrl(value) {
   return /^(YOUR_|OFFICIAL_|REPLACE_ME|PASTE_|EXAMPLE_)/i.test(String(value || '').trim());
 }
@@ -263,6 +297,14 @@ export function addLeagueExportSource({
       message: 'Export URL must be a real http:// or https:// link.',
     };
   }
+  const reachabilityError = getExportUrlReachabilityError(normalizedUrl);
+  if (reachabilityError) {
+    return {
+      ok: false,
+      code: 'unreachable_export_url',
+      message: reachabilityError,
+    };
+  }
 
   const exportSource = connectionRepository.createExportSource({
     connectionId: dashboard.connection.id,
@@ -312,6 +354,20 @@ export async function importFromExportSource({
   const exportSource = connectionRepository.getExportSourceById(exportSourceId);
   if (!exportSource || exportSource.guildId !== dashboard.session.guildId) {
     return { ok: false, code: 'missing_export_source', message: 'That export link was not found for this server.' };
+  }
+
+  const reachabilityError = getExportUrlReachabilityError(exportSource.exportUrl);
+  if (reachabilityError) {
+    connectionRepository.updateExportSource(exportSource.id, {
+      lastImportStatus: 'failed',
+      lastImportAt: new Date().toISOString(),
+      lastImportError: reachabilityError,
+    });
+    return {
+      ok: false,
+      code: 'unreachable_export_url',
+      message: reachabilityError,
+    };
   }
 
   try {

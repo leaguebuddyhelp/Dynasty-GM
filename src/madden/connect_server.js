@@ -287,13 +287,13 @@ function html(body) {
         }
         .check-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-          gap: 8px;
+          grid-template-columns: 1fr;
+          gap: 10px;
           margin: 8px 0 16px;
         }
         .check-grid label {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           gap: 10px;
           padding: 10px 12px;
           border-radius: 12px;
@@ -311,6 +311,35 @@ function html(body) {
           min-width: 0;
           word-break: break-word;
           font-size: 0.98rem;
+        }
+        .step-list {
+          margin: 10px 0 0;
+          padding-left: 20px;
+          color: #4b5563;
+        }
+        .guide-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+          margin: 12px 0 18px;
+        }
+        .guide-card {
+          border: 1px solid #eadb95;
+          border-radius: 16px;
+          background: #fffef8;
+          padding: 14px;
+        }
+        .guide-card h3 {
+          margin: 0 0 8px;
+          font-size: 1rem;
+        }
+        .guide-card p,
+        .guide-card ul {
+          margin: 0;
+          color: #4b5563;
+        }
+        .guide-card ul {
+          padding-left: 18px;
         }
         details {
           margin-top: 18px;
@@ -338,6 +367,9 @@ function html(body) {
             grid-template-columns: 1fr;
           }
           .stat-grid {
+            grid-template-columns: 1fr;
+          }
+          .guide-grid {
             grid-template-columns: 1fr;
           }
         }
@@ -444,6 +476,24 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         <section class="panel">
           <h2>Real League Setup</h2>
           <p style="color:#4b5563;">Use this when you are ready to connect a real league instead of the demo.</p>
+          <div class="guide-grid">
+            <div class="guide-card">
+              <h3>What works</h3>
+              <ul>
+                <li>A public <code>https://...</code> export link</li>
+                <li>A link that returns JSON</li>
+                <li>A link Railway can reach from the public internet</li>
+              </ul>
+            </div>
+            <div class="guide-card">
+              <h3>What will fail</h3>
+              <ul>
+                <li><code>127.0.0.1</code> or <code>localhost</code> links</li>
+                <li>Links that only work on your computer</li>
+                <li>Pages that return HTML instead of JSON</li>
+              </ul>
+            </div>
+          </div>
           <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
             <label for="league_name"><strong>League Name</strong></label><br />
             <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="Ghost Legacy" required />
@@ -455,15 +505,16 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
         <section class="panel">
           <h2>Add Export Link</h2>
-          <p style="color:#4b5563;">Paste the export link LEAGUEbuddy should use to pull league data for this server.</p>
-          <div class="subtle">If you are only testing, you can skip this and just use <strong>Load Demo League</strong>.</div>
+          <p style="color:#4b5563;">Paste the public JSON export link LEAGUEbuddy should use to pull league data for this server.</p>
+          <div class="subtle">If you are only testing, skip this and use <strong>Load Demo League</strong>. If your link lives on your own computer, this import will fail because Railway cannot reach it.</div>
           <div class="info">
-            <strong>How to use this:</strong>
-            <ol style="margin:8px 0 0;padding-left:18px;">
-              <li>Create or get the export link from your league data source.</li>
-              <li>Paste that link here.</li>
+            <strong>How exporting works:</strong>
+            <ol class="step-list">
+              <li>Create a public export from your league tool.</li>
+              <li>Copy that export URL.</li>
+              <li>Paste it here and save it.</li>
               <li>Click <strong>Import Now</strong> on the saved export card.</li>
-              <li>Then run <code>/league-status</code> in Discord.</li>
+              <li>Go back to Discord and run <code>/league-status</code>.</li>
             </ol>
           </div>
           <div class="source-list">${exportRows}</div>
@@ -471,7 +522,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             <label for="label"><strong>Export Name</strong></label><br />
             <input id="label" name="label" placeholder="Primary Export" />
             <label for="export_url"><strong>Export Link</strong></label><br />
-            <input id="export_url" name="export_url" placeholder="Paste your real export link here" required />
+            <input id="export_url" name="export_url" placeholder="https://your-export-source.example/league.json" required />
             <div class="check-grid">
               <label><input type="checkbox" name="league_info" value="1"${checked(true)} /><span>League Info</span></label>
               <label><input type="checkbox" name="weekly_stats" value="1"${checked(true)} /><span>Weekly Stats</span></label>
@@ -486,9 +537,9 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
         <section class="panel">
           <h2>Fallback Import</h2>
-          <p style="color:#4b5563;">Only use this if support tells you to. This is a backup import path while the guided setup keeps improving.</p>
+          <p style="color:#4b5563;">Only use this if support tells you to, or if you already have raw JSON data but no public export link yet.</p>
           <details>
-            <summary>Open fallback JSON importer</summary>
+            <summary>Open JSON importer</summary>
             <form method="POST" action="/madden/import?token=${encodeURIComponent(token)}" style="margin-top:16px;">
               <textarea id="payload" name="payload" placeholder='{"leagueName":"My League","leagueId":"abc123"}'></textarea>
               <button type="submit">Import Snapshot</button>
