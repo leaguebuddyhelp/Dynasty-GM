@@ -316,10 +316,6 @@ function checked(value) {
   return value ? ' checked' : '';
 }
 
-function selected(value, expected) {
-  return value === expected ? ' selected' : '';
-}
-
 function noticeBanner(notice) {
   if (!notice) return '';
   return `<div class="notice"><strong>${escapeHtml(notice)}</strong></div>`;
@@ -349,57 +345,57 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       <div>
         <span class="eyebrow">LEAGUEbuddy Madden</span>
         <h1>League Dashboard Setup</h1>
-        <p>Create the league record, attach your export sources, and use Discord as the control layer. This keeps setup stable without depending on fragile browser auth callbacks.</p>
+        <p>Set up your league here first, then finish the rest in Discord. This keeps league connection stable and gives your server one clear source for syncs and updates.</p>
       </div>
     </section>
     <div class="layout">
       <div class="stack">
         <section class="panel">
           ${noticeBanner(notice)}
-          <h2>League Record</h2>
-          <p style="color:#4b5563;">This ties your Discord server to one backend league record.</p>
+          <h2>Step 1: Name Your League</h2>
+          <p style="color:#4b5563;">Start by naming the league you want this Discord server to use.</p>
           <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
             <label for="league_name"><strong>League Name</strong></label><br />
-            <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="GHOST LEGACY" required />
+            <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="Ghost Legacy" required />
             <label for="league_external_id"><strong>League ID</strong> <span style="color:#6b7280;">(optional)</span></label><br />
-            <input id="league_external_id" name="league_external_id" value="${escapeHtml(leagueExternalId)}" placeholder="ea-league-id" />
-            <button type="submit">Save League Record</button>
+            <input id="league_external_id" name="league_external_id" value="${escapeHtml(leagueExternalId)}" placeholder="Use this only if you already know the league ID" />
+            <button type="submit">Save League Name</button>
           </form>
         </section>
 
         <section class="panel">
-          <h2>Export Sources</h2>
-          <p style="color:#4b5563;">Add one or more export URLs that LEAGUEbuddy should treat as the source of truth for this league.</p>
+          <h2>Step 2: Add Export Link</h2>
+          <p style="color:#4b5563;">Add the export link LEAGUEbuddy should use to pull league data for this server.</p>
           <table>
             <thead>
               <tr>
-                <th>Label</th>
-                <th>Export URL</th>
+                <th>Name</th>
+                <th>Export Link</th>
                 <th>Mode</th>
               </tr>
             </thead>
             <tbody>${exportRows}</tbody>
           </table>
           <form method="POST" action="/madden/connect/export-source?token=${encodeURIComponent(token)}">
-            <label for="label"><strong>Source Label</strong></label><br />
-            <input id="label" name="label" placeholder="Primary Export Source" />
-            <label for="export_url"><strong>Export URL</strong></label><br />
+            <label for="label"><strong>Export Name</strong></label><br />
+            <input id="label" name="label" placeholder="Primary Export" />
+            <label for="export_url"><strong>Export Link</strong></label><br />
             <input id="export_url" name="export_url" placeholder="http://127.0.0.1:PORT/..." required />
             <div class="check-grid">
               <label><input type="checkbox" name="league_info" value="1"${checked(true)} /> League Info</label>
               <label><input type="checkbox" name="weekly_stats" value="1"${checked(true)} /> Weekly Stats</label>
-              <label><input type="checkbox" name="roster" value="1"${checked(true)} /> Roster</label>
+              <label><input type="checkbox" name="roster" value="1"${checked(true)} /> Rosters</label>
               <label><input type="checkbox" name="extra_data" value="1"${checked(false)} /> Extra Data</label>
-              <label><input type="checkbox" name="auto_update" value="1"${checked(true)} /> Auto Update</label>
+              <label><input type="checkbox" name="auto_update" value="1"${checked(true)} /> Keep Updated</label>
             </div>
             <button type="submit"${connection ? '' : ' disabled'}>Add Export Source</button>
-            ${connection ? '' : '<p class="warning">Save the league record first.</p>'}
+            ${connection ? '' : '<p class="warning">Save the league name first.</p>'}
           </form>
         </section>
 
         <section class="panel">
           <h2>Fallback Import</h2>
-          <p style="color:#4b5563;">The raw JSON import is still available as a fallback while we finish the fully guided customer flow.</p>
+          <p style="color:#4b5563;">Only use this if support tells you to. This is a backup import path while the guided setup keeps improving.</p>
           <details>
             <summary>Open fallback JSON importer</summary>
             <form method="POST" action="/madden/import?token=${encodeURIComponent(token)}" style="margin-top:16px;">
@@ -437,12 +433,12 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
         <section class="panel">
           <span class="eyebrow" style="color:#b58900;">Setup Flow</span>
-          <h2 style="margin-top:4px;">What to do here</h2>
+          <h2 style="margin-top:4px;">What to do next</h2>
           <ol style="padding-left:20px;margin:0;">
-            <li>Save your league record.</li>
-            <li>Add at least one export URL.</li>
-            <li>Return to Discord and run <code>/league-status</code>.</li>
-            <li>Continue with the normal setup flow there.</li>
+            <li>Save your league name.</li>
+            <li>Add at least one export link.</li>
+            <li>Go back to Discord and run <code>/league-status</code>.</li>
+            <li>Then continue your normal setup flow there.</li>
           </ol>
         </section>
       </div>
