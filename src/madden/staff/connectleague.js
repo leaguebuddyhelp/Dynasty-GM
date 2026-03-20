@@ -4,7 +4,7 @@ import connectionService from '../services/export_first_connection_service.js';
 
 export const data = new SlashCommandBuilder()
   .setName('connectleague')
-  .setDescription('Start the self-serve export/import connection flow for this server.')
+  .setDescription('Open the league dashboard setup flow for this server.')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
@@ -23,7 +23,7 @@ export async function execute(interaction) {
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setStyle(ButtonStyle.Link)
-      .setLabel('Open League Setup')
+      .setLabel('Open League Dashboard')
       .setURL(setupUrl),
   );
 
@@ -33,19 +33,19 @@ export async function execute(interaction) {
         .setTitle('Connect League')
         .setColor(0x5865f2)
         .setDescription([
-          'Use the setup page below to connect your league without EA browser OAuth.',
+          'Use the dashboard below to create the league record and add one or more export sources.',
           '',
           'What happens next:',
-          '1. Open the setup page.',
-          '2. Paste the exported league JSON.',
-          '3. Submit it once.',
+          '1. Open the dashboard.',
+          '2. Save the league record.',
+          '3. Add an export URL.',
           '4. Run `/league-status` back in Discord.',
         ].join('\n'))
         .addFields(
-          { name: 'Setup Link', value: setupUrl, inline: false },
-          { name: 'Direct Import Endpoint', value: `\`${importUrl}\``, inline: false },
+          { name: 'Dashboard Link', value: setupUrl, inline: false },
+          { name: 'Fallback Import Endpoint', value: `\`${importUrl}\``, inline: false },
           { name: 'Expires', value: `<t:${Math.floor(new Date(session.expiresAt).getTime() / 1000)}:R>`, inline: false },
-          { name: 'Next', value: 'After the import succeeds, run `/league-status`.', inline: false },
+          { name: 'Next', value: 'After the dashboard setup looks right, run `/league-status`.', inline: false },
         ),
     ],
     components: [row],

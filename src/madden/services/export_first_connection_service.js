@@ -16,6 +16,16 @@ function parseJsonPayload(raw) {
   return JSON.parse(raw);
 }
 
+function isLoopbackHttpUrl(value) {
+  if (!safeString(value)) return false;
+  try {
+    const parsed = new URL(String(value));
+    return parsed.protocol === 'http:' && (parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost');
+  } catch {
+    return false;
+  }
+}
+
 function objectKeysCount(value) {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? Object.keys(value).length
@@ -90,26 +100,141 @@ export function beginLeagueConnection({ guildId, createdByUserId }) {
   };
 }
 
-export function getLeagueConnectionStatus(guildId) {
-  const connection = connectionRepository.getLeagueConnectionByGuildId(guildId);
-  const latestSnapshot = connectionRepository.getLatestSnapshotByGuildId(guildId);
-  return {
-    connection,
-    latestSnapshot,
-  };
-}
-
-export function ingestImportedPayload({ token, rawPayload }) {
+export function getLeagueConnectionDashboard(token) {
   const session = connectionRepository.getConnectSessionByToken(token);
   if (!session) {
     return { ok: false, code: 'invalid_token', message: 'This setup link is invalid.' };
   }
-  if (session.status !== 'open') {
-    return { ok: false, code: 'used_token', message: 'This setup link has already been used.' };
-  }
   if (session.expiresAt && new Date(session.expiresAt).getTime() < Date.now()) {
     return { ok: false, code: 'expired_token', message: 'This setup link has expired. Run /connectleague again.' };
   }
+
+  const connection = connectionRepository.getLeagueConnectionByGuildId(session.guildId);
+  const exportSources = connectionRepository.getExportSourcesByGuildId(session.guildId);
+  const latestSnapshot = connectionRepository.getLatestSnapshotByGuildId(session.guildId);
+
+  return {
+    ok: true,
+    session,
+    connection,
+    exportSources,
+    latestSnapshot,
+  };
+}
+
+export function getLeagueConnectionStatus(guildId) {
+  const connection = connectionRepository.getLeagueConnectionByGuildId(guildId);
+  const latestSnapshot = connectionRepository.getLatestSnapshotByGuildId(guildId);
+  const exportSources = connectionRepository.getExportSourcesByGuildId(guildId);
+  return {
+    connection,
+    latestSnapshot,
+    exportSources,
+  };
+}
+
+export function saveLeagueConnectionSetup({
+  token,
+  leagueName,
+  leagueExternalId,
+}) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+
+  const normalizedLeagueName = safeString(leagueName);
+  if (!normalizedLeagueName) {
+    return { ok: false, code: 'missing_league_name', message: 'League name is required.' };
+  }
+
+  const existingSummary = dashboard.connection?.summary || {};
+  const connection = connectionRepository.upsertLeagueConnection({
+    guildId: dashboard.session.guildId,
+    leagueName: normalizedLeagueName,
+    leagueExternalId: safeString(leagueExternalId),
+    sourceType: dashboard.connection?.sourceType || 'dashboard_export',
+    status: dashboard.connection?.status || 'pending_exports',
+    lastImportJobId: dashboard.connection?.lastImportJobId || null,
+    lastSnapshotId: dashboard.connection?.lastSnapshotId || null,
+    summary: {
+      ...existingSummary,
+      leagueName: normalizedLeagueName,
+      leagueExternalId: safeString(leagueExternalId),
+    },
+  });
+
+  return {
+    ok: true,
+    session: dashboard.session,
+    connection,
+  };
+}
+
+export function addLeagueExportSource({
+  token,
+  label,
+  exportUrl,
+  leagueInfo,
+  weeklyStats,
+  roster,
+  extraData,
+  autoUpdate,
+}) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+  if (!dashboard.connection) {
+    return { ok: false, code: 'missing_connection', message: 'Set the league details first.' };
+  }
+
+  const normalizedUrl = safeString(exportUrl);
+  if (!normalizedUrl) {
+    return { ok: false, code: 'missing_export_url', message: 'Export URL is required.' };
+  }
+  if (!isLoopbackHttpUrl(normalizedUrl)) {
+    return {
+      ok: false,
+      code: 'invalid_export_url',
+      message: 'Export URL must be an http://127.0.0.1 or http://localhost URL.',
+    };
+  }
+
+  const exportSource = connectionRepository.createExportSource({
+    connectionId: dashboard.connection.id,
+    guildId: dashboard.session.guildId,
+    label: safeString(label) || `Export Source ${dashboard.exportSources.length + 1}`,
+    exportUrl: normalizedUrl,
+    leagueInfo,
+    weeklyStats,
+    roster,
+    extraData,
+    autoUpdate,
+  });
+
+  const summary = {
+    ...(dashboard.connection.summary || {}),
+    exportSources: dashboard.exportSources.length + 1,
+  };
+  const connection = connectionRepository.upsertLeagueConnection({
+    guildId: dashboard.session.guildId,
+    leagueName: dashboard.connection.leagueName,
+    leagueExternalId: dashboard.connection.leagueExternalId,
+    sourceType: 'dashboard_export',
+    status: 'connected',
+    lastImportJobId: dashboard.connection.lastImportJobId,
+    lastSnapshotId: dashboard.connection.lastSnapshotId,
+    summary,
+  });
+
+  return {
+    ok: true,
+    session: dashboard.session,
+    connection,
+    exportSource,
+  };
+}
+
+export function ingestImportedPayload({ token, rawPayload }) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
 
   let payload;
   try {
@@ -123,12 +248,12 @@ export function ingestImportedPayload({ token, rawPayload }) {
 
   const summary = summarizePayload(payload);
   const importJob = connectionRepository.createImportJob({
-    guildId: session.guildId,
-    connectSessionId: session.id,
+    guildId: dashboard.session.guildId,
+    connectSessionId: dashboard.session.id,
     rawPayload: payload,
   });
   const snapshot = connectionRepository.createSnapshot({
-    guildId: session.guildId,
+    guildId: dashboard.session.guildId,
     importJobId: importJob.id,
     leagueName: summary.leagueName,
     leagueExternalId: summary.leagueExternalId,
@@ -139,12 +264,11 @@ export function ingestImportedPayload({ token, rawPayload }) {
     status: 'succeeded',
     summary,
   });
-  connectionRepository.consumeConnectSession(token);
   const connection = connectionRepository.upsertLeagueConnection({
-    guildId: session.guildId,
+    guildId: dashboard.session.guildId,
     leagueName: summary.leagueName,
     leagueExternalId: summary.leagueExternalId,
-    sourceType: 'export_import',
+    sourceType: dashboard.connection?.sourceType || 'dashboard_export',
     status: 'connected',
     lastImportJobId: importJob.id,
     lastSnapshotId: snapshot.id,
@@ -153,7 +277,7 @@ export function ingestImportedPayload({ token, rawPayload }) {
 
   return {
     ok: true,
-    session,
+    session: dashboard.session,
     connection,
     importJob,
     snapshot,
@@ -163,6 +287,9 @@ export function ingestImportedPayload({ token, rawPayload }) {
 
 export default {
   beginLeagueConnection,
+  getLeagueConnectionDashboard,
   getLeagueConnectionStatus,
+  saveLeagueConnectionSetup,
+  addLeagueExportSource,
   ingestImportedPayload,
 };

@@ -7,6 +7,7 @@ import { getLeaguebuddyMaddenConnectionsPath } from '../paths.js';
 const EMPTY_STORE = {
   sessions: [],
   connections: [],
+  exportSources: [],
   importJobs: [],
   snapshots: [],
 };
@@ -31,6 +32,7 @@ function loadStore() {
     return {
       sessions: Array.isArray(parsed?.sessions) ? parsed.sessions : [],
       connections: Array.isArray(parsed?.connections) ? parsed.connections : [],
+      exportSources: Array.isArray(parsed?.exportSources) ? parsed.exportSources : [],
       importJobs: Array.isArray(parsed?.importJobs) ? parsed.importJobs : [],
       snapshots: Array.isArray(parsed?.snapshots) ? parsed.snapshots : [],
     };
@@ -137,6 +139,52 @@ export function getLeagueConnectionByGuildId(guildId) {
   return clone(store.connections.find((entry) => entry.guildId === String(guildId)) || null);
 }
 
+export function getLeagueConnectionById(connectionId) {
+  if (!connectionId) return null;
+  const store = loadStore();
+  return clone(store.connections.find((entry) => entry.id === String(connectionId)) || null);
+}
+
+export function createExportSource({
+  connectionId,
+  guildId,
+  label,
+  exportUrl,
+  leagueInfo = true,
+  weeklyStats = true,
+  roster = true,
+  extraData = false,
+  autoUpdate = false,
+  status = 'active',
+}) {
+  const store = loadStore();
+  const ts = nowIso();
+  const record = {
+    id: newId('es'),
+    connectionId: String(connectionId),
+    guildId: String(guildId),
+    label: label || 'Primary Export Source',
+    exportUrl,
+    leagueInfo: Boolean(leagueInfo),
+    weeklyStats: Boolean(weeklyStats),
+    roster: Boolean(roster),
+    extraData: Boolean(extraData),
+    autoUpdate: Boolean(autoUpdate),
+    status,
+    createdAt: ts,
+    updatedAt: ts,
+  };
+  store.exportSources.push(record);
+  saveStore(store);
+  return clone(record);
+}
+
+export function getExportSourcesByGuildId(guildId) {
+  if (!guildId) return [];
+  const store = loadStore();
+  return clone(store.exportSources.filter((entry) => entry.guildId === String(guildId)));
+}
+
 export function createImportJob({
   guildId,
   connectSessionId,
@@ -212,6 +260,9 @@ export default {
   consumeConnectSession,
   upsertLeagueConnection,
   getLeagueConnectionByGuildId,
+  getLeagueConnectionById,
+  createExportSource,
+  getExportSourcesByGuildId,
   createImportJob,
   finishImportJob,
   createSnapshot,
