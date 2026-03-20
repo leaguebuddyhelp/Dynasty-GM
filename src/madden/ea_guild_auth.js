@@ -7,7 +7,7 @@ import {
   getMaddenAuthStatePath,
 } from '../leaguebuddy/paths.js';
 import { createEAClientFromEnv } from './ea_client.js';
-import { APP_REDIRECT_URL, AUTH_SOURCE, CLIENT_ID, MACHINE_KEY, REDIRECT_URL, YEAR } from './ea_constants.js';
+import { APP_REDIRECT_URL, REDIRECT_URL, YEAR, buildEaAuthUrl } from './ea_constants.js';
 
 function ensureParent(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -21,17 +21,13 @@ function normalizeTokens(tokens) {
 
 export function getGuildAuthStartUrl(guildId) {
   const state = createAuthState({ guildId });
-  const params = new URLSearchParams({
-    hide_create: 'true',
-    release_type: 'prod',
-    response_type: 'code',
-    redirect_uri: REDIRECT_URL,
-    client_id: CLIENT_ID,
-    machineProfileKey: MACHINE_KEY,
-    authentication_source: String(AUTH_SOURCE),
-    state: state.id,
+  const authUrl = buildEaAuthUrl({ state: state.id });
+  console.log('[ea-auth] generated auth URL', {
+    guildId,
+    redirectUri: REDIRECT_URL,
+    authUrl,
   });
-  return `${new URL('/connect/auth', 'https://accounts.ea.com').toString()}?${params.toString()}`;
+  return authUrl;
 }
 
 export function getGuildEATokens(guildId) {

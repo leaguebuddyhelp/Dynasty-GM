@@ -1,15 +1,57 @@
 // Minimal constants extracted from Snallabot (Madden 26)
 export const AUTH_SOURCE = 317239;
 export const CLIENT_SECRET = "teJpJ9cSXFqZAuKNW8IuHpy8D4dwWPoVrPoek38iCnrGbrUSfjqnHMBAv8iCVjeSm_20250910175618";
-// Public callback route served by the app/healthcheck server when available.
-export const APP_REDIRECT_URL = process.env.EA_REDIRECT_URL || "http://localhost:4001/madden/callback";
-// EA's OAuth client may only accept a fixed allowlisted redirect URI. Keep this separate
-// from the app callback so hosted production can still finish the flow manually in Discord.
-export const REDIRECT_URL = process.env.EA_OAUTH_REDIRECT_URL || "http://127.0.0.1:4001/madden/callback";
 export const CLIENT_ID = "MCA_26_COMP_APP";
 export const MACHINE_KEY = "444d362e8e067fe2";
 
-export const EA_LOGIN_URL = `https://accounts.ea.com/connect/auth?hide_create=true&release_type=prod&response_type=code&redirect_uri=${REDIRECT_URL}&client_id=${CLIENT_ID}&machineProfileKey=${MACHINE_KEY}&authentication_source=${AUTH_SOURCE}`;
+function looksLikePlaceholder(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return true;
+  if (trimmed === 'EA_OAUTH_REDIRECT_URL' || trimmed === 'EA_REDIRECT_URL') return true;
+  return /^(YOUR_|OFFICIAL_|REPLACE_ME|PASTE_)/i.test(trimmed);
+}
+
+function resolveRedirectUrl(envKey, fallback, { requireLoopback = false } = {}) {
+  const raw = process.env[envKey];
+  const candidate = looksLikePlaceholder(raw) ? fallback : String(raw || '').trim();
+  let parsed;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error(`[ea-auth] ${envKey} is not a valid URL: ${candidate || '<empty>'}`);
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(`[ea-auth] ${envKey} must use http or https: ${parsed.toString()}`);
+  }
+  if (requireLoopback && !(parsed.protocol === 'http:' && parsed.hostname === '127.0.0.1')) {
+    throw new Error(`[ea-auth] ${envKey} must be an http://127.0.0.1 loopback URL. Received: ${parsed.toString()}`);
+  }
+  return parsed.toString();
+}
+
+// Public callback route served by the app/healthcheck server when available.
+export const APP_REDIRECT_URL = resolveRedirectUrl('EA_REDIRECT_URL', 'http://localhost:4001/madden/callback');
+// EA's OAuth client may only accept a fixed allowlisted redirect URI. Keep this separate
+// from the app callback so hosted production can still finish the flow manually in Discord.
+export const REDIRECT_URL = resolveRedirectUrl('EA_OAUTH_REDIRECT_URL', 'http://127.0.0.1:4001/madden/callback', { requireLoopback: true });
+
+export function buildEaAuthUrl({ state, accessToken, personaId, personaNamespace } = {}) {
+  const authUrl = new URL('/connect/auth', 'https://accounts.ea.com');
+  authUrl.searchParams.set('hide_create', 'true');
+  authUrl.searchParams.set('release_type', 'prod');
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('redirect_uri', REDIRECT_URL);
+  authUrl.searchParams.set('client_id', CLIENT_ID);
+  authUrl.searchParams.set('machineProfileKey', MACHINE_KEY);
+  authUrl.searchParams.set('authentication_source', String(AUTH_SOURCE));
+  if (state) authUrl.searchParams.set('state', state);
+  if (accessToken) authUrl.searchParams.set('access_token', accessToken);
+  if (personaId) authUrl.searchParams.set('persona_id', String(personaId));
+  if (personaNamespace) authUrl.searchParams.set('persona_namespace', String(personaNamespace));
+  return authUrl.toString();
+}
+
+export const EA_LOGIN_URL = buildEaAuthUrl();
 
 // Madden 26 (release year 2026) EA service identifiers
 export const TWO_DIGIT_YEAR = "26";

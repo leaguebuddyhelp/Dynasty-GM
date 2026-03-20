@@ -1,4 +1,4 @@
-import { AUTH_SOURCE, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, VALID_ENTITLEMENTS, ENTITLEMENT_TO_VALID_NAMESPACE, ENTITLEMENT_TO_SYSTEM, CONSOLE_OVERRIDE_TO_ENTITLEMENT, CONSOLE_OVERRIDE_TO_VALID_NAMESPACE, MACHINE_KEY } from './ea_constants.js';
+import { AUTH_SOURCE, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, VALID_ENTITLEMENTS, ENTITLEMENT_TO_VALID_NAMESPACE, ENTITLEMENT_TO_SYSTEM, CONSOLE_OVERRIDE_TO_ENTITLEMENT, CONSOLE_OVERRIDE_TO_VALID_NAMESPACE, buildEaAuthUrl } from './ea_constants.js';
 
 const MOBILE_UA = "Dalvik/2.1.0 (Linux; U; Android 13; sdk_gphone_x86_64 Build/TE1A.220922.031)";
 
@@ -103,7 +103,11 @@ export async function exchangeLoginCode(rawUrl) {
 }
 
 export async function exchangePersonaToken(accessToken, personaId, personaNamespace) {
-  const locationUrlRes = await fetch(`https://accounts.ea.com/connect/auth?hide_create=true&release_type=prod&response_type=code&redirect_uri=${REDIRECT_URL}&client_id=${CLIENT_ID}&machineProfileKey=${MACHINE_KEY}&authentication_source=${AUTH_SOURCE}&access_token=${accessToken}&persona_id=${personaId}&persona_namespace=${personaNamespace}`, {
+  const locationUrlRes = await fetch(buildEaAuthUrl({
+    accessToken,
+    personaId,
+    personaNamespace,
+  }), {
     redirect: "manual",
     headers: {
       "Upgrade-Insecure-Requests": "1",
