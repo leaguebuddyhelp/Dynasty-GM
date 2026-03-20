@@ -43,7 +43,7 @@ export async function execute(interaction) {
   await interaction.deferReply({ ephemeral: true });
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    await interaction.editReply('No league configured. Run /madden-set-league first.');
+    await interaction.editReply('No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.');
     return;
   }
   let snap;

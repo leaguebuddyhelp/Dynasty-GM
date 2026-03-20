@@ -402,7 +402,7 @@ function buildPagesForUser(userId, guildId) {
   try {
     leagueId = requireLeagueIdForGuild(guildId);
   } catch (error) {
-    return { error: error?.message || 'No league set. Run /set-league first.' };
+    return { error: error?.message || 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.' };
   }
   const snapshot = loadLeagueSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};

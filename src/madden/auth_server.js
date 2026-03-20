@@ -121,7 +121,7 @@ export function startAuthServer() {
       const guildId = String(parsed.query.guild_id || '').trim();
       res.writeHead(200, { 'Content-Type': 'text/html' });
       if (!guildId) {
-        res.end(html('<h2>Missing server</h2><p>No guild_id was provided. Start from <code>/auth</code> inside Discord so LEAGUEbuddy can tie the redirect flow back to the correct server.</p>'));
+        res.end(html('<h2>Missing server</h2><p>No guild_id was provided. Start from <code>/connectleague</code> in Discord so LEAGUEbuddy can tie the dashboard setup back to the correct server.</p>'));
         return;
       }
       const loginUrl = getGuildAuthStartUrl(guildId);
@@ -143,7 +143,7 @@ export function startAuthServer() {
       }
       const state = consumeAuthState(stateId);
       if (!state?.guildId) {
-        res.end(html('<h3>Missing auth state</h3><p>This redirect session could not be tied back to a Discord server. Start the flow again from <code>/auth</code> inside the target server.</p>'));
+        res.end(html('<h3>Missing auth state</h3><p>This redirect session could not be tied back to a Discord server. Start the flow again from <code>/connectleague</code> inside the target server.</p>'));
         return;
       }
       try {

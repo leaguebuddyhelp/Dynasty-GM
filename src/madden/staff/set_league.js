@@ -4,7 +4,7 @@ import { saveLeague as saveLeagueDb } from '../../../madden/madden_db.js';
 
 const data = new SlashCommandBuilder()
   .setName('set-league')
-  .setDescription('Set the default Madden league for this server (used by other Madden commands).')
+  .setDescription('Legacy admin override: manually set the default Madden league for this server.')
   .addStringOption(opt =>
     opt.setName('league_id')
       .setDescription('League ID to set as default')
@@ -27,6 +27,7 @@ async function execute(interaction) {
         'Other Madden commands will use this guild-specific mapping automatically.',
         '',
         'No other league snapshots or process-wide env settings were changed.',
+        'Recommended path for normal setup is still `/connectleague`.',
         '',
         'Next: run `/sync`.',
       ].join('\n'))

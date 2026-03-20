@@ -112,7 +112,7 @@ export async function execute(interaction) {
   if (interaction.customId !== 'madden_awards_button') return;
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    await interaction.reply({ content: 'No league set. Run /set-league first.', ephemeral: true });
+    await interaction.reply({ content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', ephemeral: true });
     return;
   }
   const roleMap = loadRoleMap(interaction.guildId);
@@ -150,7 +150,7 @@ export async function execute_modal(interaction) {
   await interaction.deferReply({ ephemeral: true });
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    await interaction.editReply({ content: 'No league set. Run /set-league first.' });
+    await interaction.editReply({ content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.' });
     return;
   }
   const snapshot = loadLeagueSnapshot(leagueId);

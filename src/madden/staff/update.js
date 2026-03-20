@@ -910,7 +910,7 @@ async function execute(interaction) {
     }
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
     if (!leagueId) {
-      await interaction.editReply({ content: 'No league set. Run /set-league first.' });
+      await interaction.editReply({ content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.' });
       return;
     }
     const provider = new SnallabotProvider();
@@ -1631,13 +1631,13 @@ async function execute(interaction) {
     let guidance = 'Try again shortly.';
     if (lower.includes('no local ea tokens')) {
       shortType = 'Tokens missing';
-      guidance = 'Run `/auth` (or `/auth reset` then `/auth`), then rerun `/weeklyupdate`.';
+      guidance = 'Run `/connectleague`, reconnect EA in the dashboard, then rerun `/weeklyupdate`.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
       shortType = 'Auth/session';
-      guidance = 'Tokens look bad. Run `/auth reset` then `/auth` (PS5 Madden 2026 account), ensure `EA_CONSOLE=ps5` / `EA_GAME_YEAR=2026`, then rerun `/weeklyupdate`.';
+      guidance = 'The saved EA session looks stale. Return to `/connectleague`, reconnect EA in the dashboard, then rerun `/weeklyupdate`.';
     } else if (lower.includes('deleted') || lower.includes('league')) {
       shortType = 'League ID';
-      guidance = 'Check the league ID. Run `/set-league <your_league_id>` then rerun `/weeklyupdate`.';
+      guidance = 'Reconnect the league from `/connectleague`, then rerun `/weeklyupdate`.';
     }
     const shortMsg = shortType;
     const embed = new EmbedBuilder()

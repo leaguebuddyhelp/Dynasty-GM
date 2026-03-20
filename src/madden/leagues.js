@@ -23,7 +23,7 @@ async function execute(interaction) {
     if (!tokens || !tokens.accessToken || !tokens.refreshToken) {
       const embed = new EmbedBuilder()
         .setTitle('Madden Leagues')
-        .setDescription('No league connection is saved for this server. Run `/auth` first.')
+        .setDescription('No EA connection is saved for this server. Run `/connectleague` and finish the dashboard flow first.')
         .setColor(0xffcc00);
       await interaction.editReply({ embeds: [embed] });
       return;

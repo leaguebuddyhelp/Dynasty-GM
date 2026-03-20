@@ -80,7 +80,7 @@ export async function execute(interaction) {
       try {
         leagueId = requireLeagueIdForGuild(interaction.guildId);
       } catch (error) {
-        await safeMessage(interaction, error?.message || 'No league is mapped to this server yet. Run /set-league first.');
+        await safeMessage(interaction, error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.');
         return;
       }
     }

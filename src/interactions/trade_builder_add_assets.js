@@ -761,7 +761,7 @@ export async function execute(interaction) {
       return;
     }
     if (!leagueId) {
-      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league configured. Run /set-league first.' }));
+      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.' }));
       return;
     }
     const snapshot = loadLeagueSnapshot(leagueId);

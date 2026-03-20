@@ -132,7 +132,7 @@ export async function runSync(leagueId, provider, options = {}) {
     await emitProgress(options, 'Checking account connection', 'Loading the saved league connection for this server.');
     const tokens = await loadTokens(options.guildId);
     if (!tokens || !tokens.accessToken || !tokens.refreshToken) {
-      throw new Error('No EA auth was found for this server. Run /auth, then retry.');
+      throw new Error('No EA connection was found for this server. Run `/connectleague`, reconnect EA in the dashboard, then retry.');
     }
     await emitProgress(options, 'Opening league session', 'Refreshing the saved connection and opening the Madden session.');
     const client = await createEAClientFromEnv({ ...process.env, EA_ACCESS_TOKEN: tokens.accessToken, EA_REFRESH_TOKEN: tokens.refreshToken, EA_ACCESS_TOKEN_EXPIRES_AT: tokens.expiry, EA_CONSOLE: tokens.console, EA_BLAZE_ID: tokens.blazeId, EA_GAME_YEAR: tokens.gameYear }, {
@@ -485,7 +485,7 @@ export async function runSync(leagueId, provider, options = {}) {
         lower.includes('please re-auth') ||
         lower.includes('invalid_grant') ||
         lower.includes('token')) {
-      await notify('Madden EA re-auth needed', `${msg}\nRun /auth, then rerun the command.`);
+      await notify('Madden EA reconnect needed', `${msg}\nRun /connectleague, reconnect EA in the dashboard, then rerun the command.`);
     }
     throw err;
   }
@@ -506,7 +506,7 @@ async function execute(interaction) {
         embeds: [
           new EmbedBuilder()
             .setTitle('Madden Sync')
-            .setDescription('No league set. Run /set-league or provide league_id.')
+            .setDescription('No league is connected to this server yet. Run `/connectleague`, finish the dashboard flow, then rerun `/sync`.')
             .setColor(0xffcc00)
         ]
       });
@@ -546,11 +546,11 @@ async function execute(interaction) {
     const lower = msg.toLowerCase();
     let guidance = 'Try again shortly.';
     if (lower.includes('no local ea tokens')) {
-      guidance = 'Run `/auth` (or `/auth reset` then `/auth`), then rerun the sync.';
+      guidance = 'Run `/connectleague`, reconnect EA in the dashboard, then rerun the sync.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
-      guidance = 'Tokens look bad. Run `/auth reset` then `/auth` (PS5 Madden 2026 account), ensure `EA_CONSOLE=ps5` / `EA_GAME_YEAR=2026`, then rerun.';
+      guidance = 'The saved EA session looks stale. Return to `/connectleague`, reconnect EA in the dashboard, then rerun the sync.';
     } else if (lower.includes('deleted') || lower.includes('league')) {
-      guidance = 'Check the league ID. Run `/set-league <your_league_id>` then rerun.';
+      guidance = 'Reconnect the league from `/connectleague`, then rerun the sync.';
     }
     const shortMsg = msg.length > 3000 ? `${msg.slice(0, 2997)}...` : msg;
     await interaction.editReply({

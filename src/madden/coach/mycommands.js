@@ -38,8 +38,8 @@ async function execute(interaction) {
         name: 'Main Setup Flow',
         value: [
           '1. `/activateplan`',
-          '2. `/auth`',
-          '3. `/install-league`',
+          '2. `/connectleague`',
+          '3. Finish the dashboard flow',
           '4. `/sync`',
           '5. `/setup-channels`',
           'If that reply says pins missed: `/setup-pins`',

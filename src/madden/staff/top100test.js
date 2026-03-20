@@ -95,8 +95,8 @@ export async function execute(interaction, options = {}) {
   if (parsed.isPublic !== undefined) isPublic = parsed.isPublic;
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    if (!isButton) await interaction.editReply('No league configured. Run /set-league first.');
-    else await interaction.update({ content: 'No league configured. Run /set-league first.', components: [], embeds: [] });
+    if (!isButton) await interaction.editReply('No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.');
+    else await interaction.update({ content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', components: [], embeds: [] });
     return;
   }
   // Grade all players for the latest week and show a private paginated embed

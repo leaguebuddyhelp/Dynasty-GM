@@ -43,7 +43,7 @@ export async function execute(interaction) {
 
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    return interaction.editReply({ content: 'No league set. Run /set-league first.' });
+    return interaction.editReply({ content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.' });
   }
 
   try {

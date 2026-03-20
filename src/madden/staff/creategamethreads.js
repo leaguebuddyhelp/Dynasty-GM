@@ -686,7 +686,7 @@ async function execute(interaction) {
 
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    await safeEditReply(interaction, { content: 'No league set. Run /set-league first.' });
+    await safeEditReply(interaction, { content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.' });
     return;
   }
 

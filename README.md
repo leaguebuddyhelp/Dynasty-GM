@@ -74,14 +74,15 @@ npm run dev
 ## Self-hosting checklist
 1. Configure `DISCORD_TOKEN` and the Discord app ids in your env file.
 2. Configure `LB_UPGRADE_URL_STANDARD` and `LB_UPGRADE_URL_PREMIUM` if you want live customer upgrade links.
-3. Start the bot and run `/set-league` in the target server before using customer-facing Madden commands.
-4. Run `/setup-channels` to create the Madden overlay config, category, channels, and the first pin pass.
-5. If that reply says some pins missed, run `/setup-pins` to retry only the pins.
-6. Run `/setup-roles` to create the staff, trade, and coach roles.
-7. Run `/plan` to verify customer-facing access state.
-8. Run `/setup-check` to verify setup completion.
-9. Run `/server-check` as an admin to confirm the server is ready.
-10. Run `/create-threads` when you are ready to open the current week or playoff matchup threads.
+3. Run `/connectleague` in the target server and finish the dashboard flow.
+4. Run `/sync` so LEAGUEbuddy stores the first live snapshot.
+5. Run `/setup-channels` to create the Madden overlay config, category, channels, and the first pin pass.
+6. If that reply says some pins missed, run `/setup-pins` to retry only the pins.
+7. Run `/setup-roles` to create the staff, trade, and coach roles.
+8. Run `/plan` to verify customer-facing access state.
+9. Run `/setup-check` to verify setup completion.
+10. Run `/server-check` as an admin to confirm the server is ready.
+11. Run `/create-threads` when you are ready to open the current week or playoff matchup threads.
 
 ## Start Here
 - The clean commissioner flow inside Discord is:
@@ -89,8 +90,8 @@ npm run dev
   2. `/start-here`
   3. If needed: `/pricing`
   4. `/activateplan`
-  5. `/auth`
-  6. `/install-league`
+  5. `/connectleague`
+  6. Finish the dashboard flow
   7. `/sync`
   8. `/setup-channels`
   9. If pins missed: `/setup-pins`

@@ -7,7 +7,7 @@ export async function execute(interaction) {
   const weekRaw = interaction.isStringSelectMenu() ? interaction.values?.[0] : interaction.customId.split('|')[1];
   const leagueId = resolveLeagueIdStrict(interaction.guildId);
   if (!leagueId) {
-    await interaction.reply({ content: 'No league is mapped to this server yet. Run /set-league first.', ephemeral: true });
+    await interaction.reply({ content: 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', ephemeral: true });
     return;
   }
   const snapshot = loadLeagueSnapshot(leagueId);

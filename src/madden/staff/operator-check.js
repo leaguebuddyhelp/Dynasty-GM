@@ -27,8 +27,8 @@ function snapshotExists(leagueId) {
 }
 
 function nextSteps({ tokenOk, stripeStandardOk, stripePremiumOk, leagueId, setupStatus, billing }) {
-  if (!leagueId) return 'Run `/set-league`.';
-  if (!snapshotExists(leagueId)) return 'Run `/auth`, then `/sync`.';
+  if (!leagueId) return 'Run `/connectleague`.';
+  if (!snapshotExists(leagueId)) return 'Run `/sync`.';
   if (!setupStatus.overlayStatus.exists) return 'Run `/setup-channels`.';
   if (setupStatus.syncNeeded) return 'Run `/syncsetupstatus`.';
   if (!setupStatus.overlayStatus.isComplete || !setupStatus.setupCompleted) return 'Run `/setup-roles`, then `/syncsetupstatus`.';

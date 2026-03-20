@@ -250,7 +250,7 @@ export async function createEAClientFromEnv(env, options = {}) {
     throw new Error('Missing EA_ACCESS_TOKEN or EA_REFRESH_TOKEN in environment');
   }
   if (env.EA_GAME_YEAR && `${env.EA_GAME_YEAR}` !== `${YEAR}`) {
-    throw new Error(`Cached tokens are for game year ${env.EA_GAME_YEAR}, current YEAR=${YEAR}. Please re-auth with /auth.`);
+    throw new Error(`Cached tokens are for game year ${env.EA_GAME_YEAR}, current YEAR=${YEAR}. Reconnect this server through /connectleague.`);
   }
 
   const freshToken = await refreshToken(token, options.persistTokenUpdate);

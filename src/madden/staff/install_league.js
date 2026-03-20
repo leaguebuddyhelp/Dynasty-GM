@@ -28,7 +28,7 @@ function buildLeagueOptions(leagues = []) {
 
 export const data = new SlashCommandBuilder()
   .setName('install-league')
-  .setDescription('Guided league connection flow for this server.')
+  .setDescription('Legacy fallback: guided league connection flow for this server.')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
@@ -45,12 +45,12 @@ export async function execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor(0xf39c12)
       .setTitle('Connect Your League')
-      .setDescription('This server is not connected to a league account yet.')
+      .setDescription('This is the legacy connection helper. The recommended path is `/connectleague` and the dashboard.')
       .addFields(
-        { name: 'Step 1', value: `Open the connection link: ${loginUrl}` },
-        { name: 'Step 2', value: 'Finish the browser redirect flow. The callback page should say the connection was saved for this server.' },
-        { name: 'Step 3', value: 'If the browser flow does not finish cleanly, run `/auth redirect_url:<paste-callback-url>`.' },
-        { name: 'Step 4', value: 'Run `/install-league` again and pick the correct league.' },
+        { name: 'Recommended', value: 'Run `/connectleague`, open the dashboard, connect EA, choose your Madden account, then choose your league.' },
+        { name: 'Legacy Fallback', value: `If you are intentionally using the old flow, open the connection link: ${loginUrl}` },
+        { name: 'Manual Finish', value: 'If the browser flow does not finish cleanly, run `/auth redirect_url:<paste-callback-url>`.' },
+        { name: 'Then', value: 'Run `/install-league` again and pick the correct league.' },
       )
       .setFooter({ text: 'League connection is saved per server.' });
 
@@ -95,7 +95,7 @@ export async function execute(interaction) {
             .setDescription(`This server is now mapped to **${only.leagueName || 'your league'}** (\`${only.leagueId}\`).`)
             .addFields({
               name: 'Next',
-              value: 'Run `/sync`.',
+              value: 'Run `/sync`, then continue the normal setup flow.',
             }),
         ],
       });

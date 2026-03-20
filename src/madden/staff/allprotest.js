@@ -348,8 +348,8 @@ export async function execute(interaction, options = {}) {
   // Parse button state (for future extension; not using pagination now)
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    if (isButton) return interaction.update({ content: 'No league configured.', components: [], embeds: [] });
-    return interaction.editReply({ content: 'No league configured. Run /set-league first.' });
+    if (isButton) return interaction.update({ content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', components: [], embeds: [] });
+    return interaction.editReply({ content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.' });
   }
 
   // Load list
