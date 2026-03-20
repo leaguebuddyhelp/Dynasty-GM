@@ -20,6 +20,23 @@ export async function execute(interaction) {
   const snapshot = status.latestSnapshot;
   const exportSources = status.exportSources || [];
   const guildTokens = status.guildTokens;
+  const syncError = connection?.summary?.lastSyncError ? String(connection.summary.lastSyncError) : '';
+
+  function buildSyncNextStep(errorText) {
+    if (!errorText) {
+      return 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.';
+    }
+    if (errorText.includes('temporary system error')) {
+      return 'EA returned a temporary service error. Wait a moment, then run `/sync` again.';
+    }
+    if (errorText.includes('session expired') || errorText.includes('Reconnect EA')) {
+      return 'The league is linked, but the EA session expired. Reconnect EA from `/connectleague`, then run `/sync`.';
+    }
+    if (errorText.includes('taking too long')) {
+      return 'EA took too long to respond. Run `/sync` again. If it keeps timing out, reopen the dashboard and reconnect EA.';
+    }
+    return 'The league is linked, but the first sync failed. Run `/sync` now. If it fails again, return to the dashboard and reconnect EA.';
+  }
 
   if (!connection) {
     await interaction.editReply({
@@ -50,9 +67,9 @@ export async function execute(interaction) {
           { name: 'Week', value: String(snapshot?.summary?.week || connection?.summary?.week || 'unknown'), inline: true },
           { name: 'Teams', value: String(snapshot?.summary?.teams || connection?.summary?.teams || 0), inline: true },
           { name: 'Last Import', value: snapshot?.createdAt ? `<t:${Math.floor(new Date(snapshot.createdAt).getTime() / 1000)}:R>` : 'never', inline: false },
-          ...(connection?.summary?.lastSyncError ? [{ name: 'Sync Error', value: String(connection.summary.lastSyncError).slice(0, 1024), inline: false }] : []),
+          ...(syncError ? [{ name: 'Sync Error', value: syncError.slice(0, 1024), inline: false }] : []),
           { name: 'Next', value: connection.status === 'sync_error'
-            ? 'The league is linked, but the first sync failed. Run `/sync` now. If it fails again, return to the dashboard and reconnect EA.'
+            ? buildSyncNextStep(syncError)
             : 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.',
             inline: false },
         ),

@@ -662,6 +662,43 @@ function noticeBanner(notice) {
   return `<div class="notice"><strong>${escapeHtml(notice)}</strong></div>`;
 }
 
+function describeSyncError(error) {
+  const text = String(error || '').trim();
+  if (!text) {
+    return {
+      title: 'First sync did not finish.',
+      detail: 'LEAGUEbuddy linked the league, but it could not pull the first batch of Madden data yet.',
+      next: 'Run /sync in Discord. If it fails again, reopen this dashboard and reconnect EA.',
+    };
+  }
+  if (text.includes('temporary system error')) {
+    return {
+      title: 'EA is temporarily unavailable.',
+      detail: 'Your league is linked, but EA returned a temporary service error while LEAGUEbuddy tried to pull league data.',
+      next: 'Wait a moment, then run /sync in Discord.',
+    };
+  }
+  if (text.includes('session expired') || text.includes('Reconnect EA')) {
+    return {
+      title: 'EA session expired.',
+      detail: 'The league link is saved, but the EA session used for the first sync is no longer valid.',
+      next: 'Reconnect EA from this dashboard, then run /sync in Discord.',
+    };
+  }
+  if (text.includes('taking too long')) {
+    return {
+      title: 'EA took too long to respond.',
+      detail: 'LEAGUEbuddy linked your league, but the first data pull timed out before EA finished responding.',
+      next: 'Refresh this page, confirm the league is still linked, then run /sync in Discord.',
+    };
+  }
+  return {
+    title: 'First sync needs attention.',
+    detail: text,
+    next: 'Run /sync in Discord. If it fails again, reconnect EA from this dashboard.',
+  };
+}
+
 function renderDashboard({ token, dashboard, notice = '' }) {
   const connection = dashboard.connection;
   const snapshot = dashboard.latestSnapshot;
@@ -710,6 +747,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const hasLeague = Boolean(selectedLeague || connection?.leagueExternalId);
   const syncError = connection?.summary?.lastSyncError || '';
   const syncSucceeded = hasLeague && status === 'connected';
+  const syncErrorSummary = describeSyncError(syncError);
 
   const nextStep = !hasLeagueName
     ? 1
@@ -777,7 +815,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       copy: syncSucceeded
         ? `Week ${snapshot?.summary?.week || connection?.summary?.week || 'current'} data is available.`
         : hasLeague
-          ? 'League linked, but first sync still needs attention.'
+          ? syncErrorSummary.title
           : 'This will happen automatically after you connect the league.',
     },
   ];
@@ -793,7 +831,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         : !hasLeague
           ? 'Choose the league to connect to this Discord server.'
           : status === 'sync_error'
-            ? 'League is linked. Run /sync in Discord after the sync issue is fixed.'
+            ? syncErrorSummary.next
             : 'Go back to Discord and run /league-status.';
 
   function stepClass(step) {
@@ -1006,7 +1044,15 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <div>League ID: <code>${escapeHtml(connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown')}</code></div>
             </div>
           </div>
-          ${hasLeague ? '<div class="subtle">League linked. Go back to Discord and run <code>/league-status</code>.</div>' : ''}
+          ${status === 'sync_error' ? `
+            <div class="warning">
+              <strong>${escapeHtml(syncErrorSummary.title)}</strong><br />
+              ${escapeHtml(syncErrorSummary.detail)}
+            </div>
+            <div class="subtle">
+              <strong>Do this next:</strong> ${escapeHtml(syncErrorSummary.next)}
+            </div>
+          ` : hasLeague ? '<div class="subtle">League linked. Go back to Discord and run <code>/league-status</code>.</div>' : ''}
         </section>
       </div>
 
@@ -1054,7 +1100,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             ${syncError ? `
               <div class="summary-item blocker">
                 <strong>Current blocker</strong>
-                <p>${escapeHtml(syncError)}</p>
+                <p>${escapeHtml(syncErrorSummary.detail)}</p>
               </div>
             ` : ''}
             <div class="summary-item">
@@ -1071,7 +1117,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             </div>
             <div class="summary-item">
               <strong>Discord handoff</strong>
-              <p>${syncSucceeded ? 'Setup is ready. Return to Discord and run /league-status, then continue with /sync or server setup commands.' : 'Discord is the final handoff after the league link and first sync are healthy.'}</p>
+              <p>${syncSucceeded ? 'Setup is ready. Return to Discord and run /league-status, then continue with /sync or server setup commands.' : status === 'sync_error' ? syncErrorSummary.next : 'Discord is the final handoff after the league link and first sync are healthy.'}</p>
             </div>
           </div>
         </section>
