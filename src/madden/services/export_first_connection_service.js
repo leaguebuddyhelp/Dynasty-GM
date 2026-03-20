@@ -31,6 +31,10 @@ function nowPlus(ms) {
   return new Date(Date.now() + ms).toISOString();
 }
 
+function nowIso() {
+  return new Date().toISOString();
+}
+
 function safeString(value) {
   const trimmed = String(value || '').trim();
   return trimmed || null;
@@ -204,10 +208,32 @@ function summarizeLiveSnapshot(snapshot, leagueSummary = {}) {
   };
 }
 
-async function performInitialLeagueSync({ guildId, leagueId, leagueSummary }) {
+function updateSessionSyncProgress(token, updates = {}) {
+  if (!token) return;
+  const current = connectionRepository.getConnectSessionByToken(token);
+  const existing = current?.syncProgress || {};
+  connectionRepository.updateConnectSessionByToken(token, {
+    syncProgress: {
+      ...existing,
+      ...updates,
+      updatedAt: nowIso(),
+    },
+  });
+}
+
+async function performInitialLeagueSync({ token, guildId, leagueId, leagueSummary }) {
   const useSnallabot = (process.env.MADDEN_SYNC_USE_SNALLABOT ?? 'true').toLowerCase() !== 'false';
   const provider = useSnallabot ? new SnallabotProvider() : null;
-  const syncResult = await runSync(leagueId, provider, { guildId });
+  const syncResult = await runSync(leagueId, provider, {
+    guildId,
+    onProgress: async (phase, detail) => {
+      updateSessionSyncProgress(token, {
+        status: 'running',
+        phase,
+        detail,
+      });
+    },
+  });
   const liveSnapshot = loadLeagueSnapshot(leagueId);
   const summary = summarizeLiveSnapshot(liveSnapshot, leagueSummary);
   const repositorySnapshot = connectionRepository.createSnapshot({
@@ -734,60 +760,74 @@ export async function selectEaLeague({
       },
       availableLeagues: Array.isArray(leagues) ? leagues : [],
       leagueFetchError: null,
+      syncProgress: {
+        status: 'running',
+        phase: 'Starting sync',
+        detail: 'LEAGUEbuddy is opening your league and pulling the first data snapshot.',
+        updatedAt: nowIso(),
+      },
     });
 
-    try {
-      const initialSync = await performInitialLeagueSync({
-        guildId: dashboard.session.guildId,
-        leagueId: summary.leagueId,
-        leagueSummary: summary,
-      });
+    void (async () => {
+      try {
+        const initialSync = await performInitialLeagueSync({
+          token,
+          guildId: dashboard.session.guildId,
+          leagueId: summary.leagueId,
+          leagueSummary: summary,
+        });
 
-      const updatedConnection = connectionRepository.upsertLeagueConnection({
-        guildId: dashboard.session.guildId,
-        leagueName: initialSync.summary.leagueName,
-        leagueExternalId: summary.leagueId,
-        sourceType: 'ea_dashboard',
-        status: 'connected',
-        lastImportJobId: dashboard.connection?.lastImportJobId || null,
-        lastSnapshotId: initialSync.repositorySnapshot.id,
-        summary: {
-          ...(dashboard.connection?.summary || {}),
-          ...initialSync.summary,
-          syncStatus: 'succeeded',
-        },
-      });
+        connectionRepository.upsertLeagueConnection({
+          guildId: dashboard.session.guildId,
+          leagueName: initialSync.summary.leagueName,
+          leagueExternalId: summary.leagueId,
+          sourceType: 'ea_dashboard',
+          status: 'connected',
+          lastImportJobId: dashboard.connection?.lastImportJobId || null,
+          lastSnapshotId: initialSync.repositorySnapshot.id,
+          summary: {
+            ...(dashboard.connection?.summary || {}),
+            ...initialSync.summary,
+            syncStatus: 'succeeded',
+          },
+        });
 
-      return {
-        ok: true,
-        connection: updatedConnection,
-        snapshot: initialSync.repositorySnapshot,
-        message: 'League connected and first sync completed. Return to Discord and run /league-status.',
-      };
-    } catch (error) {
-      const updatedConnection = connectionRepository.upsertLeagueConnection({
-        guildId: dashboard.session.guildId,
-        leagueName: summary.leagueName,
-        leagueExternalId: summary.leagueId,
-        sourceType: 'ea_dashboard',
-        status: 'sync_error',
-        lastImportJobId: dashboard.connection?.lastImportJobId || null,
-        lastSnapshotId: dashboard.connection?.lastSnapshotId || null,
-        summary: {
-          ...(dashboard.connection?.summary || {}),
-          ...summary,
-          eaConnected: true,
-          syncStatus: 'failed',
-          lastSyncError: error?.message || 'Initial sync failed.',
-        },
-      });
+        updateSessionSyncProgress(token, {
+          status: 'succeeded',
+          phase: 'First sync complete',
+          detail: 'League data is ready. Return to Discord and run /league-status.',
+        });
+      } catch (error) {
+        connectionRepository.upsertLeagueConnection({
+          guildId: dashboard.session.guildId,
+          leagueName: summary.leagueName,
+          leagueExternalId: summary.leagueId,
+          sourceType: 'ea_dashboard',
+          status: 'sync_error',
+          lastImportJobId: dashboard.connection?.lastImportJobId || null,
+          lastSnapshotId: dashboard.connection?.lastSnapshotId || null,
+          summary: {
+            ...(dashboard.connection?.summary || {}),
+            ...summary,
+            eaConnected: true,
+            syncStatus: 'failed',
+            lastSyncError: error?.message || 'Initial sync failed.',
+          },
+        });
 
-      return {
-        ok: true,
-        connection: updatedConnection,
-        message: `League connected, but the first sync failed: ${error?.message || 'Unknown error'}. Run /sync in Discord after checking the connection.`,
-      };
-    }
+        updateSessionSyncProgress(token, {
+          status: 'failed',
+          phase: 'First sync failed',
+          detail: error?.message || 'The first sync failed.',
+        });
+      }
+    })();
+
+    return {
+      ok: true,
+      message: 'League connected. LEAGUEbuddy is now pulling your first data snapshot. Stay on this page while it updates.',
+      syncing: true,
+    };
   } catch (error) {
     return {
       ok: false,

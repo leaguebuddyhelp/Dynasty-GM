@@ -4,13 +4,14 @@ import path from 'path';
 import { registerHttpRoute, startHealthcheckServer } from '../leaguebuddy/healthcheck.js';
 import connectionService from './services/export_first_connection_service.js';
 
-function html(body) {
+function html(body, { autoRefreshMs = 0 } = {}) {
   return `<!doctype html>
   <html>
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <title>LEAGUEbuddy Connect</title>
+      ${autoRefreshMs > 0 ? `<meta http-equiv="refresh" content="${Math.max(1, Math.ceil(autoRefreshMs / 1000))}">` : ''}
       <style>
         :root {
           --lb-bg: #111111;
@@ -1004,6 +1005,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const selectedPersona = dashboard.session?.selectedPersona || null;
   const selectedLeague = dashboard.session?.selectedLeague || null;
   const leagueFetchError = dashboard.leagueFetchError || '';
+  const syncProgress = dashboard.session?.syncProgress || null;
   const resolvedPersona = selectedPersona || (guildTokens ? {
     displayName: guildTokens.personaName || guildTokens.blazeId || 'Connected Madden account',
     systemConsole: guildTokens.console || 'unknown',
@@ -1051,6 +1053,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const syncError = connection?.summary?.lastSyncError || '';
   const syncSucceeded = hasLeague && status === 'connected';
   const syncErrorSummary = describeSyncError(syncError);
+  const syncInProgress = status === 'syncing' || syncProgress?.status === 'running';
   const activeLeagueName = selectedLeague?.leagueName || connection?.leagueName || leagueName || 'No league connected yet';
   const activeLeagueId = connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown';
 
@@ -1187,6 +1190,12 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <strong>Next step</strong>
               <p>${escapeHtml(currentTask)}</p>
             </div>
+            ${syncInProgress ? `
+              <div class="summary-item active">
+                <strong>Import Progress</strong>
+                <p><strong>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br />${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your league data. Stay on this page while it updates.')}</p>
+              </div>
+            ` : ''}
             ${syncError ? `
               <div class="summary-item blocker">
                 <strong>Current blocker</strong>
@@ -1407,6 +1416,15 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <div>League ID: <code>${escapeHtml(activeLeagueId)}</code></div>
             </div>
           </div>
+          ${syncInProgress ? `
+            <div class="subtle">
+              <strong>Import in progress:</strong> ${escapeHtml(syncProgress?.phase || 'Syncing now')}<br />
+              ${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your first league snapshot. This page will refresh automatically.')}
+            </div>
+            <div class="info">
+              Stay on this page. LEAGUEbuddy is still working and this screen will update automatically as each import step finishes.
+            </div>
+          ` : ''}
           <div class="inline-actions">
             <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
               <button type="submit" class="secondary">Reconnect EA</button>
@@ -1472,6 +1490,12 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <strong>Do this next</strong>
               <p>${escapeHtml(currentTask)}</p>
             </div>
+            ${syncInProgress ? `
+              <div class="summary-item active">
+                <strong>Import Progress</strong>
+                <p><strong>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br />${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is still importing your league data.')}</p>
+              </div>
+            ` : ''}
             ${syncError ? `
               <div class="summary-item blocker">
                 <strong>Current blocker</strong>
@@ -1498,7 +1522,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
       </div>
     </div>
-  `);
+  `, { autoRefreshMs: syncInProgress ? 3000 : 0 });
 }
 
 export function startConnectServer() {
