@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { saveLeague as saveLeagueDb, loadLeague as loadLeagueDb } from './madden_db.js';
+import {
+  saveLeague as saveLeagueDb,
+  loadLeague as loadLeagueDb,
+  deleteLeague as deleteLeagueDb,
+} from './madden_db.js';
 import { getMaddenConfigPath } from '../leaguebuddy/paths.js';
 
 const CONFIG_PATH = getMaddenConfigPath();
@@ -50,6 +54,31 @@ export function setGlobalDefault(leagueId) {
   cfg.globalDefault = `${leagueId}`;
   writeConfig(cfg);
   saveLeagueDb(leagueId);
+  return cfg;
+}
+
+export function clearGuildLeague(guildId) {
+  const cfg = readConfig();
+  const guildKey = guildId ? String(guildId) : null;
+  const removedLeagueId = guildKey && cfg.guilds ? cfg.guilds[guildKey] : null;
+
+  if (guildKey && cfg.guilds) {
+    delete cfg.guilds[guildKey];
+  }
+
+  const remainingGuildLeagueIds = Object.values(cfg.guilds || {}).filter(Boolean);
+  if (!cfg.globalDefault || cfg.globalDefault === removedLeagueId) {
+    cfg.globalDefault = remainingGuildLeagueIds[0] || null;
+  }
+
+  writeConfig(cfg);
+
+  if (cfg.globalDefault) {
+    saveLeagueDb(cfg.globalDefault);
+  } else {
+    deleteLeagueDb();
+  }
+
   return cfg;
 }
 

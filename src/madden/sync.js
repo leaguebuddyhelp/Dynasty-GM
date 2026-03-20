@@ -87,6 +87,7 @@ async function loadTokens(guildId = null) {
   if (guildId) {
     const guildTokens = getGuildEATokens(guildId);
     if (guildTokens?.accessToken && guildTokens?.refreshToken) return guildTokens;
+    return null;
   }
   const dbTokens = loadTokensDb();
   if (dbTokens && dbTokens.accessToken && dbTokens.refreshToken) return dbTokens;

@@ -1,7 +1,11 @@
+import fs from 'fs';
+
 import connectionRepository from '../../leaguebuddy/repositories/madden_connection_repository.js';
+import { getMaddenLeagueSnapshotPath } from '../../leaguebuddy/paths.js';
 import {
   consumeAuthState,
   createEAClientForGuild,
+  deleteGuildEATokens,
   getGuildAuthStartUrl,
   getGuildEATokens,
   saveGuildEATokens,
@@ -15,7 +19,7 @@ import {
   fetchPersonas,
   fetchTokenInfo,
 } from '../ea_personas.js';
-import { setGuildLeague } from '../madden_config.js';
+import { clearGuildLeague, setGuildLeague } from '../madden_config.js';
 import { loadLeagueSnapshot } from '../madden_data.js';
 import { runSync } from '../sync.js';
 import { SnallabotProvider } from '../providers/SnallabotProvider.js';
@@ -450,6 +454,53 @@ export function getLeagueConnectionStatus(guildId) {
     latestSnapshot,
     exportSources,
     guildTokens,
+  };
+}
+
+function safeUnlink(filePath) {
+  if (!filePath) return;
+  try {
+    fs.unlinkSync(filePath);
+  } catch {
+    // ignore missing files
+  }
+}
+
+export function resetLeagueConnectionByGuild(guildId, { keepSessionToken = null } = {}) {
+  if (!guildId) {
+    return { ok: false, code: 'missing_guild', message: 'Guild ID is required.' };
+  }
+
+  const connection = connectionRepository.getLeagueConnectionByGuildId(guildId);
+  const leagueId = connection?.leagueExternalId || null;
+
+  connectionRepository.resetGuildConnectionData(guildId, { keepSessionToken });
+  deleteGuildEATokens(guildId);
+  clearGuildLeague(guildId);
+
+  if (leagueId) {
+    safeUnlink(getMaddenLeagueSnapshotPath(leagueId));
+  }
+
+  return {
+    ok: true,
+    guildId: String(guildId),
+    leagueId,
+  };
+}
+
+export function resetLeagueConnectionByToken(token) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+
+  resetLeagueConnectionByGuild(dashboard.session.guildId, {
+    keepSessionToken: token,
+  });
+
+  return {
+    ok: true,
+    session: connectionRepository.getConnectSessionByToken(token),
+    message: 'Setup reset. Reconnect EA and choose the league again.',
   };
 }
 

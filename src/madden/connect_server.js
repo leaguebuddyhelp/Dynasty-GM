@@ -449,6 +449,18 @@ function html(body) {
           cursor: pointer;
           box-shadow: 0 10px 26px rgba(255, 204, 0, 0.18);
         }
+        button.secondary {
+          background: #ffffff;
+          color: #1f2937;
+          border: 1px solid #d1d5db;
+          box-shadow: none;
+        }
+        button.danger {
+          background: #fff1f2;
+          color: #9f1239;
+          border: 1px solid #fecdd3;
+          box-shadow: none;
+        }
         button[disabled] {
           background: #cbd5e1;
           color: #64748b;
@@ -481,6 +493,15 @@ function html(body) {
           flex-wrap: wrap;
           gap: 10px;
           margin-top: 12px;
+        }
+        .inline-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 12px;
+        }
+        .inline-actions form {
+          width: auto;
         }
         .source-actions button {
           padding: 10px 14px;
@@ -678,6 +699,15 @@ function html(body) {
             flex-direction: column;
           }
           .source-actions > * {
+            width: 100%;
+          }
+          .inline-actions {
+            flex-direction: column;
+          }
+          .inline-actions > * {
+            width: 100%;
+          }
+          .inline-actions form {
             width: 100%;
           }
           .check-grid {
@@ -1143,6 +1173,11 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <div class="subtle" style="margin-bottom:14px;">
             <strong>This server is being linked to:</strong> ${escapeHtml(activeLeagueName)} <code>${escapeHtml(activeLeagueId)}</code>
           </div>
+          <div class="inline-actions">
+            <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
+              <button type="submit" class="secondary">Reconnect EA / Start Over</button>
+            </form>
+          </div>
           <div class="compact-summary">
             <div class="summary-item done">
               <strong>Progress</strong>
@@ -1258,6 +1293,11 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <p>${guildTokens ? `Connected as ${escapeHtml(guildTokens.personaName || guildTokens.blazeId || 'EA account')}.` : 'Start the EA login flow, then paste the returned URL below.'}</p>
               <div class="source-actions">
                 <a class="button-link" href="${escapeHtml(dashboard.authUrl)}" target="_blank" rel="noreferrer">Open EA Login</a>
+                ${hasEaConnection ? `
+                  <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
+                    <button type="submit" class="secondary">Reconnect EA</button>
+                  </form>
+                ` : ''}
               </div>
               <form method="POST" action="/madden/connect/ea-callback-url?token=${encodeURIComponent(token)}">
                 <label for="redirect_url"><strong>Returned Browser URL</strong></label><br />
@@ -1336,6 +1376,11 @@ function renderDashboard({ token, dashboard, notice = '' }) {
                 <div>League ID: <code>${escapeHtml(selectedLeague.leagueId || 'unknown')}</code></div>
                 <div>This is the league LEAGUEbuddy will connect to <strong>${escapeHtml(guildName)}</strong>.</div>
               </div>
+              <div class="inline-actions">
+                <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
+                  <button type="submit" class="secondary">Choose a Different League</button>
+                </form>
+              </div>
             </div>
           ` : `
             <div class="source-card" style="color:#6b7280;">Connect EA and choose a Madden account first. Then your leagues will appear here.</div>
@@ -1361,6 +1406,14 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <div>Week: ${escapeHtml(snapshot?.summary?.week || connection?.summary?.week || 'unknown')}</div>
               <div>League ID: <code>${escapeHtml(activeLeagueId)}</code></div>
             </div>
+          </div>
+          <div class="inline-actions">
+            <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
+              <button type="submit" class="secondary">Reconnect EA</button>
+            </form>
+            <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
+              <button type="submit" class="danger">Disconnect This League</button>
+            </form>
           </div>
           ${status === 'sync_error' ? `
             <div class="warning">
@@ -1555,6 +1608,20 @@ export function startConnectServer() {
       const location = result.ok
         ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('League record saved.')}`
         : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
+      res.writeHead(302, { location });
+      res.end();
+    },
+  });
+
+  registerHttpRoute({
+    method: 'POST',
+    path: '/madden/connect/reset',
+    handler: async (req, res) => {
+      const token = parseToken(req);
+      const result = connectionService.resetLeagueConnectionByToken(token);
+      const location = result.ok
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Setup reset. Reconnect EA and choose your league again.')}`
+        : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message || 'Could not reset the setup right now.')}`;
       res.writeHead(302, { location });
       res.end();
     },

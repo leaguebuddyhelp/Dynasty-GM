@@ -82,6 +82,14 @@ export function saveLeague(leagueId) {
   }
 }
 
+export function deleteLeague() {
+  try {
+    query(`DELETE FROM leagues WHERE id=1;`);
+  } catch (e) {
+    console.warn('[madden-db] deleteLeague failed:', e.message);
+  }
+}
+
 export function loadLeague() {
   try {
     const out = query(`SELECT leagueId FROM leagues WHERE id=1;`);

@@ -24,7 +24,7 @@ export async function execute(interaction) {
 
   function buildSyncNextStep(errorText) {
     if (!errorText) {
-      return 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.';
+      return 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league. To fully restart this server from scratch, run `/disconnectleague`.';
     }
     if (errorText.includes('temporary system error')) {
       return 'EA returned a temporary service error. Wait a moment, then run `/sync` again.';
@@ -70,7 +70,7 @@ export async function execute(interaction) {
           ...(syncError ? [{ name: 'Sync Error', value: syncError.slice(0, 1024), inline: false }] : []),
           { name: 'Next', value: connection.status === 'sync_error'
             ? buildSyncNextStep(syncError)
-            : 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.',
+            : 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league. To fully restart this server from scratch, run `/disconnectleague`.',
             inline: false },
         ),
     ],

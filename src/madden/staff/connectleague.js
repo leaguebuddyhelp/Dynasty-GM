@@ -49,7 +49,7 @@ export async function execute(interaction) {
           { name: 'Dashboard Link', value: setupUrl, inline: false },
           { name: 'EA Step', value: 'The dashboard will walk you through the reverse EA login flow and league selection.', inline: false },
           { name: 'Expires', value: `<t:${Math.floor(new Date(session.expiresAt).getTime() / 1000)}:R>`, inline: false },
-          { name: 'Next', value: 'After the dashboard looks right, run `/league-status`.', inline: false },
+          { name: 'Next', value: 'After the dashboard looks right, run `/league-status`. If you need to restart from zero later, run `/disconnectleague`.', inline: false },
         ),
     ],
     components: [row],

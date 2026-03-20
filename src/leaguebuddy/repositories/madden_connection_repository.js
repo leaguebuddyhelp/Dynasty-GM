@@ -285,6 +285,44 @@ export function getLatestSnapshotByGuildId(guildId) {
   return clone(matches.at(-1) || null);
 }
 
+export function resetGuildConnectionData(guildId, { keepSessionToken = null } = {}) {
+  if (!guildId) return null;
+  const guildKey = String(guildId);
+  const store = loadStore();
+
+  store.connections = store.connections.filter((entry) => entry.guildId !== guildKey);
+  store.exportSources = store.exportSources.filter((entry) => entry.guildId !== guildKey);
+  store.importJobs = store.importJobs.filter((entry) => entry.guildId !== guildKey);
+  store.snapshots = store.snapshots.filter((entry) => entry.guildId !== guildKey);
+
+  store.sessions = store.sessions
+    .filter((entry) => {
+      if (entry.guildId !== guildKey) return true;
+      if (keepSessionToken && entry.token === String(keepSessionToken)) return true;
+      return false;
+    })
+    .map((entry) => {
+      if (!(keepSessionToken && entry.token === String(keepSessionToken))) return entry;
+      return {
+        ...entry,
+        status: 'open',
+        usedAt: null,
+        updatedAt: nowIso(),
+        authDraft: null,
+        selectedPersona: null,
+        selectedLeague: null,
+        availableLeagues: [],
+        leagueFetchError: null,
+      };
+    });
+
+  saveStore(store);
+  return {
+    guildId: guildKey,
+    keptSessionToken: keepSessionToken ? String(keepSessionToken) : null,
+  };
+}
+
 export default {
   createConnectSession,
   getConnectSessionByToken,
@@ -301,4 +339,5 @@ export default {
   finishImportJob,
   createSnapshot,
   getLatestSnapshotByGuildId,
+  resetGuildConnectionData,
 };
