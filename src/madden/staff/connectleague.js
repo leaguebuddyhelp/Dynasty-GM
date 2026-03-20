@@ -15,7 +15,7 @@ export async function execute(interaction) {
     return;
   }
 
-  const { session, setupUrl, importUrl } = connectionService.beginLeagueConnection({
+  const { session, setupUrl } = connectionService.beginLeagueConnection({
     guildId: interaction.guildId,
     guildName: interaction.guild?.name || null,
     createdByUserId: interaction.user.id,
@@ -48,7 +48,6 @@ export async function execute(interaction) {
           { name: 'Discord Server', value: interaction.guild?.name || 'Unknown Server', inline: false },
           { name: 'Dashboard Link', value: setupUrl, inline: false },
           { name: 'EA Step', value: 'The dashboard will walk you through the reverse EA login flow and league selection.', inline: false },
-          { name: 'Support Only', value: `Fallback JSON import endpoint: \`${importUrl}\``, inline: false },
           { name: 'Expires', value: `<t:${Math.floor(new Date(session.expiresAt).getTime() / 1000)}:R>`, inline: false },
           { name: 'Next', value: 'After the dashboard looks right, run `/league-status`.', inline: false },
         ),

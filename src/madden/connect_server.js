@@ -156,11 +156,45 @@ function html(body) {
           display: grid;
           gap: 6px;
         }
+        .timeline-step.active {
+          border-color: #d4af0d;
+          box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.14);
+          background: #fffbea;
+        }
+        .timeline-step.done {
+          background: #f6fffb;
+          border-color: #9ad6b2;
+        }
+        .timeline-step.locked {
+          opacity: 0.72;
+        }
         .timeline-step strong {
           color: #1f1b08;
           font-size: 1rem;
         }
         .timeline-step span {
+          color: #4b5563;
+        }
+        .step-state {
+          display: inline-block;
+          width: fit-content;
+          padding: 4px 10px;
+          border-radius: 999px;
+          font-size: 0.76rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.7px;
+        }
+        .step-state.done {
+          background: #dcfce7;
+          color: #166534;
+        }
+        .step-state.active {
+          background: #fef3c7;
+          color: #92400e;
+        }
+        .step-state.locked {
+          background: #e5e7eb;
           color: #4b5563;
         }
         .big-action {
@@ -274,11 +308,6 @@ function html(body) {
           font-family: "SFMono-Regular", Menlo, monospace;
           font-size: 0.92em;
           word-break: break-all;
-        }
-        .source-list {
-          display: grid;
-          gap: 12px;
-          margin-bottom: 18px;
         }
         .source-card {
           border: 1px solid #eadb95;
@@ -405,13 +434,6 @@ function html(body) {
           margin: 0;
           color: #4b5563;
         }
-        details {
-          margin-top: 18px;
-        }
-        summary {
-          cursor: pointer;
-          font-weight: 700;
-        }
         .stack {
           display: grid;
           gap: 18px;
@@ -489,7 +511,6 @@ function noticeBanner(notice) {
 
 function renderDashboard({ token, dashboard, notice = '' }) {
   const connection = dashboard.connection;
-  const exportSources = dashboard.exportSources || [];
   const snapshot = dashboard.latestSnapshot;
   const guildTokens = dashboard.guildTokens || null;
   const authDraft = dashboard.authDraft || null;
@@ -501,26 +522,6 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const selectedPersona = dashboard.session?.selectedPersona || null;
   const selectedLeague = dashboard.session?.selectedLeague || null;
   const leagueFetchError = dashboard.leagueFetchError || '';
-
-  const exportRows = exportSources.length
-    ? exportSources.map((source) => `
-        <div class="source-card">
-          <strong>${escapeHtml(source.label)}</strong>
-          <div class="source-meta">
-            <div><code>${escapeHtml(source.exportUrl)}</code></div>
-            <div>Mode: ${source.autoUpdate ? '<span class="pill">Auto</span>' : 'Manual'}</div>
-            <div>Last Import: ${escapeHtml(source.lastImportAt ? new Date(source.lastImportAt).toLocaleString() : 'Never')}</div>
-            <div>Status: ${escapeHtml(source.lastImportStatus || 'never')}${source.lastImportError ? ` • ${escapeHtml(source.lastImportError)}` : ''}</div>
-          </div>
-          <form method="POST" action="/madden/connect/import-source?token=${encodeURIComponent(token)}">
-            <input type="hidden" name="export_source_id" value="${escapeHtml(source.id)}" />
-            <div class="source-actions">
-              <button type="submit">Import Now</button>
-            </div>
-          </form>
-        </div>
-      `).join('')
-    : `<div class="source-card" style="color:#6b7280;">No export links added yet.</div>`;
 
   const personaDraftRows = Array.isArray(authDraft?.personas) && authDraft.personas.length
     ? authDraft.personas.map((persona) => `
@@ -550,6 +551,33 @@ function renderDashboard({ token, dashboard, notice = '' }) {
     }).join('')
     : '';
 
+  const hasLeagueName = Boolean(connection?.leagueName);
+  const hasEaConnection = Boolean(guildTokens);
+  const hasPersona = Boolean(selectedPersona);
+  const hasLeague = Boolean(selectedLeague || connection?.leagueExternalId);
+
+  const nextStep = !hasLeagueName
+    ? 1
+    : !hasEaConnection
+      ? 2
+      : !hasPersona
+        ? 3
+        : !hasLeague
+          ? 4
+          : 5;
+
+  function stepClass(step) {
+    if (step < nextStep) return 'timeline-step done';
+    if (step === nextStep) return 'timeline-step active';
+    return 'timeline-step locked';
+  }
+
+  function stepState(step) {
+    if (step < nextStep) return '<span class="step-state done">Done</span>';
+    if (step === nextStep) return '<span class="step-state active">Do this now</span>';
+    return '<span class="step-state locked">Locked</span>';
+  }
+
   return html(`
     <section class="hero">
       <img src="/madden/assets/lb-official-logo.png" alt="LEAGUEbuddy logo" />
@@ -566,19 +594,23 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <h2>Setup Overview</h2>
           <p style="color:#4b5563;">This dashboard is already linked to your Discord server. Complete these steps in order.</p>
           <div class="timeline">
-            <div class="timeline-step">
+            <div class="${stepClass(1)}">
+              ${stepState(1)}
               <strong>1. Name your league</strong>
               <span>Save the league name so this server knows what it belongs to.</span>
             </div>
-            <div class="timeline-step">
+            <div class="${stepClass(2)}">
+              ${stepState(2)}
               <strong>2. Connect EA</strong>
               <span>Use the reverse login flow and paste the returned URL back here.</span>
             </div>
-            <div class="timeline-step">
+            <div class="${stepClass(3)}">
+              ${stepState(3)}
               <strong>3. Choose account and league</strong>
               <span>Select the Madden persona and league LEAGUEbuddy should manage.</span>
             </div>
-            <div class="timeline-step">
+            <div class="${stepClass(4)}">
+              ${stepState(4)}
               <strong>4. Return to Discord</strong>
               <span>Run <code>/league-status</code> and continue the normal server setup there.</span>
             </div>
@@ -587,7 +619,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
         <section class="panel">
           <h2>Step 1: Name Your League</h2>
-          <p style="color:#4b5563;">Start here for a real league.</p>
+          <p style="color:#4b5563;">Start here. This is the name LEAGUEbuddy will show in Discord and on this dashboard.</p>
           <div class="guide-grid">
             <div class="guide-card">
               <h3>What this step does</h3>
@@ -617,7 +649,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
         <section class="panel">
           <h2>Step 2: Connect EA</h2>
-          <p style="color:#4b5563;">This follows the same reverse login idea used by Snallabot-style tools. You log in with EA in a browser, then paste the returned local URL here.</p>
+          <p style="color:#4b5563;">This matches the Snallabot-style reverse login flow. You sign in with EA in a new tab, then paste the returned browser URL here.</p>
           <div class="info">
             <strong>How to connect EA:</strong>
             <ol class="step-list">
@@ -638,8 +670,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <form method="POST" action="/madden/connect/ea-callback-url?token=${encodeURIComponent(token)}">
                 <label for="redirect_url"><strong>Returned Browser URL</strong></label><br />
                 <input id="redirect_url" name="redirect_url" placeholder="http://127.0.0.1/success?code=..." required />
-                <button type="submit"${connection ? '' : ' disabled'}>Save EA Login</button>
-                ${connection ? '' : '<p class="warning">Save the league name first.</p>'}
+                <button type="submit"${hasLeagueName ? '' : ' disabled'}>Save EA Login</button>
+                ${hasLeagueName ? '' : '<p class="warning">Save the league name first.</p>'}
               </form>
             </div>
           </div>
@@ -647,7 +679,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
         <section class="panel">
           <h2>Step 3: Choose Madden Account</h2>
-          <p style="color:#4b5563;">After EA login is captured, choose the correct Madden account/persona for this league.</p>
+          <p style="color:#4b5563;">After EA login is saved, choose the correct Madden account for this league.</p>
           ${authDraft?.personas?.length ? `
             <form method="POST" action="/madden/connect/persona?token=${encodeURIComponent(token)}">
               <label for="persona_id"><strong>Available Personas</strong></label><br />
@@ -671,7 +703,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
         <section class="panel">
           <h2>Step 4: Choose League</h2>
-          <p style="color:#4b5563;">Choose the league LEAGUEbuddy should connect to this Discord server.</p>
+          <p style="color:#4b5563;">Choose the Madden league LEAGUEbuddy should connect to this Discord server.</p>
           ${leagueFetchError ? `<div class="warning">${escapeHtml(leagueFetchError)}</div>` : ''}
           ${availableLeagues.length ? `
             <form method="POST" action="/madden/connect/league-select?token=${encodeURIComponent(token)}">
@@ -695,7 +727,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
 
         <section class="panel">
           <h2>League Landing Page</h2>
-          <p style="color:#4b5563;">Once your league is connected, this page becomes the home for sync status and league info.</p>
+          <p style="color:#4b5563;">Once your league is connected, this becomes your confirmation page before returning to Discord.</p>
           <div class="source-card">
             <strong>${escapeHtml(connection?.leagueName || selectedLeague?.leagueName || 'No league connected yet')}</strong>
             <div class="source-meta">
@@ -705,25 +737,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <div>League ID: <code>${escapeHtml(connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown')}</code></div>
             </div>
           </div>
-        </section>
-
-        <section class="panel">
-          <h2>Support Tools</h2>
-          <p style="color:#4b5563;">These are not part of the normal customer setup path.</p>
-          <details>
-            <summary>Testing only: Load demo league</summary>
-            <form method="POST" action="/madden/connect/demo?token=${encodeURIComponent(token)}" style="margin-top:16px;">
-              <button type="submit" class="big-action">Load Demo League</button>
-            </form>
-            <div class="subtle">This fills the dashboard with sample data for testing only.</div>
-          </details>
-          <details>
-            <summary>Support only: JSON importer</summary>
-            <form method="POST" action="/madden/import?token=${encodeURIComponent(token)}" style="margin-top:16px;">
-              <textarea id="payload" name="payload" placeholder='{"leagueName":"My League","leagueId":"abc123"}'></textarea>
-              <button type="submit">Import Snapshot</button>
-            </form>
-          </details>
+          ${hasLeague ? '<div class="subtle">League linked. Go back to Discord and run <code>/league-status</code>.</div>' : ''}
         </section>
       </div>
 
@@ -747,8 +761,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <span>${escapeHtml(status)}</span>
             </div>
             <div class="stat">
-              <strong>Export Sources</strong>
-              <span>${escapeHtml(exportSources.length)}</span>
+              <strong>EA Connected</strong>
+              <span>${hasEaConnection ? 'yes' : 'no'}</span>
             </div>
             <div class="stat">
               <strong>Last Snapshot</strong>
@@ -783,8 +797,10 @@ export function startConnectServer() {
     method: 'GET',
     path: '/madden/assets/lb-official-logo.png',
     handler: async (_req, res) => {
-      const filePath = path.join(process.cwd(), 'nfl_logos', 'lb logo', 'LB_Offical_Logo.PNG');
+      const primaryPath = path.join(process.cwd(), 'nfl_logos', 'lb logo', 'LB_Offical_Logo.PNG');
+      const fallbackPath = path.join(process.cwd(), 'ghost_logos', 'ghost_legacy.png');
       try {
+        const filePath = fs.existsSync(primaryPath) ? primaryPath : fallbackPath;
         const file = fs.readFileSync(filePath);
         res.writeHead(200, {
           'content-type': 'image/png',

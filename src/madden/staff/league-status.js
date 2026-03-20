@@ -50,10 +50,7 @@ export async function execute(interaction) {
           { name: 'Week', value: String(snapshot?.summary?.week || connection?.summary?.week || 'unknown'), inline: true },
           { name: 'Teams', value: String(snapshot?.summary?.teams || connection?.summary?.teams || 0), inline: true },
           { name: 'Last Import', value: snapshot?.createdAt ? `<t:${Math.floor(new Date(snapshot.createdAt).getTime() / 1000)}:R>` : 'never', inline: false },
-          { name: 'Next', value: connection.sourceType === 'ea_dashboard'
-            ? 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.'
-            : 'This league was connected through a fallback source. Return to the dashboard if you want to move it onto the EA-driven setup path.',
-            inline: false },
+          { name: 'Next', value: 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.', inline: false },
         ),
     ],
   });
