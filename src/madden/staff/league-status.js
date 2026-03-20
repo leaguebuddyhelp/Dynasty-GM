@@ -40,7 +40,7 @@ export async function execute(interaction) {
     embeds: [
       new EmbedBuilder()
         .setTitle('League Status')
-        .setColor(connection.status === 'connected' ? 0x57f287 : 0xf39c12)
+        .setColor(connection.status === 'connected' ? 0x57f287 : connection.status === 'sync_error' ? 0xed4245 : 0xf39c12)
         .addFields(
           { name: 'League', value: connection.leagueName || 'Unknown', inline: false },
           { name: 'Status', value: connection.status || 'unknown', inline: true },
@@ -50,7 +50,11 @@ export async function execute(interaction) {
           { name: 'Week', value: String(snapshot?.summary?.week || connection?.summary?.week || 'unknown'), inline: true },
           { name: 'Teams', value: String(snapshot?.summary?.teams || connection?.summary?.teams || 0), inline: true },
           { name: 'Last Import', value: snapshot?.createdAt ? `<t:${Math.floor(new Date(snapshot.createdAt).getTime() / 1000)}:R>` : 'never', inline: false },
-          { name: 'Next', value: 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.', inline: false },
+          ...(connection?.summary?.lastSyncError ? [{ name: 'Sync Error', value: String(connection.summary.lastSyncError).slice(0, 1024), inline: false }] : []),
+          { name: 'Next', value: connection.status === 'sync_error'
+            ? 'The league is linked, but the first sync failed. Run `/sync` now. If it fails again, return to the dashboard and reconnect EA.'
+            : 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.',
+            inline: false },
         ),
     ],
   });

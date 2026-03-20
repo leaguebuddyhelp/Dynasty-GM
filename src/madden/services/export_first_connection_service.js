@@ -14,6 +14,10 @@ import {
   fetchPersonas,
   fetchTokenInfo,
 } from '../ea_personas.js';
+import { setGuildLeague } from '../madden_config.js';
+import { loadLeagueSnapshot } from '../madden_data.js';
+import { runSync } from '../sync.js';
+import { SnallabotProvider } from '../providers/SnallabotProvider.js';
 
 const CONNECT_SESSION_TTL_MS = 1000 * 60 * 60 * 24;
 
@@ -161,6 +165,57 @@ function summarizeLeagueRecord(league) {
     week,
     season,
     stage,
+  };
+}
+
+function summarizeLiveSnapshot(snapshot, leagueSummary = {}) {
+  const teams = Array.isArray(snapshot?.teams?.leagueTeamInfoList)
+    ? snapshot.teams.leagueTeamInfoList.length
+    : Array.isArray(snapshot?.teams)
+      ? snapshot.teams.length
+      : 0;
+
+  return {
+    leagueId: safeString(snapshot?.leagueId) || leagueSummary.leagueId || null,
+    leagueName: safeString(
+      snapshot?.info?.careerHubInfo?.leagueName
+      || snapshot?.leagueName
+      || leagueSummary.leagueName,
+    ) || leagueSummary.leagueName || 'Connected League',
+    week: safeString(snapshot?.currentWeek) || leagueSummary.week || null,
+    season: safeString(
+      snapshot?.info?.careerHubInfo?.seasonInfo?.seasonYear
+      || leagueSummary.season,
+    ) || leagueSummary.season || null,
+    stage: safeString(
+      snapshot?.stage
+      || snapshot?.info?.careerHubInfo?.seasonInfo?.seasonWeekType
+      || leagueSummary.stage,
+    ) || leagueSummary.stage || null,
+    teams,
+    lastSyncedAt: safeString(snapshot?.fetchedAt) || new Date().toISOString(),
+    eaConnected: true,
+  };
+}
+
+async function performInitialLeagueSync({ guildId, leagueId, leagueSummary }) {
+  const useSnallabot = (process.env.MADDEN_SYNC_USE_SNALLABOT ?? 'true').toLowerCase() !== 'false';
+  const provider = useSnallabot ? new SnallabotProvider() : null;
+  const syncResult = await runSync(leagueId, provider, { guildId });
+  const liveSnapshot = loadLeagueSnapshot(leagueId);
+  const summary = summarizeLiveSnapshot(liveSnapshot, leagueSummary);
+  const repositorySnapshot = connectionRepository.createSnapshot({
+    guildId,
+    importJobId: null,
+    leagueName: summary.leagueName,
+    leagueExternalId: summary.leagueId,
+    summary,
+    payload: liveSnapshot,
+  });
+  return {
+    syncResult,
+    summary,
+    repositorySnapshot,
   };
 }
 
@@ -541,45 +596,19 @@ export async function selectEaLeague({
     }
 
     const summary = summarizeLeagueRecord(selectedLeague);
-    const connection = connectionRepository.upsertLeagueConnection({
+    setGuildLeague(dashboard.session.guildId, summary.leagueId);
+
+    connectionRepository.upsertLeagueConnection({
       guildId: dashboard.session.guildId,
       leagueName: summary.leagueName,
       leagueExternalId: summary.leagueId,
       sourceType: 'ea_dashboard',
-      status: 'connected',
+      status: 'syncing',
       lastImportJobId: dashboard.connection?.lastImportJobId || null,
       lastSnapshotId: dashboard.connection?.lastSnapshotId || null,
       summary: {
         ...(dashboard.connection?.summary || {}),
         ...summary,
-        eaConnected: true,
-      },
-    });
-
-    const snapshot = connectionRepository.createSnapshot({
-      guildId: dashboard.session.guildId,
-      importJobId: null,
-      leagueName: summary.leagueName,
-      leagueExternalId: summary.leagueId,
-      summary: {
-        ...summary,
-        teams: Array.isArray(selectedLeague?.teams) ? selectedLeague.teams.length : 0,
-      },
-      payload: selectedLeague,
-    });
-
-    const updatedConnection = connectionRepository.upsertLeagueConnection({
-      guildId: dashboard.session.guildId,
-      leagueName: summary.leagueName,
-      leagueExternalId: summary.leagueId,
-      sourceType: 'ea_dashboard',
-      status: 'connected',
-      lastImportJobId: dashboard.connection?.lastImportJobId || null,
-      lastSnapshotId: snapshot.id,
-      summary: {
-        ...(dashboard.connection?.summary || {}),
-        ...summary,
-        teams: Array.isArray(selectedLeague?.teams) ? selectedLeague.teams.length : 0,
         eaConnected: true,
       },
     });
@@ -591,12 +620,58 @@ export async function selectEaLeague({
       },
     });
 
-    return {
-      ok: true,
-      connection: updatedConnection,
-      snapshot,
-      message: 'League connected. Go back to Discord and run /league-status.',
-    };
+    try {
+      const initialSync = await performInitialLeagueSync({
+        guildId: dashboard.session.guildId,
+        leagueId: summary.leagueId,
+        leagueSummary: summary,
+      });
+
+      const updatedConnection = connectionRepository.upsertLeagueConnection({
+        guildId: dashboard.session.guildId,
+        leagueName: initialSync.summary.leagueName,
+        leagueExternalId: summary.leagueId,
+        sourceType: 'ea_dashboard',
+        status: 'connected',
+        lastImportJobId: dashboard.connection?.lastImportJobId || null,
+        lastSnapshotId: initialSync.repositorySnapshot.id,
+        summary: {
+          ...(dashboard.connection?.summary || {}),
+          ...initialSync.summary,
+          syncStatus: 'succeeded',
+        },
+      });
+
+      return {
+        ok: true,
+        connection: updatedConnection,
+        snapshot: initialSync.repositorySnapshot,
+        message: 'League connected and first sync completed. Return to Discord and run /league-status.',
+      };
+    } catch (error) {
+      const updatedConnection = connectionRepository.upsertLeagueConnection({
+        guildId: dashboard.session.guildId,
+        leagueName: summary.leagueName,
+        leagueExternalId: summary.leagueId,
+        sourceType: 'ea_dashboard',
+        status: 'sync_error',
+        lastImportJobId: dashboard.connection?.lastImportJobId || null,
+        lastSnapshotId: dashboard.connection?.lastSnapshotId || null,
+        summary: {
+          ...(dashboard.connection?.summary || {}),
+          ...summary,
+          eaConnected: true,
+          syncStatus: 'failed',
+          lastSyncError: error?.message || 'Initial sync failed.',
+        },
+      });
+
+      return {
+        ok: true,
+        connection: updatedConnection,
+        message: `League connected, but the first sync failed: ${error?.message || 'Unknown error'}. Run /sync in Discord after checking the connection.`,
+      };
+    }
   } catch (error) {
     return {
       ok: false,
