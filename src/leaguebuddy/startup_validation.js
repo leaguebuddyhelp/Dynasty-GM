@@ -14,7 +14,10 @@ import {
 } from './paths.js';
 
 function configured(value) {
-  return String(value || '').trim().length > 0;
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return false;
+  if (/^(YOUR_|OFFICIAL_|REPLACE_ME|PASTE_)/i.test(trimmed)) return false;
+  return true;
 }
 
 function ensureDir(dirPath) {

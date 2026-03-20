@@ -50,7 +50,15 @@ function planEnvKey(plan) {
 
 function maybeUrl(value) {
   const trimmed = String(value || '').trim();
-  return trimmed ? trimmed : null;
+  if (!trimmed) return null;
+  if (/^(YOUR_|OFFICIAL_|REPLACE_ME|PASTE_)/i.test(trimmed)) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
 
 export function inviteLinkFor() {

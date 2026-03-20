@@ -7,7 +7,10 @@ import { getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
 import { getLeagueForGuild } from '../madden_config.js';
 
 function configured(value) {
-  return String(value || '').trim().length > 0;
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return false;
+  if (/^(YOUR_|OFFICIAL_|REPLACE_ME|PASTE_)/i.test(trimmed)) return false;
+  return true;
 }
 
 function readyMissing(flag, ready = 'ready', missing = 'missing') {
