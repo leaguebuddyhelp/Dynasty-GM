@@ -13,32 +13,32 @@ function html(body) {
       <title>LEAGUEbuddy Connect</title>
       <style>
         :root {
-          --lb-bg: #0f172a;
-          --lb-panel: #111827;
-          --lb-panel-soft: #172033;
+          --lb-bg: #111111;
+          --lb-panel: #171717;
+          --lb-panel-soft: #222222;
           --lb-surface: #ffffff;
-          --lb-surface-soft: #f8fafc;
-          --lb-border: #dbe2ea;
-          --lb-text: #0f172a;
-          --lb-muted: #475569;
-          --lb-accent: #fee75c;
+          --lb-surface-soft: #fffdf4;
+          --lb-border: #e7d78c;
+          --lb-text: #141414;
+          --lb-muted: #5b5340;
+          --lb-accent: #ffe15a;
           --lb-accent-strong: #ffcc00;
-          --lb-accent-ink: #332600;
+          --lb-accent-ink: #1f1b08;
           --lb-success-bg: #ecfdf5;
           --lb-success-border: #10b981;
           --lb-success-text: #065f46;
           --lb-warning-bg: #fff7ed;
           --lb-warning-text: #9a3412;
-          --lb-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+          --lb-shadow: 0 24px 60px rgba(20, 20, 20, 0.16);
         }
 
         * { box-sizing: border-box; }
         body {
           margin: 0;
-          font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+          font-family: "Avenir Next", Avenir, "Trebuchet MS", "Segoe UI", sans-serif;
           background:
-            radial-gradient(circle at top left, rgba(254, 231, 92, 0.22), transparent 22%),
-            linear-gradient(180deg, #fffdf1 0%, #f8fafc 100%);
+            radial-gradient(circle at top left, rgba(255, 225, 90, 0.28), transparent 22%),
+            linear-gradient(180deg, #fff7bf 0%, #fffdf5 38%, #f7f3df 100%);
           color: var(--lb-text);
         }
         .shell {
@@ -47,7 +47,9 @@ function html(body) {
           padding: 28px 16px 56px;
         }
         .hero {
-          background: linear-gradient(135deg, var(--lb-bg) 0%, var(--lb-panel) 58%, #1f2937 100%);
+          background:
+            radial-gradient(circle at top right, rgba(255, 225, 90, 0.18), transparent 28%),
+            linear-gradient(135deg, #0d0d0d 0%, #171717 50%, #202020 100%);
           color: #f8fafc;
           border-radius: 24px;
           padding: 28px;
@@ -83,7 +85,7 @@ function html(body) {
         .hero p {
           margin: 0;
           max-width: 680px;
-          color: #dbe4ee;
+          color: #efe6b7;
           font-size: 1rem;
           line-height: 1.55;
         }
@@ -95,10 +97,10 @@ function html(body) {
         }
         .panel {
           background: rgba(255, 255, 255, 0.94);
-          border: 1px solid rgba(219, 226, 234, 0.88);
+          border: 1px solid rgba(231, 215, 140, 0.92);
           border-radius: 22px;
           padding: 22px;
-          box-shadow: 0 18px 48px rgba(15, 23, 42, 0.09);
+          box-shadow: 0 18px 48px rgba(20, 20, 20, 0.08);
         }
         .panel h2 {
           margin: 0 0 10px;
@@ -127,7 +129,7 @@ function html(body) {
           margin-top: 12px;
         }
         .meta-card {
-          background: linear-gradient(180deg, var(--lb-surface-soft) 0%, #fff 100%);
+          background: linear-gradient(180deg, #fff6c5 0%, #fffdf4 100%);
           border: 1px solid var(--lb-border);
           border-radius: 18px;
           padding: 18px;
@@ -166,10 +168,16 @@ function html(body) {
           margin: 8px 0 16px;
           padding: 12px 14px;
           border-radius: 14px;
-          border: 1px solid #cbd5e1;
-          background: #fff;
+          border: 1px solid #dccd87;
+          background: #fffef8;
           color: var(--lb-text);
           font: inherit;
+        }
+        input:focus,
+        textarea:focus,
+        select:focus {
+          outline: 2px solid rgba(255, 204, 0, 0.45);
+          border-color: #d9b200;
         }
         textarea {
           min-height: 220px;
@@ -184,6 +192,7 @@ function html(body) {
           font: inherit;
           font-weight: 800;
           cursor: pointer;
+          box-shadow: 0 10px 26px rgba(255, 204, 0, 0.18);
         }
         button[disabled] {
           background: #cbd5e1;
@@ -219,8 +228,8 @@ function html(body) {
           display: inline-block;
           padding: 6px 10px;
           border-radius: 999px;
-          background: rgba(254, 231, 92, 0.2);
-          color: #6b4f00;
+          background: rgba(255, 204, 0, 0.18);
+          color: #6b5200;
           font-weight: 700;
           font-size: 0.85rem;
         }
@@ -236,8 +245,8 @@ function html(body) {
           gap: 8px;
           padding: 10px 12px;
           border-radius: 12px;
-          border: 1px solid #dbe2ea;
-          background: #fff;
+          border: 1px solid #e6d78a;
+          background: #fffdf4;
         }
         details {
           margin-top: 18px;
