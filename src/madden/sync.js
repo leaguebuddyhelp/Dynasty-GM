@@ -9,10 +9,15 @@ import { resolveLeagueIdWithConfig } from './madden_data.js';
 import { loadTokens as loadTokensDb } from './madden_db.js';
 import { SnallabotProvider } from './providers/SnallabotProvider.js';
 import { getGuildEATokens, saveGuildEATokens } from './ea_guild_auth.js';
+import {
+  getMaddenDataFilePath,
+  getMaddenLeagueSnapshotPath,
+  getMaddenLeaguesDir,
+} from '../leaguebuddy/paths.js';
 
-const leagueDir = path.join(process.cwd(), 'data', 'madden', 'leagues');
+const leagueDir = getMaddenLeaguesDir();
 const prevDir = path.join(leagueDir, 'previous');
-const tokenFile = path.join(process.cwd(), 'data', 'madden', 'tokens.json');
+const tokenFile = getMaddenDataFilePath('tokens.json');
 const snapshotsDir = leagueDir;
 const useSnallabot = (process.env.MADDEN_SYNC_USE_SNALLABOT ?? 'true').toLowerCase() !== 'false';
 
@@ -123,7 +128,7 @@ export async function runSync(leagueId, provider, options = {}) {
     await ensureDir();
     // Load existing snapshot (if any) so we can merge/retain weekly stats
     let existingSnapshot = null;
-    const outPath = path.join(leagueDir, `${leagueId}.json`);
+    const outPath = getMaddenLeagueSnapshotPath(leagueId);
     try {
       const existing = await fs.readFile(outPath, 'utf-8');
       existingSnapshot = JSON.parse(existing);
