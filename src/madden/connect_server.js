@@ -255,6 +255,16 @@ function html(body) {
           background: #fffef8;
           padding: 14px;
         }
+        .source-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 12px;
+        }
+        .source-actions button {
+          padding: 10px 14px;
+          font-size: 0.95rem;
+        }
         .source-card strong {
           display: block;
           margin-bottom: 6px;
@@ -397,7 +407,15 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <div class="source-meta">
             <div><code>${escapeHtml(source.exportUrl)}</code></div>
             <div>Mode: ${source.autoUpdate ? '<span class="pill">Auto</span>' : 'Manual'}</div>
+            <div>Last Import: ${escapeHtml(source.lastImportAt ? new Date(source.lastImportAt).toLocaleString() : 'Never')}</div>
+            <div>Status: ${escapeHtml(source.lastImportStatus || 'never')}${source.lastImportError ? ` • ${escapeHtml(source.lastImportError)}` : ''}</div>
           </div>
+          <form method="POST" action="/madden/connect/import-source?token=${encodeURIComponent(token)}">
+            <input type="hidden" name="export_source_id" value="${escapeHtml(source.id)}" />
+            <div class="source-actions">
+              <button type="submit">Import Now</button>
+            </div>
+          </form>
         </div>
       `).join('')
     : `<div class="source-card" style="color:#6b7280;">No export links added yet.</div>`;
@@ -444,7 +462,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             <ol style="margin:8px 0 0;padding-left:18px;">
               <li>Create or get the export link from your league data source.</li>
               <li>Paste that link here.</li>
-              <li>Save it, then run <code>/league-status</code> in Discord.</li>
+              <li>Click <strong>Import Now</strong> on the saved export card.</li>
+              <li>Then run <code>/league-status</code> in Discord.</li>
             </ol>
           </div>
           <div class="source-list">${exportRows}</div>
@@ -616,6 +635,24 @@ export function startConnectServer() {
       });
       const location = result.ok
         ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Export source added.')}`
+        : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
+      res.writeHead(302, { location });
+      res.end();
+    },
+  });
+
+  registerHttpRoute({
+    method: 'POST',
+    path: '/madden/connect/import-source',
+    handler: async (req, res) => {
+      const token = parseToken(req);
+      const form = parseForm(await readBody(req));
+      const result = await connectionService.importFromExportSource({
+        token,
+        exportSourceId: form.get('export_source_id'),
+      });
+      const location = result.ok
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Import complete. Go back to Discord and run /league-status.')}`
         : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
       res.writeHead(302, { location });
       res.end();

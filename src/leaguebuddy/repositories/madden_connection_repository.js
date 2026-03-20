@@ -173,6 +173,9 @@ export function createExportSource({
     extraData: Boolean(extraData),
     autoUpdate: Boolean(autoUpdate),
     status,
+    lastImportStatus: 'never',
+    lastImportAt: null,
+    lastImportError: null,
     createdAt: ts,
     updatedAt: ts,
   };
@@ -185,6 +188,22 @@ export function getExportSourcesByGuildId(guildId) {
   if (!guildId) return [];
   const store = loadStore();
   return clone(store.exportSources.filter((entry) => entry.guildId === String(guildId)));
+}
+
+export function getExportSourceById(exportSourceId) {
+  if (!exportSourceId) return null;
+  const store = loadStore();
+  return clone(store.exportSources.find((entry) => entry.id === String(exportSourceId)) || null);
+}
+
+export function updateExportSource(exportSourceId, updates = {}) {
+  if (!exportSourceId) return null;
+  const store = loadStore();
+  const source = store.exportSources.find((entry) => entry.id === String(exportSourceId));
+  if (!source) return null;
+  Object.assign(source, updates, { updatedAt: nowIso() });
+  saveStore(store);
+  return clone(source);
 }
 
 export function createImportJob({
@@ -265,6 +284,8 @@ export default {
   getLeagueConnectionById,
   createExportSource,
   getExportSourcesByGuildId,
+  getExportSourceById,
+  updateExportSource,
   createImportJob,
   finishImportJob,
   createSnapshot,

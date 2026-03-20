@@ -16,14 +16,18 @@ function parseJsonPayload(raw) {
   return JSON.parse(raw);
 }
 
-function isLoopbackHttpUrl(value) {
+function isHttpUrl(value) {
   if (!safeString(value)) return false;
   try {
     const parsed = new URL(String(value));
-    return parsed.protocol === 'http:' && (parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost');
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
     return false;
   }
+}
+
+function isPlaceholderUrl(value) {
+  return /^(YOUR_|OFFICIAL_|REPLACE_ME|PASTE_|EXAMPLE_)/i.test(String(value || '').trim());
 }
 
 function objectKeysCount(value) {
@@ -252,11 +256,11 @@ export function addLeagueExportSource({
   if (!normalizedUrl) {
     return { ok: false, code: 'missing_export_url', message: 'Export URL is required.' };
   }
-  if (!isLoopbackHttpUrl(normalizedUrl)) {
+  if (isPlaceholderUrl(normalizedUrl) || !isHttpUrl(normalizedUrl)) {
     return {
       ok: false,
       code: 'invalid_export_url',
-      message: 'Export URL must be an http://127.0.0.1 or http://localhost URL.',
+      message: 'Export URL must be a real http:// or https:// link.',
     };
   }
 
@@ -293,6 +297,91 @@ export function addLeagueExportSource({
     connection,
     exportSource,
   };
+}
+
+export async function importFromExportSource({
+  token,
+  exportSourceId,
+}) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+  if (!dashboard.connection) {
+    return { ok: false, code: 'missing_connection', message: 'Save the league name first.' };
+  }
+
+  const exportSource = connectionRepository.getExportSourceById(exportSourceId);
+  if (!exportSource || exportSource.guildId !== dashboard.session.guildId) {
+    return { ok: false, code: 'missing_export_source', message: 'That export link was not found for this server.' };
+  }
+
+  try {
+    const response = await fetch(exportSource.exportUrl, {
+      headers: {
+        accept: 'application/json,text/plain,*/*',
+      },
+    });
+
+    if (!response.ok) {
+      connectionRepository.updateExportSource(exportSource.id, {
+        lastImportStatus: 'failed',
+        lastImportAt: new Date().toISOString(),
+        lastImportError: `HTTP ${response.status}`,
+      });
+      return {
+        ok: false,
+        code: 'fetch_failed',
+        message: `Export link returned HTTP ${response.status}.`,
+      };
+    }
+
+    const bodyText = await response.text();
+    const payload = parseJsonPayload(bodyText);
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      connectionRepository.updateExportSource(exportSource.id, {
+        lastImportStatus: 'failed',
+        lastImportAt: new Date().toISOString(),
+        lastImportError: 'Export did not return a JSON object.',
+      });
+      return {
+        ok: false,
+        code: 'invalid_export_payload',
+        message: 'Export link did not return a valid JSON object.',
+      };
+    }
+
+    const result = createSnapshotForGuild({
+      guildId: dashboard.session.guildId,
+      connectSessionId: dashboard.session.id,
+      payload,
+      sourceType: 'dashboard_export',
+    });
+
+    connectionRepository.updateExportSource(exportSource.id, {
+      lastImportStatus: 'succeeded',
+      lastImportAt: result.snapshot.createdAt,
+      lastImportError: null,
+    });
+
+    return {
+      ok: true,
+      session: dashboard.session,
+      connection: result.connection,
+      snapshot: result.snapshot,
+      summary: result.summary,
+      exportSource: connectionRepository.getExportSourceById(exportSource.id),
+    };
+  } catch (error) {
+    connectionRepository.updateExportSource(exportSource.id, {
+      lastImportStatus: 'failed',
+      lastImportAt: new Date().toISOString(),
+      lastImportError: error?.message || 'Unknown import error',
+    });
+    return {
+      ok: false,
+      code: 'import_failed',
+      message: `Import failed: ${error?.message || 'Unknown error'}`,
+    };
+  }
 }
 
 export function loadDemoLeague(token) {
@@ -387,5 +476,6 @@ export default {
   saveLeagueConnectionSetup,
   addLeagueExportSource,
   loadDemoLeague,
+  importFromExportSource,
   ingestImportedPayload,
 };
