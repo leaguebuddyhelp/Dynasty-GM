@@ -692,6 +692,13 @@ function describeSyncError(error) {
       next: 'Refresh this page, confirm the league is still linked, then run /sync in Discord.',
     };
   }
+  if (text.includes('ENOENT') || text.includes('/data/madden/leagues/')) {
+    return {
+      title: 'League data was not created yet.',
+      detail: 'LEAGUEbuddy linked the correct league, but the first data snapshot file was not created during the initial sync.',
+      next: 'Run /sync in Discord. If it still fails, reconnect EA from this dashboard and try the league connection again.',
+    };
+  }
   return {
     title: 'First sync needs attention.',
     detail: text,
@@ -742,7 +749,13 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         || league?.league?.name
         || `League ${leagueId || 'Unknown'}`,
       );
-      return `<option value="${leagueId}">${leagueNameOption}</option>`;
+      const teamNameOption = escapeHtml(
+        league?.userTeamName
+        || league?.teamName
+        || league?.userTeam
+        || '',
+      );
+      return `<option value="${leagueId}">${leagueNameOption}${teamNameOption ? ` - ${teamNameOption}` : ''} (${leagueId})</option>`;
     }).join('')
     : '';
 
@@ -753,6 +766,8 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const syncError = connection?.summary?.lastSyncError || '';
   const syncSucceeded = hasLeague && status === 'connected';
   const syncErrorSummary = describeSyncError(syncError);
+  const activeLeagueName = selectedLeague?.leagueName || connection?.leagueName || leagueName || 'No league connected yet';
+  const activeLeagueId = connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown';
 
   const nextStep = !hasLeagueName
     ? 1
@@ -866,6 +881,9 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           ${noticeBanner(notice)}
           <h2>Setup Overview</h2>
           <p style="color:#4b5563;">This dashboard is already linked to your Discord server. Complete these steps in order.</p>
+          <div class="subtle" style="margin-bottom:14px;">
+            <strong>This server is being linked to:</strong> ${escapeHtml(activeLeagueName)} <code>${escapeHtml(activeLeagueId)}</code>
+          </div>
           <div class="timeline">
             <div class="${stepClass(1)}">
               ${stepState(1)}
@@ -1012,6 +1030,9 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <p style="color:#4b5563;">Choose the Madden league LEAGUEbuddy should connect to this Discord server.</p>
           ${leagueFetchError ? `<div class="warning"><strong>League list unavailable.</strong><br />${escapeHtml(leagueFetchError)}</div>` : ''}
           ${availableLeagues.length ? `
+            <div class="subtle" style="margin-bottom:14px;">
+              <strong>Important:</strong> If your EA account has multiple leagues, double-check the league name and the team shown in the dropdown before you connect it.
+            </div>
             <form method="POST" action="/madden/connect/league-select?token=${encodeURIComponent(token)}">
               <label for="selected_league_id"><strong>Available Leagues</strong></label><br />
               <select id="selected_league_id" name="league_id" required>
@@ -1024,6 +1045,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <strong>${escapeHtml(selectedLeague.leagueName || 'Connected League')}</strong>
               <div class="source-meta">
                 <div>League ID: <code>${escapeHtml(selectedLeague.leagueId || 'unknown')}</code></div>
+                <div>This is the league LEAGUEbuddy will connect to <strong>${escapeHtml(guildName)}</strong>.</div>
               </div>
             </div>
           ` : `
@@ -1041,12 +1063,13 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           </div>
           <p style="color:#4b5563;">Once your league is connected, this becomes your confirmation page before returning to Discord.</p>
           <div class="source-card">
-            <strong>${escapeHtml(connection?.leagueName || selectedLeague?.leagueName || 'No league connected yet')}</strong>
+            <strong>${escapeHtml(activeLeagueName)}</strong>
             <div class="source-meta">
+              <div><strong>Connected to Discord server:</strong> ${escapeHtml(guildName)}</div>
               <div>Source: ${escapeHtml(connection?.sourceType || 'ea_dashboard')}</div>
               <div>Status: ${escapeHtml(status)}</div>
               <div>Week: ${escapeHtml(snapshot?.summary?.week || connection?.summary?.week || 'unknown')}</div>
-              <div>League ID: <code>${escapeHtml(connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown')}</code></div>
+              <div>League ID: <code>${escapeHtml(activeLeagueId)}</code></div>
             </div>
           </div>
           ${status === 'sync_error' ? `
@@ -1097,6 +1120,10 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             <div class="summary-item done">
               <strong>Progress</strong>
               <p>${doneCount} of ${setupChecks.length} setup items finished.</p>
+            </div>
+            <div class="summary-item">
+              <strong>Connected league</strong>
+              <p>${escapeHtml(activeLeagueName)} <code>${escapeHtml(activeLeagueId)}</code></p>
             </div>
             <div class="summary-item active">
               <strong>Do this next</strong>
