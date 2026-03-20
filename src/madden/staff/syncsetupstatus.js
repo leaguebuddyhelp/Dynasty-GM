@@ -6,7 +6,7 @@ import { loadGuildMaddenConfigIfComplete } from '../../shared/madden_guild_confi
 export const data = new SlashCommandBuilder()
     .setName('syncsetupstatus')
     .setDescription('Admin-only: sync LEAGUEbuddy setupCompleted based on Madden v2 overlay completeness.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
 

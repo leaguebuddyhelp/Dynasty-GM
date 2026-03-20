@@ -8,7 +8,7 @@ import { applyOverwrites, buildSetupOverwrites } from './madden-setup.js';
 export const data = new SlashCommandBuilder()
   .setName('setup-roles')
   .setDescription('Admin-only: create or retry only the missing setup roles for this server.')
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
 

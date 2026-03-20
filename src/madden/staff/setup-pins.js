@@ -221,7 +221,7 @@ async function hydrateSeededPins(interaction, guildId, channelMap, snapshot) {
 export const data = new SlashCommandBuilder()
     .setName('setup-pins')
     .setDescription('Admin-only: seed and hydrate the LEAGUEbuddy pinned messages.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
 

@@ -17,7 +17,7 @@ import { seedAndHydratePins } from './setup-pins.js';
 export const data = new SlashCommandBuilder()
     .setName('setup-channels')
     .setDescription('Admin-only: build the category, channels, pins, and config for this server\'s current package.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addStringOption(o =>
         o.setName('tier')
             .setDescription('Optional override. Defaults to this server\'s current package.')

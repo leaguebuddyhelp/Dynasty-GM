@@ -3,7 +3,7 @@ import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.
 export const data = new SlashCommandBuilder()
   .setName('start-here')
   .setDescription('Admin-only: the full LEAGUEbuddy setup path from invite to first game.')
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
 

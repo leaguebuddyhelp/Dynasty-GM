@@ -29,7 +29,7 @@ function nextSteps({ tokenOk, stripeStandardOk, stripePremiumOk, leagueId, setup
   if (!setupStatus.overlayStatus.exists) return 'Run `/setup-channels`.';
   if (setupStatus.syncNeeded) return 'Run `/syncsetupstatus`.';
   if (!setupStatus.overlayStatus.isComplete || !setupStatus.setupCompleted) return 'Run `/setup-roles`, then `/syncsetupstatus`.';
-  if ((billing?.plan || 'free') === 'free') return 'Stay on free or test `/pricing`.';
+  if ((billing?.plan || 'free') === 'free') return 'Ready on free. Run `/plan` to review the customer view.';
   if (!['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'))) return 'Run `/activateplan`.';
   return 'Ready. Run `/plan` to verify the customer view.';
 }
@@ -56,7 +56,7 @@ function buildQuickStatus({ leagueId, setupStatus, billing }) {
 export const data = new SlashCommandBuilder()
   .setName('server-check')
   .setDescription('Admin-only: quick server readiness check.')
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
 
