@@ -33,7 +33,7 @@ function resolveRedirectUrl(envKey, fallback, { requireLoopback = false } = {}) 
 export const APP_REDIRECT_URL = resolveRedirectUrl('EA_REDIRECT_URL', 'http://localhost:4001/madden/callback');
 // EA's OAuth client may only accept a fixed allowlisted redirect URI. Keep this separate
 // from the app callback so hosted production can still finish the flow manually in Discord.
-export const REDIRECT_URL = resolveRedirectUrl('EA_OAUTH_REDIRECT_URL', 'http://127.0.0.1:4001/madden/callback', { requireLoopback: true });
+export const REDIRECT_URL = resolveRedirectUrl('EA_OAUTH_REDIRECT_URL', 'http://127.0.0.1/success', { requireLoopback: true });
 
 export function buildEaAuthUrl({ state, accessToken, personaId, personaNamespace } = {}) {
   const authUrl = new URL('/connect/auth', 'https://accounts.ea.com');

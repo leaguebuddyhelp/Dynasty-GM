@@ -623,7 +623,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
             <ol class="step-list">
               <li>Click <strong>Open EA Login</strong>.</li>
               <li>Sign in with EA in the new tab.</li>
-              <li>After login, copy the full URL from your browser if it starts with <code>http://127.0.0.1</code>.</li>
+              <li>After login, copy the full URL from your browser if it starts with <code>http://127.0.0.1/success</code>.</li>
               <li>Paste that full URL here and submit it.</li>
             </ol>
           </div>
@@ -637,7 +637,7 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               </div>
               <form method="POST" action="/madden/connect/ea-callback-url?token=${encodeURIComponent(token)}">
                 <label for="redirect_url"><strong>Returned Browser URL</strong></label><br />
-                <input id="redirect_url" name="redirect_url" placeholder="http://127.0.0.1:4001/madden/callback?code=..." required />
+                <input id="redirect_url" name="redirect_url" placeholder="http://127.0.0.1/success?code=..." required />
                 <button type="submit"${connection ? '' : ' disabled'}>Save EA Login</button>
                 ${connection ? '' : '<p class="warning">Save the league name first.</p>'}
               </form>

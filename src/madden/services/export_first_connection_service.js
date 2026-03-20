@@ -211,6 +211,16 @@ function publicBaseUrl() {
   return 'http://127.0.0.1:8080';
 }
 
+function isExpectedEaLoopbackUrl(value) {
+  const parsed = parseUrl(value);
+  return Boolean(
+    parsed
+    && parsed.protocol === 'http:'
+    && parsed.hostname === '127.0.0.1'
+    && parsed.pathname === '/success'
+  );
+}
+
 function createSnapshotForGuild({
   guildId,
   connectSessionId = null,
@@ -401,11 +411,11 @@ export async function submitEaRedirectUrl({
   if (!normalizedUrl) {
     return { ok: false, code: 'missing_redirect_url', message: 'Paste the full URL from the browser after EA login.' };
   }
-  if (!normalizedUrl.startsWith('http://127.0.0.1')) {
+  if (!isExpectedEaLoopbackUrl(normalizedUrl)) {
     return {
       ok: false,
       code: 'invalid_redirect_url',
-      message: 'Paste the full URL that starts with http://127.0.0.1 after EA login finishes.',
+      message: 'Paste the full URL that starts with http://127.0.0.1/success after EA login finishes.',
     };
   }
 
