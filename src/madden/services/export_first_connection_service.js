@@ -1,4 +1,19 @@
 import connectionRepository from '../../leaguebuddy/repositories/madden_connection_repository.js';
+import {
+  consumeAuthState,
+  createEAClientForGuild,
+  getGuildAuthStartUrl,
+  getGuildEATokens,
+  saveGuildEATokens,
+} from '../ea_guild_auth.js';
+import {
+  exchangeLoginCode,
+  exchangePersonaToken,
+  extractValidPersonas,
+  fetchEntitlements,
+  fetchPersonas,
+  fetchTokenInfo,
+} from '../ea_personas.js';
 
 const CONNECT_SESSION_TTL_MS = 1000 * 60 * 60 * 24;
 
@@ -106,6 +121,80 @@ function summarizePayload(payload) {
     teams,
     topLevelKeys: objectKeysCount(payload),
   };
+}
+
+function summarizeLeagueRecord(league) {
+  const leagueId = safeString(
+    league?.leagueId
+    || league?.id
+    || league?.league?.leagueId
+    || league?.league?.id,
+  );
+  const leagueName = safeString(
+    league?.leagueName
+    || league?.name
+    || league?.league?.name
+    || league?.league?.leagueName
+    || league?.displayName,
+  ) || `League ${leagueId || 'Unknown'}`;
+  const week = safeString(
+    league?.currentWeek
+    || league?.week
+    || league?.weekIndex
+    || league?.seasonInfo?.currentWeek,
+  );
+  const season = safeString(
+    league?.seasonName
+    || league?.seasonText
+    || league?.seasonInfo?.currentSeason
+    || league?.seasonInfo?.season,
+  );
+  const stage = safeString(
+    league?.stage
+    || league?.seasonInfo?.stage
+    || league?.seasonStage,
+  );
+
+  return {
+    leagueId,
+    leagueName,
+    week,
+    season,
+    stage,
+  };
+}
+
+function uniquePersonas(personas = []) {
+  const seen = new Set();
+  return personas.filter((persona) => {
+    const key = `${persona.personaId}|${persona.namespaceName}|${persona.entitlement}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function buildPersonaChoices(loginAccessToken) {
+  const tokenInfo = await fetchTokenInfo(loginAccessToken);
+  const pid = tokenInfo?.pid_id;
+  if (!pid) {
+    throw new Error('No pid_id returned from EA tokeninfo.');
+  }
+
+  const entRes = await fetchEntitlements(pid, loginAccessToken);
+  const entitlements = entRes?.entitlements?.entitlement || [];
+  const personaResponses = await Promise.all(
+    entitlements.map(async (ent) => ({
+      ent,
+      personas: await fetchPersonas(ent.pidUri, loginAccessToken),
+    })),
+  );
+
+  const personas = uniquePersonas(extractValidPersonas(entRes, personaResponses, 'Default'));
+  if (!personas.length) {
+    throw new Error('No valid Madden personas were found for this EA account.');
+  }
+  return personas;
 }
 
 function publicBaseUrl() {
@@ -223,14 +312,45 @@ export function getLeagueConnectionDashboard(token) {
   };
 }
 
+export async function getLeagueConnectionDashboardState(token) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+
+  const guildTokens = getGuildEATokens(dashboard.session.guildId);
+  const authDraft = dashboard.session?.authDraft || null;
+  let availableLeagues = [];
+  let leagueFetchError = null;
+
+  if (guildTokens) {
+    try {
+      const client = await createEAClientForGuild(dashboard.session.guildId);
+      const leagues = await client.getLeagues();
+      availableLeagues = Array.isArray(leagues) ? leagues : [];
+    } catch (error) {
+      leagueFetchError = error?.message || 'Could not load leagues from EA right now.';
+    }
+  }
+
+  return {
+    ...dashboard,
+    authUrl: getGuildAuthStartUrl(dashboard.session.guildId),
+    guildTokens,
+    authDraft,
+    availableLeagues,
+    leagueFetchError,
+  };
+}
+
 export function getLeagueConnectionStatus(guildId) {
   const connection = connectionRepository.getLeagueConnectionByGuildId(guildId);
   const latestSnapshot = connectionRepository.getLatestSnapshotByGuildId(guildId);
   const exportSources = connectionRepository.getExportSourcesByGuildId(guildId);
+  const guildTokens = getGuildEATokens(guildId);
   return {
     connection,
     latestSnapshot,
     exportSources,
+    guildTokens,
   };
 }
 
@@ -268,6 +388,212 @@ export function saveLeagueConnectionSetup({
     session: dashboard.session,
     connection,
   };
+}
+
+export async function submitEaRedirectUrl({
+  token,
+  redirectUrl,
+}) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+
+  const normalizedUrl = safeString(redirectUrl);
+  if (!normalizedUrl) {
+    return { ok: false, code: 'missing_redirect_url', message: 'Paste the full URL from the browser after EA login.' };
+  }
+  if (!normalizedUrl.startsWith('http://127.0.0.1')) {
+    return {
+      ok: false,
+      code: 'invalid_redirect_url',
+      message: 'Paste the full URL that starts with http://127.0.0.1 after EA login finishes.',
+    };
+  }
+
+  try {
+    const parsed = new URL(normalizedUrl);
+    const stateId = safeString(parsed.searchParams.get('state'));
+    const state = stateId ? consumeAuthState(stateId) : null;
+    if (!state?.guildId || String(state.guildId) !== String(dashboard.session.guildId)) {
+      return {
+        ok: false,
+        code: 'invalid_auth_state',
+        message: 'That EA login result does not match this Discord server. Start the login again from this dashboard.',
+      };
+    }
+
+    const loginTokens = await exchangeLoginCode(normalizedUrl);
+    const personas = await buildPersonaChoices(loginTokens.access_token);
+    connectionRepository.updateConnectSessionByToken(token, {
+      authDraft: {
+        createdAt: new Date().toISOString(),
+        loginAccessToken: loginTokens.access_token,
+        loginRefreshToken: loginTokens.refresh_token,
+        loginExpiry: Date.now() + (loginTokens.expires_in || 0) * 1000,
+        personas,
+      },
+    });
+    return {
+      ok: true,
+      message: 'EA login captured. Choose your Madden account/persona below.',
+      personas,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      code: 'ea_redirect_exchange_failed',
+      message: error?.message || 'Could not exchange the EA redirect URL.',
+    };
+  }
+}
+
+export async function submitEaPersona({
+  token,
+  personaId,
+}) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+
+  const authDraft = dashboard.session?.authDraft;
+  if (!authDraft?.loginAccessToken || !Array.isArray(authDraft?.personas) || !authDraft.personas.length) {
+    return { ok: false, code: 'missing_auth_draft', message: 'Start with Connect EA first.' };
+  }
+
+  const chosen = authDraft.personas.find((persona) => String(persona.personaId) === String(personaId));
+  if (!chosen) {
+    return { ok: false, code: 'missing_persona', message: 'That Madden account/persona was not found.' };
+  }
+
+  try {
+    const personaToken = await exchangePersonaToken(
+      authDraft.loginAccessToken,
+      chosen.personaId,
+      chosen.namespaceName,
+    );
+
+    saveGuildEATokens(dashboard.session.guildId, {
+      accessToken: personaToken.access_token,
+      refreshToken: personaToken.refresh_token,
+      expiry: Date.now() + (personaToken.expires_in || 0) * 1000,
+      console: chosen.systemConsole || 'ps5',
+      blazeId: `${chosen.personaId}`,
+      gameYear: process.env.EA_GAME_YEAR || '2026',
+      personaName: chosen.displayName,
+      entitlement: chosen.entitlement,
+      namespace: chosen.namespaceName,
+    });
+
+    connectionRepository.updateConnectSessionByToken(token, {
+      authDraft: null,
+      selectedPersona: {
+        personaId: `${chosen.personaId}`,
+        displayName: chosen.displayName,
+        namespaceName: chosen.namespaceName,
+        entitlement: chosen.entitlement,
+        systemConsole: chosen.systemConsole,
+      },
+    });
+
+    return {
+      ok: true,
+      message: 'EA account connected. Choose your league below.',
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      code: 'persona_exchange_failed',
+      message: error?.message || 'Could not save that Madden persona.',
+    };
+  }
+}
+
+export async function selectEaLeague({
+  token,
+  leagueId,
+}) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+
+  const normalizedLeagueId = safeString(leagueId);
+  if (!normalizedLeagueId) {
+    return { ok: false, code: 'missing_league_id', message: 'Choose a league first.' };
+  }
+
+  try {
+    const client = await createEAClientForGuild(dashboard.session.guildId);
+    const leagues = await client.getLeagues();
+    const selectedLeague = (Array.isArray(leagues) ? leagues : []).find((league) => {
+      const summary = summarizeLeagueRecord(league);
+      return summary.leagueId === normalizedLeagueId;
+    });
+
+    if (!selectedLeague) {
+      return { ok: false, code: 'missing_league', message: 'That league was not found on the connected EA account.' };
+    }
+
+    const summary = summarizeLeagueRecord(selectedLeague);
+    const connection = connectionRepository.upsertLeagueConnection({
+      guildId: dashboard.session.guildId,
+      leagueName: summary.leagueName,
+      leagueExternalId: summary.leagueId,
+      sourceType: 'ea_dashboard',
+      status: 'connected',
+      lastImportJobId: dashboard.connection?.lastImportJobId || null,
+      lastSnapshotId: dashboard.connection?.lastSnapshotId || null,
+      summary: {
+        ...(dashboard.connection?.summary || {}),
+        ...summary,
+        eaConnected: true,
+      },
+    });
+
+    const snapshot = connectionRepository.createSnapshot({
+      guildId: dashboard.session.guildId,
+      importJobId: null,
+      leagueName: summary.leagueName,
+      leagueExternalId: summary.leagueId,
+      summary: {
+        ...summary,
+        teams: Array.isArray(selectedLeague?.teams) ? selectedLeague.teams.length : 0,
+      },
+      payload: selectedLeague,
+    });
+
+    const updatedConnection = connectionRepository.upsertLeagueConnection({
+      guildId: dashboard.session.guildId,
+      leagueName: summary.leagueName,
+      leagueExternalId: summary.leagueId,
+      sourceType: 'ea_dashboard',
+      status: 'connected',
+      lastImportJobId: dashboard.connection?.lastImportJobId || null,
+      lastSnapshotId: snapshot.id,
+      summary: {
+        ...(dashboard.connection?.summary || {}),
+        ...summary,
+        teams: Array.isArray(selectedLeague?.teams) ? selectedLeague.teams.length : 0,
+        eaConnected: true,
+      },
+    });
+
+    connectionRepository.updateConnectSessionByToken(token, {
+      selectedLeague: {
+        leagueId: summary.leagueId,
+        leagueName: summary.leagueName,
+      },
+    });
+
+    return {
+      ok: true,
+      connection: updatedConnection,
+      snapshot,
+      message: 'League connected. Go back to Discord and run /league-status.',
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      code: 'league_select_failed',
+      message: error?.message || 'Could not load or save that league.',
+    };
+  }
 }
 
 export function addLeagueExportSource({
@@ -528,8 +854,12 @@ export function ingestImportedPayload({ token, rawPayload }) {
 export default {
   beginLeagueConnection,
   getLeagueConnectionDashboard,
+  getLeagueConnectionDashboardState,
   getLeagueConnectionStatus,
   saveLeagueConnectionSetup,
+  submitEaRedirectUrl,
+  submitEaPersona,
+  selectEaLeague,
   addLeagueExportSource,
   loadDemoLeague,
   importFromExportSource,

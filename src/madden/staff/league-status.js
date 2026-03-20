@@ -19,6 +19,7 @@ export async function execute(interaction) {
   const connection = status.connection;
   const snapshot = status.latestSnapshot;
   const exportSources = status.exportSources || [];
+  const guildTokens = status.guildTokens;
 
   if (!connection) {
     await interaction.editReply({
@@ -28,7 +29,7 @@ export async function execute(interaction) {
           .setColor(0xf39c12)
           .setDescription('No league is connected to this server yet.')
           .addFields(
-            { name: 'Next', value: 'Run `/connectleague`, open the dashboard, save the league name, save your league source, then click `Import Now`.', inline: false },
+            { name: 'Next', value: 'Run `/connectleague`, open the dashboard, save the league name, connect EA, choose your Madden account, then choose your league.', inline: false },
           ),
       ],
     });
@@ -44,12 +45,15 @@ export async function execute(interaction) {
           { name: 'League', value: connection.leagueName || 'Unknown', inline: false },
           { name: 'Status', value: connection.status || 'unknown', inline: true },
           { name: 'Source', value: connection.sourceType || 'unknown', inline: true },
-          { name: 'Export Sources', value: String(exportSources.length), inline: true },
+          { name: 'EA Connected', value: guildTokens ? 'yes' : 'no', inline: true },
           { name: 'Last Snapshot', value: snapshot?.id || 'none', inline: false },
           { name: 'Week', value: String(snapshot?.summary?.week || connection?.summary?.week || 'unknown'), inline: true },
           { name: 'Teams', value: String(snapshot?.summary?.teams || connection?.summary?.teams || 0), inline: true },
           { name: 'Last Import', value: snapshot?.createdAt ? `<t:${Math.floor(new Date(snapshot.createdAt).getTime() / 1000)}:R>` : 'never', inline: false },
-          { name: 'Next', value: 'If you need fresh data, go back to the dashboard, use your saved league source, click `Import Now`, then rerun `/league-status`.', inline: false },
+          { name: 'Next', value: connection.sourceType === 'ea_dashboard'
+            ? 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league.'
+            : 'This league was connected through a fallback source. Return to the dashboard if you want to move it onto the EA-driven setup path.',
+            inline: false },
         ),
     ],
   });

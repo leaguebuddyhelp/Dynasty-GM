@@ -259,6 +259,17 @@ function html(body) {
           color: #64748b;
           cursor: not-allowed;
         }
+        .button-link {
+          display: inline-block;
+          border-radius: 14px;
+          padding: 12px 16px;
+          background: linear-gradient(180deg, var(--lb-accent) 0%, var(--lb-accent-strong) 100%);
+          color: var(--lb-accent-ink);
+          font: inherit;
+          font-weight: 800;
+          text-decoration: none;
+          box-shadow: 0 10px 26px rgba(255, 204, 0, 0.18);
+        }
         code {
           font-family: "SFMono-Regular", Menlo, monospace;
           font-size: 0.92em;
@@ -480,10 +491,16 @@ function renderDashboard({ token, dashboard, notice = '' }) {
   const connection = dashboard.connection;
   const exportSources = dashboard.exportSources || [];
   const snapshot = dashboard.latestSnapshot;
+  const guildTokens = dashboard.guildTokens || null;
+  const authDraft = dashboard.authDraft || null;
+  const availableLeagues = Array.isArray(dashboard.availableLeagues) ? dashboard.availableLeagues : [];
   const leagueName = connection?.leagueName || '';
   const leagueExternalId = connection?.leagueExternalId || '';
   const status = connection?.status || 'not_connected';
   const guildName = dashboard.session?.guildName || `Discord Server ${dashboard.session?.guildId || ''}`;
+  const selectedPersona = dashboard.session?.selectedPersona || null;
+  const selectedLeague = dashboard.session?.selectedLeague || null;
+  const leagueFetchError = dashboard.leagueFetchError || '';
 
   const exportRows = exportSources.length
     ? exportSources.map((source) => `
@@ -505,13 +522,41 @@ function renderDashboard({ token, dashboard, notice = '' }) {
       `).join('')
     : `<div class="source-card" style="color:#6b7280;">No export links added yet.</div>`;
 
+  const personaDraftRows = Array.isArray(authDraft?.personas) && authDraft.personas.length
+    ? authDraft.personas.map((persona) => `
+        <option value="${escapeHtml(persona.personaId)}">
+          ${escapeHtml(persona.displayName)} - ${escapeHtml(persona.systemConsole || 'unknown').toUpperCase()} - ${escapeHtml(persona.entitlement || 'Madden')}
+        </option>
+      `).join('')
+    : '';
+
+  const leagueRows = availableLeagues.length
+    ? availableLeagues.map((league) => {
+      const leagueId = escapeHtml(
+        league?.leagueId
+        || league?.id
+        || league?.league?.leagueId
+        || league?.league?.id
+        || '',
+      );
+      const leagueNameOption = escapeHtml(
+        league?.leagueName
+        || league?.name
+        || league?.league?.leagueName
+        || league?.league?.name
+        || `League ${leagueId || 'Unknown'}`,
+      );
+      return `<option value="${leagueId}">${leagueNameOption}</option>`;
+    }).join('')
+    : '';
+
   return html(`
     <section class="hero">
       <img src="/madden/assets/lb-official-logo.png" alt="LEAGUEbuddy logo" />
       <div>
         <span class="eyebrow">LEAGUEbuddy Madden</span>
         <h1>League Dashboard Setup</h1>
-        <p>Set up your league here first, then finish the rest in Discord. This is your one setup path for a real league.</p>
+        <p>Set up your league here first, then finish the rest in Discord. Connect EA, choose your Madden account, choose your league, and LEAGUEbuddy will handle the rest.</p>
       </div>
     </section>
     <div class="layout">
@@ -526,12 +571,12 @@ function renderDashboard({ token, dashboard, notice = '' }) {
               <span>Save the league name so this server knows what it belongs to.</span>
             </div>
             <div class="timeline-step">
-              <strong>2. Add a public export link</strong>
-              <span>Use a public JSON link Railway can reach from the internet.</span>
+              <strong>2. Connect EA</strong>
+              <span>Use the reverse login flow and paste the returned URL back here.</span>
             </div>
             <div class="timeline-step">
-              <strong>3. Click Import Now</strong>
-              <span>LEAGUEbuddy will pull the data and create the first snapshot.</span>
+              <strong>3. Choose account and league</strong>
+              <span>Select the Madden persona and league LEAGUEbuddy should manage.</span>
             </div>
             <div class="timeline-step">
               <strong>4. Return to Discord</strong>
@@ -545,19 +590,19 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <p style="color:#4b5563;">Start here for a real league.</p>
           <div class="guide-grid">
             <div class="guide-card">
-              <h3>What works</h3>
+              <h3>What this step does</h3>
               <ul>
-                <li>A public <code>https://...</code> export link</li>
-                <li>A link that returns JSON</li>
-                <li>A link Railway can reach from the public internet</li>
+                <li>Ties this dashboard to your Discord server</li>
+                <li>Creates the league record LEAGUEbuddy will use</li>
+                <li>Prepares the rest of the setup flow</li>
               </ul>
             </div>
             <div class="guide-card">
-              <h3>What will fail</h3>
+              <h3>What happens next</h3>
               <ul>
-                <li><code>127.0.0.1</code> or <code>localhost</code> links</li>
-                <li>Links that only work on your computer</li>
-                <li>Pages that return HTML instead of JSON</li>
+                <li>Connect EA</li>
+                <li>Choose your Madden account</li>
+                <li>Choose the league to link</li>
               </ul>
             </div>
           </div>
@@ -571,35 +616,29 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
 
         <section class="panel">
-          <h2>Step 2: Choose League Source</h2>
-          <p style="color:#4b5563;">Choose the source LEAGUEbuddy should use for this league. Right now there is one production-ready customer path.</p>
+          <h2>Step 2: Connect EA</h2>
+          <p style="color:#4b5563;">This follows the same reverse login idea used by Snallabot-style tools. You log in with EA in a browser, then paste the returned local URL here.</p>
           <div class="info">
-            <strong>How this works:</strong>
+            <strong>How to connect EA:</strong>
             <ol class="step-list">
-              <li>Save your league source below.</li>
-              <li>Click <strong>Import Now</strong> on the saved source card.</li>
-              <li>Go back to Discord and run <code>/league-status</code>.</li>
+              <li>Click <strong>Open EA Login</strong>.</li>
+              <li>Sign in with EA in the new tab.</li>
+              <li>After login, copy the full URL from your browser if it starts with <code>http://127.0.0.1</code>.</li>
+              <li>Paste that full URL here and submit it.</li>
             </ol>
           </div>
           <div class="method-grid">
             <div class="method-card">
-              <span class="method-badge">Recommended</span>
-              <h3>Public Export URL</h3>
-              <p>Use a public <code>https://...</code> link that returns league JSON. This is the live source LEAGUEbuddy will sync from on Railway.</p>
-              <div class="subtle">Do not use <code>localhost</code>, <code>127.0.0.1</code>, or links that only work on your computer.</div>
-              <form method="POST" action="/madden/connect/export-source?token=${encodeURIComponent(token)}">
-                <label for="label"><strong>Source Name</strong></label><br />
-                <input id="label" name="label" placeholder="Primary League Source" />
-                <label for="export_url"><strong>Public Export URL</strong></label><br />
-                <input id="export_url" name="export_url" placeholder="https://your-export-source.example/league.json" required />
-                <div class="check-grid">
-                  <label><input type="checkbox" name="league_info" value="1"${checked(true)} /><span>League Info</span></label>
-                  <label><input type="checkbox" name="weekly_stats" value="1"${checked(true)} /><span>Weekly Stats</span></label>
-                  <label><input type="checkbox" name="roster" value="1"${checked(true)} /><span>Rosters</span></label>
-                  <label><input type="checkbox" name="extra_data" value="1"${checked(false)} /><span>Extra Data</span></label>
-                  <label><input type="checkbox" name="auto_update" value="1"${checked(true)} /><span>Keep Updated</span></label>
-                </div>
-                <button type="submit"${connection ? '' : ' disabled'}>Save League Source</button>
+              <span class="method-badge">${guildTokens ? 'Connected' : 'Required'}</span>
+              <h3>EA Account Connection</h3>
+              <p>${guildTokens ? `Connected as ${escapeHtml(guildTokens.personaName || guildTokens.blazeId || 'EA account')}.` : 'Start the EA login flow, then paste the returned URL below.'}</p>
+              <div class="source-actions">
+                <a class="button-link" href="${escapeHtml(dashboard.authUrl)}" target="_blank" rel="noreferrer">Open EA Login</a>
+              </div>
+              <form method="POST" action="/madden/connect/ea-callback-url?token=${encodeURIComponent(token)}">
+                <label for="redirect_url"><strong>Returned Browser URL</strong></label><br />
+                <input id="redirect_url" name="redirect_url" placeholder="http://127.0.0.1:4001/madden/callback?code=..." required />
+                <button type="submit"${connection ? '' : ' disabled'}>Save EA Login</button>
                 ${connection ? '' : '<p class="warning">Save the league name first.</p>'}
               </form>
             </div>
@@ -607,9 +646,65 @@ function renderDashboard({ token, dashboard, notice = '' }) {
         </section>
 
         <section class="panel">
-          <h2>Step 3: Import From Saved Source</h2>
-          <p style="color:#4b5563;">After you save a source, use the button below it to pull the latest league data into LEAGUEbuddy.</p>
-          <div class="source-list">${exportRows}</div>
+          <h2>Step 3: Choose Madden Account</h2>
+          <p style="color:#4b5563;">After EA login is captured, choose the correct Madden account/persona for this league.</p>
+          ${authDraft?.personas?.length ? `
+            <form method="POST" action="/madden/connect/persona?token=${encodeURIComponent(token)}">
+              <label for="persona_id"><strong>Available Personas</strong></label><br />
+              <select id="persona_id" name="persona_id" required>
+                ${personaDraftRows}
+              </select>
+              <button type="submit">Use This Madden Account</button>
+            </form>
+          ` : selectedPersona ? `
+            <div class="source-card">
+              <strong>${escapeHtml(selectedPersona.displayName)}</strong>
+              <div class="source-meta">
+                <div>Console: ${escapeHtml(selectedPersona.systemConsole || 'unknown')}</div>
+                <div>Entitlement: ${escapeHtml(selectedPersona.entitlement || 'Madden')}</div>
+              </div>
+            </div>
+          ` : `
+            <div class="source-card" style="color:#6b7280;">Connect EA first. Your available Madden accounts will appear here.</div>
+          `}
+        </section>
+
+        <section class="panel">
+          <h2>Step 4: Choose League</h2>
+          <p style="color:#4b5563;">Choose the league LEAGUEbuddy should connect to this Discord server.</p>
+          ${leagueFetchError ? `<div class="warning">${escapeHtml(leagueFetchError)}</div>` : ''}
+          ${availableLeagues.length ? `
+            <form method="POST" action="/madden/connect/league-select?token=${encodeURIComponent(token)}">
+              <label for="selected_league_id"><strong>Available Leagues</strong></label><br />
+              <select id="selected_league_id" name="league_id" required>
+                ${leagueRows}
+              </select>
+              <button type="submit">Connect This League</button>
+            </form>
+          ` : selectedLeague ? `
+            <div class="source-card">
+              <strong>${escapeHtml(selectedLeague.leagueName || 'Connected League')}</strong>
+              <div class="source-meta">
+                <div>League ID: <code>${escapeHtml(selectedLeague.leagueId || 'unknown')}</code></div>
+              </div>
+            </div>
+          ` : `
+            <div class="source-card" style="color:#6b7280;">Connect EA and choose a Madden account first. Then your leagues will appear here.</div>
+          `}
+        </section>
+
+        <section class="panel">
+          <h2>League Landing Page</h2>
+          <p style="color:#4b5563;">Once your league is connected, this page becomes the home for sync status and league info.</p>
+          <div class="source-card">
+            <strong>${escapeHtml(connection?.leagueName || selectedLeague?.leagueName || 'No league connected yet')}</strong>
+            <div class="source-meta">
+              <div>Source: ${escapeHtml(connection?.sourceType || 'ea_dashboard')}</div>
+              <div>Status: ${escapeHtml(status)}</div>
+              <div>Week: ${escapeHtml(snapshot?.summary?.week || connection?.summary?.week || 'unknown')}</div>
+              <div>League ID: <code>${escapeHtml(connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown')}</code></div>
+            </div>
+          </div>
         </section>
 
         <section class="panel">
@@ -672,8 +767,9 @@ function renderDashboard({ token, dashboard, notice = '' }) {
           <h2 style="margin-top:4px;">What to do next</h2>
           <ol style="padding-left:20px;margin:0;">
             <li>Save your league name.</li>
-            <li>Save your league source.</li>
-            <li>Click <strong>Import Now</strong> on that source.</li>
+            <li>Connect EA and paste the returned browser URL.</li>
+            <li>Choose your Madden account/persona.</li>
+            <li>Choose your league.</li>
             <li>Go back to Discord and run <code>/league-status</code>.</li>
           </ol>
         </section>
@@ -708,7 +804,7 @@ export function startConnectServer() {
     handler: async (req, res) => {
       const token = parseToken(req);
       const notice = parseNotice(req);
-      const dashboard = connectionService.getLeagueConnectionDashboard(token);
+      const dashboard = await connectionService.getLeagueConnectionDashboardState(token);
       if (!dashboard.ok) {
         res.writeHead(400, { 'content-type': 'text/html; charset=utf-8' });
         res.end(html(`<h1>Setup Link Unavailable</h1><p>${escapeHtml(dashboard.message)}</p>`));
@@ -716,6 +812,60 @@ export function startConnectServer() {
       }
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       res.end(renderDashboard({ token, dashboard, notice }));
+    },
+  });
+
+  registerHttpRoute({
+    method: 'POST',
+    path: '/madden/connect/ea-callback-url',
+    handler: async (req, res) => {
+      const token = parseToken(req);
+      const form = parseForm(await readBody(req));
+      const result = await connectionService.submitEaRedirectUrl({
+        token,
+        redirectUrl: form.get('redirect_url'),
+      });
+      const location = result.ok
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('EA login saved. Choose your Madden account below.')}`
+        : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
+      res.writeHead(302, { location });
+      res.end();
+    },
+  });
+
+  registerHttpRoute({
+    method: 'POST',
+    path: '/madden/connect/persona',
+    handler: async (req, res) => {
+      const token = parseToken(req);
+      const form = parseForm(await readBody(req));
+      const result = await connectionService.submitEaPersona({
+        token,
+        personaId: form.get('persona_id'),
+      });
+      const location = result.ok
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Madden account selected. Choose your league below.')}`
+        : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
+      res.writeHead(302, { location });
+      res.end();
+    },
+  });
+
+  registerHttpRoute({
+    method: 'POST',
+    path: '/madden/connect/league-select',
+    handler: async (req, res) => {
+      const token = parseToken(req);
+      const form = parseForm(await readBody(req));
+      const result = await connectionService.selectEaLeague({
+        token,
+        leagueId: form.get('league_id'),
+      });
+      const location = result.ok
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('League connected. Return to Discord and run /league-status.')}`
+        : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
+      res.writeHead(302, { location });
+      res.end();
     },
   });
 

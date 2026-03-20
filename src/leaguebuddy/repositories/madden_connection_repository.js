@@ -81,6 +81,16 @@ export function getConnectSessionByToken(token) {
   return clone(store.sessions.find((session) => session.token === String(token)) || null);
 }
 
+export function updateConnectSessionByToken(token, updates = {}) {
+  if (!token) return null;
+  const store = loadStore();
+  const session = store.sessions.find((entry) => entry.token === String(token));
+  if (!session) return null;
+  Object.assign(session, updates, { updatedAt: nowIso() });
+  saveStore(store);
+  return clone(session);
+}
+
 export function consumeConnectSession(token) {
   if (!token) return null;
   const store = loadStore();
@@ -278,6 +288,7 @@ export function getLatestSnapshotByGuildId(guildId) {
 export default {
   createConnectSession,
   getConnectSessionByToken,
+  updateConnectSessionByToken,
   consumeConnectSession,
   upsertLeagueConnection,
   getLeagueConnectionByGuildId,
