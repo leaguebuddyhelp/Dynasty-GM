@@ -541,9 +541,9 @@ export async function execute(interaction) {
                 '',
                 `Pins: ${pinsSummary.replace(/^Pins:\s*/, '')}`,
                 !snapshotReady
-                    ? 'Next: finish `/connectleague`, run `/sync`, then rerun `/setup-channels` if you want the boards hydrated with real data.'
+                    ? 'Next: finish `/connectleague` so LEAGUEbuddy has live league data, then rerun `/setup-channels` if you want the boards hydrated with real data.'
                     : pinsNeedRetry
-                        ? 'Next: run `/setup-pins`, then `/setup-roles`.'
+                        ? 'Next: run `/setup-roles`. If any seeded board is still missing, use `/setup-pins` as a repair command after setup.'
                         : 'Next: run `/setup-roles`, then `/syncsetupstatus`.'
             ].join('\n'),
         });

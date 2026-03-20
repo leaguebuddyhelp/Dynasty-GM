@@ -58,12 +58,11 @@ export async function execute(interaction) {
                 value: [
                     '1. `/connectleague`',
                     '2. `/league-status`',
-                    '3. `/sync` if needed',
-                    '4. `/setup-channels`',
-                    '5. `/setup-pins` if needed',
-                    '6. `/setup-roles`',
-                    '7. `/syncsetupstatus`',
-                    '8. `/server-check`',
+                    '3. `/setup-channels`',
+                    '4. `/setup-roles`',
+                    '5. `/syncsetupstatus`',
+                    '6. `/server-check`',
+                    '7. `/create-threads`',
                 ].join('\n'),
             },
         );
