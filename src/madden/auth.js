@@ -90,7 +90,8 @@ async function execute(interaction) {
             { name: 'Step 1', value: 'Tap **Open Connection Link** below.' },
             { name: 'Step 2', value: 'Finish the browser sign-in and redirect flow.' },
             { name: 'Step 3', value: 'If the callback page says the connection was saved for this server, run `/install-league`.' },
-            { name: 'If The Callback Page Does Not Save It', value: 'Copy the full callback URL from the browser address bar, then run `/auth redirect_url:<paste-full-callback-url>` in Discord to finish the same redirect flow manually.' },
+            { name: 'Manual Finish', value: 'If the browser lands on the callback URL but the save does not finish automatically, copy the full callback URL from the browser address bar.' },
+            { name: 'Run This In Discord', value: '`/auth redirect_url:<paste-full-callback-url>`' },
             { name: 'Next', value: 'After the redirect flow is saved, run `/install-league`.' },
           )
           .setColor(0x5865f2),
@@ -166,7 +167,7 @@ async function execute(interaction) {
             '',
             'This server must use the redirect link flow.',
             'Next: rerun `/auth` and use the connection link again.',
-            'If the callback page does not save automatically, copy the full callback URL and run `/auth redirect_url:<paste-full-callback-url>` to finish that same redirect flow manually.',
+            'If the browser reaches the callback URL but the save does not finish automatically, copy the full callback URL and run `/auth redirect_url:<paste-full-callback-url>` to finish that same redirect flow manually.',
           ].join('\n'))
           .setColor(0xed4245),
       ],
