@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, MessageFlags } from 'discord.js';
 import { getMessageForWeek } from './madden_utils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
@@ -186,7 +186,7 @@ async function postNoChanges(channel, title, weekLabel, color, body) {
     .addFields({ name: '\u200b', value: body })
     .setColor(color)
     .setTimestamp(new Date());
-  await channel.send({ embeds: [embed] }).catch(() => null);
+  await channel.send({ embeds: [embed], flags: MessageFlags.SuppressNotifications }).catch(() => null);
 }
 
 function lastCompletedWeek(snapshot) {
@@ -224,7 +224,7 @@ export async function updatePlayerChanges(client, leagueId, guildId = null) {
     return;
   }
   const roleMap = loadJson(ROLE_MAP_FILE) || {};
-  const commishMentions = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish']
+  const commishMentions = ['LB Commish', 'LB Co-Commish']
     .map(r => roleMap[r] ? `<@&${roleMap[r]}>` : null)
     .filter(Boolean)
     .join(' ');
@@ -295,7 +295,11 @@ export async function updatePlayerChanges(client, leagueId, guildId = null) {
         .setColor(0x1e90ff)
         .setTimestamp(new Date());
       const content = positionChangedForTeam ? commishMentions : null;
-      await channel.send({ content: content || undefined, embeds: [embed] }).catch(() => null);
+      await channel.send({
+        content: content || undefined,
+        embeds: [embed],
+        ...(positionChangedForTeam ? {} : { flags: MessageFlags.SuppressNotifications }),
+      }).catch(() => null);
       postedAny = true;
     }
   }

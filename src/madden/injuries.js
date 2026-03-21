@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, MessageFlags } from 'discord.js';
 import { getMessageForWeek } from './madden_utils.js';
 import { appendMaddenStaffLog, postMaddenStaffLog } from '../shared/madden_staff_ops.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
@@ -78,7 +78,7 @@ async function postNoChanges(channel, title, weekLabel, color, body) {
     .addFields({ name: '\u200b', value: body })
     .setColor(color)
     .setTimestamp(new Date());
-  await channel.send({ embeds: [embed] }).catch(() => null);
+  await channel.send({ embeds: [embed], flags: MessageFlags.SuppressNotifications }).catch(() => null);
 }
 
 function formatInjury(p) {
@@ -202,7 +202,7 @@ export async function updateInjuries(client, leagueId, guildId = null) {
         .addFields({ name: '\u200b', value: part.join('\n\n') })
         .setColor(0xdc3545)
         .setTimestamp(new Date());
-      await channel.send({ embeds: [embed] }).catch(() => null);
+      await channel.send({ embeds: [embed], flags: MessageFlags.SuppressNotifications }).catch(() => null);
       postedAny = true;
     }
   }

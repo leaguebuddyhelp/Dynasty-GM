@@ -14,6 +14,8 @@ import {
   formatLearningResource,
 } from '../../shared/madden_learning_resources.js';
 
+export const featureKey = 'ops_full';
+
 const data = new SlashCommandBuilder()
   .setName('gamestrategy')
   .setDescription(coachCommandDescription('gamestrategy'));

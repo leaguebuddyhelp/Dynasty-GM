@@ -21,7 +21,7 @@ function isStaff(member) {
   } catch {
     // ignore and fall back to name check
   }
-  const fallbackNames = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+  const fallbackNames = ['LB Commish', 'LB Co-Commish'];
   return member?.roles?.cache?.some(r => fallbackNames.includes(r.name)) ?? false;
 }
 
@@ -69,10 +69,7 @@ async function execute(interaction) {
         name: 'Billing Support',
         value: [
           '`/pricing`',
-          '`/claim-plan`',
-          '`/viewbilling`',
-          '`/deactivateplan`',
-          '`/attachpaymentref`',
+          'Package upgrades and billing are handled from the LEAGUEbuddy site.',
         ].join('\n'),
       },
     )
@@ -86,20 +83,21 @@ async function execute(interaction) {
       {
         name: 'Start Here',
         value: [
-          '`/help`, `/plan`, `/pricing`',
+          '`/help`, `/pricing`',
           '`/setup` for the next server step',
         ].join('\n'),
       },
       {
         name: 'Free Commands',
         value: [
-          '`/schedule`, `/roster`, `/playersearch`, `/tradevalue`, `/pickvalue`, `/streamlink`',
+          '`/schedule`, `/roster`, `/playersearch`',
         ].join('\n'),
       },
       {
         name: 'Standard Adds',
         value: [
           '`/tradeblock`',
+          '`/streamlink`',
           '`/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`',
         ].join('\n'),
       },

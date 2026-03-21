@@ -11,7 +11,7 @@ import { formatTeamLabelWithEmoji, RECOGNITION_EMOJIS } from '../../shared/madde
 import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 import { getMessageForWeek } from '../madden_utils.js';
 
-export const featureKey = 'recognition';
+export const featureKey = 'ops_light';
 
 function normalizeName(name = '') {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');

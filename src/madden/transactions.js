@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, MessageFlags } from 'discord.js';
 import { getMessageForWeek } from './madden_utils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
@@ -142,7 +142,7 @@ async function postNoChanges(channel, title, weekLabel, color, body) {
     .addFields({ name: '\u200b', value: body })
     .setColor(color)
     .setTimestamp(new Date());
-  await channel.send({ embeds: [embed] }).catch(() => null);
+  await channel.send({ embeds: [embed], flags: MessageFlags.SuppressNotifications }).catch(() => null);
 }
 
 function lastCompletedWeek(snapshot) {
@@ -221,7 +221,7 @@ export async function updateTransactions(client, leagueId, guildId = null) {
         .addFields({ name: '\u200b', value: part.join('\n\n') })
         .setColor(0x007bff)
         .setTimestamp(new Date());
-      await channel.send({ embeds: [embed] }).catch(() => null);
+      await channel.send({ embeds: [embed], flags: MessageFlags.SuppressNotifications }).catch(() => null);
     }
   }
 }

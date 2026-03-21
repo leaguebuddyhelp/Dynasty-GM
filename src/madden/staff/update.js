@@ -927,8 +927,31 @@ const data = new SlashCommandBuilder()
 async function execute(interaction) {
   let weekOverride = null;
   await interaction.deferReply();
+  const progressSteps = [
+    'Validate staff access and league connection',
+    'Sync the latest league data for this server',
+    'Refresh weekly boards and season state',
+    'Post weekly log channels',
+    'Finalize the weekly update',
+  ];
+  const renderProgressEmbed = (stepIndex, detail) => {
+    const lines = progressSteps.map((step, index) => {
+      if (index < stepIndex) return `✅ ${step}`;
+      if (index === stepIndex) return `⏳ ${step}`;
+      return `• ${step}`;
+    });
+    return new EmbedBuilder()
+      .setTitle(brandTitle('Madden Weekly Update'))
+      .setDescription(detail)
+      .addFields({ name: 'Progress', value: lines.join('\n') })
+      .setColor(0xf1c40f);
+  };
+  const updateProgress = async (stepIndex, detail) => {
+    await interaction.editReply({ embeds: [renderProgressEmbed(stepIndex, detail)] }).catch(() => null);
+  };
   try {
     const criticalFailures = [];
+    await updateProgress(0, 'Checking this server, your staff access, and the connected league.');
     const roleMap = loadRoleMapForGuild(interaction.guildId);
     const member = await interaction.guild.members.fetch(interaction.user.id);
     if (!hasStaffRole(member, roleMap)) {
@@ -956,6 +979,7 @@ async function execute(interaction) {
     const connectionStatus = connectionService.getLeagueConnectionStatus(interaction.guildId);
     const hasExportSource = Array.isArray(connectionStatus?.exportSources) && connectionStatus.exportSources.length > 0;
     let summary = null;
+    await updateProgress(1, 'Pulling the latest league snapshot for this server.');
     if (!guildTokens && hasExportSource) {
       const refresh = await connectionService.refreshExportSourceForGuild(interaction.guildId);
       if (!refresh?.ok) {
@@ -1121,6 +1145,7 @@ async function execute(interaction) {
     const inPreseason = phase.inPreseason;
     // Allow pin updates when in regular season or when a week override was provided
     const allowPinnedUpdates = !inPreseason || backfillOnlyAwards;
+    await updateProgress(2, 'Refreshing pins, boards, and week-specific league state.');
 
     // Open/reset scouting at Week 1 of the regular season
     if (!backfillOnlyAwards && stageForWeek === Stage.SEASON && currentWeekValue === 1) {
@@ -1358,6 +1383,7 @@ async function execute(interaction) {
       }
     }
     // Post weekly transactions
+    await updateProgress(3, 'Posting weekly logs and any tier-specific outputs for this server.');
     if (!backfillOnlyAwards) {
       try {
         await updateTransactions(interaction.client, leagueId, interaction.guildId);
@@ -1576,6 +1602,7 @@ async function execute(interaction) {
         value: `Rebuild mode is for fixing Week ${Number(weekOverride)} only. Use it when an older week card, grades, awards, or recap needs to be rebuilt.`,
       });
     }
+    await updateProgress(4, 'Wrapping up the weekly update results.');
     await interaction.editReply({ embeds: [embed] });
 
     if (recapEnabled) {
