@@ -38,7 +38,7 @@ export async function execute(interaction) {
           '',
           'Main setup path:',
           '1. Open the dashboard.',
-          '2. Save your league name.',
+          '2. Save your league name and league password.',
           '3. Connect EA and paste the returned browser URL.',
           '4. Choose your Madden account/persona.',
           '5. Choose your league.',

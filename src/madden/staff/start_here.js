@@ -19,7 +19,7 @@ export async function execute(interaction) {
           '1. Turn on the package: `/activateplan`',
           'If you still need plan info first, check `/pricing`.',
           '2. Open the league dashboard: `/connectleague`',
-          '3. In the dashboard: save the league name, connect EA, choose the Madden account, then choose the league.',
+          '3. In the dashboard: save the league name and league password, connect EA, choose the Madden account, then choose the league.',
           '4. Return to Discord and confirm: `/league-status`',
           '5. Build the category, channels, and first pin pass: `/setup-channels`',
           '6. Create the staff, trade, and coach roles: `/setup-roles`',

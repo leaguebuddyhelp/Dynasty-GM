@@ -46,7 +46,7 @@ export async function execute(interaction) {
           .setColor(0xf39c12)
           .setDescription('No league is connected to this server yet.')
           .addFields(
-            { name: 'Next', value: 'Run `/connectleague`, open the dashboard, save the league name, connect EA, choose your Madden account, then choose your league.', inline: false },
+            { name: 'Next', value: 'Run `/connectleague`, open the dashboard, save the league name and league password, connect EA, choose your Madden account, then choose your league.', inline: false },
           ),
       ],
     });

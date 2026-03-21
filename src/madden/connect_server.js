@@ -1005,6 +1005,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   const authDraft = dashboard.authDraft || null;
   const availableLeagues = Array.isArray(dashboard.availableLeagues) ? dashboard.availableLeagues : [];
   const leagueName = connection?.leagueName || '';
+  const leaguePassword = connection?.leaguePassword || connection?.summary?.leaguePassword || '';
   const leagueExternalId = connection?.leagueExternalId || '';
   const status = connection?.status || 'not_connected';
   const guildName = dashboard.session?.guildName || `Discord Server ${dashboard.session?.guildId || ''}`;
@@ -1065,7 +1066,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   const activeLeagueName = selectedLeague?.leagueName || connection?.leagueName || leagueName || 'No league connected yet';
   const activeLeagueId = connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown';
 
-  const nextStep = !hasLeagueName
+  const nextStep = !(hasLeagueName && leaguePassword)
     ? 1
     : !hasEaConnection
       ? 2
@@ -1091,10 +1092,10 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   const setupChecks = [
     {
       key: 'league_name',
-      done: hasLeagueName,
+      done: Boolean(hasLeagueName && leaguePassword),
       active: nextStep === 1,
-      title: 'League name saved',
-      copy: hasLeagueName ? `Using ${leagueName}.` : 'Save a league name to begin setup.',
+      title: 'League join info saved',
+      copy: hasLeagueName && leaguePassword ? `Using ${leagueName} with the saved league password.` : 'Save your league name and password to begin setup.',
     },
     {
       key: 'ea',
@@ -1138,8 +1139,8 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
 
   const doneCount = setupChecks.filter((item) => item.done).length;
   const remaining = setupChecks.filter((item) => !item.done).map((item) => item.title);
-  const currentTask = !hasLeagueName
-    ? 'Save your league name.'
+  const currentTask = !(hasLeagueName && leaguePassword)
+    ? 'Save your league name and password.'
     : !hasEaConnection
       ? 'Connect EA and save the returned browser URL.'
       : !hasPersona
@@ -1184,7 +1185,8 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           <h2>Setup Overview</h2>
           <p style="color:#4b5563;">This dashboard is already linked to your Discord server. Complete these steps in order.</p>
           <div class="subtle" style="margin-bottom:14px;">
-            <strong>This server is being linked to:</strong> ${escapeHtml(activeLeagueName)} <code>${escapeHtml(activeLeagueId)}</code>
+            <strong>This server is being linked to:</strong> ${escapeHtml(activeLeagueName)} <code>${escapeHtml(activeLeagueId)}</code><br />
+            <strong>Saved join info:</strong> ${leaguePassword ? `Password <code>${escapeHtml(leaguePassword)}</code>` : 'add the league password below'}
           </div>
           <div class="inline-actions">
             <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
@@ -1217,7 +1219,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             <div class="${stepClass(1)}">
               ${stepState(1)}
               <strong>1. Name your league</strong>
-              <span>Save the league name so this server knows what it belongs to.</span>
+              <span>Save the league name and password so this server knows its join info.</span>
             </div>
             <div class="${stepClass(2)}">
               ${stepState(2)}
@@ -1245,15 +1247,15 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
             ${stepChip(1)}
           </div>
-          <div class="step-mobile-summary">${hasLeagueName ? `Saved as ${escapeHtml(leagueName)}.` : 'Save your league name to begin.'}</div>
+          <div class="step-mobile-summary">${hasLeagueName && leaguePassword ? `Saved as ${escapeHtml(leagueName)} with the league password.` : 'Save your league name and password to begin.'}</div>
           <div class="step-body">
-          <p style="color:#4b5563;">Start here. This is the name LEAGUEbuddy will show in Discord and on this dashboard.</p>
+          <p style="color:#4b5563;">Start here. Save the exact league name and league password your commissioners use in Madden so LEAGUEbuddy can reuse them later for onboarding.</p>
           <div class="checklist">
-            <div class="check-item ${hasLeagueName ? 'done' : nextStep === 1 ? 'active' : 'locked'}">
-              <span class="check-icon">${hasLeagueName ? '✓' : nextStep === 1 ? '1' : '•'}</span>
+            <div class="check-item ${hasLeagueName && leaguePassword ? 'done' : nextStep === 1 ? 'active' : 'locked'}">
+              <span class="check-icon">${hasLeagueName && leaguePassword ? '✓' : nextStep === 1 ? '1' : '•'}</span>
               <div class="check-copy">
-                <strong>Save the league record for this Discord server</strong>
-                <span>${hasLeagueName ? `Saved as ${escapeHtml(leagueName)}.` : 'This unlocks the rest of the setup flow.'}</span>
+                <strong>Save the league join info for this Discord server</strong>
+                <span>${hasLeagueName && leaguePassword ? `Saved as ${escapeHtml(leagueName)} with the league password ready for onboarding.` : 'This unlocks the rest of the setup flow.'}</span>
               </div>
             </div>
           </div>
@@ -1262,7 +1264,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
               <h3>What this step does</h3>
               <ul>
                 <li>Ties this dashboard to your Discord server</li>
-                <li>Creates the league record LEAGUEbuddy will use</li>
+                <li>Saves the league name and password LEAGUEbuddy will reuse later</li>
                 <li>Prepares the rest of the setup flow</li>
               </ul>
             </div>
@@ -1278,9 +1280,9 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
             <label for="league_name"><strong>League Name</strong></label><br />
             <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="Ghost Legacy" required />
-            <label for="league_external_id"><strong>League ID</strong> <span style="color:#6b7280;">(optional)</span></label><br />
-            <input id="league_external_id" name="league_external_id" value="${escapeHtml(leagueExternalId)}" placeholder="Use this only if you already know the league ID" />
-            <button type="submit">Save League Name</button>
+            <label for="league_password"><strong>League Password</strong></label><br />
+            <input id="league_password" name="league_password" value="${escapeHtml(leaguePassword)}" placeholder="Enter the Madden league password" required />
+            <button type="submit">Save League Info</button>
           </form>
           </div>
         </section>
@@ -1321,8 +1323,8 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
               <form method="POST" action="/madden/connect/ea-callback-url?token=${encodeURIComponent(token)}">
                 <label for="redirect_url"><strong>Returned Browser URL</strong></label><br />
                 <input id="redirect_url" name="redirect_url" placeholder="http://127.0.0.1/success?code=..." required />
-                <button type="submit"${hasLeagueName ? '' : ' disabled'}>Save EA Login</button>
-                ${hasLeagueName ? '' : '<p class="warning">Save the league name first.</p>'}
+                <button type="submit"${hasLeagueName && leaguePassword ? '' : ' disabled'}>Save EA Login</button>
+                ${hasLeagueName && leaguePassword ? '' : '<p class="warning">Save the league name and password first.</p>'}
               </form>
             </div>
           </div>
@@ -1424,6 +1426,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
               <div>Status: ${escapeHtml(status)}</div>
               <div>Week: ${escapeHtml(snapshot?.summary?.week || connection?.summary?.week || 'unknown')}</div>
               <div>League ID: <code>${escapeHtml(activeLeagueId)}</code></div>
+              ${leaguePassword ? `<div>League Password: <code>${escapeHtml(leaguePassword)}</code></div>` : ''}
             </div>
           </div>
           ${syncInProgress ? `
@@ -1500,6 +1503,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             <div class="summary-item">
               <strong>Connected league</strong>
               <p>${escapeHtml(activeLeagueName)} <code>${escapeHtml(activeLeagueId)}</code></p>
+              ${leaguePassword ? `<p style="margin-top:6px;">League password: <code>${escapeHtml(leaguePassword)}</code></p>` : ''}
             </div>
             <div class="summary-item active">
               <strong>Do this next</strong>
@@ -1643,10 +1647,10 @@ export function startConnectServer() {
       const result = connectionService.saveLeagueConnectionSetup({
         token,
         leagueName: form.get('league_name'),
-        leagueExternalId: form.get('league_external_id'),
+        leaguePassword: form.get('league_password'),
       });
       const location = result.ok
-        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('League record saved.')}`
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('League name and password saved.')}`
         : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
       res.writeHead(302, { location });
       res.end();

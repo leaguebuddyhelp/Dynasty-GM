@@ -11,6 +11,8 @@ import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { listThreadStates, hydrateThreadStateFromLiveThread } from '../../shared/madden_thread_notifier.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { loadGuildMaddenConfig, saveGuildMaddenConfig } from '../../shared/madden_guild_config.js';
+import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
+import connectionRepository from '../../leaguebuddy/repositories/madden_connection_repository.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -197,6 +199,10 @@ async function sendOnboardingDM({ client, guild, user, teamDisplay, snapshot, ch
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
     const seasonNumber = seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? seasonInfo.calendarYear ?? 'Current';
     const weekNumber = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? (Number.isFinite(Number(seasonInfo.weekIndex)) ? Number(seasonInfo.weekIndex) + 1 : null);
+    const billing = getBillingSummary(guild?.id);
+    const connection = connectionRepository.getLeagueConnectionByGuildId(guild?.id);
+    const savedPassword = String(connection?.leaguePassword || connection?.summary?.leaguePassword || '').trim();
+    const showJoinInfo = ['standard', 'premium'].includes(String(billing?.plan || '').toLowerCase()) && savedPassword;
 
     const channelIdFor = (names = []) => {
         for (const name of names) {
@@ -236,7 +242,13 @@ async function sendOnboardingDM({ client, guild, user, teamDisplay, snapshot, ch
             },
             {
                 name: 'League Join Info',
-                value: 'Your commissioner or server admin handles the league name, password, and rules for this server.',
+                value: showJoinInfo
+                    ? [
+                        `League: **${connection?.leagueName || guild?.name || 'This server league'}**`,
+                        `Password: **${savedPassword}**`,
+                        'Your commissioner or server admin still controls rules and league settings.',
+                    ].join('\n')
+                    : 'Your commissioner or server admin handles the league name, password, and rules for this server.',
             },
             ...((channelLink(rulesOpsId) || channelLink(breakdownId) || channelLink(scoutingHubId) || channelLink(tradeSubmitId))
                 ? [{

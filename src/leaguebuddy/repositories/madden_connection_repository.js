@@ -106,6 +106,7 @@ export function upsertLeagueConnection({
   guildId,
   leagueName,
   leagueExternalId,
+  leaguePassword = undefined,
   sourceType,
   status,
   lastImportJobId = null,
@@ -118,6 +119,7 @@ export function upsertLeagueConnection({
   if (existing) {
     existing.leagueName = leagueName;
     existing.leagueExternalId = leagueExternalId;
+    if (leaguePassword !== undefined) existing.leaguePassword = leaguePassword;
     existing.sourceType = sourceType;
     existing.status = status;
     existing.lastImportJobId = lastImportJobId;
@@ -132,6 +134,7 @@ export function upsertLeagueConnection({
     guildId: String(guildId),
     leagueName,
     leagueExternalId,
+    leaguePassword: leaguePassword ?? null,
     sourceType,
     status,
     lastImportJobId,

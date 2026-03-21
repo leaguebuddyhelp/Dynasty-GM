@@ -533,21 +533,26 @@ export function resetLeagueConnectionByToken(token) {
 export function saveLeagueConnectionSetup({
   token,
   leagueName,
-  leagueExternalId,
+  leaguePassword,
 }) {
   const dashboard = getLeagueConnectionDashboard(token);
   if (!dashboard.ok) return dashboard;
 
   const normalizedLeagueName = safeString(leagueName);
+  const normalizedLeaguePassword = safeString(leaguePassword);
   if (!normalizedLeagueName) {
     return { ok: false, code: 'missing_league_name', message: 'League name is required.' };
+  }
+  if (!normalizedLeaguePassword) {
+    return { ok: false, code: 'missing_league_password', message: 'League password is required.' };
   }
 
   const existingSummary = dashboard.connection?.summary || {};
   const connection = connectionRepository.upsertLeagueConnection({
     guildId: dashboard.session.guildId,
     leagueName: normalizedLeagueName,
-    leagueExternalId: safeString(leagueExternalId),
+    leagueExternalId: dashboard.connection?.leagueExternalId || null,
+    leaguePassword: normalizedLeaguePassword,
     sourceType: dashboard.connection?.sourceType || 'dashboard_export',
     status: dashboard.connection?.status || 'pending_exports',
     lastImportJobId: dashboard.connection?.lastImportJobId || null,
@@ -555,7 +560,7 @@ export function saveLeagueConnectionSetup({
     summary: {
       ...existingSummary,
       leagueName: normalizedLeagueName,
-      leagueExternalId: safeString(leagueExternalId),
+      leaguePassword: normalizedLeaguePassword,
     },
   });
 
