@@ -17,7 +17,7 @@ import { updateAwards, gatherWeeklyStats } from '../../../madden/awards.js';
 import { maybePostDraftGrades } from '../../../madden/draft_grades_auto.js';
 import { updateTopPlayers, getLatestReliableRegularSeasonWeekIndex } from '../../../madden/top_players.js';
 import { updateWeeklyGameLog } from '../weekly_game_log.js';
-import { hasStaffRole, loadRoleMap } from './staffUtils.js';
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 import { buildStoryContext, buildWeeklyRecapData } from '../storytelling.js';
 import { queueMaddenContentReview } from '../../shared/madden_content_review_queue.js';
 import { brandText, brandTitle } from '../../shared/madden_branding.js';
@@ -879,7 +879,7 @@ async function execute(interaction) {
   await interaction.deferReply();
   try {
     const criticalFailures = [];
-    const roleMap = loadRoleMap();
+    const roleMap = loadRoleMapForGuild(interaction.guildId);
     const member = await interaction.guild.members.fetch(interaction.user.id);
     if (!hasStaffRole(member, roleMap)) {
       await interaction.editReply({ content: 'Only LB Commish/Co-Commish can use this command.' });

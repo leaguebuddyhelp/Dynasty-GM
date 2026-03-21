@@ -484,7 +484,7 @@ function normalizeGameScores(weekly) {
 export async function updateAwards(client, leagueId, weekOverride = null, options = {}) {
   const interaction = options.interaction || null;
   const isPublic = options.isPublic || false;
-  const guildId = options.guildId || interaction?.guildId || client?.guilds?.cache?.first?.()?.id || null;
+  const guildId = options.guildId || interaction?.guildId || null;
   const snapshot = loadSnapshot(leagueId);
   if (!snapshot && weekOverride == null) {
     console.warn('[awards] Snapshot missing; run weekly update first or supply weekOverride.');

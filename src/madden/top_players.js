@@ -11,7 +11,7 @@ import { applyEmbedThumbnailFromAsset, getNflBrandAsset } from '../shared/madden
 
 const TOP_FILE = path.join(process.cwd(), 'data', 'madden', 'top_players.json');
 const TOP_HISTORY_DIR = path.join(process.cwd(), 'data', 'madden', 'top_players_history');
-const DEFAULT_POST_CHANNEL = '1462629502864851069';
+const DEFAULT_POST_CHANNEL = null;
 const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 const TEAM_EMOJIS = loadJson(TEAM_EMOJIS_FILE, {});
