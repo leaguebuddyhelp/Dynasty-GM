@@ -170,17 +170,20 @@ async function ensureTextChannelInCategory(guild, spec, categoryId = null) {
 }
 
 export async function applyOverwrites(channel, overwrites = []) {
-    if (!channel || !Array.isArray(overwrites) || !overwrites.length) return channel;
+    if (!channel || !Array.isArray(overwrites) || !overwrites.length) {
+        return { channel, ok: true, error: null };
+    }
     try {
         await channel.permissionOverwrites.set(overwrites, 'Madden v2 setup permissions');
+        return { channel, ok: true, error: null };
     } catch (error) {
         console.warn('[setup] permission overwrite skipped', {
             channelId: channel?.id || null,
             channelName: channel?.name || null,
             error: error?.message || error,
         });
+        return { channel, ok: false, error };
     }
-    return channel;
 }
 
 function allow(...perms) {
@@ -618,19 +621,53 @@ export async function execute(interaction) {
 
         // Category
         let rootCategory = null;
+        const overwriteFailures = [];
         for (const cat of DEFAULT_CATEGORY_SPECS) {
             rootCategory = await ensureCategoryWithRetry(guild, cat);
             cfg.compat.maddenChannelMap[cat.key] = rootCategory.id;
         }
         const overwritePlan = buildSetupOverwrites(guild, cfg.compat.maddenRoleMap);
-        await applyOverwrites(rootCategory, overwritePlan.category);
+        const categoryOverwrite = await applyOverwrites(rootCategory, overwritePlan.category);
+        if (!categoryOverwrite.ok) {
+            overwriteFailures.push({
+                name: rootCategory?.name || 'LEAGUEbuddy Madden',
+                error: categoryOverwrite.error?.message || String(categoryOverwrite.error || 'Missing Permissions'),
+            });
+        }
         await pruneUnsupportedSetupChannels(guild, cfg, activeChannelSpecs);
 
         // Channels (created under category when possible)
         for (const spec of activeChannelSpecs) {
             const ch = await ensureTextChannelInCategoryWithRetry(guild, spec, rootCategory?.id || null);
-            await applyOverwrites(ch, overwritePlan.channels[spec.key] || []);
+            const overwriteResult = await applyOverwrites(ch, overwritePlan.channels[spec.key] || []);
+            if (!overwriteResult.ok) {
+                overwriteFailures.push({
+                    name: ch?.name || spec.name,
+                    error: overwriteResult.error?.message || String(overwriteResult.error || 'Missing Permissions'),
+                });
+            }
             cfg.compat.maddenChannelMap[spec.key] = ch.id;
+        }
+
+        if (overwriteFailures.length) {
+            const details = overwriteFailures
+                .slice(0, 10)
+                .map((item) => `- ${item.name}: ${item.error}`)
+                .join('\n');
+            await interaction.editReply({
+                content: [
+                    '**Madden v2 setup failed**',
+                    'LEAGUEbuddy created or found the channels, but Discord rejected the channel permission updates.',
+                    'This prevents `/setup-pins` from pinning messages correctly.',
+                    '',
+                    'Failed channels:',
+                    details,
+                    '',
+                    'Fix the bot role permissions in Discord, then rerun `/setup-channels`.',
+                    'Required bot permissions: Manage Channels, Manage Messages, View Channel, Send Messages, Read Message History.',
+                ].join('\n'),
+            });
+            return;
         }
 
         if (tradeEnabled && cfg.compat.maddenChannelMap['Trades']) {
