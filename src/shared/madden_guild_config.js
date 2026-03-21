@@ -63,19 +63,19 @@ export function upsertGuildPin(guildId, key, messageId) {
 }
 
 export function getGuildChannelMap(guildId) {
-    const cfg = loadGuildMaddenConfigIfComplete(guildId);
+    const cfg = loadGuildMaddenConfig(guildId);
     const map = cfg?.compat?.maddenChannelMap;
     return map && typeof map === 'object' ? map : null;
 }
 
 export function getGuildRoleMap(guildId) {
-    const cfg = loadGuildMaddenConfigIfComplete(guildId);
+    const cfg = loadGuildMaddenConfig(guildId);
     const map = cfg?.compat?.maddenRoleMap;
     return map && typeof map === 'object' ? map : null;
 }
 
 export function getGuildPinsMap(guildId) {
-    const cfg = loadGuildMaddenConfigIfComplete(guildId);
+    const cfg = loadGuildMaddenConfig(guildId);
     const map = cfg?.pins;
     return map && typeof map === 'object' ? map : null;
 }
@@ -100,7 +100,7 @@ export function isPackEnabled(guildId, packId) {
 }
 
 export function getGuildCompatMaps(guildId) {
-    const cfg = loadGuildMaddenConfigIfComplete(guildId);
+    const cfg = loadGuildMaddenConfig(guildId);
     return {
         channelMap: (cfg?.compat?.maddenChannelMap && typeof cfg.compat.maddenChannelMap === 'object') ? cfg.compat.maddenChannelMap : null,
         roleMap: (cfg?.compat?.maddenRoleMap && typeof cfg.compat.maddenRoleMap === 'object') ? cfg.compat.maddenRoleMap : null,
