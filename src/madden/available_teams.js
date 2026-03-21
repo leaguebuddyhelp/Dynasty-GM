@@ -28,6 +28,19 @@ const CONFERENCES = {
   ]),
 };
 
+function isConferenceTeam(conference, teamName = '') {
+  const raw = String(teamName || '').trim();
+  if (!raw) return false;
+  if (conference.has(raw)) return true;
+  const normalized = normalizeKey(raw);
+  for (const candidate of conference) {
+    const normalizedCandidate = normalizeKey(candidate);
+    if (normalized === normalizedCandidate) return true;
+    if (normalized.endsWith(normalizedCandidate)) return true;
+  }
+  return false;
+}
+
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
 }
@@ -253,8 +266,8 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
 
     const byConf = { AFC: [], NFC: [] };
     assignments.forEach(a => {
-      if (CONFERENCES.AFC.has(a.rawTeam)) byConf.AFC.push(a);
-      else if (CONFERENCES.NFC.has(a.rawTeam)) byConf.NFC.push(a);
+      if (isConferenceTeam(CONFERENCES.AFC, a.rawTeam) || isConferenceTeam(CONFERENCES.AFC, a.team)) byConf.AFC.push(a);
+      else if (isConferenceTeam(CONFERENCES.NFC, a.rawTeam) || isConferenceTeam(CONFERENCES.NFC, a.team)) byConf.NFC.push(a);
     });
 
     const seasonLabel = isOffseason
