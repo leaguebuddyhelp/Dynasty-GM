@@ -3,18 +3,39 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/m
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
+const PRESEASON_WEEK_CHOICES = [
+  { name: 'Preseason Week 1', value: 1 },
+  { name: 'Preseason Week 2', value: 2 },
+  { name: 'Preseason Week 3', value: 3 },
+  { name: 'Preseason Week 4', value: 4 },
+];
+const REGULAR_SEASON_WEEK_CHOICES = Array.from({ length: 18 }, (_, index) => ({
+  name: `Regular Season Week ${index + 1}`,
+  value: index + 1,
+}));
+
 export const data = new SlashCommandBuilder()
   .setName('delete-threads')
-  .setDescription('Delete the current preseason, regular-season, or playoff game threads for this server.')
-  .addIntegerOption(o => o.setName('preseason_week').setDescription('Optional preseason week override. Use this during preseason.').setRequired(false))
-  .addIntegerOption(o => o.setName('week').setDescription('Optional regular-season week override. Use this during the regular season.').setRequired(false))
+  .setDescription('Delete preseason, regular-season, or playoff game threads for this server.')
+  .addIntegerOption(o =>
+    o.setName('preseason_week')
+      .setDescription('Optional preseason week to delete.')
+      .setRequired(false)
+      .addChoices(...PRESEASON_WEEK_CHOICES)
+  )
+  .addIntegerOption(o =>
+    o.setName('regular_season_week')
+      .setDescription('Optional regular-season week to delete.')
+      .setRequired(false)
+      .addChoices(...REGULAR_SEASON_WEEK_CHOICES)
+  )
   .addStringOption(o =>
     o.setName('playoff_round')
-      .setDescription('Optional playoff round. Use this instead of week during the postseason.')
+      .setDescription('Optional playoff round to delete.')
       .setRequired(false)
       .addChoices(
-        { name: 'Wildcard', value: 'wildcard' },
-        { name: 'Divisional', value: 'divisional' },
+        { name: 'Wild Card', value: 'wildcard' },
+        { name: 'Divisional Round', value: 'divisional' },
         { name: 'Conference Championship', value: 'conference' },
         { name: 'Super Bowl', value: 'superbowl' },
       )
@@ -32,8 +53,9 @@ export async function execute(interaction) {
   }
   const playoffRound = interaction.options.getString('playoff_round');
   const preseasonWeek = interaction.options.getInteger('preseason_week');
-  if ([Boolean(preseasonWeek), Boolean(interaction.options.getInteger('week')), Boolean(playoffRound)].filter(Boolean).length > 1) {
-    await interaction.editReply({ content: 'Use only one of `preseason_week`, `week`, or `playoff_round` at a time.' });
+  const regularSeasonWeek = interaction.options.getInteger('regular_season_week') ?? interaction.options.getInteger('week');
+  if ([Boolean(preseasonWeek), Boolean(regularSeasonWeek), Boolean(playoffRound)].filter(Boolean).length > 1) {
+    await interaction.editReply({ content: 'Use only one of `preseason_week`, `regular_season_week`, or `playoff_round` at a time.' });
     return;
   }
   const playoffMap = {
@@ -49,7 +71,7 @@ export async function execute(interaction) {
     superbowl: 'Super Bowl',
   };
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-  let week = interaction.options.getInteger('week');
+  let week = regularSeasonWeek;
   if (!week && !playoffRound && !preseasonWeek) {
     try {
       const snap = loadLeagueSnapshot(leagueId);

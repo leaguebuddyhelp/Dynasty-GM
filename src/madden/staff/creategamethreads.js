@@ -15,6 +15,16 @@ import { hasStaffRole as hasGuildStaffRole, loadRoleMapForGuild } from './staffU
 export const featureKey = 'threads';
 const PLAYOFF_RESULTS_FILE = path.join(process.cwd(), 'data', 'madden', 'playoff_results.json');
 const STAFF_ROLE_NAMES = ['LB Commish', 'LB Co-Commish'];
+const PRESEASON_WEEK_CHOICES = [
+  { name: 'Preseason Week 1', value: 1 },
+  { name: 'Preseason Week 2', value: 2 },
+  { name: 'Preseason Week 3', value: 3 },
+  { name: 'Preseason Week 4', value: 4 },
+];
+const REGULAR_SEASON_WEEK_CHOICES = Array.from({ length: 18 }, (_, index) => ({
+  name: `Regular Season Week ${index + 1}`,
+  value: index + 1,
+}));
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
@@ -740,7 +750,7 @@ async function execute(interaction) {
     return;
   }
 
-  const weekInput = interaction.options.getInteger('week');
+  const weekInput = interaction.options.getInteger('regular_season_week') ?? interaction.options.getInteger('week');
   const preseasonWeekInput = interaction.options.getInteger('preseason_week');
   const playoffRound = interaction.options.getString('playoff_round');
   const playoffMap = {
@@ -761,7 +771,7 @@ async function execute(interaction) {
     const snapshot = loadLeagueSnapshot(leagueId);
     const phase = currentPhaseInfo(snapshot);
     if ([Boolean(preseasonWeekInput), Boolean(weekInput), Boolean(playoffRound)].filter(Boolean).length > 1) {
-      await safeEditReply(interaction, { content: 'Use only one of `preseason_week`, `week`, or `playoff_round` at a time.' });
+      await safeEditReply(interaction, { content: 'Use only one of `preseason_week`, `regular_season_week`, or `playoff_round` at a time.' });
       return;
     }
     if (phase.inOffseason && !preseasonWeekInput && !weekInput && !playoffRound) {
@@ -1119,17 +1129,27 @@ async function execute(interaction) {
 
 export const data = new SlashCommandBuilder()
   .setName('create-threads')
-  .setDescription('Create the current preseason, regular-season, or playoff game threads for this server.')
-  .addIntegerOption(o => o.setName('preseason_week').setDescription('Optional preseason week override. Use this during preseason.').setRequired(false))
-  .addIntegerOption(o => o.setName('week').setDescription('Optional regular-season week override. Use this during the regular season.').setRequired(false))
+  .setDescription('Create preseason, regular-season, or playoff game threads for this server.')
+  .addIntegerOption(o =>
+    o.setName('preseason_week')
+      .setDescription('Optional preseason week to create.')
+      .setRequired(false)
+      .addChoices(...PRESEASON_WEEK_CHOICES)
+  )
+  .addIntegerOption(o =>
+    o.setName('regular_season_week')
+      .setDescription('Optional regular-season week to create.')
+      .setRequired(false)
+      .addChoices(...REGULAR_SEASON_WEEK_CHOICES)
+  )
   .addStringOption(o =>
     o.setName('playoff_round')
-      .setDescription('Optional playoff round. Use this instead of week during the postseason.')
+      .setDescription('Optional playoff round to create.')
       .setRequired(false)
       .addChoices(
         { name: 'Wild Card', value: 'wildcard' },
-        { name: 'Divisional', value: 'divisional' },
-        { name: 'Conference', value: 'conference' },
+        { name: 'Divisional Round', value: 'divisional' },
+        { name: 'Conference Championship', value: 'conference' },
         { name: 'Super Bowl', value: 'superbowl' },
       )
   )
