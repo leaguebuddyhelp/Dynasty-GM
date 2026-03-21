@@ -36,33 +36,33 @@ function formatMissingItems(items = []) {
 
 function buildFlowLines() {
   return [
-    '1. Start with `/setup`.',
-    '2. If LEAGUEbuddy still needs your league, `/setup` will send you to `/connectleague` first.',
-    '3. After each step, come back and run `/setup` again.',
-    '4. Keep following the one next step until `/setup` says complete.',
+    '1. Do the one next step below.',
+    '2. Run `/setup` again.',
+    '3. Repeat until setup is complete.',
   ].join('\n');
 }
 
-function buildLaunchLines(tier = 'free') {
-  const base = [
-    '1. Assign coaches to their team roles with `/member assign`.',
-    '2. Have coaches run `/help` to see their commands.',
-    '3. Start the week by running `/create-threads`.',
-    '4. Have coaches play their games for the week.',
-    '5. When the week is over, run `/delete-threads`.',
-    '6. Then run `/weeklyupdate` to post results and advance the weekly content.',
-    '7. Repeat steps 3 through 6 every week.',
+function buildCommissionerLines(tier = 'free') {
+  const lines = [
+    '1. Assign coaches with `/member assign`.',
+    '2. Start the week with `/create-threads`.',
+    '3. End the week with `/delete-threads`.',
+    '4. Run `/weeklyupdate`.',
+    '5. Repeat each week.',
   ];
   if (String(tier).toLowerCase() === 'standard' || String(tier).toLowerCase() === 'premium') {
-    base.splice(1, 0, '2. Use `/member onboard` if you want the DM onboarding pack too.');
-    base[2] = '3. Have coaches run `/help` to see their commands.';
-    base[3] = '4. Start the week by running `/create-threads`.';
-    base[4] = '5. Have coaches play their games for the week.';
-    base[5] = '6. When the week is over, run `/delete-threads`.';
-    base[6] = '7. Then run `/weeklyupdate` to post results and advance the weekly content.';
-    base[7] = '8. Repeat steps 4 through 7 every week.';
+    lines.splice(1, 0, '2. Use `/member onboard` if you want the DM onboarding pack too.');
   }
-  return base.join('\n');
+  return lines.join('\n');
+}
+
+function buildCoachLines() {
+  return [
+    '1. Run `/help`.',
+    '2. Find your game thread.',
+    '3. Play your game.',
+    '4. Repeat each week.',
+  ].join('\n');
 }
 
 function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk }) {
@@ -133,7 +133,7 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
   }
   return {
     title: 'Setup complete',
-    action: 'Setup is complete. Use the "Start The League" steps below for what to do next.',
+    action: 'Setup is complete.',
     details: `League: ${leagueId} • Package: ${status.overlayStatus.tier || billing?.plan || 'free'}`,
   };
 }
@@ -172,29 +172,33 @@ export async function execute(interaction) {
     .setColor(!readiness.hasRequiredPermissions || readiness.hierarchyWarning || status.missingRequiredRoles.length || status.syncNeeded
       ? 0xf1c40f
       : 0x57f287)
-    .setDescription('Run `/setup` first. LEAGUEbuddy will tell you the next step, including `/connectleague` when your league still needs to be linked.')
-    .addFields(
+    .setDescription(setupComplete
+      ? 'Setup is complete. Use the steps below to start your league.'
+      : 'Use `/setup` as your guide. Do the next step below, then come back to `/setup`.');
+
+  if (setupComplete) {
+    embed.addFields(
       {
-        name: 'Current Step',
-        value: decision.title,
+        name: 'Commissioner Next',
+        value: buildCommissionerLines(tier),
       },
       {
-        name: 'Do This Next',
+        name: 'Coaches Next',
+        value: buildCoachLines(),
+      },
+    );
+  } else {
+    embed.addFields(
+      {
+        name: 'Next Step',
         value: decision.action,
       },
       {
-        name: 'Why',
-        value: decision.details,
-      },
-      {
-        name: 'Full Flow',
+        name: 'Repeat',
         value: buildFlowLines(),
       },
-      ...(setupComplete ? [{
-        name: 'Start The League',
-        value: buildLaunchLines(tier),
-      }] : []),
     );
+  }
 
   await interaction.editReply({ embeds: [embed], content: '' });
 }
