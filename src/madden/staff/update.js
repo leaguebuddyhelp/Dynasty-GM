@@ -1179,9 +1179,8 @@ async function execute(interaction) {
       }
     }
 
-    // Stat leaders: reset in preseason/new season, otherwise update
-    if (inPreseason) {
-      // Preseason: keep placeholders (no stat updates)
+    // Offseason/preseason: keep placeholders instead of forcing live board updates.
+    if (inPreseason || inOffseason) {
       try {
         await resetStatLeaders(interaction.client);
       } catch (e) {
@@ -1215,7 +1214,7 @@ async function execute(interaction) {
       console.warn('[madden-weeklyupdate] stat leaders skipped: no eligible update path');
     }
 
-    if (!backfillOnlyAwards && allowPinnedUpdates) {
+    if (!backfillOnlyAwards && allowPinnedUpdates && !inOffseason) {
       try {
         await updateStandings(interaction.client, leagueId);
       } catch (e) {
