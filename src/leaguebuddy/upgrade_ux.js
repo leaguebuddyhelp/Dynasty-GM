@@ -75,10 +75,20 @@ function maybeClientId(value) {
   return trimmed;
 }
 
+function clientIdFromInviteUrl(value) {
+  const direct = maybeUrl(value);
+  if (!direct) return null;
+  try {
+    const parsed = new URL(direct);
+    if (!/discord\.com$/i.test(parsed.hostname)) return null;
+    return maybeClientId(parsed.searchParams.get('client_id'));
+  } catch {
+    return null;
+  }
+}
+
 export function inviteLinkFor() {
-  const direct = maybeUrl(process.env.LB_BOT_INVITE_URL);
-  if (direct) return direct;
-  const clientId = maybeClientId(process.env.CLIENT_ID);
+  const clientId = maybeClientId(process.env.CLIENT_ID) || clientIdFromInviteUrl(process.env.LB_BOT_INVITE_URL);
   if (!clientId) return null;
   const permissions = new PermissionsBitField([
     PermissionsBitField.Flags.ViewChannel,
@@ -143,7 +153,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
     .setColor(0x5865f2)
     .setDescription([
       'Pick a monthly plan below, then use the buy buttons.',
-      'After checkout, invite LEAGUEbuddy to your server and run `/start-here` there.',
+      'After checkout, invite LEAGUEbuddy to your server and run `/setup` there.',
     ].join('\n'))
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
@@ -175,7 +185,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
       '1. Choose Standard or Premium below.',
       '2. Finish monthly checkout.',
       '3. Invite LEAGUEbuddy to your own server.',
-      '4. Run `/start-here` there.',
+      '4. Run `/setup` there.',
     ].join('\n'));
 
   return [pricing, nextStep];
@@ -187,10 +197,10 @@ export function buildPostPaymentEmbed() {
     .setColor(0x57f287)
     .setDescription([
       '1. Invite LEAGUEbuddy to the server you want to activate.',
-      '2. Run `/start-here` in that server.',
+      '2. Run `/setup` in that server.',
       '3. If you are using the manual claim flow, run `/claim-plan` and paste the payment reference from your Stripe receipt email.',
       '4. Run `/plan` to confirm access.',
-      '5. Continue the setup flow from `/start-here`.',
+      '5. Continue the setup flow from `/setup`.',
     ].join('\n'));
 }
 
@@ -289,7 +299,7 @@ export function buildActivationFollowup({ guildId, plan }) {
     '**Customer follow-up**',
     `Plan **${plan}** is now active for guild **${guildId}**.`,
     'Next steps for the commissioner:',
-    '• Run `/start-here`.',
+    '• Run `/setup`.',
     '• Run `/plan` to confirm access.',
     '• Finish the setup flow before using paid features.',
   ].join('\n');
@@ -302,7 +312,7 @@ export function buildClaimInstructions() {
     '2. Invite LEAGUEbuddy to your server.',
     '3. Run `/claim-plan`.',
     '4. Paste either your one-time claim code or the Stripe payment reference from your receipt email.',
-    '5. Run `/start-here`.',
+    '5. Run `/setup`.',
   ].join('\n');
 }
 

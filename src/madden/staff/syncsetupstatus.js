@@ -1,41 +1,16 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
-import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
-import { setSetupCompleted, ensureGuildActivated } from '../../leaguebuddy/guild_access_service.js';
-import { loadGuildMaddenConfigIfComplete } from '../../shared/madden_guild_config.js';
+
+import { execute as setupExecute } from './setup_dashboard.js';
 
 export const data = new SlashCommandBuilder()
     .setName('syncsetupstatus')
-    .setDescription('Admin-only: sync LEAGUEbuddy setupCompleted based on Madden v2 overlay completeness.')
+    .setDescription('Alias for /setup. Opens the main LEAGUEbuddy setup dashboard and syncs setup automatically.')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
 
 export async function execute(interaction) {
-    const guildId = interaction.guildId;
-    if (!guildId) {
-        await interaction.editReply({ content: 'This command can only be used in a server.' });
-        return;
-    }
-
-    const actor = buildActorFromInteraction(interaction);
-
-    // Our strongest available signal for "real" setup: Madden overlay is present and status=complete.
-    const maddenOverlayComplete = !!loadGuildMaddenConfigIfComplete(guildId);
-
-    ensureGuildActivated(guildId, { actor, source: 'command:/syncsetupstatus' });
-    const rec = setSetupCompleted(guildId, maddenOverlayComplete, { actor, source: 'command:/syncsetupstatus' });
-
-    await interaction.editReply({
-        content: [
-            '**Setup status synced**',
-            `Madden overlay: ${maddenOverlayComplete ? '✅ complete' : '❌ incomplete/missing'}`,
-            `LEAGUEbuddy setupCompleted: **${rec.setupCompleted ? 'yes' : 'no'}**`,
-            '',
-            rec.setupCompleted
-                ? 'Next: run `/server-check`.'
-                : 'Next: run `/setup-channels`, then `/setup-pins`, then `/setup-roles`, then rerun `/syncsetupstatus`.',
-        ].join('\n'),
-    });
+    return setupExecute(interaction);
 }
 
-export default { data, execute };
+export default { data, execute, deferOnDispatch };

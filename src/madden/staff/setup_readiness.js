@@ -77,13 +77,13 @@ export function buildSetupReadinessNextSteps(report) {
     return [
       report?.inviteUrl
         ? `Re-invite LEAGUEbuddy with the correct setup permissions: ${report.inviteUrl}`
-        : 'Re-invite LEAGUEbuddy with the correct setup permissions, then run `/setup-check` again.',
-      'Then run `/setup-check` again.',
+        : 'Re-invite LEAGUEbuddy with the correct setup permissions, then run `/setup` again.',
+      'Then run `/setup` again.',
       report?.hierarchyWarning ? 'After that, move the bot role higher in Server Settings > Roles.' : null,
     ].filter(Boolean).join('\n');
   }
   if (report?.hierarchyWarning) {
-    return 'Before `/setup-roles`, move the LEAGUEbuddy role higher in Server Settings > Roles, then rerun `/setup-check`.';
+    return 'Before `/setup-roles`, move the LEAGUEbuddy role higher in Server Settings > Roles, then rerun `/setup`.';
   }
   return 'Bot permissions look ready. Continue with `/connectleague`, then `/setup-channels`.';
 }
