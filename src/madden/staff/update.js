@@ -1651,11 +1651,23 @@ async function execute(interaction) {
       : pulledWeekLabel;
 
     const partialUpdate = statsPartial;
+    const inferredCompletedWeekLabel = (() => {
+      const current = Math.max(0, Number(currentWeekValue || 0));
+      if (phase.inPreseason) {
+        return current > 1 ? `Preseason Week ${current - 1}` : dataWeekLabel;
+      }
+      if (phase.isRegularSeason) {
+        return current > 1 ? `Week ${current - 1}` : dataWeekLabel;
+      }
+      if (phase.inPlayoffs) {
+        if (current <= 19) return 'Week 18';
+        return getMessageForWeek(current - 1, 2, 0);
+      }
+      return dataWeekLabel;
+    })();
     const completedWeekLabel = usedFallbackWeek && dataWeekLabel !== pulledWeekLabel
       ? dataWeekLabel
-      : (phase.isRegularSeason && Number(currentWeekValue || 0) > 1
-        ? `Week ${Math.max(1, Number(currentWeekValue || 1) - 1)}`
-        : dataWeekLabel);
+      : inferredCompletedWeekLabel;
 
     const embed = new EmbedBuilder()
       .setTitle(brandTitle(partialUpdate ? 'Madden Weekly Update Partial' : 'Madden Weekly Update Complete'))
