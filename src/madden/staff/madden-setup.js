@@ -183,19 +183,43 @@ function deny(...perms) {
 
 export function buildSetupOverwrites(guild, roleMap = {}) {
     const everyoneId = guild.roles.everyone.id;
+    const botRoleId = guild.members.me?.roles?.botRole?.id || null;
     const commishId = roleMap['Ghost Legacy Commish'] || null;
     const coCommishId = roleMap['Ghost Legacy Co-Commish'] || null;
     const tradeCommitteeId = roleMap['Trade Committee'] || null;
 
-    const publicReadOnly = [
+    const botAccess = botRoleId ? [{
+        id: botRoleId,
+        allow: allow(
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.UseApplicationCommands,
+            PermissionFlagsBits.AddReactions,
+            PermissionFlagsBits.ManageMessages,
+            PermissionFlagsBits.ManageThreads,
+            PermissionFlagsBits.SendMessagesInThreads,
+            PermissionFlagsBits.CreatePublicThreads,
+            PermissionFlagsBits.CreatePrivateThreads,
+        ),
+        deny: [],
+    }] : [];
+
+    function withBotAccess(overwrites = []) {
+        return [...botAccess, ...overwrites];
+    }
+
+    const publicReadOnly = withBotAccess([
         {
             id: everyoneId,
             allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
             deny: deny(PermissionFlagsBits.SendMessages),
         },
-    ];
+    ]);
 
-    const publicInteractive = [
+    const publicInteractive = withBotAccess([
         {
             id: everyoneId,
             allow: allow(
@@ -209,9 +233,9 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             ),
             deny: [],
         },
-    ];
+    ]);
 
-    const staffOnly = [
+    const staffOnly = withBotAccess([
         {
             id: everyoneId,
             deny: deny(PermissionFlagsBits.ViewChannel),
@@ -239,9 +263,9 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             ),
             deny: [],
         }] : []),
-    ];
+    ]);
 
-    const tradeCommitteeOnly = [
+    const tradeCommitteeOnly = withBotAccess([
         {
             id: everyoneId,
             deny: deny(PermissionFlagsBits.ViewChannel),
@@ -276,7 +300,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             ),
             deny: [],
         }] : []),
-    ];
+    ]);
 
     return {
         category: publicInteractive,
@@ -291,7 +315,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             'Playoff Picture': publicReadOnly,
             'Top 100': publicReadOnly,
             'Yearly Awards': publicReadOnly,
-            tradeSubmit: [
+            tradeSubmit: withBotAccess([
                 {
                     id: everyoneId,
                     allow: allow(
@@ -301,7 +325,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                     ),
                     deny: deny(PermissionFlagsBits.SendMessages),
                 },
-            ],
+            ]),
             'Trade Counts': publicReadOnly,
             Trades: publicReadOnly,
             'Approved trades': publicReadOnly,

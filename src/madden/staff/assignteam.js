@@ -21,6 +21,11 @@ function buildCoachRoleNamesFromSnapshot(snapshot) {
   }).filter(Boolean);
 }
 
+function getLeaguebuddyCoachesRole(guild, roleMap) {
+  const roleId = roleMap['Ghost Legacy'] || roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || null;
+  return roleId ? guild.roles.cache.get(roleId) || null : null;
+}
+
 async function ensureCoachRole(interaction, roleName) {
   let role = interaction.guild.roles.cache.find((item) => item.name === roleName) || null;
   if (!role) {
@@ -138,6 +143,10 @@ export async function execute(interaction) {
   try {
     await guildMember.roles.add(r1);
     if (r2) await guildMember.roles.add(r2);
+    const coachGroupRole = getLeaguebuddyCoachesRole(interaction.guild, roleMap);
+    if (coachGroupRole && [/ coach$/i.test(r1.name), / coach$/i.test(r2?.name || '')].some(Boolean)) {
+      await guildMember.roles.add(coachGroupRole).catch(() => null);
+    }
     for (const role of [r1, r2].filter(Boolean)) {
       if (!/ coach$/i.test(role.name)) continue;
       const teamName = role.name.replace(/ coach$/i, '').trim();

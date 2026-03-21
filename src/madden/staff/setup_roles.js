@@ -70,6 +70,10 @@ export async function execute(interaction) {
       cfg.compat.maddenRoleMap['LB Trade Committee'] = role.id;
       cfg.compat.maddenRoleMap['LEAGUEbuddy Trade Committee'] = role.id;
     }
+    if (spec.key === 'Ghost Legacy') {
+      cfg.compat.maddenRoleMap['LEAGUEbuddy Coaches'] = role.id;
+      cfg.compat.maddenRoleMap['LB Coaches'] = role.id;
+    }
   }
 
   const leagueId = getLeagueForGuild(guild.id);

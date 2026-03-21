@@ -1,6 +1,7 @@
 export const DEFAULT_ROLE_SPECS = [
   { key: 'Ghost Legacy Commish', name: 'LB Commish', color: 0x5865F2, hoist: true },
   { key: 'Ghost Legacy Co-Commish', name: 'LB Co-Commish', color: 0x57F287, hoist: true },
+  { key: 'Ghost Legacy', name: 'LEAGUEbuddy Coaches', color: 0xFEE75C, hoist: false, mentionable: true },
 ];
 
 export const TRADE_ROLE_SPECS = [
@@ -93,7 +94,9 @@ async function createRoleOnce(guild, spec) {
 
   const role = await guild.roles.create({
     name: spec.name,
-    mentionable: false,
+    mentionable: spec.mentionable === true,
+    hoist: spec.hoist === true,
+    color: spec.color ?? undefined,
     reason: 'Madden v2 setup',
   });
   return { role, source: 'create_response' };

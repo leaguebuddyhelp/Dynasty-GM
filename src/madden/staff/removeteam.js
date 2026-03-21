@@ -38,6 +38,11 @@ function hasAnyCoachRole(member, roleMap) {
   return ids.some((id) => member.roles.cache.has(id));
 }
 
+function getLeaguebuddyCoachesRole(guild, roleMap) {
+  const roleId = roleMap['Ghost Legacy'] || roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || null;
+  return roleId ? guild.roles.cache.get(roleId) || null : null;
+}
+
 function roleNamePriority(name = '') {
   if (name === 'LEAGUEbuddy Trade Committee') return 100;
   if (ASSIGNABLE.includes(name)) return 90;
@@ -136,6 +141,10 @@ export async function execute(interaction) {
     const removedCoachRole = [/ coach$/i.test(r1.name), / coach$/i.test(r2?.name || '')].some(Boolean);
     let systemsResetMessage = null;
     if (removedCoachRole && refreshedMember && !hasAnyCoachRole(refreshedMember, roleMap)) {
+      const coachGroupRole = getLeaguebuddyCoachesRole(interaction.guild, roleMap);
+      if (coachGroupRole && refreshedMember.roles.cache.has(coachGroupRole.id)) {
+        await refreshedMember.roles.remove(coachGroupRole).catch(() => null);
+      }
       if (isProtectedCoachTarget(target)) {
         systemsResetMessage = ' Note: coach systems reset was skipped because this user is protected for testing.';
       } else {

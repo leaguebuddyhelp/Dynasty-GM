@@ -68,23 +68,35 @@ function maybeUrl(value) {
   }
 }
 
+function maybeClientId(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return null;
+  if (/^(YOUR_|OFFICIAL_|REPLACE_ME|PASTE_)/i.test(trimmed)) return null;
+  return trimmed;
+}
+
 export function inviteLinkFor() {
   const direct = maybeUrl(process.env.LB_BOT_INVITE_URL);
   if (direct) return direct;
-  const clientId = maybeUrl(process.env.CLIENT_ID);
+  const clientId = maybeClientId(process.env.CLIENT_ID);
   if (!clientId) return null;
   const permissions = new PermissionsBitField([
     PermissionsBitField.Flags.ViewChannel,
     PermissionsBitField.Flags.SendMessages,
-    PermissionsBitField.Flags.ManageChannels,
-    PermissionsBitField.Flags.ManageRoles,
-    PermissionsBitField.Flags.ManageThreads,
-    PermissionsBitField.Flags.MentionEveryone,
     PermissionsBitField.Flags.EmbedLinks,
     PermissionsBitField.Flags.AttachFiles,
     PermissionsBitField.Flags.ReadMessageHistory,
-    PermissionsBitField.Flags.UseExternalEmojis,
+    PermissionsBitField.Flags.UseApplicationCommands,
+    PermissionsBitField.Flags.ManageChannels,
+    PermissionsBitField.Flags.ManageRoles,
+    PermissionsBitField.Flags.ManageMessages,
+    PermissionsBitField.Flags.ManageThreads,
+    PermissionsBitField.Flags.SendMessagesInThreads,
+    PermissionsBitField.Flags.CreatePublicThreads,
+    PermissionsBitField.Flags.CreatePrivateThreads,
     PermissionsBitField.Flags.AddReactions,
+    PermissionsBitField.Flags.UseExternalEmojis,
+    PermissionsBitField.Flags.MentionEveryone,
   ]).bitfield.toString();
   const scopes = encodeURIComponent('bot applications.commands');
   return `https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=${scopes}&permissions=${permissions}`;

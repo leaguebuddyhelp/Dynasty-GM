@@ -1391,7 +1391,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           </div>
           <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
             <label for="league_name"><strong>League Name</strong></label><br />
-            <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="Ghost Legacy" required />
+            <input id="league_name" name="league_name" value="${escapeHtml(leagueName)}" placeholder="My Madden League" required />
             <label for="league_password"><strong>League Password</strong> <span style="color:#6b7280;">(optional)</span></label><br />
             <input id="league_password" name="league_password" value="${escapeHtml(leaguePassword)}" placeholder="Only saved for onboarding later" />
             <div class="subtle" style="margin-top:10px;">

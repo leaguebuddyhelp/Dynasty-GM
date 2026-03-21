@@ -94,6 +94,11 @@ async function ensureCoachRole(interaction, roleName) {
     return role;
 }
 
+function getLeaguebuddyCoachesRole(guild, roleMap) {
+    const roleId = roleMap['Ghost Legacy'] || roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || null;
+    return roleId ? guild.roles.cache.get(roleId) || null : null;
+}
+
 function resolveSnapshotTeamByName(snapshot, teamName) {
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
     const target = normalizeKey(teamName);
@@ -632,6 +637,10 @@ export async function execute(interaction) {
 
     try {
         await guildMember.roles.add(coachRole);
+        const coachGroupRole = getLeaguebuddyCoachesRole(interaction.guild, roleMap);
+        if (coachGroupRole) {
+            await guildMember.roles.add(coachGroupRole).catch(() => null);
+        }
     } catch (err) {
         await interaction.editReply({ content: `Failed to assign role "${coachRole.name}": ${err?.message || err}` });
         return;
