@@ -47,18 +47,18 @@ function buildLaunchLines(tier = 'free') {
   const base = [
     '1. Assign coaches to their team roles with `/member assign`.',
     '2. Have coaches run `/help` to see their commands.',
-    '3. Run `/create-threads` to open the current week.',
+    '3. Run `/create-threads` at the start of the week and `/delete-threads` when the week is done.',
     '4. Play the games.',
     '5. Run `/weeklyupdate` when the week is over.',
-    '6. Repeat `/create-threads` -> games -> `/weeklyupdate` every week.',
+    '6. Repeat `/create-threads` -> games -> `/delete-threads` -> `/weeklyupdate` every week.',
   ];
   if (String(tier).toLowerCase() === 'standard' || String(tier).toLowerCase() === 'premium') {
     base.splice(1, 0, '2. Use `/member onboard` if you want the DM onboarding pack too.');
     base[2] = '3. Have coaches run `/help` to see their commands.';
-    base[3] = '4. Run `/create-threads` to open the current week.';
+    base[3] = '4. Run `/create-threads` at the start of the week and `/delete-threads` when the week is done.';
     base[4] = '5. Play the games.';
     base[5] = '6. Run `/weeklyupdate` when the week is over.';
-    base[6] = '7. Repeat `/create-threads` -> games -> `/weeklyupdate` every week.';
+    base[6] = '7. Repeat `/create-threads` -> games -> `/delete-threads` -> `/weeklyupdate` every week.';
   }
   return base.join('\n');
 }

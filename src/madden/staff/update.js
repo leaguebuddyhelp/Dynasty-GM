@@ -29,6 +29,7 @@ import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getCoachAssignmentMap, setCoachAssignment } from '../../shared/madden_coach_assignments.js';
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
+import { loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 
 export const featureKey = 'core';
 
@@ -1339,12 +1340,18 @@ async function execute(interaction) {
     }
     // Draft grades auto-post (after draft recap)
     // Skip automatic draft grades; post only manually if needed
+    const guildTier = String(loadGuildMaddenConfig(interaction.guildId)?.license?.tier || 'free').toLowerCase();
+    const top100Included = guildTier === 'standard' || guildTier === 'premium';
+    const yearlyAwardsIncluded = guildTier === 'standard' || guildTier === 'premium';
+
     // Weekly Top 30 log + running Top 100 (use current formula even during backfill)
     const reliableTopPlayersWeekIndex = getLatestReliableRegularSeasonWeekIndex(snap, Number(targetWeekIdx));
     const topPlayersWeekValue = reliableTopPlayersWeekIndex != null
       ? reliableTopPlayersWeekIndex + 1
       : Number(effectiveCurrentWeekUsed || currentWeekValue || 0);
-    const allowTopPlayers = !inOffseason && !inPreseason && topPlayersWeekValue > 0;
+    const channelMap = loadMaddenChannelMap(interaction.guildId);
+    const top100ChannelId = channelMap['Top 100'] || null;
+    const allowTopPlayers = top100Included && top100ChannelId && !inOffseason && !inPreseason && topPlayersWeekValue > 0;
     if (allowTopPlayers) {
       // If user passed a specific week, clear old history so Top100 reflects that week only
       if (weekOverride && leagueId) {
@@ -1359,12 +1366,14 @@ async function execute(interaction) {
       try {
         await updateTopPlayers(interaction.client, leagueId, snap, topPlayersWeekValue, {
           isWildcard,
-          postChannelId: '1462629502864851069'
+          postChannelId: top100ChannelId,
         });
       } catch (e) {
         criticalFailures.push('Top players');
         console.warn('[madden-weeklyupdate] top players update skipped:', e?.message || e);
       }
+    } else if (!top100Included || !top100ChannelId) {
+      console.warn('[madden-weeklyupdate] top players skipped: not included in this package');
     } else if (statsPartial) {
       console.warn('[madden-weeklyupdate] top players skipped: no reliable week available for fallback');
     }
@@ -1389,8 +1398,8 @@ async function execute(interaction) {
             (!inOffseason && !inPreseason && seasonInfo.isWeeklyAwardsPeriodActive !== false && effectiveCurrentWeekUsed && effectiveCurrentWeekUsed <= 23)
           )
         );
-      if (canPostAwards) {
-        await updateAwards(interaction.client, leagueId, awardsWeekToPost);
+      if (canPostAwards && yearlyAwardsIncluded) {
+        await updateAwards(interaction.client, leagueId, awardsWeekToPost, { guildId: interaction.guildId });
         if (forceAwardsOnce) {
           if (weeklyUpdateOverrides[leagueId]) {
             delete weeklyUpdateOverrides[leagueId].forceAwardsOnce;
@@ -1399,6 +1408,8 @@ async function execute(interaction) {
           }
           console.log('[madden-weeklyupdate] consumed one-time awards override', { leagueId, week: awardsWeekToPost });
         }
+      } else if (!yearlyAwardsIncluded) {
+        console.warn('[madden-weeklyupdate] awards skipped: not included in this package');
       } else if (statsPartial) {
         if (reliableAwardsWeekIndex != null) {
           console.warn('[madden-weeklyupdate] awards: target week partial; will post latest reliable week', {

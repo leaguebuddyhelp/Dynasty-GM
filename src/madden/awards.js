@@ -484,7 +484,7 @@ function normalizeGameScores(weekly) {
 export async function updateAwards(client, leagueId, weekOverride = null, options = {}) {
   const interaction = options.interaction || null;
   const isPublic = options.isPublic || false;
-  const guildId = interaction?.guildId || client?.guilds?.cache?.first?.()?.id || null;
+  const guildId = options.guildId || interaction?.guildId || client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
   if (!snapshot && weekOverride == null) {
     console.warn('[awards] Snapshot missing; run weekly update first or supply weekOverride.');
@@ -495,7 +495,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   const channelMap = loadChannelMap(guildId);
   const roleMap = loadRoleMap(guildId);
   const emojiMap = loadJson(TEAM_EMOJIS_FILE);
-  const awardsChannelId = channelMap['Awards'];
+  const awardsChannelId = channelMap['Yearly Awards'] || channelMap['Awards'];
   const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId).catch(() => null) : null);
   if (!interaction && !targetChannel?.isTextBased()) {
     console.warn('[awards] Awards channel not text-based or missing.');
