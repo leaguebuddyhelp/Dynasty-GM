@@ -4,24 +4,40 @@ import planRepository from './repositories/guild_plan_repository.js';
 import overlayRepository from './repositories/guild_overlay_repository.js';
 import { getTestingBypassBilling } from './testing_bypass.js';
 
-const REQUIRED_CHANNEL_KEYS = [
+const CORE_REQUIRED_CHANNEL_KEYS = [
   'League Staff',
-  'LG Logs',
-  'Game threads',
-  'Yearly Awards',
+  'Available Teams',
   'Standings',
   'Stat Leaders',
   'Power Rankings',
   'Playoff Picture',
   'Top 100',
-  'rulesOps',
-  'scoutingHub',
-  'breakdown',
+  'Game threads',
+  'Yearly Awards',
 ];
 
-const REQUIRED_ROLE_KEYS = [
+const STANDARD_REQUIRED_CHANNEL_KEYS = [
+  'scoutingHub',
+];
+
+const TRADE_REQUIRED_CHANNEL_KEYS = [
+  'tradeSubmit',
+  'Trade Block',
+  'Trades',
+  'Trade Counts',
+  'Trade Committee',
+  'Approved trades',
+  'Denied trades',
+];
+
+const BASE_REQUIRED_ROLE_KEYS = [
   'Ghost Legacy Commish',
   'Ghost Legacy Co-Commish',
+  'Ghost Legacy',
+];
+
+const TRADE_REQUIRED_ROLE_KEYS = [
+  'Trade Committee',
 ];
 
 function summarizeMappedEntries(mapObj) {
@@ -36,6 +52,24 @@ function summarizeMappedEntries(mapObj) {
 function diffMissingKeys(mapObj, requiredKeys) {
   const map = mapObj && typeof mapObj === 'object' ? mapObj : {};
   return requiredKeys.filter((key) => !map[key]);
+}
+
+function requiredChannelKeysForSetup(overlayConfig) {
+  const tier = String(overlayConfig?.license?.tier || 'free').toLowerCase();
+  const packsEnabled = Array.isArray(overlayConfig?.packsEnabled) ? overlayConfig.packsEnabled : [];
+  return [
+    ...CORE_REQUIRED_CHANNEL_KEYS,
+    ...((tier === 'standard' || tier === 'premium') ? STANDARD_REQUIRED_CHANNEL_KEYS : []),
+    ...(packsEnabled.includes('trades_basic') ? TRADE_REQUIRED_CHANNEL_KEYS : []),
+  ];
+}
+
+function requiredRoleKeysForSetup(overlayConfig) {
+  const packsEnabled = Array.isArray(overlayConfig?.packsEnabled) ? overlayConfig.packsEnabled : [];
+  return [
+    ...BASE_REQUIRED_ROLE_KEYS,
+    ...(packsEnabled.includes('trades_basic') ? TRADE_REQUIRED_ROLE_KEYS : []),
+  ];
 }
 
 function buildFeatureSummary(guildId, packsEnabled = []) {
@@ -91,8 +125,10 @@ export function getSetupStatus(guildId) {
   const syncNeeded = overlayComplete !== setupCompleted;
   const channels = summarizeMappedEntries(channelMap);
   const roles = summarizeMappedEntries(roleMap);
-  const missingRequiredChannels = diffMissingKeys(channelMap, REQUIRED_CHANNEL_KEYS);
-  const missingRequiredRoles = diffMissingKeys(roleMap, REQUIRED_ROLE_KEYS);
+  const requiredChannelKeys = requiredChannelKeysForSetup(overlayConfig);
+  const requiredRoleKeys = requiredRoleKeysForSetup(overlayConfig);
+  const missingRequiredChannels = diffMissingKeys(channelMap, requiredChannelKeys);
+  const missingRequiredRoles = diffMissingKeys(roleMap, requiredRoleKeys);
   const { unlockedFeatures, blockedFeatures } = buildFeatureSummary(guildId, packsEnabled);
 
   return {
@@ -135,6 +171,6 @@ export function getSetupStatus(guildId) {
 
 export default {
   getSetupStatus,
-  REQUIRED_CHANNEL_KEYS,
-  REQUIRED_ROLE_KEYS,
+  requiredChannelKeysForSetup,
+  requiredRoleKeysForSetup,
 };

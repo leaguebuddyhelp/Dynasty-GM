@@ -113,6 +113,9 @@ export async function execute(interaction) {
     coachSummaryText = 'Coach roles skipped because the staff role pass still has failures.';
   }
 
+  if (staffSummary.failed.length === 0) {
+    cfg.status = 'complete';
+  }
   saveGuildMaddenConfig(guild.id, cfg);
 
   await updateProgress('refreshing channel permissions', [

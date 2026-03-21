@@ -750,7 +750,7 @@ export async function execute(interaction) {
             ],
         });
 
-        cfg.status = 'complete';
+        cfg.status = 'incomplete';
         saveGuildMaddenConfig(guild.id, cfg);
     } catch (error) {
         console.error('[setup] failed', { guildId: guild.id, step: currentStep, error: error?.message || error });
