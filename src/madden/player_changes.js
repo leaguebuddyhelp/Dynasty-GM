@@ -4,11 +4,12 @@ import { EmbedBuilder } from 'discord.js';
 import { getMessageForWeek } from './madden_utils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getMaddenDataFilePath, getMaddenLeagueSnapshotPath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 
-const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
+const LEAGUE_DIR = getMaddenLeaguesDir();
 const PREV_DIR = path.join(LEAGUE_DIR, 'previous');
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const PLAYER_CHANGES_FILE = path.join(process.cwd(), 'data', 'madden', 'player_changes.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
+const PLAYER_CHANGES_FILE = getMaddenDataFilePath('player_changes.json');
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
@@ -51,7 +52,7 @@ function buildPlayerMap(snapshot) {
   return { byTeam, players };
 }
 
-const devEmojis = loadJson(path.join(process.cwd(), 'data', 'madden', 'dev_emojis.json')) || {};
+const devEmojis = loadJson(getMaddenDataFilePath('dev_emojis.json')) || {};
 const devMap = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
 
 // Allowlist of attributes to report
@@ -198,7 +199,7 @@ function lastCompletedWeek(snapshot) {
 }
 
 export async function updatePlayerChanges(client, leagueId, guildId = null) {
-  const currPath = path.join(LEAGUE_DIR, `${leagueId}.json`);
+  const currPath = getMaddenLeagueSnapshotPath(leagueId);
   const prevPath = path.join(PREV_DIR, `${leagueId}.json`);
   const curr = loadJson(currPath);
   const prev = loadJson(prevPath);

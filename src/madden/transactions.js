@@ -4,8 +4,9 @@ import { EmbedBuilder } from 'discord.js';
 import { getMessageForWeek } from './madden_utils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getMaddenLeagueSnapshotPath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 
-const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
+const LEAGUE_DIR = getMaddenLeaguesDir();
 const PREV_DIR = path.join(LEAGUE_DIR, 'previous');
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
@@ -155,7 +156,7 @@ function lastCompletedWeek(snapshot) {
 }
 
 export async function updateTransactions(client, leagueId, guildId = null) {
-  const currPath = path.join(LEAGUE_DIR, `${leagueId}.json`);
+  const currPath = getMaddenLeagueSnapshotPath(leagueId);
   const prevPath = path.join(PREV_DIR, `${leagueId}.json`);
   const curr = loadJson(currPath);
   const prev = loadJson(prevPath);
