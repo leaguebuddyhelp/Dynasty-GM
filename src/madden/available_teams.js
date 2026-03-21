@@ -140,14 +140,20 @@ function buildTeamEntries(league, roleMap) {
 function formatAssignments(guild, roles) {
   return roles.map(r => {
     const role = guild.roles.cache.get(r.roleId);
-    if (!role) return { team: r.team, value: 'Open' };
+    if (!role) return { team: r.team, value: 'Open', rawTeam: r.rawTeam || r.team || '' };
     const members = [...role.members.values()];
     // Show coach names without raw mention IDs to avoid ugly formatting
     const names = members.length
       ? members.map(m => m.displayName || m.user?.username || m.user?.tag || m.id).join(', ')
       : 'Open';
-    return { team: r.team, value: names, rawTeam: r.team };
+    return { team: r.team, value: names, rawTeam: r.rawTeam || r.team || '' };
   });
+}
+
+function compareTeamEntries(a, b) {
+  const left = String(a?.rawTeam || a?.team || '').trim();
+  const right = String(b?.rawTeam || b?.team || '').trim();
+  return left.localeCompare(right);
 }
 
 function chunkFields(fields) {
@@ -225,7 +231,7 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
         {
           title: 'AFC',
           items: byConf.AFC
-            .sort((a, b) => a.rawTeam.localeCompare(b.rawTeam))
+            .sort(compareTeamEntries)
             .map((entry) => ({
               label: entry.team,
               meta: entry.value || 'Open',
@@ -235,7 +241,7 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
         {
           title: 'NFC',
           items: byConf.NFC
-            .sort((a, b) => a.rawTeam.localeCompare(b.rawTeam))
+            .sort(compareTeamEntries)
             .map((entry) => ({
               label: entry.team,
               meta: entry.value || 'Open',
