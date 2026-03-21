@@ -12,7 +12,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { loadRoleMap } from '../madden/staff/staffUtils.js';
+import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import {
   autoPickMockDraft,
   buildMockDraftOnClockEmbed,
@@ -401,8 +401,8 @@ function buildSearchModal(sessionId) {
     );
 }
 
-function coachRoleIds() {
-  const roleMap = loadRoleMap();
+function coachRoleIds(guildId = null) {
+  const roleMap = loadRoleMapForGuild(guildId);
   return Object.entries(roleMap)
     .filter(([name, id]) => name.endsWith(' Coach') && id)
     .map(([, id]) => id);
@@ -420,7 +420,7 @@ async function buildCoachInviteOptions(guild, session) {
   }
 
   if (!membersById.size) {
-    const ids = coachRoleIds();
+    const ids = coachRoleIds(guild.id);
     for (const roleId of ids) {
       const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
       if (!role) continue;

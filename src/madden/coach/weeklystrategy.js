@@ -2,7 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { loadRoleMap } from '../staff/staffUtils.js';
+import { loadRoleMapForGuild } from '../staff/staffUtils.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { coachCommandDescription, coachVoiceFooter } from '../../shared/madden_coach_voice.js';
 import {
@@ -144,7 +144,7 @@ function teamMap(snapshot) {
 }
 
 function findCoachTeam(member, snapshot) {
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(member?.guild?.id);
   const names = new Set(
     Object.keys(roleMap)
       .filter((name) => / coach$/i.test(name))

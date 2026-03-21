@@ -166,7 +166,7 @@ export async function execute(interaction) {
   }
 
   const roleMap = loadRoleMap(interaction.guildId);
-  const coachRoleId = roleMap['Ghost Legacy'];
+  const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'] || null;
   const coachRoleMention = coachRoleId ? `<@&${coachRoleId}> ` : '';
   const committeeRoleId = roleMap['Trade Committee']
     || roleMap['Ghost Legacy Trade Committee']
@@ -254,7 +254,7 @@ export async function execute(interaction) {
     pending[tradeId] = { trade };
     writePendingProofs(pending);
 
-    const roleMap = loadRoleMap();
+    const roleMap = loadRoleMap(interaction.guildId);
     const coachA = getCoachRole(roleMap, trade.yourTeam);
     const coachB = getCoachRole(roleMap, trade.otherTeam);
     const tags = [coachA && `<@&${coachA}>`, coachB && `<@&${coachB}>`].filter(Boolean).join(' ');
@@ -272,7 +272,7 @@ export async function execute(interaction) {
       .setColor(0x57F287);
 
     try {
-      const proofChannelId = channelMap['Pending Trades'] || channelMap['Trade Committee'] || null;
+      const proofChannelId = channelMap['Trade Committee'] || channelMap['Pending Trades'] || channelMap['tradeSubmit'] || null;
       const proofChan = proofChannelId
         ? await interaction.client.channels.fetch(proofChannelId).catch(() => null)
         : null;

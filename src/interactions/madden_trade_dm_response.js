@@ -125,7 +125,7 @@ function buildEmbed(trade, tradeId, status, actor) {
 
 async function deletePendingMessage(client, channelMap, trade) {
   if (!trade?.pendingMsgId) return;
-  const pendingId = channelMap['Pending Trades'];
+  const pendingId = channelMap['Trade Committee'] || channelMap['Pending Trades'] || channelMap['tradeSubmit'] || null;
   if (!pendingId) return;
   const channel = await client.channels.fetch(pendingId).catch(() => null);
   if (!channel || !channel.isTextBased()) return;
@@ -221,7 +221,7 @@ export async function execute(interaction) {
   saveActiveTrades(trades);
 
   const embed = buildEmbed(trade, tradeId, 'approved', actor);
-  const committeeId = channelMap['Trade Committee'];
+  const committeeId = channelMap['Trade Committee'] || channelMap['Pending Trades'] || channelMap['tradeSubmit'] || null;
   let committeeMsgId = null;
   if (!committeeId) {
     console.error('[madden_trade_dm_response] No Trade Committee channel configured in channel map.');

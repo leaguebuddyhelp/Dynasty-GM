@@ -1,11 +1,14 @@
 import { ButtonInteraction, EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 
-function loadRoleMap() {
+function loadRoleMap(guildId = null) {
+  const overlay = guildId ? getGuildRoleMap(guildId) : null;
+  if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
 }
 
@@ -49,7 +52,7 @@ export const customId = /^madden_game_complete_/;
 
 export async function execute(interaction) {
   if (!(interaction instanceof ButtonInteraction)) return;
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMap(interaction.guildId);
   const thread = interaction.channel;
   const coachRoleIds = allowedCoachRoleIds(thread?.name || '', roleMap);
   const allowedIds = new Set([
@@ -60,7 +63,7 @@ export async function execute(interaction) {
   const member = await interaction.guild.members.fetch(interaction.user.id);
   const authorized = isStaff(member, roleMap) || member.roles.cache.some(r => allowedIds.has(r.id));
   if (!authorized) {
-    await interaction.reply({ content: 'Only the two coaches for this game or Ghost Legacy Commish/Co-Commish can mark it complete.', ephemeral: true });
+    await interaction.reply({ content: 'Only the two coaches for this game or LB Commish/Co-Commish can mark it complete.', ephemeral: true });
     return;
   }
 

@@ -82,7 +82,7 @@ function loadRoleMap(guildId = null) {
 async function announce(client, roleMap, channelMap, teamName, cleanLabelText, detailText, positionText, rosterId) {
   const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
   const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
-  const tradeChannelId = channelMap['Trade Block'] || channelMap['Pending Trades'] || channelMap['Transaction Log'];
+  const tradeChannelId = channelMap['Trade Block'] || channelMap['tradeSubmit'] || channelMap['Pending Trades'] || null;
   if (!tradeChannelId) return;
   const channel = await client.channels.fetch(tradeChannelId).catch(() => null);
   if (!channel || !channel.isTextBased()) return;
@@ -344,7 +344,7 @@ async function execute(interaction) {
       // try to delete the trade block message if we created one
       try {
         if (removed.messageId) {
-          const tradeChannelId = channelMap['Trade Block'] || channelMap['Pending Trades'] || channelMap['Transaction Log'];
+          const tradeChannelId = channelMap['Trade Block'] || channelMap['tradeSubmit'] || channelMap['Pending Trades'] || null;
           const threadId = removed.threadId;
           const targetChannelId = threadId || tradeChannelId;
           if (targetChannelId) {

@@ -4,7 +4,7 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { deriveTeamNeeds } from './mockdraft.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { loadRoleMap } from '../staff/staffUtils.js';
+import { loadRoleMapForGuild } from '../staff/staffUtils.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
@@ -42,7 +42,7 @@ function normalizeName(name = '') {
 }
 
 function findCoachTeam(member, snapshot) {
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(member?.guild?.id);
   const teamInfos = snapshot?.teams?.leagueTeamInfoList || [];
   const teamCandidates = teamInfos.map((team) => ({
     fullName: getFullTeamName(team, `Team ${team.teamId}`),

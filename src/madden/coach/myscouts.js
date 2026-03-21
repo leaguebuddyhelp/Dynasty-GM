@@ -7,6 +7,7 @@ import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser }
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
+import { getFullTeamName } from '../../shared/madden_team_names.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -14,7 +15,6 @@ const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
 const DEV_EMOJI_PATH = getMaddenDataFilePath('dev_emojis.json');
 const DRAFT_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
-const COACH_MAP_PATH = getDataFilePath('coachRoleMap.json');
 const POINTS_PER_WEEK = 60;
 const REVEAL_ORDER = ['arch', 'ovr', 'dev'];
 const MAX_WEEKLY_POINTS = 120;
@@ -59,18 +59,30 @@ function normalizeTeamName(name = '') {
   return String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function getCoachTeam(userId) {
-  if (!fs.existsSync(COACH_MAP_PATH)) return null;
-  try {
-    const map = JSON.parse(fs.readFileSync(COACH_MAP_PATH, 'utf8'));
-    return map?.[userId] || null;
-  } catch {
-    return null;
+function resolveCoachTeamFromMember(member, snapshot) {
+  const roleNames = new Set(
+    (member?.roles?.cache?.values?.() || [])
+      .map((role) => String(role?.name || '').trim())
+      .filter((name) => / coach$/i.test(name))
+      .map((name) => name.replace(/ coach$/i, '').trim()),
+  );
+  if (!roleNames.size) return null;
+  const teams = snapshot?.teams?.leagueTeamInfoList || [];
+  for (const team of teams) {
+    const fullName = getFullTeamName(team, `Team ${team.teamId}`);
+    const candidates = [fullName, team.displayName, team.nickName, team.cityName, team.abbrName]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean);
+    for (const roleName of roleNames) {
+      const target = normalizeTeamName(roleName);
+      if (candidates.some((value) => normalizeTeamName(value) === target)) return fullName;
+    }
   }
+  return null;
 }
 
-function resolveTeamNeedsForCoach(userId, snapshot) {
-  const teamName = getCoachTeam(userId);
+function resolveTeamNeedsForCoach(member, snapshot) {
+  const teamName = resolveCoachTeamFromMember(member, snapshot);
   if (!teamName) return [];
   const needsByTeam = deriveTeamNeeds(snapshot);
   const target = normalizeTeamName(teamName);
@@ -199,7 +211,7 @@ function normalizeSuggestedScoutStore(value) {
   return [];
 }
 
-function getSuggestedScoutCandidates(userId, userData, classKey, weekKey, snapshot, draftData, playersByClass, perkEnabled = false) {
+function getSuggestedScoutCandidates(member, userId, userData, classKey, weekKey, snapshot, draftData, playersByClass, perkEnabled = false) {
   if (!perkEnabled) return [];
   userData.suggestedScout = userData.suggestedScout || {};
   userData.suggestedScout[classKey] = userData.suggestedScout[classKey] || {};
@@ -215,7 +227,7 @@ function getSuggestedScoutCandidates(userId, userData, classKey, weekKey, snapsh
     return validStored;
   }
 
-  const topNeeds = resolveTeamNeedsForCoach(userId, snapshot).slice(0, 3);
+  const topNeeds = resolveTeamNeedsForCoach(member, snapshot).slice(0, 3);
   const prospects = Object.values(draftData || {});
   const needUsage = new Map();
   const pickedNames = new Set();
@@ -397,7 +409,7 @@ export function updateBoardUiState(userId, classKey, patch = {}, seasonKey) {
   return ui;
 }
 
-function buildPagesForUser(userId, guildId) {
+function buildPagesForUser(userId, guildId, member = null) {
   let leagueId = null;
   try {
     leagueId = requireLeagueIdForGuild(guildId);
@@ -470,6 +482,7 @@ function buildPagesForUser(userId, guildId) {
   const remainingRaw = userData.weeklyPoints[weekKey];
   const remaining = Number.isFinite(remainingRaw) ? Number(remainingRaw) : allowance;
   getSuggestedScoutCandidates(
+    member,
     userId,
     userData,
     resolvedClassKey,
@@ -589,7 +602,7 @@ export async function execute(interaction) {
     try { await interaction.deferReply({ flags: 64 }); } catch (_) { }
   }
   const userId = interaction.user.id;
-  const { pages, error, classKey, activeName } = buildPagesForUser(userId, interaction.guildId);
+  const { pages, error, classKey, activeName } = buildPagesForUser(userId, interaction.guildId, interaction.member);
   if (error) {
     await interaction.editReply({ content: error, ephemeral: true });
     return;

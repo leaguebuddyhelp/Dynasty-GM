@@ -1,6 +1,6 @@
 import { ButtonInteraction, ActionRowBuilder, ButtonBuilder } from 'discord.js';
 import { loadContentQueue, saveContentQueue, countPendingRumorReviews, getRumorPendingPolicy } from '../shared/madden_content_review_queue.js';
-import { hasStaffRole, loadRoleMap } from '../madden/staff/staffUtils.js';
+import { hasStaffRole, loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import { appendMaddenStaffLog, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
 import { queueScheduledRumorMill } from '../shared/madden_staff_ops.js';
 import { recordRumorReviewFeedback } from '../shared/madden_rumor_feedback.js';
@@ -22,7 +22,7 @@ export async function execute(interaction) {
   const [, action, reviewId] = match;
   try { await interaction.deferReply({ flags: 64 }); } catch { return; }
 
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
     await interaction.editReply({ content: 'Only LB Commish or LB Co-Commish can review content.' });
