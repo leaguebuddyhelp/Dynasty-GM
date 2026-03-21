@@ -179,6 +179,16 @@ function chunkLines(lines, maxLen = 900) {
   return chunks;
 }
 
+async function postNoChanges(channel, title, weekLabel, color, body) {
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(weekLabel)
+    .addFields({ name: '\u200b', value: body })
+    .setColor(color)
+    .setTimestamp(new Date());
+  await channel.send({ embeds: [embed] }).catch(() => null);
+}
+
 function lastCompletedWeek(snapshot) {
   const currentWeek = snapshot.currentWeek ?? 0;
   const currentStage = snapshot.stage ?? snapshot.info?.careerHubInfo?.seasonInfo?.seasonWeekType ?? 1;
@@ -244,6 +254,7 @@ export async function updatePlayerChanges(client, leagueId, guildId = null) {
   const last = lastCompletedWeek(curr);
   const weekLabel = getMessageForWeek((last.wk ?? prevWeekIdx) + 1, last.st ?? stageForWeek, offSeasonStage);
   batch.weekLabel = weekLabel;
+  let postedAny = false;
 
   for (const [teamId, players] of Object.entries(currTeamMap)) {
     const lines = [];
@@ -285,7 +296,19 @@ export async function updatePlayerChanges(client, leagueId, guildId = null) {
         .setTimestamp(new Date());
       const content = positionChangedForTeam ? commishMentions : null;
       await channel.send({ content: content || undefined, embeds: [embed] }).catch(() => null);
+      postedAny = true;
     }
+  }
+
+  if (!postedAny) {
+    console.log('[player_changes] No player changes detected.');
+    await postNoChanges(
+      channel,
+      'Player Changes',
+      weekLabel,
+      0x6c757d,
+      'No player position, dev trait, or attribute changes were detected in this update.',
+    );
   }
 
   if (batch.items.length) {

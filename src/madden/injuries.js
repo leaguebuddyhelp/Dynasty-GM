@@ -71,6 +71,16 @@ function chunkLines(lines, maxLen = 3400) {
   return chunks;
 }
 
+async function postNoChanges(channel, title, weekLabel, color, body) {
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(weekLabel)
+    .addFields({ name: '\u200b', value: body })
+    .setColor(color)
+    .setTimestamp(new Date());
+  await channel.send({ embeds: [embed] }).catch(() => null);
+}
+
 function formatInjury(p) {
   const weeks = Number(p.injuryLength) || 0;
   const status = weeks > 0 ? `Out ${weeks} wk${weeks === 1 ? '' : 's'}` : 'Out (length unknown)';
@@ -157,6 +167,7 @@ export async function updateInjuries(client, leagueId, guildId = null) {
   const offSeasonStage = curr.info?.careerHubInfo?.seasonInfo?.offSeasonStage ?? 0;
   const last = lastCompletedWeek(curr);
   const weekLabel = getMessageForWeek((last.wk ?? prevWeekIdx) + 1, last.st ?? stageForWeek, offSeasonStage);
+  let postedAny = false;
 
   for (const [teamId, roster] of Object.entries(currTeams)) {
     const lines = [];
@@ -192,7 +203,19 @@ export async function updateInjuries(client, leagueId, guildId = null) {
         .setColor(0xdc3545)
         .setTimestamp(new Date());
       await channel.send({ embeds: [embed] }).catch(() => null);
+      postedAny = true;
     }
+  }
+
+  if (!postedAny) {
+    console.log('[injuries] No injury changes detected.');
+    await postNoChanges(
+      channel,
+      'Injuries',
+      weekLabel,
+      0x6c757d,
+      'No new injuries or recoveries were detected in this update.',
+    );
   }
 
   if (notableInjuries.length) {

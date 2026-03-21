@@ -135,6 +135,16 @@ function chunkLines(lines, maxLen = 3500) {
   return chunks;
 }
 
+async function postNoChanges(channel, title, weekLabel, color, body) {
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(weekLabel)
+    .addFields({ name: '\u200b', value: body })
+    .setColor(color)
+    .setTimestamp(new Date());
+  await channel.send({ embeds: [embed] }).catch(() => null);
+}
+
 function lastCompletedWeek(snapshot) {
   const currentWeek = snapshot.currentWeek ?? 0;
   const currentStage = snapshot.stage ?? snapshot.info?.careerHubInfo?.seasonInfo?.seasonWeekType ?? 1;
@@ -178,10 +188,6 @@ export async function updateTransactions(client, leagueId, guildId = null) {
 
   const teamNames = teamNameMap(curr);
   const changes = diffTransactions(prev, curr);
-  if (!changes.length) {
-    console.log('[transactions] No roster changes detected.');
-    return;
-  }
   // Use the previous week when labeling, since updates run after advancing
   const prevWeekIdx = Math.max(0, (curr.currentWeek ?? 1) - 1);
   const weekEntry = curr.weeklyStats?.find(w => w.weekIndex === prevWeekIdx);
@@ -190,6 +196,17 @@ export async function updateTransactions(client, leagueId, guildId = null) {
   const offSeasonStage = curr.info?.careerHubInfo?.seasonInfo?.offSeasonStage ?? 0;
   const last = lastCompletedWeek(curr);
   const weekLabel = getMessageForWeek((last.wk ?? prevWeekIdx) + 1, last.st ?? stageForWeek, offSeasonStage);
+  if (!changes.length) {
+    console.log('[transactions] No roster changes detected.');
+    await postNoChanges(
+      channel,
+      'Transactions',
+      weekLabel,
+      0x6c757d,
+      'No roster transactions were detected in this update.',
+    );
+    return;
+  }
 
   for (const change of changes) {
     const teamMeta = teamNames[change.teamId] || {};
