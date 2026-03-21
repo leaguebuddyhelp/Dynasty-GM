@@ -8,7 +8,7 @@ import {
 } from 'discord.js';
 
 import {
-    loadGuildMaddenConfigIfComplete,
+    loadGuildMaddenConfig,
     upsertGuildPin,
 } from '../../shared/madden_guild_config.js';
 import { getLeagueForGuild } from '../madden_config.js';
@@ -336,9 +336,9 @@ function buildPinsProgressEmbed({ step, details = [] }) {
 }
 
 export async function seedAndHydratePins(client, guildId) {
-    const cfg = loadGuildMaddenConfigIfComplete(guildId);
+    const cfg = loadGuildMaddenConfig(guildId);
     if (!cfg) {
-        throw new Error('No completed overlay config found. Run `/setup-channels` first.');
+        throw new Error('No setup config found. Run `/setup-channels` first.');
     }
 
     const channelMap = cfg?.compat?.maddenChannelMap || {};
@@ -429,7 +429,7 @@ export async function seedAndHydratePins(client, guildId) {
     }
 
     for (const job of jobs) {
-        const pinId = loadGuildMaddenConfigIfComplete(guildId)?.pins?.[job.key] || pins[job.key] || null;
+        const pinId = loadGuildMaddenConfig(guildId)?.pins?.[job.key] || pins[job.key] || null;
         let hasPinnedMessage = await hasVerifiedPinnedBoardMessage(client, guildId, channelMap[job.channelKey], pinId);
         if (!hasPinnedMessage) {
             const repaired = await repairPinnedBoardMessage(client, guildId, channelMap[job.channelKey], job.title, job.key);
