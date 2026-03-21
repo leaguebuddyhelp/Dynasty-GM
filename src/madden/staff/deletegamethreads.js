@@ -6,10 +6,10 @@ import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 export const data = new SlashCommandBuilder()
   .setName('delete-threads')
   .setDescription('Delete the current week or playoff game threads for this server.')
-  .addIntegerOption(o => o.setName('week').setDescription('Week number to delete (optional, defaults to current week)').setRequired(false))
+  .addIntegerOption(o => o.setName('week').setDescription('Optional regular-season week override. Leave empty during playoffs.').setRequired(false))
   .addStringOption(o =>
     o.setName('playoff_round')
-      .setDescription('Playoff round (optional)')
+      .setDescription('Optional playoff round. Use this instead of week during the postseason.')
       .setRequired(false)
       .addChoices(
         { name: 'Wildcard', value: 'wildcard' },

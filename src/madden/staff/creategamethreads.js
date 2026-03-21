@@ -1080,10 +1080,10 @@ async function execute(interaction) {
 export const data = new SlashCommandBuilder()
   .setName('create-threads')
   .setDescription('Create the current week or playoff game threads for this server.')
-  .addIntegerOption(o => o.setName('week').setDescription('Regular-season week number (defaults to current)').setRequired(false))
+  .addIntegerOption(o => o.setName('week').setDescription('Optional regular-season week override. Leave empty during playoffs.').setRequired(false))
   .addStringOption(o =>
     o.setName('playoff_round')
-      .setDescription('Playoff round')
+      .setDescription('Optional playoff round. Use this instead of week during the postseason.')
       .setRequired(false)
       .addChoices(
         { name: 'Wild Card', value: 'wildcard' },

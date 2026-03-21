@@ -34,7 +34,7 @@ function scoreAutocompleteChoice(name = '', focused = '') {
 }
 
 function baseRoleBoost(name = '', optionName = 'role1') {
-  if (optionName !== 'role2') return 0;
+  if (optionName !== 'role2' && optionName !== 'extra_role') return 0;
   if (name === 'LEAGUEbuddy Coaches') return 1000;
   if (name === 'LB Coaches') return 950;
   if (name === 'LEAGUEbuddy Trade Committee') return 850;
@@ -162,8 +162,8 @@ export async function execute(interaction) {
     return;
   }
   const target = interaction.options.getUser('user');
-  const roleName1 = interaction.options.getString('role1');
-  const roleName2 = interaction.options.getString('role2');
+  const roleName1 = interaction.options.getString('role') || interaction.options.getString('role1');
+  const roleName2 = interaction.options.getString('extra_role') || interaction.options.getString('role2');
 
   const guildMember = await interaction.guild.members.fetch(target.id).catch(() => null);
   if (!guildMember) {
@@ -247,10 +247,10 @@ export async function autocomplete(interaction) {
   const roleMap = loadRoleMapForGuild(interaction.guildId);
   const focused = interaction.options.getFocused();
   const focusedName = interaction.options.getFocused(true)?.name || 'role1';
-  const selectedRole1 = interaction.options.getString('role1');
+  const selectedRole1 = interaction.options.getString('role') || interaction.options.getString('role1');
   const options = [...roleChoices(roleMap, interaction.guild), ...coachChoicesFromSnapshot(interaction, roleMap)]
     .filter((item, index, arr) => arr.findIndex((other) => normalizeKey(other.name) === normalizeKey(item.name)) === index)
-    .filter((item) => focusedName !== 'role2' || normalizeKey(item.name) !== normalizeKey(selectedRole1))
+    .filter((item) => !['role2', 'extra_role'].includes(focusedName) || normalizeKey(item.name) !== normalizeKey(selectedRole1))
     .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) + baseRoleBoost(item.name, focusedName) }))
     .filter((item) => !focused || item.score > 0)
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))

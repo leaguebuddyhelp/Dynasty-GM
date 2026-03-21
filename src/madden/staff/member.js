@@ -17,17 +17,17 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName('assign')
-      .setDescription('Assign a coach or committee role.')
+      .setDescription('Assign one or two league roles to a user.')
       .addUserOption((o) => o.setName('user').setDescription('User to assign').setRequired(true))
-      .addStringOption((o) => o.setName('role1').setDescription('First role to assign').setRequired(true).setAutocomplete(true))
-      .addStringOption((o) => o.setName('role2').setDescription('Second role to assign').setRequired(false).setAutocomplete(true)))
+      .addStringOption((o) => o.setName('role').setDescription('Role to assign').setRequired(true).setAutocomplete(true))
+      .addStringOption((o) => o.setName('extra_role').setDescription('Optional second role').setRequired(false).setAutocomplete(true)))
   .addSubcommand((subcommand) =>
     subcommand
       .setName('remove')
-      .setDescription('Remove a coach or committee role.')
+      .setDescription('Remove one or two league roles from a user.')
       .addUserOption((o) => o.setName('user').setDescription('User to update').setRequired(true))
-      .addStringOption((o) => o.setName('role1').setDescription('First role to remove').setRequired(true).setAutocomplete(true))
-      .addStringOption((o) => o.setName('role2').setDescription('Second role to remove').setRequired(false).setAutocomplete(true)));
+      .addStringOption((o) => o.setName('role').setDescription('Role to remove').setRequired(true).setAutocomplete(true))
+      .addStringOption((o) => o.setName('extra_role').setDescription('Optional second role').setRequired(false).setAutocomplete(true)));
 
 export async function execute(interaction) {
   const action = interaction.options.getSubcommand();
