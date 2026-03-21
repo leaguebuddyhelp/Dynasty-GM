@@ -135,7 +135,7 @@ async function repairPinnedBoardMessage(client, guildId, channelId, expectedTitl
     try {
         if (!match.pinned) await match.pin();
         upsertGuildPin(guildId, key, match.id);
-        setPinId(key, match.id);
+        setPinId(key, match.id, guildId);
         return match;
     } catch {
         return null;
@@ -337,7 +337,7 @@ export async function seedAndHydratePins(client, guildId) {
         }
 
         upsertGuildPin(guildId, job.key, msg.id);
-        setPinId(job.key, msg.id);
+        setPinId(job.key, msg.id, guildId);
         boardStates[job.key].seeded = true;
     }
 

@@ -215,7 +215,8 @@ async function resolveStatLeadersMessage(channel, pinId) {
   if (pinId) {
     const direct = await channel.messages.fetch(pinId).catch(() => null);
     if (direct) {
-      setPinId('stat_leaders', direct.id);
+      const guildId = channel?.guild?.id || null;
+      setPinId('stat_leaders', direct.id, guildId);
       return direct;
     }
   }
@@ -225,7 +226,8 @@ async function resolveStatLeadersMessage(channel, pinId) {
     (msg.embeds || []).some((embed) => (embed?.title || '').includes('Madden Stat Leaders'))
   );
   if (pinnedMatch) {
-    setPinId('stat_leaders', pinnedMatch.id);
+    const guildId = channel?.guild?.id || null;
+    setPinId('stat_leaders', pinnedMatch.id, guildId);
     return pinnedMatch;
   }
 
@@ -236,7 +238,7 @@ async function resolveStatLeadersMessage(channel, pinId) {
   if (recentMatch) {
     const guildId = channel?.guild?.id || null;
     if (guildId) upsertGuildPin(guildId, 'stat_leaders', recentMatch.id);
-    setPinId('stat_leaders', recentMatch.id);
+    setPinId('stat_leaders', recentMatch.id, guildId);
     return recentMatch;
   }
 
@@ -250,7 +252,7 @@ async function ensureStatLeadersMessage(channel, embed, pinId) {
       await existing.edit({ embeds: [embed], content: null });
       const guildId = channel?.guild?.id || null;
       if (guildId) upsertGuildPin(guildId, 'stat_leaders', existing.id);
-      setPinId('stat_leaders', existing.id);
+      setPinId('stat_leaders', existing.id, guildId);
       return existing;
     } catch (error) {
       console.warn('[stat_leaders] existing message edit failed, replacing', {
@@ -266,7 +268,7 @@ async function ensureStatLeadersMessage(channel, embed, pinId) {
   await created.pin().catch(() => null);
   const guildId = channel?.guild?.id || null;
   if (guildId) upsertGuildPin(guildId, 'stat_leaders', created.id);
-  setPinId('stat_leaders', created.id);
+  setPinId('stat_leaders', created.id, guildId);
   console.log('[stat_leaders] replacement created', { channelId: channel.id, messageId: created.id, oldPinId: pinId || null });
   return created;
 }

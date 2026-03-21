@@ -1886,7 +1886,7 @@ async function postTop100(client, leagueId, list, channelId, meta = {}) {
     const sent = await resolvedChannel.send({ embeds: [embed], components: [row], files });
     if (sent?.id) {
       if (guildId) upsertGuildPin(guildId, 'top100', sent.id);
-      setPinId('top100', sent.id);
+      setPinId('top100', sent.id, guildId);
     }
   } catch (err) {
     console.error('[top_players] Failed to post Top 100:', err);

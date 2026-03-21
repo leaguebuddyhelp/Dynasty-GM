@@ -1,8 +1,8 @@
 import fs from 'fs';
-import path from 'path';
 import { getGuildPinsMap } from '../shared/madden_guild_config.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const PINS_FILE = path.join(process.cwd(), 'data', 'madden', 'pins.json');
+const PINS_FILE = getMaddenDataFilePath('pins.json');
 const STATIC_PINS = {
   available_teams: '1479545575903858791',
   stat_leaders: '1479314025002045676',
@@ -29,13 +29,24 @@ export function getPinId(key, guildId = null) {
   const overlay = guildId ? getGuildPinsMap(guildId) : null;
   if (overlay?.[key]) return overlay[key];
   const pins = loadPins();
+  if (guildId && pins?.guilds?.[String(guildId)]?.[key]) return pins.guilds[String(guildId)][key];
+  if (pins?.global?.[key]) return pins.global[key];
   if (pins[key]) return pins[key];
   return STATIC_PINS[key] || null;
 }
 
-export function setPinId(key, id) {
+export function setPinId(key, id, guildId = null) {
   const pins = loadPins();
-  pins[key] = id;
+  if (!pins.global || typeof pins.global !== 'object') pins.global = {};
+  if (guildId) {
+    if (!pins.guilds || typeof pins.guilds !== 'object') pins.guilds = {};
+    if (!pins.guilds[String(guildId)] || typeof pins.guilds[String(guildId)] !== 'object') {
+      pins.guilds[String(guildId)] = {};
+    }
+    pins.guilds[String(guildId)][key] = id;
+  } else {
+    pins.global[key] = id;
+  }
   savePins(pins);
 }
 

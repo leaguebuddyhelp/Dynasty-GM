@@ -132,5 +132,5 @@ export async function updateTradeCountsEmbed(client, channelMap, counts, { guild
   const msg = await channel.send({ embeds: [embed] });
   try { await msg.pin(); } catch { }
   if (guildId) upsertGuildPin(guildId, 'trade_counts', msg.id);
-  setPinId('trade_counts', msg.id);
+  setPinId('trade_counts', msg.id, guildId);
 }
