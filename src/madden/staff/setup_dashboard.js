@@ -34,64 +34,86 @@ function formatMissingItems(items = []) {
   return items.map((item) => displaySetupItemName(item)).join(', ');
 }
 
-function icon(flag) {
-  return flag ? '✅' : '❌';
-}
-
-function buildStageLines({ leagueId, snapshotOk, status }) {
-  return [
-    `${icon(!!leagueId)} League connected`,
-    `${icon(status.overlayStatus.exists)} Channels setup started`,
-    `${icon(status.missingRequiredChannels.length === 0 && status.overlayStatus.exists)} Channels created`,
-    `${icon(status.overlayStatus.exists)} Pins ready to seed or refresh`,
-    `${icon(status.missingRequiredRoles.length === 0)} Roles created`,
-    `${icon(status.overlayStatus.isComplete)} Final role-based setup complete`,
-    `${icon(!status.syncNeeded && status.setupCompleted)} LEAGUEbuddy access synced`,
-    `${icon(snapshotOk)} League snapshot available`,
-  ].join('\n');
-}
-
-function buildCurrentSummary({ leagueId, snapshotOk, status, billing }) {
-  return [
-    `League: **${leagueId || 'not connected'}**`,
-    `Snapshot: **${snapshotOk ? 'ready' : 'missing'}**`,
-    `Package: **${status.overlayStatus.tier || billing?.plan || 'free'}**`,
-    `Plan: **${billing?.plan || 'free'}**`,
-    `Billing: **${billing?.subscriptionStatus || 'inactive'}**`,
-  ].join('\n');
-}
-
-function buildNextStep({ leagueId, snapshotOk, readiness, status, billingOk }) {
-  if (!readiness.hasRequiredPermissions) {
-    return buildSetupReadinessNextSteps(readiness);
-  }
-  if (readiness.hierarchyWarning) {
-    return [
-      'The invite link is already correct.',
-      'Discord still requires one manual step: move the LEAGUEbuddy role higher in Server Settings > Roles.',
-      'Then rerun `/setup`.',
-    ].join('\n');
-  }
-  if (!leagueId) return 'Run `/connectleague`, finish the dashboard flow, then rerun `/setup`.';
-  if (!snapshotOk) return 'Run `/league-status` and wait for a healthy snapshot, then rerun `/setup`.';
-  if (!status.overlayStatus.exists) return 'Run `/setup-channels` next.';
-  if (status.missingRequiredChannels.length > 0) return 'Run `/setup-channels` again to finish creating the package channels.';
-  if (status.missingRequiredRoles.length > 0) return 'Run `/setup-roles` next to finish the final LEAGUEbuddy role setup.';
-  if (status.syncNeeded || !status.setupCompleted) return 'Setup is ready to finalize. Rerun `/setup` once more if needed, then continue to `/create-threads`.';
-  if (!billingOk && (billing?.plan || 'free') !== 'free') return 'Setup is done. Activate billing or plan access before using paid features.';
-  return 'Setup is complete. Continue with `/create-threads` or your normal weekly workflow.';
-}
-
 function buildFlowLines() {
   return [
-    '1. `/connectleague`',
-    '2. `/league-status`',
-    '3. `/setup-channels`',
-    '4. `/setup-pins`',
-    '5. `/setup-roles`',
-    '6. Rerun `/setup` to confirm everything is synced',
-    '7. `/create-threads`',
+    '1. Run the one command shown below.',
+    '2. Fix only that one thing.',
+    '3. Run `/setup` again.',
+    '4. Repeat until `/setup` says complete.',
   ].join('\n');
+}
+
+function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk }) {
+  if (!readiness.hasRequiredPermissions) {
+    return {
+      title: 'Fix Discord bot permissions',
+      action: 'A server admin needs to fix the LEAGUEbuddy bot role permissions in Discord, then rerun `/setup`.',
+      details: buildSetupReadinessLines(readiness),
+    };
+  }
+  if (readiness.hierarchyWarning) {
+    return {
+      title: 'Move the LEAGUEbuddy role higher',
+      action: 'Move the LEAGUEbuddy role above `Admin` or any protected roles, then rerun `/setup`.',
+      details: readiness.hierarchyWarning,
+    };
+  }
+  if (!leagueId) {
+    return {
+      title: 'Connect the league',
+      action: 'Run `/connectleague`, finish the dashboard flow, then rerun `/setup`.',
+      details: 'LEAGUEbuddy cannot continue until this server is linked to a league.',
+    };
+  }
+  if (!snapshotOk) {
+    return {
+      title: 'Wait for a healthy snapshot',
+      action: 'Run `/league-status`. Once the league snapshot looks healthy, rerun `/setup`.',
+      details: 'Pins and role setup depend on current league data.',
+    };
+  }
+  if (!status.overlayStatus.exists || status.missingRequiredChannels.length > 0) {
+    return {
+      title: 'Create or repair the channels',
+      action: 'Run `/setup-channels`, then rerun `/setup`.',
+      details: status.missingRequiredChannels.length
+        ? `Still missing: ${formatMissingItems(status.missingRequiredChannels)}`
+        : 'The LEAGUEbuddy channel layout has not been created yet.',
+    };
+  }
+  if (!status.channels.mappedKeys.includes('Available Teams') || !status.channels.mappedKeys.includes('Top 100')) {
+    return {
+      title: 'Seed the pins',
+      action: 'Run `/setup-pins`, then rerun `/setup`.',
+      details: 'Pinned boards need to be refreshed after channels are ready.',
+    };
+  }
+  if (status.missingRequiredRoles.length > 0) {
+    return {
+      title: 'Create the final roles',
+      action: 'Run `/setup-roles`, then rerun `/setup`.',
+      details: `Still missing: ${formatMissingItems(status.missingRequiredRoles)}`,
+    };
+  }
+  if (status.syncNeeded || !status.setupCompleted) {
+    return {
+      title: 'Finish setup',
+      action: 'Rerun `/setup` once more to finalize access sync automatically.',
+      details: 'LEAGUEbuddy will mark setup complete during this final pass.',
+    };
+  }
+  if (!billingOk && (billing?.plan || 'free') !== 'free') {
+    return {
+      title: 'Activate paid access',
+      action: 'Setup is complete. Activate billing or plan access before using paid features.',
+      details: `Current billing status: ${billing?.subscriptionStatus || 'inactive'}`,
+    };
+  }
+  return {
+    title: 'Setup complete',
+    action: 'Setup is complete. Run `/create-threads` or continue with your normal weekly workflow.',
+    details: `League: ${leagueId} • Package: ${status.overlayStatus.tier || billing?.plan || 'free'}`,
+  };
 }
 
 async function maybeSyncSetupState(interaction) {
@@ -119,41 +141,32 @@ export async function execute(interaction) {
   const snapshotOk = snapshotExists(leagueId);
   const billing = getBillingSummary(guildId);
   const billingOk = ['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'));
+  const decision = buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk });
 
   const embed = new EmbedBuilder()
     .setTitle('LEAGUEbuddy Setup')
     .setColor(!readiness.hasRequiredPermissions || readiness.hierarchyWarning || status.missingRequiredRoles.length || status.syncNeeded
       ? 0xf1c40f
       : 0x57f287)
-    .setDescription(buildNextStep({ leagueId, snapshotOk, readiness, status, billing, billingOk }))
+    .setDescription('Run `/setup`, do the one next step it shows, then run `/setup` again.')
     .addFields(
       {
-        name: 'Setup Progress',
-        value: buildStageLines({ leagueId, snapshotOk, status }),
+        name: 'Current Step',
+        value: decision.title,
       },
       {
-        name: 'Current',
-        value: buildCurrentSummary({ leagueId, snapshotOk, status, billing }),
+        name: 'Do This Next',
+        value: decision.action,
       },
       {
-        name: 'Permissions And Hierarchy',
-        value: buildSetupReadinessLines(readiness),
+        name: 'Why',
+        value: decision.details,
       },
       {
-        name: 'Main Flow',
+        name: 'Repeat Loop',
         value: buildFlowLines(),
       },
     );
-
-  if (status.missingRequiredChannels.length || status.missingRequiredRoles.length) {
-    embed.addFields({
-      name: 'Missing Final Setup Items',
-      value: [
-        status.missingRequiredChannels.length ? `Channels: ${formatMissingItems(status.missingRequiredChannels)}` : 'Channels: none',
-        status.missingRequiredRoles.length ? `Roles: ${formatMissingItems(status.missingRequiredRoles)}` : 'Roles: none',
-      ].join('\n'),
-    });
-  }
 
   await interaction.editReply({ embeds: [embed], content: '' });
 }
