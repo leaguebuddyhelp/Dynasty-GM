@@ -240,11 +240,57 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         deny: [],
     }] : [];
 
+    const staffRoleAccess = [
+        ...(commishId ? [{
+            id: commishId,
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ManageMessages,
+                PermissionFlagsBits.ManageThreads,
+            ),
+            deny: [],
+        }] : []),
+        ...(coCommishId ? [{
+            id: coCommishId,
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ManageMessages,
+                PermissionFlagsBits.ManageThreads,
+            ),
+            deny: [],
+        }] : []),
+    ];
+
+    const coachGroupAccess = coachGroupId ? [{
+        id: coachGroupId,
+        allow: allow(
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.SendMessagesInThreads,
+            PermissionFlagsBits.CreatePublicThreads,
+            PermissionFlagsBits.UseApplicationCommands,
+        ),
+        deny: [],
+    }] : [];
+
     function withBotAccess(overwrites = []) {
         return [...botAccess, ...overwrites];
     }
 
-    const publicReadOnly = withBotAccess([
+    function withCommonRoleAccess(overwrites = []) {
+        return withBotAccess([
+            ...staffRoleAccess,
+            ...coachGroupAccess,
+            ...overwrites,
+        ]);
+    }
+
+    const publicReadOnly = withCommonRoleAccess([
         {
             id: everyoneId,
             allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
@@ -252,7 +298,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         },
     ]);
 
-    const publicInteractive = withBotAccess([
+    const publicInteractive = withCommonRoleAccess([
         {
             id: everyoneId,
             allow: allow(
@@ -274,28 +320,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
             deny: deny(PermissionFlagsBits.SendMessages),
         },
-        ...(commishId ? [{
-            id: commishId,
-            allow: allow(
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ManageMessages,
-                PermissionFlagsBits.ManageThreads,
-            ),
-            deny: [],
-        }] : []),
-        ...(coCommishId ? [{
-            id: coCommishId,
-            allow: allow(
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ManageMessages,
-                PermissionFlagsBits.ManageThreads,
-            ),
-            deny: [],
-        }] : []),
+        ...staffRoleAccess,
     ]);
 
     const publicInteractiveWithCoachAccess = withBotAccess([
@@ -312,18 +337,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             ),
             deny: [],
         },
-        ...(coachGroupId ? [{
-            id: coachGroupId,
-            allow: allow(
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.SendMessagesInThreads,
-                PermissionFlagsBits.CreatePublicThreads,
-                PermissionFlagsBits.UseApplicationCommands,
-            ),
-            deny: [],
-        }] : []),
+        ...coachGroupAccess,
     ]);
 
     const staffOnly = withBotAccess([
@@ -332,28 +346,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             deny: deny(PermissionFlagsBits.ViewChannel),
             allow: [],
         },
-        ...(commishId ? [{
-            id: commishId,
-            allow: allow(
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ManageMessages,
-                PermissionFlagsBits.ManageThreads,
-            ),
-            deny: [],
-        }] : []),
-        ...(coCommishId ? [{
-            id: coCommishId,
-            allow: allow(
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ManageMessages,
-                PermissionFlagsBits.ManageThreads,
-            ),
-            deny: [],
-        }] : []),
+        ...staffRoleAccess,
     ]);
 
     const tradeCommitteeOnly = withBotAccess([
@@ -362,26 +355,15 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             deny: deny(PermissionFlagsBits.ViewChannel),
             allow: [],
         },
-        ...(commishId ? [{
-            id: commishId,
+        ...staffRoleAccess.map((entry) => ({
+            ...entry,
             allow: allow(
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.ReadMessageHistory,
                 PermissionFlagsBits.SendMessages,
                 PermissionFlagsBits.ManageMessages,
             ),
-            deny: [],
-        }] : []),
-        ...(coCommishId ? [{
-            id: coCommishId,
-            allow: allow(
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ManageMessages,
-            ),
-            deny: [],
-        }] : []),
+        })),
         ...(tradeCommitteeId ? [{
             id: tradeCommitteeId,
             allow: allow(
@@ -397,6 +379,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         category: publicInteractive,
         channels: {
             'League Staff': staffOnly,
+            'Madden League Buddy Announcements': publicReadOnlyWithStaffPosting,
             'LG Logs': staffOnly,
             rulesOps: publicReadOnlyWithStaffPosting,
             'Available Teams': publicReadOnly,
@@ -406,6 +389,9 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             'Playoff Picture': publicReadOnly,
             'Top 100': publicReadOnly,
             'Yearly Awards': publicReadOnly,
+            'Transaction Log': publicReadOnlyWithStaffPosting,
+            'Injuries Log': publicReadOnlyWithStaffPosting,
+            'Player Change Log': publicReadOnlyWithStaffPosting,
             'Game threads': publicInteractiveWithCoachAccess,
             scoutingHub: publicReadOnlyWithStaffPosting,
             breakdown: publicReadOnlyWithStaffPosting,
