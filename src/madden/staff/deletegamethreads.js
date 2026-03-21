@@ -36,6 +36,12 @@ export async function execute(interaction) {
     conference: 21,
     superbowl: 23,
   };
+  const playoffLabels = {
+    wildcard: 'Wild Card',
+    divisional: 'Divisional Round',
+    conference: 'Conference Championship',
+    superbowl: 'Super Bowl',
+  };
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   let week = interaction.options.getInteger('week');
   if (!week && !playoffRound) {
@@ -62,14 +68,16 @@ export async function execute(interaction) {
     const allThreads = new Map([...active.threads, ...archived.threads]);
     let deleted = 0;
     const roundNum = playoffRound ? playoffMap[playoffRound] : null;
-    const match = roundNum ? [`P${roundNum}`, `PO-${playoffRound}`] : [`W${week}`];
+    const match = roundNum ? [`PO-${playoffRound}`] : [`W${week}`];
     for (const [, thread] of allThreads) {
       if (match.some(m => thread.name.includes(m))) {
         await thread.delete('Madden game thread cleanup');
         deleted += 1;
       }
     }
-    await interaction.editReply({ content: `Deleted ${deleted} threads for ${roundNum ? `playoff round ${roundNum}` : `week ${week}`}.` });
+    await interaction.editReply({
+      content: `Deleted ${deleted} threads for ${playoffRound ? playoffLabels[playoffRound] || playoffRound : `Week ${week}`}.`,
+    });
   } catch (err) {
     if (err.code === 50001) {
       await interaction.editReply({ content: 'Missing access to the Game threads channel. Check bot permissions and channel ID.' });
