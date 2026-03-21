@@ -210,11 +210,33 @@ function lastCompletedWeek(snapshot) {
 
 function phaseAwareWeekLabel(curr, prevWeekIdx, last, stageForWeek) {
   const seasonInfo = curr?.info?.careerHubInfo?.seasonInfo || {};
+  const rawWeek = Number(curr?.currentWeek ?? seasonInfo.displayWeek ?? prevWeekIdx + 1) || 0;
   const seasonWeekType = Number(seasonInfo.seasonWeekType ?? curr?.stage ?? stageForWeek ?? 1);
-  if (seasonWeekType === 0) {
-    return `Preseason Week ${Math.max(1, Number(curr?.currentWeek ?? seasonInfo.displayWeek ?? prevWeekIdx + 1) || 1)}`;
-  }
   const offSeasonStage = Number(seasonInfo.offSeasonStage ?? 0) || 0;
+  const weeklyStats = Array.isArray(curr?.weeklyStats) ? curr.weeklyStats : [];
+  const scheduleEntries = Array.isArray(curr?.schedule?.schedules) ? curr.schedule.schedules : [];
+  const currentWeekIndex = rawWeek > 0 ? rawWeek - 1 : null;
+  const hasCurrentStage0Schedule = currentWeekIndex !== null && scheduleEntries.some((entry) =>
+    Number(entry?.weekIndex ?? entry?.week ?? -1) === currentWeekIndex &&
+    Number(entry?.stageIndex ?? entry?.stage ?? -1) === 0
+  );
+  const hasAnyRegularSeasonStats = weeklyStats.some((entry) =>
+    Number(entry?.stage ?? entry?.stageIndex ?? -1) === 1
+  );
+  const isPreseason =
+    seasonWeekType === 0 ||
+    (rawWeek > 0 && rawWeek <= 3 && hasCurrentStage0Schedule && !hasAnyRegularSeasonStats);
+  if (isPreseason) {
+    return `Preseason Week ${Math.max(1, rawWeek || prevWeekIdx + 1)}`;
+  }
+  const isRegularSeason = seasonWeekType === 1 && rawWeek >= 1 && rawWeek <= 18;
+  if (isRegularSeason) {
+    return `Week ${Math.max(1, Number(last?.wk ?? prevWeekIdx) + 1)}`;
+  }
+  const isPlayoffs = seasonWeekType === 2 || rawWeek >= 19;
+  if (isPlayoffs) {
+    return getMessageForWeek(Number(last?.wk ?? prevWeekIdx) + 1, 2, 0);
+  }
   return getMessageForWeek(
     Number(last?.wk ?? prevWeekIdx) + 1,
     last?.st ?? stageForWeek,
