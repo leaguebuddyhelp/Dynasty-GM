@@ -116,7 +116,7 @@ function isStaffNotableInjury(player, type, offSeasonStage = 0) {
 
 function lastCompletedWeek(snapshot) {
   const currentWeek = snapshot.currentWeek ?? 0;
-  const currentStage = snapshot.stage ?? snapshot.info?.careerHubInfo?.seasonInfo?.seasonWeekType ?? 1;
+  const currentStage = snapshot.info?.careerHubInfo?.seasonInfo?.seasonWeekType ?? snapshot.stage ?? 1;
   const targetIdx = Math.max(0, currentWeek - 1);
   const weeks = Array.isArray(snapshot.weeklyStats) ? snapshot.weeklyStats : [];
   let best = null;
@@ -137,7 +137,7 @@ function phaseAwareWeekLabel(curr, prevWeekIdx, last, stageForWeek) {
   const seasonInfo = curr?.info?.careerHubInfo?.seasonInfo || {};
   const seasonWeekType = Number(seasonInfo.seasonWeekType ?? curr?.stage ?? stageForWeek ?? 1);
   if (seasonWeekType === 0) {
-    return `Preseason Week ${Math.max(1, Number(last?.wk ?? prevWeekIdx) + 1)}`;
+    return `Preseason Week ${Math.max(1, Number(curr?.currentWeek ?? seasonInfo.displayWeek ?? prevWeekIdx + 1) || 1)}`;
   }
   const offSeasonStage = Number(seasonInfo.offSeasonStage ?? 0) || 0;
   return getMessageForWeek(
