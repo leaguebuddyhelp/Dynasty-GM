@@ -1,4 +1,10 @@
-import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+
+import {
+  buildSetupReadinessLines,
+  buildSetupReadinessNextSteps,
+  inspectSetupReadiness,
+} from './setup_readiness.js';
 
 export const data = new SlashCommandBuilder()
   .setName('start-here')
@@ -8,6 +14,7 @@ export const data = new SlashCommandBuilder()
 export const deferOnDispatch = { flags: 64 };
 
 export async function execute(interaction) {
+  const readiness = await inspectSetupReadiness(interaction.guild);
   const embed = new EmbedBuilder()
     .setColor(0x1e90ff)
     .setTitle('Start Here')
@@ -28,6 +35,14 @@ export async function execute(interaction) {
           '9. Confirm ready: `/server-check`',
           '10. Open the week: `/create-threads`',
           '11. Keep it moving weekly: `/weeklyupdate`',
+        ].join('\n'),
+      },
+      {
+        name: 'Before `/setup-channels`',
+        value: [
+          buildSetupReadinessLines(readiness),
+          '',
+          buildSetupReadinessNextSteps(readiness),
         ].join('\n'),
       },
       {
@@ -56,7 +71,18 @@ export async function execute(interaction) {
     )
     .setFooter({ text: 'Install entry: invite bot -> /start-here. Main path now begins with /connectleague before the Discord setup flow continues.' });
 
-  await interaction.editReply({ embeds: [embed] });
+  const components = readiness.inviteUrl
+    ? [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setStyle(ButtonStyle.Link)
+            .setLabel('Invite LEAGUEbuddy')
+            .setURL(readiness.inviteUrl),
+        ),
+      ]
+    : [];
+
+  await interaction.editReply({ embeds: [embed], components });
 }
 
 export default { data, execute, deferOnDispatch };

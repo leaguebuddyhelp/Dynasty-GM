@@ -1,5 +1,10 @@
-import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
+import {
+    buildSetupReadinessLines,
+    buildSetupReadinessNextSteps,
+    inspectSetupReadiness,
+} from './setup_readiness.js';
 
 export const data = new SlashCommandBuilder()
     .setName('setup-check')
@@ -13,6 +18,7 @@ export async function execute(interaction) {
     }
 
     const status = getSetupStatus(guildId);
+    const readiness = await inspectSetupReadiness(interaction.guild);
     const setupSummary = status.syncNeeded && status.overlayStatus.isComplete
         ? 'One fix left: run `/syncsetupstatus` so LEAGUEbuddy access matches the completed overlay setup.'
         : [
@@ -50,8 +56,16 @@ export async function execute(interaction) {
                 value: blockedNow,
             },
             {
+                name: 'Bot Setup Readiness',
+                value: buildSetupReadinessLines(readiness),
+            },
+            {
                 name: 'What To Fix Next',
-                value: status.recommendedNextAction,
+                value: [
+                    status.recommendedNextAction,
+                    '',
+                    buildSetupReadinessNextSteps(readiness),
+                ].join('\n'),
             },
             {
                 name: 'Recommended Order',
@@ -78,7 +92,18 @@ export async function execute(interaction) {
         });
     }
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    const components = readiness.inviteUrl
+        ? [
+            new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setStyle(ButtonStyle.Link)
+                    .setLabel('Invite LEAGUEbuddy')
+                    .setURL(readiness.inviteUrl),
+            ),
+        ]
+        : [];
+
+    await interaction.reply({ embeds: [embed], components, ephemeral: true });
 }
 
 export default { data, execute };

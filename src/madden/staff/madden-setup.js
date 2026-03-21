@@ -13,6 +13,7 @@ import {
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getLeagueForGuild } from '../madden_config.js';
 import { loadLeagueSnapshot } from '../madden_data.js';
+import { inspectSetupReadiness } from './setup_readiness.js';
 
 export const data = new SlashCommandBuilder()
     .setName('setup-channels')
@@ -555,19 +556,32 @@ export async function execute(interaction) {
     });
 
     try {
-        const me = guild.members.me || await guild.members.fetchMe().catch(() => null);
-        const perms = me?.permissions;
+        const readiness = await inspectSetupReadiness(guild);
         await guild.roles.fetch().catch(() => null);
         const roleCount = guild.roles.cache.size;
-        if (!perms?.has(PermissionFlagsBits.ManageRoles) || !perms?.has(PermissionFlagsBits.ManageChannels)) {
+        if (!readiness.hasRequiredPermissions) {
             await interaction.editReply({
                 content: [
                     '**Madden v2 setup failed**',
-                    'The bot is missing required Discord permissions.',
-                    `- Manage Roles: ${perms?.has(PermissionFlagsBits.ManageRoles) ? 'yes' : 'no'}`,
-                    `- Manage Channels: ${perms?.has(PermissionFlagsBits.ManageChannels) ? 'yes' : 'no'}`,
-                    'Grant those permissions to the bot role, then run `/setup-channels` again.',
+                    'The bot is missing required Discord permissions before channel setup can start.',
+                    ...readiness.missingPermissions.map((name) => `- ${name}`),
+                    readiness.inviteUrl ? `Re-invite LEAGUEbuddy with the correct permissions: ${readiness.inviteUrl}` : 'Re-invite URL is not configured.',
+                    readiness.hierarchyWarning ? readiness.hierarchyWarning : null,
+                    'After that, run `/setup-check`, then `/setup-channels` again.',
                 ].join('\n'),
+            });
+            return;
+        }
+        if (readiness.hierarchyWarning) {
+            await interaction.editReply({
+                content: [
+                    '**Before You Continue**',
+                    readiness.hierarchyWarning,
+                    '',
+                    readiness.inviteUrl ? `Invite link: ${readiness.inviteUrl}` : null,
+                    'This usually will not block channel creation, but it can block `/setup-roles` later.',
+                    'Move the LEAGUEbuddy role higher in Server Settings > Roles, then rerun `/setup-check` or `/setup-channels`.',
+                ].filter(Boolean).join('\n'),
             });
             return;
         }
