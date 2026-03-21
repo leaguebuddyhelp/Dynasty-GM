@@ -72,11 +72,14 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
   );
   const offSeasonStage = Number(summary.offSeasonStage ?? seasonInfo.offSeasonStage ?? 0) || 0;
   const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && rawStage !== Stage.SEASON;
+  const explicitPreseason = rawStage === Stage.PRESEASON;
 
   let kind = 'regular';
-  if (offSeasonStage > 0 || rawStage === 3 || rawStage === 8 || draftInactive) {
+  if (explicitPreseason) {
+    kind = 'preseason';
+  } else if (offSeasonStage > 0 || rawStage === 3 || rawStage === 8 || draftInactive) {
     kind = 'offseason';
-  } else if (rawStage === Stage.PRESEASON || rawWeek <= 0) {
+  } else if (rawWeek <= 0) {
     kind = 'preseason';
   } else if (rawStage === 2 || rawWeek >= 19) {
     kind = 'playoffs';
@@ -1535,7 +1538,6 @@ async function execute(interaction) {
     };
     const displayWeekLabel = (stage, currentWeek, offSeasonStage = 0, seasonWeekType = stage) => {
       const st = seasonWeekType !== undefined ? seasonWeekType : stage;
-      if (offSeasonStage > 0 && st === Stage.PRESEASON) return `Offseason Stage ${offSeasonStage}`;
       if (currentWeek === null || currentWeek === undefined) return 'unknown';
       const wkIdx = Math.max(0, Number(currentWeek) - 1);
       return weekLabel(st !== undefined ? st : 1, wkIdx, offSeasonStage, st);
