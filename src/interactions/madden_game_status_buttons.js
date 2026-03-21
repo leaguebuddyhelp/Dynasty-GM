@@ -9,6 +9,7 @@ import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecisi
 import { queueRemovalReview, queueImmediateRemedyReview } from '../shared/madden_removal_review.js';
 import { sendCoachReceipt } from '../shared/madden_coach_receipts.js';
 import { consumeRecognitionPerk, hasRecognitionPerk, recordRecognitionGameOutcome } from '../shared/league_recognition.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import {
   STRIKE_LIMIT,
   loadStrikeStore,
@@ -23,7 +24,7 @@ import {
 } from '../shared/madden_strikes.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const COMMISH_ROLE_IDS = ['1460399404241522759', '1460399405436768431']; // Legacy commish roles
+const STAFF_ROLE_NAMES = ['LB Commish', 'LB Co-Commish'];
 const PENDING_FILE = path.join(process.cwd(), 'data', 'madden', 'pending.json');
 const pendingFair = new Map(); // threadId or threadId:complete -> { away: bool, home: bool }
 
@@ -47,7 +48,9 @@ function savePendingFile() {
 
 loadPendingFile();
 
-function loadRoleMap() {
+function loadRoleMap(guildId = null) {
+  const overlay = guildId ? getGuildRoleMap(guildId) : null;
+  if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
 }
 function normalize(name) {
@@ -95,10 +98,32 @@ function coachRoleIds(team, roleMap) {
 }
 
 async function buildCoachMentions(guild, team, roleMap) {
-  const roleIds = coachRoleIds(team, roleMap);
+  const roleIds = await resolveGuildRoleIds(guild, coachRoleIds(team, roleMap));
   if (roleIds.length) return roleIds.map(id => `<@&${id}>`);
   const users = await coachUserIds(guild, team, roleMap);
   return users.map(id => `<@${id}>`);
+}
+
+function uniqueIds(ids = []) {
+  return [...new Set(ids.map((id) => String(id || '').trim()).filter(Boolean))];
+}
+
+async function resolveGuildRoleIds(guild, ids = []) {
+  const resolved = [];
+  for (const id of uniqueIds(ids)) {
+    if (!/^\d{6,}$/.test(id)) continue;
+    const role = guild.roles.cache.get(id) || await guild.roles.fetch(id).catch(() => null);
+    if (role) resolved.push(role.id);
+  }
+  return uniqueIds(resolved);
+}
+
+async function resolveStaffRoleIds(guild, roleMap = {}) {
+  const configured = STAFF_ROLE_NAMES.map((name) => roleMap?.[name]).filter(Boolean);
+  const byName = guild.roles.cache
+    .filter((role) => STAFF_ROLE_NAMES.includes(role.name))
+    .map((role) => role.id);
+  return resolveGuildRoleIds(guild, [...configured, ...byName]);
 }
 
 function rolesFromMessageMentions(thread) {
@@ -247,7 +272,7 @@ async function respond(interaction, payload = {}) {
 export async function execute(interaction) {
   if (!(interaction instanceof ButtonInteraction)) return;
   const [, action, threadId, awayEnc, homeEnc] = interaction.customId.match(customId) || [];
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMap(interaction.guildId);
   try {
     await interaction.deferReply({ flags: 64 });
   } catch (err) {
@@ -271,8 +296,8 @@ export async function execute(interaction) {
     home = homeEnc ? decodeURIComponent(homeEnc) : home;
   }
   console.log('[game_status] thread', { thread: thread.name, away, home, action, user: interaction.user.id });
-  let awayCoachRoles = coachRoleIds(away, roleMap);
-  let homeCoachRoles = coachRoleIds(home, roleMap);
+  let awayCoachRoles = await resolveGuildRoleIds(interaction.guild, coachRoleIds(away, roleMap));
+  let homeCoachRoles = await resolveGuildRoleIds(interaction.guild, coachRoleIds(home, roleMap));
   // Fallback: use first-message mentions if no roles found (helps test threads)
   if (!awayCoachRoles.length || !homeCoachRoles.length) {
     const mentionRoles = rolesFromMessageMentions(thread);
@@ -284,7 +309,7 @@ export async function execute(interaction) {
       if (!awayCoachRoles.length && mentionRoles.length === 1) awayCoachRoles = mentionRoles;
     }
   }
-  const staffRoles = [roleMap['Ghost Legacy Commish'], roleMap['Ghost Legacy Co-Commish'], ...COMMISH_ROLE_IDS].filter(Boolean);
+  const staffRoles = await resolveStaffRoleIds(interaction.guild, roleMap);
   const hasRole = (roles) => roles.some(rid => member.roles.cache.has(rid));
   const isAwayCoach = hasRole(awayCoachRoles);
   const isHomeCoach = hasRole(homeCoachRoles);
@@ -304,7 +329,7 @@ export async function execute(interaction) {
     return;
   }
 
-  const commishMention = Array.from(new Set(COMMISH_ROLE_IDS)).map(id => `<@&${id}>`).join(' ');
+  const commishMention = staffRoles.map((id) => `<@&${id}>`).join(' ');
   const baseEmbed = new EmbedBuilder().setTimestamp(new Date());
 
   // CPU action should be fast and should not rely on potentially slow guild-wide member fetches.

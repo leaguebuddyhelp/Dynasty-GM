@@ -13,6 +13,7 @@ import { hasStaffRole as hasGuildStaffRole, loadRoleMapForGuild } from './staffU
 
 export const featureKey = 'threads';
 const PLAYOFF_RESULTS_FILE = path.join(process.cwd(), 'data', 'madden', 'playoff_results.json');
+const STAFF_ROLE_NAMES = ['LB Commish', 'LB Co-Commish'];
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
@@ -61,6 +62,28 @@ function coachRoleIds(teamName, roleMap) {
   );
 
   return [...new Set(hits.map(h => h.id).filter(Boolean))];
+}
+
+function uniqueIds(ids = []) {
+  return [...new Set(ids.map((id) => String(id || '').trim()).filter(Boolean))];
+}
+
+async function resolveGuildRoleIds(guild, ids = []) {
+  const resolved = [];
+  for (const id of uniqueIds(ids)) {
+    if (!/^\d{6,}$/.test(id)) continue;
+    const role = guild.roles.cache.get(id) || await guild.roles.fetch(id).catch(() => null);
+    if (role) resolved.push(role.id);
+  }
+  return uniqueIds(resolved);
+}
+
+async function resolveStaffRoleIds(guild, roleMap = {}) {
+  const configured = STAFF_ROLE_NAMES.map((name) => roleMap?.[name]).filter(Boolean);
+  const byName = guild.roles.cache
+    .filter((role) => STAFF_ROLE_NAMES.includes(role.name))
+    .map((role) => role.id);
+  return resolveGuildRoleIds(guild, [...configured, ...byName]);
 }
 
 function normalizeName(name) {
@@ -200,11 +223,6 @@ function teamMentions(game, teams, roleMap) {
       console.warn('[creategamethreads] Missing coach role for team:', n);
     }
   }
-  // Always tag commish/co-commish if available
-  const commishIds = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish']
-    .map(name => roleMap?.[name])
-    .filter(Boolean);
-  ids.push(...commishIds);
   const text = ids.length ? ids.map(id => `<@&${id}>`).join(' ') : '';
   return { text, ids };
 }
@@ -855,12 +873,13 @@ async function execute(interaction) {
           autoArchiveDuration: 10080, // 7 days
           reason: `Game thread for ${weekLabel}`,
         });
-        const { text: mentionTextRaw, ids: mentionIdsRaw } = teamMentions(game, teams, roleMap);
-        const commishIds = ['1460399404241522759', '1460399405436768431'].filter(Boolean);
-        const mentionIds = [...new Set([...(mentionIdsRaw || []), ...commishIds].filter(Boolean))];
+        const { ids: mentionIdsRaw } = teamMentions(game, teams, roleMap);
+        const teamMentionIds = await resolveGuildRoleIds(interaction.guild, mentionIdsRaw || []);
+        const commishIds = await resolveStaffRoleIds(interaction.guild, roleMap);
+        const mentionIds = uniqueIds([...(teamMentionIds || []), ...commishIds]);
         const mentionText = mentionIds.length
           ? Array.from(new Set(mentionIds.map(id => `<@&${id}>`))).join(' ')
-          : (mentionTextRaw || '').trim();
+          : '';
         const cleanName = (name) => (name || '').replace(/\bcoach\b/ig, '').trim();
         const short = (name) => {
           const cleaned = cleanName(name);
@@ -913,9 +932,12 @@ async function execute(interaction) {
           allowedMentions: mentionIds?.length ? { roles: mentionIds, parse: [] } : { parse: ['roles'] },
         });
         try {
+          const awayRoleIds = await resolveGuildRoleIds(interaction.guild, coachRoleIds(teams[game.awayTeamId], roleMap));
+          const homeRoleIds = await resolveGuildRoleIds(interaction.guild, coachRoleIds(teams[game.homeTeamId], roleMap));
           registerThread(thread.id, {
             createdAt: thread.createdTimestamp,
             mention: mentionText || '',
+            staffRoleIds: commishIds,
             leagueId,
             seasonKey: `year_${snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear()}`,
             stageIndex: Number.isFinite(Number(game.stageIndex ?? game.stage)) ? Number(game.stageIndex ?? game.stage) : null,
@@ -926,8 +948,8 @@ async function execute(interaction) {
             homeTeamId: game.homeTeamId || null,
             awayTeam: teams[game.awayTeamId] || null,
             homeTeam: teams[game.homeTeamId] || null,
-            awayRoleIds: coachRoleIds(teams[game.awayTeamId], roleMap),
-            homeRoleIds: coachRoleIds(teams[game.homeTeamId], roleMap),
+            awayRoleIds,
+            homeRoleIds,
           });
         } catch (e) { console.warn('[madden-creategamethreads] registerThread failed', e?.message || e); }
         created += 1;

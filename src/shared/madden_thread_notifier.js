@@ -14,7 +14,6 @@ const TWELVE_HOURS = 12 * 60 * 60 * 1000;
 const SIX_HOURS = 6 * 60 * 60 * 1000;
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 const ONE_HOUR = 60 * 60 * 1000;
-const COMMISH_ROLE_IDS = ['1460399404241522759', '1460399405436768431'];
 
 function normalizeName(value = '') {
   return String(value).toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -76,7 +75,7 @@ function getCoachRoleIdForTeam(label, roleMap) {
 }
 
 function parseRoleIdsFromMention(mention = '') {
-  return [...new Set(String(mention).match(/\d{6,}/g) || [])].filter((id) => !COMMISH_ROLE_IDS.includes(id));
+  return [...new Set(String(mention).match(/\d{6,}/g) || [])];
 }
 
 function parseThreadTeams(threadName = '') {
@@ -333,7 +332,10 @@ function matchupCoachState(info = {}) {
 
 function buildCoachAndStaffMention(info) {
   const coachMention = buildCoachMention(info);
-  const staffMention = COMMISH_ROLE_IDS.map((id) => `<@&${id}>`).join(' ');
+  const coachRoleIds = [...new Set([...(info.awayRoleIds || []), ...(info.homeRoleIds || [])].filter(Boolean).map(String))];
+  const staffRoleIds = [...new Set((info.staffRoleIds || []).filter(Boolean).map(String))];
+  const fallbackStaffRoleIds = parseRoleIdsFromMention(info.mention || '').filter((id) => !coachRoleIds.includes(id));
+  const staffMention = [...new Set([...(staffRoleIds || []), ...fallbackStaffRoleIds])].map((id) => `<@&${id}>`).join(' ');
   return [coachMention, staffMention].filter(Boolean).join(' ');
 }
 
