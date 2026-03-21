@@ -97,7 +97,7 @@ function roleNamePriority(name = '') {
   return name.endsWith(' Coach') ? words : 0;
 }
 
-const roleChoices = (roleMap) => {
+const roleChoices = (roleMap, guild = null) => {
   const byRoleId = new Map();
   for (const [name, roleId] of Object.entries(roleMap || {})) {
     if (!roleId) continue;
@@ -107,6 +107,17 @@ const roleChoices = (roleMap) => {
     if (!existing || roleNamePriority(name) > roleNamePriority(existing.name)) {
       byRoleId.set(key, { name, value: name });
     }
+  }
+  if (guild?.roles?.cache) {
+    guild.roles.cache.forEach((role) => {
+      const name = String(role.name || '');
+      if (!name.endsWith(' Coach') && !ASSIGNABLE.includes(name)) return;
+      const key = String(role.id);
+      const existing = byRoleId.get(key);
+      if (!existing || roleNamePriority(name) > roleNamePriority(existing.name)) {
+        byRoleId.set(key, { name, value: name });
+      }
+    });
   }
   return [...byRoleId.values()].sort((a, b) => a.name.localeCompare(b.name));
 };
@@ -237,7 +248,7 @@ export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused();
   const focusedName = interaction.options.getFocused(true)?.name || 'role1';
   const selectedRole1 = interaction.options.getString('role1');
-  const options = [...roleChoices(roleMap), ...coachChoicesFromSnapshot(interaction, roleMap)]
+  const options = [...roleChoices(roleMap, interaction.guild), ...coachChoicesFromSnapshot(interaction, roleMap)]
     .filter((item, index, arr) => arr.findIndex((other) => normalizeKey(other.name) === normalizeKey(item.name)) === index)
     .filter((item) => focusedName !== 'role2' || normalizeKey(item.name) !== normalizeKey(selectedRole1))
     .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) + baseRoleBoost(item.name, focusedName) }))

@@ -87,7 +87,7 @@ function baseRoleBoost(name = '', optionName = 'role1') {
   return 0;
 }
 
-const roleChoices = (roleMap) => {
+const roleChoices = (roleMap, guild = null) => {
   const byRoleId = new Map();
   for (const [name, roleId] of Object.entries(roleMap || {})) {
     if (!roleId) continue;
@@ -97,6 +97,17 @@ const roleChoices = (roleMap) => {
     if (!existing || roleNamePriority(name) > roleNamePriority(existing.name)) {
       byRoleId.set(key, { name, value: name });
     }
+  }
+  if (guild?.roles?.cache) {
+    guild.roles.cache.forEach((role) => {
+      const name = String(role.name || '');
+      if (!name.endsWith(' Coach') && !ASSIGNABLE.includes(name)) return;
+      const key = String(role.id);
+      const existing = byRoleId.get(key);
+      if (!existing || roleNamePriority(name) > roleNamePriority(existing.name)) {
+        byRoleId.set(key, { name, value: name });
+      }
+    });
   }
   return [...byRoleId.values()].sort((a, b) => a.name.localeCompare(b.name));
 };
@@ -270,9 +281,12 @@ export async function autocomplete(interaction) {
       await interaction.respond([]);
       return;
     }
-    filteredRoles = roleChoices(roleMap).filter(r => {
+    filteredRoles = roleChoices(roleMap, interaction.guild).filter(r => {
       const id = roleMap[r.name];
-      return id && member.roles.cache.has(id);
+      const role = (id ? interaction.guild.roles.cache.get(id) : null)
+        || interaction.guild.roles.cache.find((item) => item.name === r.name)
+        || null;
+      return role && member.roles.cache.has(role.id);
     });
   } catch {
     filteredRoles = [];
