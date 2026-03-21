@@ -38,6 +38,20 @@ function formatPinError(error) {
     return text;
 }
 
+function formatPinningFailure(error) {
+    const code = String(error?.code || '').trim();
+    const text = String(error?.message || error || '').trim();
+    const lower = text.toLowerCase();
+
+    if (code === '50013' || lower.includes('missing permissions')) {
+        return 'missing Discord permission: Manage Messages';
+    }
+    if (lower.includes('maximum number of pins') || lower.includes('max pins')) {
+        return 'channel already has the maximum number of pinned messages';
+    }
+    return text || 'pin request failed';
+}
+
 function createBoardState(title) {
     return { title, seeded: false, hydrated: false, warning: null, info: null };
 }
@@ -49,16 +63,43 @@ function renderBoardState(state) {
     return `❌ ${state.title}: refresh failed`;
 }
 
+function getPinPermissionsIssue(channel) {
+    const me = channel?.guild?.members?.me;
+    const perms = me ? channel.permissionsFor(me) : null;
+    if (!perms?.has(PermissionFlagsBits.ViewChannel)) return 'bot cannot view this channel';
+    if (!perms?.has(PermissionFlagsBits.SendMessages)) return 'bot cannot send messages in this channel';
+    if (!perms?.has(PermissionFlagsBits.ManageMessages)) return 'missing Discord permission: Manage Messages';
+    return null;
+}
+
+async function pinMessageAndVerify(channel, message) {
+    const permissionIssue = getPinPermissionsIssue(channel);
+    if (permissionIssue) {
+        return { message, pinned: Boolean(message?.pinned), pinError: permissionIssue };
+    }
+
+    let pinError = null;
+    try {
+        await message.pin();
+    } catch (error) {
+        pinError = formatPinningFailure(error);
+    }
+    const refreshed = await channel.messages.fetch(message.id).catch(() => message);
+    return {
+        message: refreshed || message,
+        pinned: Boolean(refreshed?.pinned),
+        pinError: refreshed?.pinned ? null : (pinError || 'pin request failed'),
+    };
+}
+
 async function ensurePinnedEmbedMessage(channel, embed, existingMessageId = null) {
-    if (!channel || !channel.isTextBased()) return null;
+    if (!channel || !channel.isTextBased()) return { message: null, pinError: 'channel not found' };
 
     if (existingMessageId) {
         const existing = await channel.messages.fetch(existingMessageId).catch(() => null);
         if (existing) {
             await existing.edit({ embeds: [embed], content: null, components: [] }).catch(() => null);
-            try { await existing.pin(); } catch { }
-            const refreshed = await channel.messages.fetch(existing.id).catch(() => existing);
-            return refreshed?.pinned ? refreshed : null;
+            return pinMessageAndVerify(channel, existing);
         }
     }
 
@@ -66,26 +107,22 @@ async function ensurePinnedEmbedMessage(channel, embed, existingMessageId = null
     const botPinned = pins?.find((m) => m?.author?.id && m.author.id === channel.client.user.id) || null;
     if (botPinned) {
         await botPinned.edit({ embeds: [embed], content: null, components: [] }).catch(() => null);
-        return botPinned;
+        return { message: botPinned, pinned: true, pinError: null };
     }
 
     const sent = await channel.send({ embeds: [embed] }).catch(() => null);
-    if (!sent) return null;
-    try { await sent.pin(); } catch { }
-    const refreshed = await channel.messages.fetch(sent.id).catch(() => sent);
-    return refreshed?.pinned ? refreshed : null;
+    if (!sent) return { message: null, pinError: 'could not send the board message' };
+    return pinMessageAndVerify(channel, sent);
 }
 
 async function ensurePinnedActionMessage(channel, { embed, components, existingMessageId = null, matchTitle }) {
-    if (!channel || !channel.isTextBased()) return null;
+    if (!channel || !channel.isTextBased()) return { message: null, pinError: 'channel not found' };
 
     if (existingMessageId) {
         const existing = await channel.messages.fetch(existingMessageId).catch(() => null);
         if (existing) {
             await existing.edit({ embeds: [embed], components, content: null }).catch(() => null);
-            try { await existing.pin(); } catch { }
-            const refreshed = await channel.messages.fetch(existing.id).catch(() => existing);
-            return refreshed?.pinned ? refreshed : null;
+            return pinMessageAndVerify(channel, existing);
         }
     }
 
@@ -96,14 +133,12 @@ async function ensurePinnedActionMessage(channel, { embed, components, existingM
     ) || null;
     if (botPinned) {
         await botPinned.edit({ embeds: [embed], components, content: null }).catch(() => null);
-        return botPinned;
+        return { message: botPinned, pinned: true, pinError: null };
     }
 
     const sent = await channel.send({ embeds: [embed], components }).catch(() => null);
-    if (!sent) return null;
-    try { await sent.pin(); } catch { }
-    const refreshed = await channel.messages.fetch(sent.id).catch(() => sent);
-    return refreshed?.pinned ? refreshed : null;
+    if (!sent) return { message: null, pinError: 'could not send the trade button' };
+    return pinMessageAndVerify(channel, sent);
 }
 
 async function hasVerifiedPinnedBoardMessage(client, guildId, channelId, expectedMessageId = null) {
@@ -330,15 +365,18 @@ export async function seedAndHydratePins(client, guildId) {
             continue;
         }
 
-        const msg = await ensurePinnedEmbedMessage(channel, embeds[job.key], pins[job.key]);
-        if (!msg) {
-            boardStates[job.key].warning = 'could not update the pinned board message';
+        const result = await ensurePinnedEmbedMessage(channel, embeds[job.key], pins[job.key]);
+        if (!result?.message) {
+            boardStates[job.key].warning = result?.pinError || 'could not update the pinned board message';
             continue;
         }
 
-        upsertGuildPin(guildId, job.key, msg.id);
-        setPinId(job.key, msg.id, guildId);
+        upsertGuildPin(guildId, job.key, result.message.id);
+        setPinId(job.key, result.message.id, guildId);
         boardStates[job.key].seeded = true;
+        if (result.pinError) {
+            boardStates[job.key].warning = `board content updated, but ${result.pinError}`;
+        }
     }
 
     const extraResults = [];
@@ -352,8 +390,10 @@ export async function seedAndHydratePins(client, guildId) {
             components: buildTradeSubmitComponents(),
             matchTitle: 'Submit Trade',
         });
-        extraResults.push(tradeMessage
-            ? '✅ Submit Trade: seeded button'
+        extraResults.push(tradeMessage?.message
+            ? tradeMessage.pinError
+                ? `⚠️ Submit Trade: button updated, but ${tradeMessage.pinError}`
+                : '✅ Submit Trade: seeded button'
             : '⚠️ Submit Trade: could not update the trade button');
     } else {
         extraResults.push('ℹ️ Submit Trade: not included in this tier');
@@ -397,7 +437,7 @@ export async function seedAndHydratePins(client, guildId) {
         }
         if (!hasPinnedMessage) {
             boardStates[job.key].hydrated = false;
-            boardStates[job.key].warning = 'board content updated, but LEAGUEbuddy could not pin the board message';
+            boardStates[job.key].warning = boardStates[job.key].warning || 'board content updated, but LEAGUEbuddy could not pin the board message';
         }
     }
 
