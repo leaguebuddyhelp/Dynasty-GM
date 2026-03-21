@@ -74,6 +74,7 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
   const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && rawStage !== Stage.SEASON;
   const currentWeekIndex = rawWeek > 0 ? rawWeek - 1 : null;
   const weeklyStatsEntries = Array.isArray(snap?.weeklyStats) ? snap.weeklyStats : [];
+  const scheduleEntries = Array.isArray(snap?.schedule?.schedules) ? snap.schedule.schedules : [];
   const statCountFor = (entry) => {
     const buckets = [
       entry?.passing?.playerPassingStatInfoList,
@@ -93,12 +94,29 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
     Number(entry?.stage ?? entry?.stageIndex ?? -1) === Stage.SEASON &&
     statCountFor(entry) > 0
   );
+  const preseasonScheduleEvidence = currentWeekIndex !== null && scheduleEntries.some((entry) =>
+    Number(entry?.weekIndex ?? entry?.week ?? -1) === currentWeekIndex &&
+    Number(entry?.stageIndex ?? entry?.stage ?? -1) === Stage.PRESEASON
+  );
+  const anyRegularSeasonStats = weeklyStatsEntries.some((entry) =>
+    Number(entry?.stage ?? entry?.stageIndex ?? -1) === Stage.SEASON &&
+    statCountFor(entry) > 0
+  );
   const inferredPreseasonFromStats =
     rawWeek > 0 &&
     rawWeek <= 3 &&
     preseasonEvidence &&
     !currentRegularEvidence;
-  const explicitPreseason = rawStage === Stage.PRESEASON || inferredPreseasonFromStats;
+  const inferredPreseasonFromSchedule =
+    rawWeek > 0 &&
+    rawWeek <= 3 &&
+    preseasonScheduleEvidence &&
+    !currentRegularEvidence &&
+    (!anyRegularSeasonStats || offSeasonStage > 0);
+  const explicitPreseason =
+    rawStage === Stage.PRESEASON ||
+    inferredPreseasonFromStats ||
+    inferredPreseasonFromSchedule;
 
   let kind = 'regular';
   if (explicitPreseason) {

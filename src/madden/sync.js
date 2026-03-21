@@ -392,8 +392,18 @@ export async function runSync(leagueId, provider, options = {}) {
     // If schedule fetch returned empty, fall back to previous snapshot schedule if available from file
     let finalSchedule = schedule;
 
+    const hasStage1Week0Stats = Array.from(collectedByKey.values()).some((entry) =>
+      Number(entry?.stage ?? entry?.stageIndex ?? -1) === Stage.SEASON &&
+      Number(entry?.weekIndex ?? -1) === 0 &&
+      Number(entry?.playerCount ?? countPlayers(entry) ?? 0) > 0
+    );
     // If this looks like the first week of a new regular season, discard old weekly stats to avoid cross-season bleed
-    if ((seasonInfo?.seasonWeekType === 1) && (seasonInfo?.seasonWeek === 1 || currentWeek === 1) && !weekOverride) {
+    if (
+      (seasonInfo?.seasonWeekType === 1) &&
+      (seasonInfo?.seasonWeek === 1 || currentWeek === 1) &&
+      hasStage1Week0Stats &&
+      !weekOverride
+    ) {
       existingSnapshot = existingSnapshot || {};
       existingSnapshot.weeklyStats = [];
     }
