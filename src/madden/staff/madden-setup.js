@@ -472,17 +472,17 @@ function tierSetupNotes(tier, tradeEnabled) {
     if (tier === 'premium') {
         return [
             'Premium setup includes the core league boards, trade center, scouting hub, recognition, and sportsbook boards.',
-            'After channels are ready, continue with `/setup-pins`, `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
+            'After channels are ready, run `/setup-pins`, then keep using `/setup` until setup is complete.',
         ];
     }
     if (tier === 'standard') {
         return [
             'Standard setup includes the core league boards, trade center, and scouting hub.',
-            'After channels are ready, continue with `/setup-pins`, `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
+            'After channels are ready, run `/setup-pins`, then keep using `/setup` until setup is complete.',
         ];
     }
     return [
-        'Free setup includes the core league boards, game threads, standings, stat leaders, and awards boards.',
+        'Free setup includes the core league boards, game threads, and the basic pinned league boards.',
         tradeEnabled ? 'Trade center is included in this package.' : 'Trade center is not included in the Free plan.',
     ];
 }
@@ -744,7 +744,7 @@ export async function execute(interaction) {
                         {
                             name: 'Next',
                             value: snapshotReady
-                                ? 'Run `/setup-pins`, then `/setup-roles`. `/setup-roles` will finish the final role-based channel access in the same pass.'
+                                ? 'Run `/setup-pins`, then rerun `/setup` for the next step.'
                                 : 'Run `/setup-pins` next. If the league snapshot is still missing, connect the league first and rerun `/setup-pins` after `/league-status` looks healthy.',
                         },
                     ),

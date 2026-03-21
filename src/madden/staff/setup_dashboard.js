@@ -37,7 +37,7 @@ function formatMissingItems(items = []) {
 function buildFlowLines() {
   return [
     '1. Run the one command shown below.',
-    '2. Fix only that one thing.',
+    '2. Do only that one thing.',
     '3. Run `/setup` again.',
     '4. Repeat until `/setup` says complete.',
   ].join('\n');
@@ -62,7 +62,7 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
     return {
       title: 'Connect the league',
       action: 'Run `/connectleague`, finish the dashboard flow, then rerun `/setup`.',
-      details: 'LEAGUEbuddy cannot continue until this server is linked to a league.',
+      details: 'For a free server, this is the main first step after inviting LEAGUEbuddy.',
     };
   }
   if (!snapshotOk) {
@@ -148,7 +148,7 @@ export async function execute(interaction) {
     .setColor(!readiness.hasRequiredPermissions || readiness.hierarchyWarning || status.missingRequiredRoles.length || status.syncNeeded
       ? 0xf1c40f
       : 0x57f287)
-    .setDescription('Run `/setup`, do the one next step it shows, then run `/setup` again.')
+    .setDescription('Free quick start: invite LEAGUEbuddy, run `/connectleague`, then use `/setup` until it says complete.')
     .addFields(
       {
         name: 'Current Step',

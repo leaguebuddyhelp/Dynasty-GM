@@ -29,7 +29,7 @@ export async function execute(interaction) {
     .setDescription(`This server is now mapped to league \`${leagueId}\`.`)
     .addFields({
       name: 'Next Steps',
-      value: '1. Run `/sync`\n2. Run `/setup-channels`\n3. Run `/setup-roles`\n4. Run `/syncsetupstatus`',
+      value: '1. Run `/sync`\n2. Run `/setup`\n3. Do the one next step it shows\n4. Run `/setup` again until it says complete',
     });
 
   await interaction.update({

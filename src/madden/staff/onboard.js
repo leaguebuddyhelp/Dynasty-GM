@@ -239,7 +239,7 @@ async function sendOnboardingDM({ client, guild, user, teamDisplay, snapshot, ch
             {
                 name: 'Start Here',
                 value: [
-                    '• `/mycommands`',
+                    '• `/help`',
                     '• `/schedule`',
                     '• `/roster`',
                     '• Check your game thread',

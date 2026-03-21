@@ -531,8 +531,8 @@ export async function execute(interaction) {
                     {
                         name: 'Next',
                         value: hasFailures
-                            ? 'Some league boards still need data. Run `/sync` if the league was just connected, rerun `/setup-pins`, then continue with `/setup-roles`.'
-                            : 'Pins are ready. Next run `/setup-roles`, then `/syncsetupstatus`.',
+                            ? 'Some league boards still need data. Run `/sync` if the league was just connected, rerun `/setup-pins`, then rerun `/setup`.'
+                            : 'Pins are ready. Rerun `/setup` for the next step.',
                     },
                 ),
         ],

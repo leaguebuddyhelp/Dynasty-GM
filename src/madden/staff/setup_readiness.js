@@ -80,7 +80,7 @@ export function buildSetupReadinessNextSteps(report) {
   if (report?.hierarchyWarning) {
     return 'Before `/setup-roles`, move the LEAGUEbuddy role higher in Server Settings > Roles, then rerun `/setup`.';
   }
-  return 'Bot permissions look ready. Continue with `/connectleague`, then `/setup-channels`.';
+  return 'Bot permissions look ready. Continue with `/connectleague`, then `/setup`.';
 }
 
 export default {

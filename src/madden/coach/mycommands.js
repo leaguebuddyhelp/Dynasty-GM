@@ -6,8 +6,8 @@ import { coachCommandDescription, coachPanelIntro, coachVoiceFooter, coachVoiceT
 const ROLE_MAP_PATH = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 
 const data = new SlashCommandBuilder()
-  .setName('mycommands')
-  .setDescription(coachCommandDescription('mycommands'));
+  .setName('help')
+  .setDescription(coachCommandDescription('help'));
 
 function isStaff(member) {
   try {
@@ -32,26 +32,23 @@ async function execute(interaction) {
   const staffEmbed = new EmbedBuilder()
     .setColor(0xffd700)
     .setTitle(coachVoiceTitle('staffCommands', 'Admin Commands'))
-    .setDescription('Use this exact order when setting up a server.')
+    .setDescription('Use this as the quick-start board for a new LEAGUEbuddy server.')
     .addFields(
       {
-        name: 'Main Setup Flow',
+        name: 'Free Quick Start',
         value: [
-          '1. `/activateplan`',
+          '1. Invite LEAGUEbuddy',
           '2. `/connectleague`',
           '3. Finish the dashboard flow',
-          '4. `/league-status`',
-          '5. `/setup-channels`',
-          '6. `/setup-pins`',
-          '7. `/setup-roles`',
-          '8. `/syncsetupstatus`',
-          '9. `/server-check`',
-          '10. `/create-threads`',
-          '11. `/weeklyupdate`',
+          '4. `/setup`',
+          '5. Do the one next step it shows',
+          '6. Run `/setup` again until it says complete',
+          '7. `/create-threads`',
+          '8. `/weeklyupdate`',
         ].join('\n'),
       },
       {
-        name: 'Coach Staffing',
+        name: 'Staffing',
         value: [
           '`/member assign`',
           '`/member remove`',
@@ -77,9 +74,15 @@ async function execute(interaction) {
     .setDescription('This menu shows the customer commands that matter for the current league tier.')
     .addFields(
       {
-        name: 'Every Tier',
+        name: 'Start Here',
         value: [
-          '`/pricing`, `/plan`, `/setup-check`',
+          '`/help`, `/plan`, `/pricing`',
+          '`/setup` for the next server step',
+        ].join('\n'),
+      },
+      {
+        name: 'Free Commands',
+        value: [
           '`/schedule`, `/roster`, `/playersearch`, `/tradevalue`, `/pickvalue`, `/streamlink`',
         ].join('\n'),
       },

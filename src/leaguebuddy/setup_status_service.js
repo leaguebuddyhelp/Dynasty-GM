@@ -135,11 +135,11 @@ function buildFeatureSummary(guildId, packsEnabled = []) {
 }
 
 function buildRecommendedNextAction({ overlayExists, overlayComplete, setupCompleted, syncNeeded, blockedFeatures }) {
-  if (!overlayExists) return 'Run /setup-channels to create the LEAGUEbuddy category and channel layout for this server.';
-  if (!overlayComplete) return 'Finish the LEAGUEbuddy setup flow: rerun /setup-channels, then /setup-pins, then /setup-roles, then /syncsetupstatus.';
-  if (syncNeeded) return 'Run /syncsetupstatus so LEAGUEbuddy access state matches the completed Madden overlay.';
-  if (!setupCompleted) return 'Mark setup complete by syncing setup status after verifying the overlay configuration.';
-  return 'Setup is complete. Use /server-check for server readiness and plan status.';
+  if (!overlayExists) return 'Run /setup. It will point you to the next required setup step.';
+  if (!overlayComplete) return 'Run /setup and follow the next step it shows until setup is complete.';
+  if (syncNeeded) return 'Run /setup once more so LEAGUEbuddy can finalize the setup state.';
+  if (!setupCompleted) return 'Run /setup once more to finish the last setup pass.';
+  return 'Setup is complete. You can move on to /create-threads or your normal weekly workflow.';
 }
 
 export function getSetupStatus(guildId) {

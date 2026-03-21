@@ -66,8 +66,8 @@ export async function execute(interaction) {
           name: 'Next Steps',
           value: [
             '• Run `/plan` to confirm access.',
-            '• Run `/setup-check` to see whether setup is still missing anything.',
-            '• If this is a brand new server, a manager should still run `/connectleague`, finish the dashboard flow, then run `/setup-channels`, `/setup-pins`, and `/setup-roles`.',
+            '• Run `/setup` to see the next server step.',
+            '• If this is a brand new server, a manager should still run `/connectleague`, finish the dashboard flow, then keep rerunning `/setup` until it says complete.',
           ].join('\n'),
         },
       );

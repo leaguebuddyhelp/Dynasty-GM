@@ -2,7 +2,7 @@ const COMMAND_DESCRIPTIONS = {
   franchisehub: 'Private front-office briefing with your roster pulse, accountability, and league leverage.',
   gamestrategy: 'Private matchup briefing with weekly edges, tendencies, and game-plan intel.',
   draftprimer: 'Private draft-room briefing with targets, pressure points, and class texture.',
-  mycommands: 'Show the live Madden command board built for your role.',
+  help: 'Show the live Madden command board built for your role.',
   tradeblock: 'Run your trade block and keep your roster market visible.',
   roster: 'Open a full team roster card with contract, dev, and value context.',
   playersearch: 'Pull a live player card from the latest synced Madden roster.',

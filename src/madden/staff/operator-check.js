@@ -13,4 +13,4 @@ export async function execute(interaction) {
   return setupExecute(interaction);
 }
 
-export default { data, execute, deferOnDispatch };
+export default { data, execute, deferOnDispatch, skipDeploy: true };

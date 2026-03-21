@@ -24,7 +24,7 @@ export async function execute(interaction) {
 
   function buildSyncNextStep(errorText) {
     if (!errorText) {
-      return 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league. To fully restart this server from scratch, run `/disconnectleague`.';
+      return 'Your league is linked. If this is a new server, run `/setup` now. To fully restart from scratch later, run `/disconnectleague`.';
     }
     if (errorText.includes('temporary system error')) {
       return 'EA returned a temporary service error. Wait a moment, then run `/sync` again.';
@@ -46,7 +46,7 @@ export async function execute(interaction) {
           .setColor(0xf39c12)
           .setDescription('No league is connected to this server yet.')
           .addFields(
-            { name: 'Next', value: 'Run `/connectleague`, open the dashboard, save the league name, optionally save the league password for onboarding later, connect EA, choose your Madden account, then choose your league.', inline: false },
+            { name: 'Next', value: 'Run `/connectleague`, finish the dashboard flow, then come back and run `/setup`.', inline: false },
           ),
       ],
     });
@@ -70,7 +70,7 @@ export async function execute(interaction) {
           ...(syncError ? [{ name: 'Sync Error', value: syncError.slice(0, 1024), inline: false }] : []),
           { name: 'Next', value: connection.status === 'sync_error'
             ? buildSyncNextStep(syncError)
-            : 'Your league is linked through the dashboard. Return there if you need to reconnect EA or pick a different league. To fully restart this server from scratch, run `/disconnectleague`.',
+            : 'Your league is linked. If this is a new server, run `/setup` now. To fully restart from scratch later, run `/disconnectleague`.',
             inline: false },
         ),
     ],

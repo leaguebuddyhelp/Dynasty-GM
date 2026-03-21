@@ -174,7 +174,7 @@ export async function execute(interaction) {
             name: 'Next',
             value: staffSummary.failed.length
               ? 'Some Discord roles still failed to create. Fix the server role issue, then rerun `/setup-roles`.'
-              : 'Roles and channel access are ready. Next run `/syncsetupstatus`, then `/server-check`.',
+              : 'Roles and channel access are ready. Rerun `/setup` to finish the last setup pass.',
           },
         ),
     ],

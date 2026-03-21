@@ -34,23 +34,23 @@ export async function execute(interaction) {
         .setTitle('Connect League')
         .setColor(0x5865f2)
         .setDescription([
-          'Use the dashboard below to connect your league.',
+          'Use the dashboard below to connect your league, then go straight back to `/setup`.',
           '',
-          'Main setup path:',
+          'Quick start:',
           '1. Open the dashboard.',
           '2. Save your league name. Add the league password too if you want LEAGUEbuddy to reuse it later for onboarding.',
           '3. Connect EA and paste the returned browser URL.',
           '4. Choose your Madden account/persona.',
           '5. Choose your league.',
           '6. Return to Discord and confirm the link: `/league-status`.',
-          '7. Continue the normal setup flow: `/setup-channels` -> `/setup-pins` -> `/setup-roles` -> `/syncsetupstatus` -> `/server-check`.',
+          '7. Run `/setup` and do the one next step it shows.',
         ].join('\n'))
         .addFields(
           { name: 'Discord Server', value: interaction.guild?.name || 'Unknown Server', inline: false },
           { name: 'Dashboard Link', value: setupUrl, inline: false },
           { name: 'EA Step', value: 'The dashboard will walk you through the reverse EA login flow and league selection.', inline: false },
           { name: 'Expires', value: `<t:${Math.floor(new Date(session.expiresAt).getTime() / 1000)}:R>`, inline: false },
-          { name: 'Next', value: 'After the dashboard looks right, run `/league-status`, then `/setup-channels`, `/setup-pins`, and `/setup-roles`. If you need to restart from zero later, run `/disconnectleague`.', inline: false },
+          { name: 'Next', value: 'After the dashboard looks right, run `/league-status`, then run `/setup`. If you need to restart from zero later, run `/disconnectleague`.', inline: false },
         ),
     ],
     components: [row],

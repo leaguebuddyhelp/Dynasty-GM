@@ -94,7 +94,7 @@ export async function execute(interaction) {
     } else if (status !== SUBSCRIPTION_STATUSES.active && status !== SUBSCRIPTION_STATUSES.trialing) {
         lines.push('If you already paid, run `/claim-plan` with the payment reference from your Stripe receipt.');
     } else {
-        lines.push('Run `/pricing` for upgrade links or `/setup-check` for setup guidance.');
+        lines.push('Run `/pricing` for upgrade links or `/setup` for setup guidance.');
     }
 
     if (!canManage) {
