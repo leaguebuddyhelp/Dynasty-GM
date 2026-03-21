@@ -100,6 +100,7 @@ export function inviteLinkFor() {
     PermissionsBitField.Flags.ManageChannels,
     PermissionsBitField.Flags.ManageRoles,
     PermissionsBitField.Flags.ManageMessages,
+    PermissionsBitField.Flags.PinMessages,
     PermissionsBitField.Flags.ManageThreads,
     PermissionsBitField.Flags.SendMessagesInThreads,
     PermissionsBitField.Flags.CreatePublicThreads,

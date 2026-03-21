@@ -68,7 +68,7 @@ function getPinPermissionsIssue(channel) {
     const perms = me ? channel.permissionsFor(me) : null;
     if (!perms?.has(PermissionFlagsBits.ViewChannel)) return 'bot cannot view this channel';
     if (!perms?.has(PermissionFlagsBits.SendMessages)) return 'bot cannot send messages in this channel';
-    if (!perms?.has(PermissionFlagsBits.ManageMessages)) return 'missing Discord permission: Manage Messages';
+    if (!perms?.has(PermissionFlagsBits.PinMessages)) return 'missing Discord permission: Pin Messages';
     return null;
 }
 

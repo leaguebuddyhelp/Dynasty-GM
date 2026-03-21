@@ -6,6 +6,7 @@ const REQUIRED_SETUP_PERMISSIONS = [
   { bit: PermissionFlagsBits.ReadMessageHistory, label: 'Read Message History' },
   { bit: PermissionFlagsBits.ManageChannels, label: 'Manage Channels' },
   { bit: PermissionFlagsBits.ManageMessages, label: 'Manage Messages' },
+  { bit: PermissionFlagsBits.PinMessages, label: 'Pin Messages' },
   { bit: PermissionFlagsBits.ManageRoles, label: 'Manage Roles' },
 ];
 
