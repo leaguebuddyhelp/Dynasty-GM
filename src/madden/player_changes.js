@@ -208,6 +208,20 @@ function lastCompletedWeek(snapshot) {
   return { st: currentStage, wk: targetIdx };
 }
 
+function phaseAwareWeekLabel(curr, prevWeekIdx, last, stageForWeek) {
+  const seasonInfo = curr?.info?.careerHubInfo?.seasonInfo || {};
+  const seasonWeekType = Number(seasonInfo.seasonWeekType ?? curr?.stage ?? stageForWeek ?? 1);
+  if (seasonWeekType === 0) {
+    return `Preseason Week ${Math.max(1, Number(last?.wk ?? prevWeekIdx) + 1)}`;
+  }
+  const offSeasonStage = Number(seasonInfo.offSeasonStage ?? 0) || 0;
+  return getMessageForWeek(
+    Number(last?.wk ?? prevWeekIdx) + 1,
+    last?.st ?? stageForWeek,
+    offSeasonStage,
+  );
+}
+
 export async function updatePlayerChanges(client, leagueId, guildId = null) {
   const currPath = getMaddenLeagueSnapshotPath(leagueId);
   const prevPath = path.join(PREV_DIR, `${leagueId}.json`);
@@ -250,9 +264,8 @@ export async function updatePlayerChanges(client, leagueId, guildId = null) {
   const weekEntry = curr.weeklyStats?.find(w => w.weekIndex === prevWeekIdx);
   const seasonWeekType = curr.info?.careerHubInfo?.seasonInfo?.seasonWeekType ?? weekEntry?.stage ?? curr.stage ?? 1;
   const stageForWeek = seasonWeekType === 1 ? 1 : (weekEntry?.stage ?? curr.stage ?? 1);
-  const offSeasonStage = curr.info?.careerHubInfo?.seasonInfo?.offSeasonStage ?? 0;
   const last = lastCompletedWeek(curr);
-  const weekLabel = getMessageForWeek((last.wk ?? prevWeekIdx) + 1, last.st ?? stageForWeek, offSeasonStage);
+  const weekLabel = phaseAwareWeekLabel(curr, prevWeekIdx, last, stageForWeek);
   batch.weekLabel = weekLabel;
   let postedAny = false;
 
