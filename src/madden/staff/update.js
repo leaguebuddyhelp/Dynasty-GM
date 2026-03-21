@@ -29,20 +29,80 @@ import { getCoachAssignmentMap, setCoachAssignment } from '../../shared/madden_c
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
+import { getMaddenDataFilePath, getMaddenLeagueSnapshotPath, getMaddenLeaguesDir, getMaddenRoot } from '../../leaguebuddy/paths.js';
 import { getMessageForWeek } from '../madden_utils.js';
 import connectionService from '../services/export_first_connection_service.js';
 import { getGuildEATokens } from '../ea_guild_auth.js';
 
 export const featureKey = 'core';
 
-const POWER_RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
-const SCOUT_POINTS_FILE = path.join(process.cwd(), 'data', 'madden', 'scout_points.json');
-const WEEKLY_UPDATE_OVERRIDES_FILE = path.join(process.cwd(), 'data', 'madden', 'weekly_update_overrides.json');
-const SCOUT_LOG_FILE = path.join(process.cwd(), 'data', 'madden', 'scout_log.json');
-const STAFF_ACTIVITY_LOG_FILE = path.join(process.cwd(), 'data', 'madden', 'staff_activity_log.json');
-const FAIRSIMS_FILE = path.join(process.cwd(), 'data', 'madden', 'fairsims.json');
-const WEEKLY_GAME_LOG_FILE = path.join(process.cwd(), 'data', 'madden', 'weekly_game_log.json');
-const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
+const POWER_RANKS_FILE = getMaddenDataFilePath('power_ranks.json');
+const SCOUT_POINTS_FILE = getMaddenDataFilePath('scout_points.json');
+const WEEKLY_UPDATE_OVERRIDES_FILE = getMaddenDataFilePath('weekly_update_overrides.json');
+const SCOUT_LOG_FILE = getMaddenDataFilePath('scout_log.json');
+const STAFF_ACTIVITY_LOG_FILE = getMaddenDataFilePath('staff_activity_log.json');
+const FAIRSIMS_FILE = getMaddenDataFilePath('fairsims.json');
+const WEEKLY_GAME_LOG_FILE = getMaddenDataFilePath('weekly_game_log.json');
+const AWARDS_FILE = getMaddenDataFilePath('awards.json');
+
+function getWeekStageValue(entry = null, fallback = Stage.SEASON) {
+  const raw = entry?.stage ?? entry?.stageIndex;
+  return Number.isFinite(Number(raw)) ? Number(raw) : Number(fallback);
+}
+
+function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOverride = null, derivedWeekFromStats = 0 }) {
+  const rawWeek = Number(
+    weekOverride && weekOverride > 0
+      ? weekOverride
+      : (
+        summary.currentWeek
+        ?? snap?.currentWeek
+        ?? seasonInfo.displayWeek
+        ?? seasonInfo.seasonWeek
+        ?? derivedWeekFromStats
+        ?? 0
+      ),
+  ) || 0;
+  const rawStage = Number(
+    seasonInfo.seasonWeekType
+    ?? seasonInfo.seasonWeekTypeId
+    ?? summary.stage
+    ?? snap?.stage
+    ?? Stage.SEASON,
+  );
+  const offSeasonStage = Number(summary.offSeasonStage ?? seasonInfo.offSeasonStage ?? 0) || 0;
+  const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && rawStage !== Stage.SEASON;
+
+  let kind = 'regular';
+  if (offSeasonStage > 0 || rawStage === 3 || rawStage === 8 || draftInactive) {
+    kind = 'offseason';
+  } else if (rawStage === Stage.PRESEASON || rawWeek <= 0) {
+    kind = 'preseason';
+  } else if (rawStage === 2 || rawWeek >= 19) {
+    kind = 'playoffs';
+  }
+
+  let stageForWeek = rawStage;
+  if (kind === 'regular') {
+    stageForWeek = Stage.SEASON;
+  } else if (kind === 'preseason') {
+    stageForWeek = Stage.PRESEASON;
+  } else if (kind === 'playoffs') {
+    stageForWeek = 2;
+  }
+
+  return {
+    currentWeekValue: rawWeek,
+    currentWeekIndex: rawWeek > 0 ? rawWeek - 1 : null,
+    offSeasonStage,
+    stageForWeek,
+    kind,
+    inOffseason: kind === 'offseason',
+    inPreseason: kind === 'preseason',
+    inPlayoffs: kind === 'playoffs',
+    isRegularSeason: kind === 'regular',
+  };
+}
 function median(values = []) {
   const nums = values
     .map((value) => Number(value || 0))
@@ -85,7 +145,7 @@ function decodeSignedByte(value) {
 }
 
 function loadHistoricalSnapshot(leagueId, currentYear) {
-  const snapshot = safeReadJSON(path.join(process.cwd(), 'data', 'madden', 'leagues', 'previous', `${leagueId}.json`), null);
+  const snapshot = safeReadJSON(path.join(getMaddenLeaguesDir(), 'previous', `${leagueId}.json`), null);
   const snapshotYear = Number(snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || 0);
   if (!snapshot || !snapshotYear || snapshotYear >= Number(currentYear || 0)) return null;
   return snapshot;
@@ -939,7 +999,7 @@ async function execute(interaction) {
     const leagueOverride = weeklyUpdateOverrides?.[leagueId] || {};
     const forceAwardsOnce = forceAwardsOption || leagueOverride?.forceAwardsOnce === true;
     // Load the freshly written snapshot so we can use richer context (stage per week, season info flags)
-    const snapPath = path.join(process.cwd(), 'data', 'madden', 'leagues', `${leagueId}.json`);
+    const snapPath = getMaddenLeagueSnapshotPath(leagueId);
     let snap = null;
     try {
       snap = JSON.parse(fs.readFileSync(snapPath, 'utf8'));
@@ -952,48 +1012,21 @@ async function execute(interaction) {
       const maxIdx = Math.max(...regWeeks.map(w => Number(w.weekIndex !== undefined ? w.weekIndex : -1)).filter(n => n >= 0));
       return maxIdx >= 0 ? maxIdx + 1 : 0;
     })();
-    // If caller explicitly passed a week, honor it for all downstream grading/awards.
-    const currentWeekValue = weekOverride && weekOverride > 0
-      ? weekOverride
-      : (summary.currentWeek && summary.currentWeek > 0
-        ? summary.currentWeek
-        : (seasonInfo.displayWeek && seasonInfo.displayWeek > 0
-          ? seasonInfo.displayWeek
-          : derivedWeekFromStats));
-    // Define effectiveCurrentWeek for downstream use
-    // Use currentWeekValue as the effective current week
+    const weeklyStatsEntries = Array.isArray(snap?.weeklyStats) ? snap.weeklyStats : [];
+    const phase = resolveWeeklyPhase({
+      seasonInfo,
+      summary,
+      snap,
+      weekOverride,
+      derivedWeekFromStats,
+    });
+    const currentWeekValue = phase.currentWeekValue;
     const effectiveCurrentWeek = currentWeekValue;
-    const currentWeekIndex = currentWeekValue > 0 ? currentWeekValue - 1 : null;
-    const weekEntry = snap?.weeklyStats?.find(w => w.weekIndex === currentWeekIndex);
+    const currentWeekIndex = phase.currentWeekIndex;
     const seasonWeekType = seasonInfo.seasonWeekType;
-    // Derive stage: prefer seasonWeekType (0=pre,1=reg,2=post), else summary.stage.
-    let stageForWeek = typeof seasonWeekType === 'number' ? seasonWeekType : Stage.SEASON;
-    if (typeof seasonWeekType === 'number') {
-      stageForWeek = seasonWeekType;
-    } else if (summary.stage !== undefined) {
-      stageForWeek = summary.stage;
-    }
-    if (weekEntry?.stage !== undefined && (weekEntry.weekIndex !== undefined ? weekEntry.weekIndex : 0) >= 18) {
-      stageForWeek = weekEntry.stage;
-    }
-    // Only correct obvious preseason mislabels for active in-season weeks; preserve postseason.
-    if (currentWeekValue >= 1 && stageForWeek === Stage.PRESEASON && Number(currentWeekValue) <= 18) {
-      stageForWeek = Stage.SEASON;
-    }
-    const offStageValue = summary.offSeasonStage !== undefined ? summary.offSeasonStage : (seasonInfo.offSeasonStage !== undefined ? seasonInfo.offSeasonStage : 0);
-    let inOffseason = offStageValue > 0;
-    // If we're clearly in a numbered week, treat as in-season even if offSeasonStage lingered
-    if (stageForWeek === Stage.SEASON && currentWeekValue >= 1) {
-      inOffseason = false;
-    }
-    // If explicitly overriding, force regular-season handling
-    if (weekOverride && weekOverride > 0 && Number(weekOverride) <= 18) {
-      stageForWeek = Stage.SEASON;
-      inOffseason = false;
-    }
-    // Determine effective target and week using available stats
-    // (effectiveTargetWeekIdx/effectiveCurrentWeekUsed computed later after we know if we have stats)
-    const targetWeekIdx = currentWeekValue ? currentWeekValue - 1 : null;
+    const stageForWeek = phase.stageForWeek;
+    const inOffseason = phase.inOffseason;
+    const targetWeekIdx = currentWeekIndex;
     const countPlayers = (wk) => {
       const buckets = [
         wk?.passing?.playerPassingStatInfoList,
@@ -1003,17 +1036,28 @@ async function execute(interaction) {
       ];
       return buckets.reduce((acc, b) => acc + (Array.isArray(b) ? b.length : 0), 0);
     };
-    const weekEntries = (snap?.weeklyStats || []).filter(w => Number(w.weekIndex) === Number(targetWeekIdx));
+    const weekEntries = weeklyStatsEntries.filter((entry) => Number(entry?.weekIndex ?? -1) === Number(targetWeekIdx));
+    const phaseWeekEntries = weekEntries.filter((entry) => {
+      const entryStage = getWeekStageValue(entry);
+      if (phase.inPreseason) return entryStage === Stage.PRESEASON;
+      if (phase.inPlayoffs) return entryStage !== Stage.PRESEASON;
+      return entryStage === Stage.SEASON;
+    });
     const stageInfo = weekEntries.map(w => ({
-      stage: w.stage !== undefined ? w.stage : (w.stageIndex !== undefined ? w.stageIndex : 0),
+      stage: getWeekStageValue(w, 0),
       playerCount: countPlayers(w)
     }));
-    const targetWeekPlayerCount = Math.max(0, ...stageInfo.map((entry) => Number(entry.playerCount || 0)));
-    const weekData = targetWeekIdx !== null && snap ? gatherWeeklyStats(snap, targetWeekIdx) : null;
-    const hasWeeklyPlayers = !!weekData;
-    // Fallback: if the current week has no stats, use the latest Stage 1 week with stats
+    const targetWeekPlayerCount = Math.max(
+      0,
+      ...(phaseWeekEntries.length ? phaseWeekEntries : weekEntries).map((entry) => Number(countPlayers(entry) || 0)),
+    );
+    const weekData = phase.isRegularSeason && targetWeekIdx !== null && snap
+      ? gatherWeeklyStats(snap, targetWeekIdx)
+      : null;
+    const hasWeeklyPlayers = phase.isRegularSeason ? !!weekData : targetWeekPlayerCount > 0;
+    // Only regular-season weekly update falls back to the last complete stat week.
     const latestStage1WithStats = (() => {
-      const weeks = (snap?.weeklyStats || [])
+      const weeks = weeklyStatsEntries
         .filter(w => Number(w.stage ?? w.stageIndex ?? 0) === 1)
         .filter(w => {
           const buckets = [
@@ -1028,13 +1072,19 @@ async function execute(interaction) {
       if (!weeks.length) return null;
       return Math.max(...weeks);
     })();
-    const effectiveTargetWeekIdx = hasWeeklyPlayers ? targetWeekIdx : latestStage1WithStats;
-    const effectiveCurrentWeekUsed = hasWeeklyPlayers
-      ? currentWeekValue
-      : (latestStage1WithStats != null ? latestStage1WithStats + 1 : currentWeekValue);
-    const hasWeeklyPlayersEffective = effectiveTargetWeekIdx != null
-      ? !!gatherWeeklyStats(snap, effectiveTargetWeekIdx)
-      : false;
+    const effectiveTargetWeekIdx = phase.isRegularSeason
+      ? (hasWeeklyPlayers ? targetWeekIdx : latestStage1WithStats)
+      : targetWeekIdx;
+    const effectiveCurrentWeekUsed = phase.isRegularSeason
+      ? (
+        hasWeeklyPlayers
+          ? currentWeekValue
+          : (latestStage1WithStats != null ? latestStage1WithStats + 1 : currentWeekValue)
+      )
+      : currentWeekValue;
+    const hasWeeklyPlayersEffective = phase.isRegularSeason
+      ? (effectiveTargetWeekIdx != null ? !!gatherWeeklyStats(snap, effectiveTargetWeekIdx) : false)
+      : hasWeeklyPlayers;
     const isWildcard = Number(effectiveCurrentWeekUsed ?? currentWeekValue ?? 0) === 19;
     const backfillOnlyAwards = rebuildMode;
     const missingWeeks = (summary.missingWeeks || []).filter(w => ((w.playerCount !== undefined ? w.playerCount : 0)) > 0);
@@ -1051,9 +1101,9 @@ async function execute(interaction) {
         existing.playerCount = w.playerCount !== undefined ? w.playerCount : existing.playerCount;
       }
     });
-    const usedFallbackWeek = Number(effectiveCurrentWeekUsed) !== Number(currentWeekValue);
-    const targetWeekMissing = deduped.some((entry) => Number(entry.weekIndex) === Number(targetWeekIdx));
-    const recentRegularWeekCounts = (snap?.weeklyStats || [])
+    const usedFallbackWeek = phase.isRegularSeason && Number(effectiveCurrentWeekUsed) !== Number(currentWeekValue);
+    const targetWeekMissing = phase.isRegularSeason && deduped.some((entry) => Number(entry.weekIndex) === Number(targetWeekIdx));
+    const recentRegularWeekCounts = weeklyStatsEntries
       .filter((entry) => Number(entry?.stage ?? entry?.stageIndex ?? 0) === 1)
       .filter((entry) => Number(entry?.weekIndex ?? -1) < Number(targetWeekIdx))
       .map((entry) => countPlayers(entry))
@@ -1061,12 +1111,16 @@ async function execute(interaction) {
       .slice(-4);
     const recentMedianCount = median(recentRegularWeekCounts);
     const lowPlayerCountWeek =
+      phase.isRegularSeason &&
       !backfillOnlyAwards &&
       Number(targetWeekIdx) >= 0 &&
       recentMedianCount > 0 &&
       targetWeekPlayerCount > 0 &&
       targetWeekPlayerCount < (recentMedianCount * 0.7);
-    const statsPartial = !backfillOnlyAwards && (usedFallbackWeek || targetWeekMissing || !hasWeeklyPlayersEffective || lowPlayerCountWeek);
+    const statsPartial =
+      phase.isRegularSeason &&
+      !backfillOnlyAwards &&
+      (usedFallbackWeek || targetWeekMissing || !hasWeeklyPlayersEffective || lowPlayerCountWeek);
 
     console.log('[madden-weeklyupdate] week targeting', {
       requestedMode,
@@ -1089,8 +1143,7 @@ async function execute(interaction) {
       console.warn('[madden-weeklyupdate] no stage 1 player stats found for selected week; skipping top players and awards if requested');
     }
 
-    // Determine if we are in preseason (stageForWeek is PRESEASON and week is 0 or 1)
-    const inPreseason = stageForWeek === Stage.PRESEASON || currentWeekValue === 0;
+    const inPreseason = phase.inPreseason;
     // Allow pin updates when in regular season or when a week override was provided
     const allowPinnedUpdates = !inPreseason || backfillOnlyAwards;
 
@@ -1375,7 +1428,7 @@ async function execute(interaction) {
       // If user passed a specific week, clear old history so Top100 reflects that week only
       if (weekOverride && leagueId) {
         try {
-          const histDir = path.join(process.cwd(), 'data', 'madden', 'top_players_history', String(leagueId));
+          const histDir = path.join(getMaddenRoot(), 'top_players_history', String(leagueId));
           fs.rmSync(histDir, { recursive: true, force: true });
           console.log('[madden-weeklyupdate] cleared top_players_history for override week', { leagueId, weekOverride });
         } catch (e) {
@@ -1450,7 +1503,7 @@ async function execute(interaction) {
     }
     // Debug: report which weeks have player stats
     try {
-      const snapPath = path.join(process.cwd(), 'data', 'madden', 'leagues', `${leagueId}.json`);
+      const snapPath = getMaddenLeagueSnapshotPath(leagueId);
       const snap = JSON.parse(fs.readFileSync(snapPath, 'utf8'));
       const ws = snap.weeklyStats || [];
       const withData = ws
