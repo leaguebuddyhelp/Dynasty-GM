@@ -155,7 +155,16 @@ async function hasVerifiedPinnedBoardMessage(client, guildId, channelId, expecte
     return Boolean(pins?.some((message) => message?.author?.id === client.user?.id));
 }
 
-async function repairPinnedBoardMessage(client, guildId, channelId, expectedTitle, key) {
+function boardTitleMatches(embedTitle, expectedTitles = []) {
+    const actual = String(embedTitle || '').trim().toLowerCase();
+    if (!actual) return false;
+    return expectedTitles.some((title) => {
+        const expected = String(title || '').trim().toLowerCase();
+        return expected && (actual === expected || actual.includes(expected) || expected.includes(actual));
+    });
+}
+
+async function repairPinnedBoardMessage(client, guildId, channelId, expectedTitles, key) {
     if (!channelId) return { message: null, pinError: 'channel not found' };
     const channel = await client.channels.fetch(channelId).catch(() => null);
     if (!channel || !channel.isTextBased()) return { message: null, pinError: 'channel not found' };
@@ -163,7 +172,7 @@ async function repairPinnedBoardMessage(client, guildId, channelId, expectedTitl
     const recent = await channel.messages.fetch({ limit: 25 }).catch(() => null);
     const match = recent?.find((message) =>
         message?.author?.id === client.user?.id &&
-        (message.embeds || []).some((embed) => String(embed?.title || '').trim() === expectedTitle)
+        (message.embeds || []).some((embed) => boardTitleMatches(embed?.title, expectedTitles))
     ) || null;
 
     if (!match) return { message: null, pinError: 'existing board message not found for repair' };
@@ -359,12 +368,12 @@ export async function seedAndHydratePins(client, guildId) {
     const embeds = buildEmbeds();
 
     const jobs = [
-        { key: 'available_teams', channelKey: 'Available Teams', title: 'Available Teams' },
-        { key: 'standings', channelKey: 'Standings', title: 'Standings' },
-        { key: 'stat_leaders', channelKey: 'Stat Leaders', title: 'Stat Leaders' },
-        { key: 'playoff_picture', channelKey: 'Playoff Picture', title: 'Playoff Picture' },
-        { key: 'power_rankings', channelKey: 'Power Rankings', title: 'Power Rankings' },
-        { key: 'top100', channelKey: 'Top 100', title: 'Top 100' },
+        { key: 'available_teams', channelKey: 'Available Teams', title: 'Available Teams', repairTitles: ['Available Teams'] },
+        { key: 'standings', channelKey: 'Standings', title: 'Standings', repairTitles: ['Standings', 'Madden Standings'] },
+        { key: 'stat_leaders', channelKey: 'Stat Leaders', title: 'Stat Leaders', repairTitles: ['Stat Leaders', 'Madden Stat Leaders'] },
+        { key: 'playoff_picture', channelKey: 'Playoff Picture', title: 'Playoff Picture', repairTitles: ['Playoff Picture', 'Madden Playoff Picture'] },
+        { key: 'power_rankings', channelKey: 'Power Rankings', title: 'Power Rankings', repairTitles: ['Power Rankings', 'Madden Power Rankings'] },
+        { key: 'top100', channelKey: 'Top 100', title: 'Top 100', repairTitles: ['Top 100', 'Madden Player Grades'] },
     ];
 
     const boardStates = Object.fromEntries(jobs.map((job) => [job.key, createBoardState(job.title)]));
@@ -445,7 +454,7 @@ export async function seedAndHydratePins(client, guildId) {
         const pinId = loadGuildMaddenConfig(guildId)?.pins?.[job.key] || pins[job.key] || null;
         let hasPinnedMessage = await hasVerifiedPinnedBoardMessage(client, guildId, channelMap[job.channelKey], pinId);
         if (!hasPinnedMessage) {
-            const repaired = await repairPinnedBoardMessage(client, guildId, channelMap[job.channelKey], job.title, job.key);
+            const repaired = await repairPinnedBoardMessage(client, guildId, channelMap[job.channelKey], job.repairTitles || [job.title], job.key);
             hasPinnedMessage = Boolean(repaired?.message?.pinned);
             if (repaired?.pinError) {
                 boardStates[job.key].warning = `board content updated, but ${repaired.pinError}`;
