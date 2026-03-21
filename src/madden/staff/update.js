@@ -1651,41 +1651,29 @@ async function execute(interaction) {
       : pulledWeekLabel;
 
     const partialUpdate = statsPartial;
-    const runModeLabel = backfillOnlyAwards
-      ? `Rebuild Week ${Number(weekOverride)}`
-      : 'Normal weekly run';
-    const runScopeLabel = backfillOnlyAwards
-      ? 'Week-specific rebuild. League-wide standing pins and some live-season outputs stay untouched.'
-      : 'Full post-advance refresh using the latest reliable week.';
+    const completedWeekLabel = usedFallbackWeek && dataWeekLabel !== pulledWeekLabel
+      ? dataWeekLabel
+      : (phase.isRegularSeason && Number(currentWeekValue || 0) > 1
+        ? `Week ${Math.max(1, Number(currentWeekValue || 1) - 1)}`
+        : dataWeekLabel);
 
     const embed = new EmbedBuilder()
       .setTitle(brandTitle(partialUpdate ? 'Madden Weekly Update Partial' : 'Madden Weekly Update Complete'))
       .setDescription(
         partialUpdate
           ? 'League data saved, but the target week still looks incomplete. Run it again once the week is fully finished.'
-          : 'Latest data pulled and saved locally.'
+          : 'Latest data pulled and league outputs refreshed.'
       )
       .setColor(partialUpdate ? 0xf1c40f : 0x00cc66)
       .addFields(
-        { name: 'Run mode', value: runModeLabel, inline: false },
         { name: 'Phase', value: phaseNameLabel(phase), inline: false },
-        { name: 'Scope', value: runScopeLabel, inline: false },
-        { name: 'League', value: String(summary.leagueId), inline: true },
         { name: 'Current league week', value: pulledWeekLabel, inline: true },
-        { name: 'Teams', value: String(summary.teamsCount), inline: true },
-        { name: 'Standings', value: String(summary.standingsCount), inline: true },
-        { name: 'Games', value: String(summary.gamesCount), inline: true },
-        { name: 'Missing player stats', value: missingField, inline: false },
-        { name: 'Saved', value: summary.outPath, inline: false }
+        { name: 'Completed week processed', value: completedWeekLabel, inline: true }
       );
-
-    if (usedFallbackWeek && dataWeekLabel !== pulledWeekLabel) {
-      embed.addFields({ name: 'Completed week processed', value: dataWeekLabel, inline: false });
-    }
 
     if (partialUpdate) {
       const notes = [];
-      if (usedFallbackWeek) notes.push(`Used last completed week with stats: Week ${Number(effectiveCurrentWeekUsed || 0)}`);
+      if (usedFallbackWeek) notes.push(`Used last completed week with stats: ${dataWeekLabel}`);
       if (targetWeekMissing) notes.push('The current target week still looks incomplete.');
       if (lowPlayerCountWeek) notes.push(`Week ${Number(targetWeekIdx) + 1} player volume looks incomplete for this export.`);
       embed.addFields({ name: 'Update status', value: notes.join('\n').slice(0, 1024) || 'Partial update' });
@@ -1697,29 +1685,24 @@ async function execute(interaction) {
     }
     if (inPreseason) {
       embed.addFields({
-        name: 'Preseason behavior',
-        value: 'Preseason keeps threads, announcements, and league logs active while the season boards stay visible from last year. They reset when Regular Season Week 1 starts.',
+        name: 'Note',
+        value: 'Season boards stay visible from last year until Regular Season Week 1.',
       });
     } else if (inOffseason) {
       embed.addFields({
-        name: 'Offseason behavior',
-        value: 'Offseason keeps setup, logs, and offseason workflows active while the season boards stay visible from last year. They reset when Regular Season Week 1 starts.',
-      });
-    } else if (phase.inPlayoffs) {
-      embed.addFields({
-        name: 'Playoff behavior',
-        value: 'Playoff updates stay phase-aware for playoff rounds, threads, and board refreshes. Regular-season-only outputs stay gated when they no longer apply.',
+        name: 'Note',
+        value: 'Season boards stay visible from last year until Regular Season Week 1.',
       });
     }
-    if (!backfillOnlyAwards) {
+    if (partialUpdate) {
       embed.addFields({
-        name: 'When to use this',
-        value: 'Normal weekly run: use right after each advance. Leave every option empty unless you are rebuilding a specific older week.',
+        name: 'Next',
+        value: 'Run `/weeklyupdate` again after the week is fully complete.',
       });
-    } else {
+    } else if (backfillOnlyAwards) {
       embed.addFields({
-        name: 'When to use this',
-        value: `Rebuild mode is for fixing Week ${Number(weekOverride)} only. Use it when an older week card, grades, awards, or recap needs to be rebuilt.`,
+        name: 'Next',
+        value: `Rebuild mode was used for Week ${Number(weekOverride)}.`,
       });
     }
     await updateProgress(4, 'Wrapping up the weekly update results.');
