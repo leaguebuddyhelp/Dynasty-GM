@@ -57,6 +57,11 @@ const CORE_REQUIRED_PIN_KEYS = [
 
 const STANDARD_REQUIRED_PIN_KEYS = [
   'top100',
+  'madden_awards_button',
+];
+
+const TRADE_REQUIRED_PIN_KEYS = [
+  'trade_counts',
 ];
 
 const SETUP_ITEM_LABELS = {
@@ -110,9 +115,11 @@ function requiredRoleKeysForSetup(overlayConfig) {
 
 function requiredPinKeysForSetup(overlayConfig) {
   const tier = String(overlayConfig?.license?.tier || 'free').toLowerCase();
+  const packsEnabled = Array.isArray(overlayConfig?.packsEnabled) ? overlayConfig.packsEnabled : [];
   return [
     ...CORE_REQUIRED_PIN_KEYS,
     ...((tier === 'standard' || tier === 'premium') ? STANDARD_REQUIRED_PIN_KEYS : []),
+    ...(packsEnabled.includes('trades_basic') ? TRADE_REQUIRED_PIN_KEYS : []),
   ];
 }
 

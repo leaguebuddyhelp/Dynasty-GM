@@ -274,6 +274,30 @@ function buildTradeSubmitComponents() {
     ];
 }
 
+function buildAwardsButtonEmbed() {
+    return new EmbedBuilder()
+        .setTitle('Madden Yearly Awards (Staff)')
+        .setDescription(
+            [
+                'Staff: after the season ends and before the next season begins, click below to enter the yearly awards.',
+                'MVP, Coach of the Year, OPOY, DPOY, OROY, DROY, Super Bowl Champion, and Super Bowl MVP.',
+            ].join('\n'),
+        )
+        .setColor(0xFFD700)
+        .setFooter({ text: 'LEAGUEbuddy • yearly awards' });
+}
+
+function buildAwardsButtonComponents() {
+    return [
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('madden_awards_button')
+                .setLabel('Enter Madden Yearly Awards')
+                .setStyle(ButtonStyle.Primary),
+        ),
+    ];
+}
+
 async function hydrateSeededPins(interaction, guildId, channelMap, snapshot, options = {}) {
     const top100Included = options.top100Included !== false;
     const leagueId = getLeagueForGuild(guildId);
@@ -384,6 +408,7 @@ export async function seedAndHydratePins(client, guildId) {
     const embeds = buildEmbeds();
     const tier = String(cfg?.license?.tier || 'free').toLowerCase();
     const top100Included = tier === 'standard' || tier === 'premium';
+    const awardsIncluded = tier === 'standard' || tier === 'premium';
 
     const jobs = [
         { key: 'available_teams', channelKey: 'Available Teams', title: 'Available Teams', repairTitles: ['Available Teams'] },
@@ -439,6 +464,30 @@ export async function seedAndHydratePins(client, guildId) {
             : '⚠️ Submit Trade: could not update the trade button');
     } else {
         extraResults.push('ℹ️ Submit Trade: not included in this tier');
+    }
+
+    const awardsChannelId = channelMap['Yearly Awards'];
+    const awardsChannel = awardsChannelId
+        ? await client.channels.fetch(awardsChannelId).catch(() => null)
+        : null;
+    if (awardsIncluded && awardsChannel?.isTextBased()) {
+        const awardsMessage = await ensurePinnedActionMessage(awardsChannel, {
+            embed: buildAwardsButtonEmbed(),
+            components: buildAwardsButtonComponents(),
+            existingMessageId: pins.madden_awards_button,
+            matchTitle: 'Madden Yearly Awards (Staff)',
+        });
+        if (awardsMessage?.message) {
+            upsertGuildPin(guildId, 'madden_awards_button', awardsMessage.message.id);
+            setPinId('madden_awards_button', awardsMessage.message.id, guildId);
+        }
+        extraResults.push(awardsMessage?.message
+            ? awardsMessage.pinError
+                ? `⚠️ Yearly Awards: button updated, but ${awardsMessage.pinError}`
+                : '✅ Yearly Awards: seeded button'
+            : '⚠️ Yearly Awards: could not update the awards button');
+    } else {
+        extraResults.push('ℹ️ Yearly Awards: not included in this tier');
     }
 
     let snapshot = null;

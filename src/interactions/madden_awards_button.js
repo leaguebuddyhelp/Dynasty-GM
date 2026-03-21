@@ -16,7 +16,7 @@ import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
 const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
