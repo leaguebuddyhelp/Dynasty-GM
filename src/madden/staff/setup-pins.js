@@ -120,6 +120,28 @@ async function hasVerifiedPinnedBoardMessage(client, guildId, channelId, expecte
     return Boolean(pins?.some((message) => message?.author?.id === client.user?.id));
 }
 
+async function repairPinnedBoardMessage(client, guildId, channelId, expectedTitle, key) {
+    if (!channelId) return null;
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    if (!channel || !channel.isTextBased()) return null;
+
+    const recent = await channel.messages.fetch({ limit: 25 }).catch(() => null);
+    const match = recent?.find((message) =>
+        message?.author?.id === client.user?.id &&
+        (message.embeds || []).some((embed) => String(embed?.title || '').trim() === expectedTitle)
+    ) || null;
+
+    if (!match) return null;
+    try {
+        if (!match.pinned) await match.pin();
+        upsertGuildPin(guildId, key, match.id);
+        setPinId(key, match.id);
+        return match;
+    } catch {
+        return null;
+    }
+}
+
 function buildEmbeds() {
     const common = {
         color: 0x5865F2,
@@ -368,10 +390,14 @@ export async function seedAndHydratePins(client, guildId) {
 
     for (const job of jobs) {
         const pinId = loadGuildMaddenConfigIfComplete(guildId)?.pins?.[job.key] || pins[job.key] || null;
-        const hasPinnedMessage = await hasVerifiedPinnedBoardMessage(client, guildId, channelMap[job.channelKey], pinId);
+        let hasPinnedMessage = await hasVerifiedPinnedBoardMessage(client, guildId, channelMap[job.channelKey], pinId);
+        if (!hasPinnedMessage) {
+            const repaired = await repairPinnedBoardMessage(client, guildId, channelMap[job.channelKey], job.title, job.key);
+            hasPinnedMessage = Boolean(repaired?.pinned);
+        }
         if (!hasPinnedMessage) {
             boardStates[job.key].hydrated = false;
-            boardStates[job.key].warning = 'board content updated, but no pinned message exists in the channel yet';
+            boardStates[job.key].warning = 'board content updated, but LEAGUEbuddy could not pin the board message';
         }
     }
 
