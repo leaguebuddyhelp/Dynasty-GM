@@ -1192,22 +1192,22 @@ async function execute(interaction) {
     // Offseason/preseason: keep placeholders instead of forcing live board updates.
     if (inPreseason || inOffseason) {
       try {
-        await resetStatLeaders(interaction.client);
+        await resetStatLeaders(interaction.client, interaction.guildId);
       } catch (e) {
         console.warn('[madden-weeklyupdate] stat leaders reset skipped:', e?.message || e);
       }
       try {
-        await resetStandings(interaction.client);
+        await resetStandings(interaction.client, interaction.guildId);
       } catch (e) {
         console.warn('[madden-weeklyupdate] standings reset skipped:', e?.message || e);
       }
       try {
-        await resetPlayoffPicture(interaction.client);
+        await resetPlayoffPicture(interaction.client, interaction.guildId);
       } catch (e) {
         console.warn('[madden-weeklyupdate] playoff picture reset skipped:', e?.message || e);
       }
       try {
-        await resetPowerRankings(interaction.client);
+        await resetPowerRankings(interaction.client, interaction.guildId);
       } catch (e) {
         console.warn('[madden-weeklyupdate] power rankings reset skipped:', e?.message || e);
       }
