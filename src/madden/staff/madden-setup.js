@@ -74,6 +74,7 @@ function uniqueStrings(values = []) {
 
 const CORE_CHANNEL_SPECS = [
     { key: 'League Staff', name: 'lb-league-staff', type: ChannelType.GuildText },
+    { key: 'Madden League Buddy Announcements', name: 'lb-announcements', type: ChannelType.GuildText },
     { key: 'Available Teams', name: 'lb-available-teams', type: ChannelType.GuildText },
     { key: 'Standings', name: 'lb-standings', type: ChannelType.GuildText },
     { key: 'Stat Leaders', name: 'lb-stat-leaders', type: ChannelType.GuildText },

@@ -6,6 +6,7 @@ import { getTestingBypassBilling } from './testing_bypass.js';
 
 const CORE_REQUIRED_CHANNEL_KEYS = [
   'League Staff',
+  'Madden League Buddy Announcements',
   'Available Teams',
   'Standings',
   'Stat Leaders',
