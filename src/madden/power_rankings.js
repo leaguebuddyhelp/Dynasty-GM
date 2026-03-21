@@ -1,11 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { EmbedBuilder } from 'discord.js';
-import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
-import { upsertGuildPin } from '../shared/madden_guild_config.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
+import { ensureBoardPinMessage } from './board_pin_utils.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
@@ -147,6 +146,7 @@ function teamRoleMention(teamName, roleMap) {
 }
 
 export async function updatePowerRankings(client, leagueId, guildId = null) {
+  const resolvedGuildId = guildId || client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const displayWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? 0;
@@ -155,7 +155,7 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
   const inPreseason = displayWeek <= 0 && !hasSeasonData;
   if (inPreseason) {
     // Preseason: keep the placeholder message instead of updating rankings
-    await resetPowerRankings(client);
+    await resetPowerRankings(client, resolvedGuildId);
     return;
   }
   const teams = teamNameMap(snapshot);
@@ -199,7 +199,7 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
   }
   fields.push({ name: 'Top 10', value: lines.join('\n'), inline: false });
 
-  const channelMap = loadChannelMap(guildId);
+  const channelMap = loadChannelMap(resolvedGuildId);
   const channelId = channelMap['Power Rankings'];
   if (!channelId) throw new Error('Power Rankings channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -231,15 +231,12 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
     .setTimestamp(new Date());
   if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
 
-  const pinId = getPinId('power_rankings', guildId);
-  if (!pinId) return;
-  const msg = await channel.messages.fetch(pinId).catch(() => null);
-  if (!msg) {
-    console.warn('[power_rankings] pin not found; skipping create');
-    return;
-  }
-  if (channel?.guild?.id) upsertGuildPin(channel.guild.id, 'power_rankings', msg.id);
-  await msg.edit({ embeds: [embed], files: boardImage ? [boardImage] : [], content: null }).catch(() => null);
+  await ensureBoardPinMessage(channel, {
+    pinKey: 'power_rankings',
+    guildId: resolvedGuildId,
+    matchTitle: 'Madden Power Rankings',
+    payload: { embeds: [embed], files: boardImage ? [boardImage] : [], content: null },
+  });
 
   // Tag new entrants separately
   if (newEntrants.length && channel?.isTextBased()) {
@@ -265,9 +262,9 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
   }
 }
 
-export async function resetPowerRankings(client) {
-  const guildId = client?.guilds?.cache?.first?.()?.id || null;
-  const channelMap = loadChannelMap(guildId);
+export async function resetPowerRankings(client, guildId = null) {
+  const resolvedGuildId = guildId || client?.guilds?.cache?.first?.()?.id || null;
+  const channelMap = loadChannelMap(resolvedGuildId);
   const channelId = channelMap['Power Rankings'];
   if (!channelId) throw new Error('Power Rankings channel not configured');
   const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -280,12 +277,12 @@ export async function resetPowerRankings(client) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('power_rankings', guildId);
-  if (!pinId) return;
-  const msg = await channel.messages.fetch(pinId).catch(() => null);
-  if (!msg) return;
-  if (channel?.guild?.id) upsertGuildPin(channel.guild.id, 'power_rankings', msg.id);
-  await msg.edit({ embeds: [embed], content: null }).catch(() => null);
+  await ensureBoardPinMessage(channel, {
+    pinKey: 'power_rankings',
+    guildId: resolvedGuildId,
+    matchTitle: 'Madden Power Rankings',
+    payload: { embeds: [embed], content: null },
+  });
 }
 
 export default { updatePowerRankings };

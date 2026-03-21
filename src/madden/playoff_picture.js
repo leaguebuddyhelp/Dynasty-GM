@@ -1,11 +1,10 @@
 import fs from 'fs';
 import { EmbedBuilder } from 'discord.js';
-import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
-import { upsertGuildPin } from '../shared/madden_guild_config.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
+import { ensureBoardPinMessage } from './board_pin_utils.js';
 
 function loadSnapshot(leagueId) {
   const file = getMaddenLeagueSnapshotPath(leagueId);
@@ -68,7 +67,7 @@ export async function updatePlayoffPicture(client, leagueId, guildId = null) {
   const hasSeasonData = (snapshot?.weeklyStats || []).some(w => Number(w.weekIndex ?? -1) >= 0) || standings.length > 0;
   const inPreseason = displayWeek <= 0 && !hasSeasonData;
   if (inPreseason) {
-    await resetPlayoffPicture(client);
+    await resetPlayoffPicture(client, resolvedGuildId);
     return;
   }
   const teams = teamNameMap(snapshot);
@@ -120,14 +119,12 @@ export async function updatePlayoffPicture(client, leagueId, guildId = null) {
     .setTimestamp(new Date());
   if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
 
-  const pinId = getPinId('playoff_picture', resolvedGuildId);
-  if (!pinId) return;
-  const msg = await channel.messages.fetch(pinId).catch(() => null);
-  if (!msg) {
-    console.warn('[playoff_picture] pin not found; skipping create');
-    return;
-  }
-  await msg.edit({ embeds: [embed], files: boardImage ? [boardImage] : [], content: null }).catch(() => null);
+  await ensureBoardPinMessage(channel, {
+    pinKey: 'playoff_picture',
+    guildId: resolvedGuildId,
+    matchTitle: 'Madden Playoff Picture',
+    payload: { embeds: [embed], files: boardImage ? [boardImage] : [], content: null },
+  });
 }
 
 export async function resetPlayoffPicture(client, guildId = null) {
@@ -145,14 +142,12 @@ export async function resetPlayoffPicture(client, guildId = null) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('playoff_picture', resolvedGuildId);
-  if (!pinId) return;
-  const msg = await channel.messages.fetch(pinId).catch(() => null);
-  if (!msg) {
-    console.warn('[playoff_picture] pin not found; skipping create');
-    return;
-  }
-  await msg.edit({ embeds: [embed], content: null }).catch(() => null);
+  await ensureBoardPinMessage(channel, {
+    pinKey: 'playoff_picture',
+    guildId: resolvedGuildId,
+    matchTitle: 'Madden Playoff Picture',
+    payload: { embeds: [embed], content: null },
+  });
 }
 
 export default { updatePlayoffPicture };

@@ -1,10 +1,10 @@
 import fs from 'fs';
 import { EmbedBuilder } from 'discord.js';
-import { getPinId, setPinId } from './pins_store.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
+import { ensureBoardPinMessage } from './board_pin_utils.js';
 
 function loadSnapshot(leagueId) {
   const file = getMaddenLeagueSnapshotPath(leagueId);
@@ -88,7 +88,7 @@ export async function updateStandings(client, leagueId, guildId = null) {
     (snapshot?.standings?.teamStandingInfoList || []).length > 0;
   const inPreseason = (seasonWeekType === 0 || displayWeek <= 0) && !hasSeasonData;
   if (inPreseason) {
-    await resetStandings(client);
+    await resetStandings(client, resolvedGuildId);
     return;
   }
   const divisions = groupByDivision(snapshot);
@@ -165,14 +165,12 @@ export async function updateStandings(client, leagueId, guildId = null) {
     .setTimestamp(new Date());
   if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
 
-  const pinId = getPinId('standings', resolvedGuildId);
-  if (!pinId) return;
-  const msg = await channel.messages.fetch(pinId).catch(() => null);
-  if (!msg) {
-    console.warn('[standings] pin not found; skipping create');
-    return;
-  }
-  await msg.edit({ embeds: [embed], files: boardImage ? [boardImage] : [], content: null }).catch(() => null);
+  await ensureBoardPinMessage(channel, {
+    pinKey: 'standings',
+    guildId: resolvedGuildId,
+    matchTitle: 'Madden Standings',
+    payload: { embeds: [embed], files: boardImage ? [boardImage] : [], content: null },
+  });
 }
 
 export async function resetStandings(client, guildId = null) {
@@ -190,11 +188,12 @@ export async function resetStandings(client, guildId = null) {
     timestamp: new Date().toISOString(),
   };
 
-  const pinId = getPinId('standings', resolvedGuildId);
-  if (!pinId) return;
-  const msg = await channel.messages.fetch(pinId).catch(() => null);
-  if (!msg) return;
-  await msg.edit({ embeds: [placeholder], content: null }).catch(() => null);
+  await ensureBoardPinMessage(channel, {
+    pinKey: 'standings',
+    guildId: resolvedGuildId,
+    matchTitle: 'Madden Standings',
+    payload: { embeds: [placeholder], content: null },
+  });
 }
 
 export default { updateStandings };
