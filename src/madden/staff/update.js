@@ -98,35 +98,65 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
     Number(entry?.weekIndex ?? entry?.week ?? -1) === currentWeekIndex &&
     Number(entry?.stageIndex ?? entry?.stage ?? -1) === Stage.PRESEASON
   );
+  const regularScheduleEvidence = currentWeekIndex !== null && scheduleEntries.some((entry) =>
+    Number(entry?.weekIndex ?? entry?.week ?? -1) === currentWeekIndex &&
+    Number(entry?.stageIndex ?? entry?.stage ?? -1) === Stage.SEASON &&
+    Number(entry?.weekIndex ?? entry?.week ?? -1) >= 0 &&
+    Number(entry?.weekIndex ?? entry?.week ?? -1) <= 17
+  );
   const anyRegularSeasonStats = weeklyStatsEntries.some((entry) =>
     Number(entry?.stage ?? entry?.stageIndex ?? -1) === Stage.SEASON &&
     statCountFor(entry) > 0
+  );
+  const anyRegularSeasonSchedule = scheduleEntries.some((entry) =>
+    Number(entry?.stageIndex ?? entry?.stage ?? -1) === Stage.SEASON &&
+    Number(entry?.weekIndex ?? entry?.week ?? -1) >= 0 &&
+    Number(entry?.weekIndex ?? entry?.week ?? -1) <= 17
   );
   const inferredPreseasonFromStats =
     rawWeek > 0 &&
     rawWeek <= 3 &&
     preseasonEvidence &&
-    !currentRegularEvidence;
+    !currentRegularEvidence &&
+    !regularScheduleEvidence;
   const inferredPreseasonFromSchedule =
     rawWeek > 0 &&
     rawWeek <= 3 &&
     preseasonScheduleEvidence &&
     !currentRegularEvidence &&
+    !regularScheduleEvidence &&
     (!anyRegularSeasonStats || offSeasonStage > 0);
+  const explicitRegularSeason =
+    (
+      rawStage === Stage.SEASON &&
+      rawWeek > 0 &&
+      rawWeek <= 18
+    ) ||
+    (
+      rawWeek > 0 &&
+      rawWeek <= 18 &&
+      (currentRegularEvidence || regularScheduleEvidence)
+    ) ||
+    (
+      rawWeek > 0 &&
+      rawWeek <= 18 &&
+      anyRegularSeasonSchedule &&
+      !preseasonEvidence &&
+      !preseasonScheduleEvidence
+    );
   const explicitPreseason =
-    rawStage === Stage.PRESEASON ||
+    (
+      rawStage === Stage.PRESEASON &&
+      !explicitRegularSeason
+    ) ||
     inferredPreseasonFromStats ||
     inferredPreseasonFromSchedule;
-  const explicitRegularSeason =
-    rawStage === Stage.SEASON &&
-    rawWeek > 0 &&
-    rawWeek <= 18;
 
   let kind = 'regular';
-  if (explicitPreseason) {
-    kind = 'preseason';
-  } else if (explicitRegularSeason) {
+  if (explicitRegularSeason) {
     kind = 'regular';
+  } else if (explicitPreseason) {
+    kind = 'preseason';
   } else if (offSeasonStage > 0 || rawStage === 3 || rawStage === 8 || draftInactive) {
     kind = 'offseason';
   } else if (rawWeek <= 0) {
