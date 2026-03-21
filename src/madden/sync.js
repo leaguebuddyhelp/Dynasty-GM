@@ -23,12 +23,7 @@ const useSnallabot = (process.env.MADDEN_SYNC_USE_SNALLABOT ?? 'true').toLowerCa
 
 const data = new SlashCommandBuilder()
   .setName('sync')
-  .setDescription('Pull Madden data directly from EA and save locally.')
-  .addStringOption(option =>
-    option.setName('league_id')
-      .setDescription('Madden league ID (optional; defaults to saved/latest)')
-      .setRequired(false)
-  );
+  .setDescription('Pull this server\'s connected Madden league data and save locally.');
 
 async function emitProgress(options, phase, detail) {
   if (typeof options?.onProgress !== 'function') return;
@@ -518,7 +513,7 @@ export async function runSync(leagueId, provider, options = {}) {
 }
 
 async function execute(interaction) {
-  const leagueId = interaction.options.getString('league_id') || resolveLeagueIdWithConfig(interaction.guildId);
+  const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   await interaction.deferReply({ ephemeral: true });
 
   const renderProgressEmbed = (phase, detail) => new EmbedBuilder()

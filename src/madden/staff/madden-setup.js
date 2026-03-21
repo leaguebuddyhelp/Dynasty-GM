@@ -18,16 +18,7 @@ import { inspectSetupReadiness } from './setup_readiness.js';
 export const data = new SlashCommandBuilder()
     .setName('setup-channels')
     .setDescription('Admin-only: build the category, channels, and config for this server\'s current package.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .addStringOption(o =>
-        o.setName('tier')
-            .setDescription('Optional override. Defaults to this server\'s current package.')
-            .addChoices(
-                { name: 'Free', value: 'free' },
-                { name: 'Standard', value: 'standard' },
-                { name: 'Premium', value: 'premium' },
-            )
-            .setRequired(false));
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 const DEFAULT_PACKS = {
     free: ['core', 'threads', 'stats_light'],
@@ -585,7 +576,7 @@ export async function execute(interaction) {
             return;
         }
 
-        const tierChoice = detectSetupTier(guild.id, interaction.options.getString('tier'));
+        const tierChoice = detectSetupTier(guild.id, null);
         const tier = tierChoice.tier;
         const packsEnabled = [...(DEFAULT_PACKS[tier] || DEFAULT_PACKS.free)];
         const tradeEnabled = packsEnabled.includes('trades_basic');

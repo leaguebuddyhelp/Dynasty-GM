@@ -913,26 +913,14 @@ async function buildRecognitionBackfillPayload({
 
 const data = new SlashCommandBuilder()
   .setName('weeklyupdate')
-  .setDescription('Run after each advance. Use rebuild mode only when fixing a specific week.')
-  .addStringOption(o => o
-    .setName('mode')
-    .setDescription('Leave empty for the normal post-advance run.')
-    .addChoices(
-      { name: 'Normal weekly run', value: 'normal' },
-      { name: 'Rebuild a specific week', value: 'rebuild_week' },
-    )
-    .setRequired(false))
+  .setDescription('Run after each advance. Leave every option empty for the normal weekly run.')
   .addIntegerOption(o => o
     .setName('target_week')
-    .setDescription('Only use with rebuild mode. Example: 5 for Week 5.')
-    .setRequired(false))
-  .addBooleanOption(o => o
-    .setName('queue_recap')
-    .setDescription('Queue the weekly recap review. Default: true for normal runs.')
+    .setDescription('Optional rebuild week. Example: 5 for Week 5.')
     .setRequired(false))
   .addBooleanOption(o => o
     .setName('force_weekly_awards')
-    .setDescription('Rebuild mode only: force weekly awards for the chosen week.')
+    .setDescription('Only use with target_week when you need to force awards for that rebuild week.')
     .setRequired(false))
   .setDefaultMemberPermissions(null);
 
@@ -947,27 +935,14 @@ async function execute(interaction) {
       await interaction.editReply({ content: 'Only LB Commish/Co-Commish can use this command.' });
       return;
     }
-    const requestedMode = interaction.options.getString('mode') || 'normal';
     weekOverride = interaction.options.getInteger('target_week');
     const forceAwardsOption = interaction.options.getBoolean('force_weekly_awards') === true;
-    const queueRecapOption = interaction.options.getBoolean('queue_recap');
-    const recapEnabled = queueRecapOption !== false;
-    const rebuildMode = requestedMode === 'rebuild_week';
-    if (rebuildMode && (!weekOverride || weekOverride < 1)) {
-      await interaction.editReply({
-        content: 'Rebuild mode needs `target_week`. Example: set mode to `Rebuild a specific week` and `target_week` to `5` for Week 5.',
-      });
-      return;
-    }
-    if (!rebuildMode && weekOverride) {
-      await interaction.editReply({
-        content: 'Leave `target_week` empty for the normal weekly run. Only set `target_week` when mode is `Rebuild a specific week`.',
-      });
-      return;
-    }
+    const recapEnabled = true;
+    const rebuildMode = Number(weekOverride || 0) > 0;
+    const requestedMode = rebuildMode ? 'rebuild_week' : 'normal';
     if (!rebuildMode && forceAwardsOption) {
       await interaction.editReply({
-        content: '`force_weekly_awards` only applies in `Rebuild a specific week` mode.',
+        content: '`force_weekly_awards` only applies when `target_week` is set.',
       });
       return;
     }
