@@ -79,6 +79,17 @@ function scoreAutocompleteChoice(name = '', focused = '') {
   return 0;
 }
 
+function baseRoleBoost(name = '', optionName = 'role1') {
+  if (optionName !== 'role2') return 0;
+  if (name === 'LEAGUEbuddy Coaches') return 1000;
+  if (name === 'LB Coaches') return 950;
+  if (name === 'Ghost Legacy') return 900;
+  if (name === 'LEAGUEbuddy Trade Committee') return 850;
+  if (name === 'LB Trade Committee') return 800;
+  if (name === 'Trade Committee') return 750;
+  return 0;
+}
+
 const roleChoices = (roleMap) => {
   const byRoleId = new Map();
   for (const [name, roleId] of Object.entries(roleMap || {})) {
@@ -272,7 +283,7 @@ export async function autocomplete(interaction) {
 
   const options = filteredRoles
     .filter((item) => focusedName !== 'role2' || normalizeKey(item.name) !== normalizeKey(selectedRole1))
-    .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) }))
+    .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) + baseRoleBoost(item.name, focusedName) }))
     .filter((item) => !focused || item.score > 0)
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
     .slice(0, 25);
