@@ -88,6 +88,8 @@ export const data = new SlashCommandBuilder()
   .addStringOption(o => o.setName('role2').setDescription('Second role to remove (optional)').setRequired(false).setAutocomplete(true))
   .setDefaultMemberPermissions(null);
 
+export const skipDeploy = true;
+
 export async function execute(interaction) {
   const roleMap = loadRoleMapForGuild(interaction.guildId);
   await interaction.deferReply({ ephemeral: true });

@@ -49,8 +49,6 @@ const BETA_MADDEN_COMMANDS = new Set([
   'setup-roles',
   'setup-reset',
   'member',
-  'assignrole',
-  'removerole',
   'activateplan',
   'deactivateplan',
   'attachpaymentref',
