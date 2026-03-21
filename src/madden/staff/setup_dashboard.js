@@ -36,10 +36,10 @@ function formatMissingItems(items = []) {
 
 function buildFlowLines() {
   return [
-    '1. Run the one command shown below.',
-    '2. Do only that one thing.',
-    '3. Run `/setup` again.',
-    '4. Repeat until `/setup` says complete.',
+    '1. Start with `/setup`.',
+    '2. If LEAGUEbuddy still needs your league, `/setup` will send you to `/connectleague` first.',
+    '3. After each step, come back and run `/setup` again.',
+    '4. Keep following the one next step until `/setup` says complete.',
   ].join('\n');
 }
 
@@ -133,7 +133,7 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
   }
   return {
     title: 'Setup complete',
-    action: 'Setup is complete. Run `/create-threads` or continue with your normal weekly workflow.',
+    action: 'Setup is complete. Use the "Start The League" steps below for what to do next.',
     details: `League: ${leagueId} • Package: ${status.overlayStatus.tier || billing?.plan || 'free'}`,
   };
 }
@@ -172,7 +172,7 @@ export async function execute(interaction) {
     .setColor(!readiness.hasRequiredPermissions || readiness.hierarchyWarning || status.missingRequiredRoles.length || status.syncNeeded
       ? 0xf1c40f
       : 0x57f287)
-    .setDescription('Free quick start: invite LEAGUEbuddy, run `/connectleague`, then use `/setup` until it says complete.')
+    .setDescription('Run `/setup` first. LEAGUEbuddy will tell you the next step, including `/connectleague` when your league still needs to be linked.')
     .addFields(
       {
         name: 'Current Step',
@@ -187,7 +187,7 @@ export async function execute(interaction) {
         value: decision.details,
       },
       {
-        name: 'Repeat Loop',
+        name: 'Full Flow',
         value: buildFlowLines(),
       },
       ...(setupComplete ? [{
