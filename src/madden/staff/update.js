@@ -117,10 +117,16 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
     rawStage === Stage.PRESEASON ||
     inferredPreseasonFromStats ||
     inferredPreseasonFromSchedule;
+  const explicitRegularSeason =
+    rawStage === Stage.SEASON &&
+    rawWeek > 0 &&
+    rawWeek <= 18;
 
   let kind = 'regular';
   if (explicitPreseason) {
     kind = 'preseason';
+  } else if (explicitRegularSeason) {
+    kind = 'regular';
   } else if (offSeasonStage > 0 || rawStage === 3 || rawStage === 8 || draftInactive) {
     kind = 'offseason';
   } else if (rawWeek <= 0) {
