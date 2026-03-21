@@ -156,9 +156,9 @@ async function hasVerifiedPinnedBoardMessage(client, guildId, channelId, expecte
 }
 
 async function repairPinnedBoardMessage(client, guildId, channelId, expectedTitle, key) {
-    if (!channelId) return null;
+    if (!channelId) return { message: null, pinError: 'channel not found' };
     const channel = await client.channels.fetch(channelId).catch(() => null);
-    if (!channel || !channel.isTextBased()) return null;
+    if (!channel || !channel.isTextBased()) return { message: null, pinError: 'channel not found' };
 
     const recent = await channel.messages.fetch({ limit: 25 }).catch(() => null);
     const match = recent?.find((message) =>
@@ -166,15 +166,28 @@ async function repairPinnedBoardMessage(client, guildId, channelId, expectedTitl
         (message.embeds || []).some((embed) => String(embed?.title || '').trim() === expectedTitle)
     ) || null;
 
-    if (!match) return null;
+    if (!match) return { message: null, pinError: 'existing board message not found for repair' };
+
+    const permissionIssue = getPinPermissionsIssue(channel);
+    if (permissionIssue) {
+        return { message: match, pinError: permissionIssue };
+    }
+
+    let pinError = null;
     try {
         if (!match.pinned) await match.pin();
-        upsertGuildPin(guildId, key, match.id);
-        setPinId(key, match.id, guildId);
-        return match;
-    } catch {
-        return null;
+    } catch (error) {
+        pinError = formatPinningFailure(error);
     }
+
+    const refreshed = await channel.messages.fetch(match.id).catch(() => match);
+    if (refreshed?.pinned) {
+        upsertGuildPin(guildId, key, refreshed.id);
+        setPinId(key, refreshed.id, guildId);
+        return { message: refreshed, pinError: null };
+    }
+
+    return { message: refreshed || match, pinError: pinError || 'pin request failed during repair' };
 }
 
 function buildEmbeds() {
@@ -433,7 +446,10 @@ export async function seedAndHydratePins(client, guildId) {
         let hasPinnedMessage = await hasVerifiedPinnedBoardMessage(client, guildId, channelMap[job.channelKey], pinId);
         if (!hasPinnedMessage) {
             const repaired = await repairPinnedBoardMessage(client, guildId, channelMap[job.channelKey], job.title, job.key);
-            hasPinnedMessage = Boolean(repaired?.pinned);
+            hasPinnedMessage = Boolean(repaired?.message?.pinned);
+            if (repaired?.pinError) {
+                boardStates[job.key].warning = `board content updated, but ${repaired.pinError}`;
+            }
         }
         if (!hasPinnedMessage) {
             boardStates[job.key].hydrated = false;
