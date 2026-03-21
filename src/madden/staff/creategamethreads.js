@@ -9,6 +9,7 @@ import { setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
 import { postSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
+import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { hasStaffRole as hasGuildStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
 export const featureKey = 'threads';
@@ -17,6 +18,21 @@ const STAFF_ROLE_NAMES = ['LB Commish', 'LB Co-Commish'];
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
+}
+
+function formatPlayoffRoundLabel(round = '') {
+  switch (String(round || '').toLowerCase()) {
+    case 'wildcard':
+      return 'Wild Card';
+    case 'divisional':
+      return 'Divisional Round';
+    case 'conference':
+      return 'Conference Championship';
+    case 'superbowl':
+      return 'Super Bowl';
+    default:
+      return String(round || '').trim();
+  }
 }
 
 function loadRoleMap(guildId = null) {
@@ -993,28 +1009,36 @@ async function execute(interaction) {
       const announceChannelId = channelMap['Madden League Buddy Announcements'];
       const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
       const coachTag = coachRoleId ? `<@&${coachRoleId}>` : '';
+      const billing = getBillingSummary(interaction.guildId);
+      const isFreePlan = String(billing?.plan || 'free').toLowerCase() === 'free';
+      const roundLabel = playoffRound ? formatPlayoffRoundLabel(playoffRound) : `Week ${wkNumeric}`;
       if (announceChannelId) {
         const announce = await interaction.client.channels.fetch(announceChannelId).catch(() => null);
         if (announce && announce.isTextBased()) {
-          const featuredLine = featuredGame
+          const featuredLine = !isFreePlan && featuredGame
             ? `**Game of the Week:** ${featuredGame.awayTeam} (${featuredGame.awayRecord}) vs ${featuredGame.homeTeam} (${featuredGame.homeRecord})`
             : null;
-          const textureLine = featuredGame
+          const textureLine = !isFreePlan && featuredGame
             ? wkNumeric >= 11 && featuredGame.playoffImplicationBoost > 0
               ? `This one carries real late-season weight. Winner earns double impact recognition.`
               : `This is the featured matchup on the slate. Winner earns double impact recognition.`
             : null;
+          const baseDescription = [
+            `${created} matchup ${created === 1 ? 'thread is' : 'threads are'} live for ${roundLabel}.`,
+            `Deadline to play: <t:${deadline}:F> (<t:${deadline}:R>).`,
+          ];
           const embed = {
-            title: brandTitle(playoffRound ? `${playoffRound} Threads Created` : `Week ${wkNumeric} Threads Created`),
-            description: [
-              `${created} matchup threads are live for ${playoffRound ? playoffRound : `Week ${wkNumeric}`}.`,
-              `Deadline to play: <t:${deadline}:F> (<t:${deadline}:R>).`,
-              '',
-              featuredLine,
-              textureLine,
-              '',
-              `This week's clean recognition checklist: use strategy, post stream, touch a front-office tool, respond in-thread, and finish on time.`,
-            ].filter(Boolean).join('\n'),
+            title: brandTitle(`${roundLabel} Threads Created`),
+            description: isFreePlan
+              ? baseDescription.join('\n')
+              : [
+                  ...baseDescription,
+                  '',
+                  featuredLine,
+                  textureLine,
+                  '',
+                  `This week's clean recognition checklist: use strategy, post stream, touch a front-office tool, respond in-thread, and finish on time.`,
+                ].filter(Boolean).join('\n'),
             color: 0x00b0f4,
             timestamp: new Date().toISOString(),
           };
