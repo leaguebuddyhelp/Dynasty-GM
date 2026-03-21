@@ -25,7 +25,7 @@ export async function execute(interaction) {
   const roleMap = loadRoleMap();
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
-    await interaction.editReply({ content: 'Only Ghost Legacy Commish/Co-Commish can review content.' });
+    await interaction.editReply({ content: 'Only LB Commish or LB Co-Commish can review content.' });
     return;
   }
 

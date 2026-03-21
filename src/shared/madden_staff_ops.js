@@ -35,7 +35,7 @@ function getStaffChannelId(channelMap = {}) {
 }
 
 function getOpsChannelId(channelMap = {}) {
-  return channelMap['LG Logs'] || null;
+  return channelMap['League Staff'] || channelMap['LG Logs'] || null;
 }
 
 function loadRoleMap() {

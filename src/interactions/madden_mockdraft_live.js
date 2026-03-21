@@ -40,12 +40,12 @@ import {
   updateMockDraftSession,
 } from '../shared/madden_mock_draft_live.js';
 import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 
 // Handles live mock draft room controls plus the pick select menu used by search results.
 // Note: some components use `madden_mockdraft_live|...`, others use `madden_mockdraft|...`.
 export const customId = /^madden_mockdraft(_live)?\|/;
 export const customId_pick = /^madden_mockdraft_pick\|/;
-const SCOUTING_HUB_CHANNEL_ID = '1460288930946482299';
 const INVITE_REPLY_TTL_MS = 1000 * 60 * 20;
 
 function inviteKey(sessionId, userId) {
@@ -54,6 +54,11 @@ function inviteKey(sessionId, userId) {
 
 function privatePayload(content) {
   return { content, flags: 64 };
+}
+
+function resolveScoutingHubChannelId(guildId) {
+  const channelMap = loadMaddenChannelMap(guildId);
+  return channelMap?.scoutingHub || channelMap?.['Scouting Hub'] || null;
 }
 
 const SESSION_MAX_IDLE_MS = 1000 * 60 * 60 * 6;
@@ -673,14 +678,17 @@ async function handleButton(interaction) {
 
   if (action === 'create') {
     await interaction.deferReply({ flags: 64 });
-    const scoutingHub = interaction.guild.channels.cache.get(SCOUTING_HUB_CHANNEL_ID)
-      || await interaction.guild.channels.fetch(SCOUTING_HUB_CHANNEL_ID).catch(() => null);
+    const scoutingHubChannelId = resolveScoutingHubChannelId(interaction.guildId);
+    const scoutingHub = scoutingHubChannelId
+      ? interaction.guild.channels.cache.get(scoutingHubChannelId)
+        || await interaction.guild.channels.fetch(scoutingHubChannelId).catch(() => null)
+      : null;
     if (!scoutingHub?.threads?.create) {
       await interaction.editReply('Scouting hub is not available for private mock draft rooms right now.');
       return;
     }
 
-    const existing = findActiveMockDraftSession(interaction.guildId, SCOUTING_HUB_CHANNEL_ID);
+    const existing = findActiveMockDraftSession(interaction.guildId, scoutingHubChannelId);
     let usableExisting = existing;
     if (usableExisting) {
       const existingChannel = await interaction.client.channels.fetch(usableExisting.channelId).catch(() => null);
@@ -689,7 +697,7 @@ async function handleButton(interaction) {
         : null;
       const staleLegacy =
         usableExisting.roomType !== 'private'
-        || usableExisting.originalChannelId !== SCOUTING_HUB_CHANNEL_ID;
+        || usableExisting.originalChannelId !== scoutingHubChannelId;
       const inaccessible = !existingChannel || !existingMessage;
       const staleByAge = (Date.now() - Number(usableExisting.updatedAt || usableExisting.createdAt || 0)) > SESSION_MAX_IDLE_MS;
       if (staleLegacy || inaccessible || staleByAge) {
@@ -737,7 +745,7 @@ async function handleButton(interaction) {
     const session = createMockDraftSessionWithRoom({
       guildId: interaction.guildId,
       channelId: room.id,
-      originalChannelId: SCOUTING_HUB_CHANNEL_ID,
+      originalChannelId: scoutingHubChannelId,
       hostId: interaction.user.id,
       roomType: 'private',
     });

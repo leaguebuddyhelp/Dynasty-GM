@@ -22,7 +22,7 @@ function loadChannelMap(guildId = null) {
 }
 
 function getReviewChannelId(channelMap = {}) {
-  return channelMap['LG Logs'] || channelMap['League Staff'] || null;
+  return channelMap['League Staff'] || channelMap['LG Logs'] || null;
 }
 
 function loadReviewState() {
