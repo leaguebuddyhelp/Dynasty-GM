@@ -25,6 +25,29 @@ function fmtBool(v) {
     return v ? '✅' : '❌';
 }
 
+function formatPinError(error) {
+    const text = String(error?.message || error || '').trim();
+    if (!text) return 'refresh failed';
+    if (text.includes('ENOENT') || text.includes('no such file or directory')) {
+        return 'waiting for the latest league snapshot';
+    }
+    if (text.toLowerCase().includes('snapshot missing')) {
+        return 'waiting for the latest league snapshot';
+    }
+    return text;
+}
+
+function createBoardState(title) {
+    return { title, seeded: false, hydrated: false, warning: null, info: null };
+}
+
+function renderBoardState(state) {
+    if (state.hydrated) return `✅ ${state.title}: ready`;
+    if (state.seeded && !state.warning) return `✅ ${state.title}: seeded`;
+    if (state.warning) return `⚠️ ${state.title}: ${state.warning}`;
+    return `❌ ${state.title}: refresh failed`;
+}
+
 async function ensurePinnedEmbedMessage(channel, embed, existingMessageId = null) {
     if (!channel || !channel.isTextBased()) return null;
 
@@ -145,44 +168,44 @@ function buildTradeSubmitComponents() {
 async function hydrateSeededPins(interaction, guildId, channelMap, snapshot) {
     const leagueId = getLeagueForGuild(guildId);
     if (!leagueId || !snapshot) {
-        return ['⚠️ Snapshot hydration skipped: run `/sync` first'];
+        return { snapshotMissing: true, results: [] };
     }
 
-    const results = [];
+    const results = {};
 
     try {
         await updateAvailableTeamsPin(interaction.client, guildId, { leagueId, snapshot });
-        results.push('✅ Available Teams: hydrated');
+        results.available_teams = { hydrated: true };
     } catch (error) {
-        results.push(`⚠️ Available Teams: ${error?.message || 'hydrate failed'}`);
+        results.available_teams = { warning: formatPinError(error) };
     }
 
     try {
         await updateStandings(interaction.client, leagueId, guildId);
-        results.push('✅ Standings: hydrated');
+        results.standings = { hydrated: true };
     } catch (error) {
-        results.push(`⚠️ Standings: ${error?.message || 'hydrate failed'}`);
+        results.standings = { warning: formatPinError(error) };
     }
 
     try {
         await updateStatLeaders(interaction.client, leagueId, guildId);
-        results.push('✅ Stat Leaders: hydrated');
+        results.stat_leaders = { hydrated: true };
     } catch (error) {
-        results.push(`⚠️ Stat Leaders: ${error?.message || 'hydrate failed'}`);
+        results.stat_leaders = { warning: formatPinError(error) };
     }
 
     try {
         await updatePlayoffPicture(interaction.client, leagueId, guildId);
-        results.push('✅ Playoff Picture: hydrated');
+        results.playoff_picture = { hydrated: true };
     } catch (error) {
-        results.push(`⚠️ Playoff Picture: ${error?.message || 'hydrate failed'}`);
+        results.playoff_picture = { warning: formatPinError(error) };
     }
 
     try {
         await updatePowerRankings(interaction.client, leagueId, guildId);
-        results.push('✅ Power Rankings: hydrated');
+        results.power_rankings = { hydrated: true };
     } catch (error) {
-        results.push(`⚠️ Power Rankings: ${error?.message || 'hydrate failed'}`);
+        results.power_rankings = { warning: formatPinError(error) };
     }
 
     try {
@@ -199,23 +222,23 @@ async function hydrateSeededPins(interaction, guildId, channelMap, snapshot) {
             topPlayersWeekValue,
             { postChannelId: channelMap['Top 100'] || null },
         );
-        results.push('✅ Top 100: hydrated');
+        results.top100 = { hydrated: true };
     } catch (error) {
-        results.push(`⚠️ Top 100: ${error?.message || 'hydrate failed'}`);
+        results.top100 = { warning: formatPinError(error) };
     }
 
     if (channelMap['Trade Counts']) {
         try {
             await updateTradeCountsEmbed(interaction.client, channelMap, loadTradeCounts(), { guildId });
-            results.push('✅ Trade Counts: hydrated');
+            results.trade_counts = { hydrated: true };
         } catch (error) {
-            results.push(`⚠️ Trade Counts: ${error?.message || 'hydrate failed'}`);
+            results.trade_counts = { warning: formatPinError(error) };
         }
     } else {
-        results.push('ℹ️ Trade Counts: not included in this tier');
+        results.trade_counts = { info: 'not included in this tier' };
     }
 
-    return results;
+    return { snapshotMissing: false, results };
 }
 
 export const data = new SlashCommandBuilder()
@@ -255,26 +278,28 @@ export async function seedAndHydratePins(client, guildId) {
         { key: 'top100', channelKey: 'Top 100', title: 'Top 100' },
     ];
 
-    const results = [];
+    const boardStates = Object.fromEntries(jobs.map((job) => [job.key, createBoardState(job.title)]));
+
     for (const job of jobs) {
         const channelId = channelMap[job.channelKey];
         const channel = channelId ? await client.channels.fetch(channelId).catch(() => null) : null;
 
         if (!channel || !channel.isTextBased()) {
-            results.push(`${fmtBool(false)} ${job.title}: channel not found (${job.channelKey})`);
+            boardStates[job.key].warning = 'channel not found';
             continue;
         }
 
         const msg = await ensurePinnedEmbedMessage(channel, embeds[job.key], pins[job.key]);
         if (!msg) {
-            results.push(`${fmtBool(false)} ${job.title}: failed to send/edit`);
+            boardStates[job.key].warning = 'could not update the pinned board message';
             continue;
         }
 
         upsertGuildPin(guildId, job.key, msg.id);
-        results.push(`${fmtBool(true)} ${job.title}: seeded`);
+        boardStates[job.key].seeded = true;
     }
 
+    const extraResults = [];
     const tradeSubmitChannelId = channelMap['tradeSubmit'];
     const tradeSubmitChannel = tradeSubmitChannelId
         ? await client.channels.fetch(tradeSubmitChannelId).catch(() => null)
@@ -285,11 +310,11 @@ export async function seedAndHydratePins(client, guildId) {
             components: buildTradeSubmitComponents(),
             matchTitle: 'Submit Trade',
         });
-        results.push(tradeMessage
+        extraResults.push(tradeMessage
             ? '✅ Submit Trade: seeded button'
-            : '❌ Submit Trade: failed to seed button');
+            : '⚠️ Submit Trade: could not update the trade button');
     } else {
-        results.push('ℹ️ Submit Trade: not included in this tier');
+        extraResults.push('ℹ️ Submit Trade: not included in this tier');
     }
 
     let snapshot = null;
@@ -302,10 +327,36 @@ export async function seedAndHydratePins(client, guildId) {
         }
     }
 
-    const hydrationResults = await hydrateSeededPins({ client }, guildId, channelMap, snapshot);
-    results.push(...hydrationResults);
+    const hydration = await hydrateSeededPins({ client }, guildId, channelMap, snapshot);
+    for (const [key, stateUpdate] of Object.entries(hydration.results || {})) {
+        if (!boardStates[key]) continue;
+        if (stateUpdate.hydrated) {
+            boardStates[key].hydrated = true;
+            boardStates[key].warning = null;
+        } else if (stateUpdate.warning) {
+            boardStates[key].warning = stateUpdate.warning;
+        } else if (stateUpdate.info) {
+            boardStates[key].info = stateUpdate.info;
+        }
+    }
 
-    return { results };
+    if (hydration.snapshotMissing) {
+        for (const state of Object.values(boardStates)) {
+            if (!state.hydrated) state.warning = 'waiting for the latest league snapshot';
+        }
+    }
+
+    const results = [
+        ...jobs.map((job) => renderBoardState(boardStates[job.key])),
+        ...extraResults,
+        hydration.results?.trade_counts?.hydrated
+            ? '✅ Trade Counts: ready'
+            : hydration.results?.trade_counts?.warning
+                ? `⚠️ Trade Counts: ${hydration.results.trade_counts.warning}`
+                : 'ℹ️ Trade Counts: not included in this tier',
+    ];
+
+    return { results, snapshotMissing: hydration.snapshotMissing };
 }
 
 export async function execute(interaction) {
@@ -333,7 +384,7 @@ export async function execute(interaction) {
     ]);
 
     const out = await seedAndHydratePins(interaction.client, guildId);
-    const hasFailures = out.results.some((line) => /❌|⚠️/.test(String(line)));
+    const hasFailures = out.results.some((line) => /⚠️|❌/.test(String(line)));
 
     await interaction.editReply({
         content: '',
@@ -350,7 +401,7 @@ export async function execute(interaction) {
                     {
                         name: 'Next',
                         value: hasFailures
-                            ? 'Some league boards still need a clean snapshot. Run `/sync` if needed, rerun `/setup-pins`, then continue with `/setup-roles`.'
+                            ? 'Some league boards still need data. Run `/sync` if the league was just connected, rerun `/setup-pins`, then continue with `/setup-roles`.'
                             : 'Pins are ready. Next run `/setup-roles`, then `/syncsetupstatus`.',
                     },
                 ),
