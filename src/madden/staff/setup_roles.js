@@ -117,7 +117,8 @@ export async function execute(interaction) {
 
   await updateProgress('refreshing channel permissions', [
     'Updating channel permissions with the new role map',
-    'Applying the LEAGUEbuddy visibility rules across all setup channels',
+    'Applying the final LEAGUEbuddy role-based visibility rules across all setup channels',
+    'This finishes the second pass automatically so you do not have to rerun setup commands',
   ], { tier, tradeEnabled });
 
   const overwritePlan = buildSetupOverwrites(guild, cfg.compat?.maddenRoleMap || {});
@@ -146,7 +147,8 @@ export async function execute(interaction) {
             value: [
               '• Created or verified staff roles',
               tradeEnabled ? '• Created or verified trade roles' : '• Skipped trade roles because they are not included in this plan',
-              '• Refreshed channel permissions after the role pass',
+              '• Reapplied the final channel permissions after the role pass',
+              '• Finalized staff/trade channel access using the roles created in this command',
             ].join('\n'),
           },
           {
@@ -169,7 +171,7 @@ export async function execute(interaction) {
             name: 'Next',
             value: staffSummary.failed.length
               ? 'Some Discord roles still failed to create. Fix the server role issue, then rerun `/setup-roles`.'
-              : 'Roles are ready. Next run `/syncsetupstatus`, then `/server-check`.',
+              : 'Roles and channel access are ready. Next run `/syncsetupstatus`, then `/server-check`.',
           },
         ),
     ],

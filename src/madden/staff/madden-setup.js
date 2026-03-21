@@ -181,12 +181,28 @@ function deny(...perms) {
     return perms;
 }
 
+function roleIdFor(roleMap = {}, aliases = []) {
+    for (const alias of aliases) {
+        const id = roleMap[alias];
+        if (id) return id;
+    }
+    return null;
+}
+
 export function buildSetupOverwrites(guild, roleMap = {}) {
     const everyoneId = guild.roles.everyone.id;
     const botRoleId = guild.members.me?.roles?.botRole?.id || null;
-    const commishId = roleMap['Ghost Legacy Commish'] || null;
-    const coCommishId = roleMap['Ghost Legacy Co-Commish'] || null;
-    const tradeCommitteeId = roleMap['Trade Committee'] || null;
+    const commishId = roleIdFor(roleMap, ['Ghost Legacy Commish', 'LB Commish']);
+    const coCommishId = roleIdFor(roleMap, ['Ghost Legacy Co-Commish', 'LB Co-Commish']);
+    const tradeCommitteeId = roleIdFor(roleMap, [
+        'Trade Committee',
+        'Ghost Legacy Trade Committee',
+        'Madden Trade Committee',
+        'Madden Trade Committe',
+        'LB Trade Committee',
+        'LEAGUEbuddy Trade Committee',
+    ]);
+    const coachGroupId = roleIdFor(roleMap, ['Ghost Legacy', 'LEAGUEbuddy Coaches', 'LB Coaches']);
 
     const botAccess = botRoleId ? [{
         id: botRoleId,
@@ -233,6 +249,64 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             ),
             deny: [],
         },
+    ]);
+
+    const publicReadOnlyWithStaffPosting = withBotAccess([
+        {
+            id: everyoneId,
+            allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
+            deny: deny(PermissionFlagsBits.SendMessages),
+        },
+        ...(commishId ? [{
+            id: commishId,
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ManageMessages,
+                PermissionFlagsBits.ManageThreads,
+            ),
+            deny: [],
+        }] : []),
+        ...(coCommishId ? [{
+            id: coCommishId,
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ManageMessages,
+                PermissionFlagsBits.ManageThreads,
+            ),
+            deny: [],
+        }] : []),
+    ]);
+
+    const publicInteractiveWithCoachAccess = withBotAccess([
+        {
+            id: everyoneId,
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.CreatePrivateThreads,
+                PermissionFlagsBits.UseApplicationCommands,
+            ),
+            deny: [],
+        },
+        ...(coachGroupId ? [{
+            id: coachGroupId,
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.UseApplicationCommands,
+            ),
+            deny: [],
+        }] : []),
     ]);
 
     const staffOnly = withBotAccess([
@@ -307,7 +381,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         channels: {
             'League Staff': staffOnly,
             'LG Logs': staffOnly,
-            rulesOps: publicReadOnly,
+            rulesOps: publicReadOnlyWithStaffPosting,
             'Available Teams': publicReadOnly,
             Standings: publicReadOnly,
             'Stat Leaders': publicReadOnly,
@@ -315,6 +389,9 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             'Playoff Picture': publicReadOnly,
             'Top 100': publicReadOnly,
             'Yearly Awards': publicReadOnly,
+            'Game threads': publicInteractiveWithCoachAccess,
+            scoutingHub: publicReadOnlyWithStaffPosting,
+            breakdown: publicReadOnlyWithStaffPosting,
             tradeSubmit: withBotAccess([
                 {
                     id: everyoneId,
@@ -327,6 +404,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                 },
             ]),
             'Trade Counts': publicReadOnly,
+            'Trade Block': publicInteractiveWithCoachAccess,
             Trades: publicReadOnly,
             'Approved trades': publicReadOnly,
             'Denied trades': publicReadOnly,
@@ -561,7 +639,7 @@ export async function execute(interaction) {
                         {
                             name: 'Next',
                             value: snapshotReady
-                                ? 'Run `/setup-pins`, then `/setup-roles`.'
+                                ? 'Run `/setup-pins`, then `/setup-roles`. `/setup-roles` will finish the final role-based channel access in the same pass.'
                                 : 'Run `/setup-pins` next. If the league snapshot is still missing, connect the league first and rerun `/setup-pins` after `/league-status` looks healthy.',
                         },
                     ),
