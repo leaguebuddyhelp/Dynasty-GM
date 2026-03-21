@@ -7,7 +7,6 @@ const PRESEASON_WEEK_CHOICES = [
   { name: 'Preseason Week 1', value: 1 },
   { name: 'Preseason Week 2', value: 2 },
   { name: 'Preseason Week 3', value: 3 },
-  { name: 'Preseason Week 4', value: 4 },
 ];
 const REGULAR_SEASON_WEEK_CHOICES = Array.from({ length: 18 }, (_, index) => ({
   name: `Regular Season Week ${index + 1}`,
