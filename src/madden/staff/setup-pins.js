@@ -101,6 +101,20 @@ async function ensurePinnedActionMessage(channel, { embed, components, existingM
     return sent;
 }
 
+async function hasVerifiedPinnedBoardMessage(client, guildId, channelId, expectedMessageId = null) {
+    if (!channelId) return false;
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    if (!channel || !channel.isTextBased()) return false;
+
+    if (expectedMessageId) {
+        const existing = await channel.messages.fetch(expectedMessageId).catch(() => null);
+        if (existing?.pinned) return true;
+    }
+
+    const pins = await channel.messages.fetchPinned().catch(() => null);
+    return Boolean(pins?.some((message) => message?.author?.id === client.user?.id));
+}
+
 function buildEmbeds() {
     const common = {
         color: 0x5865F2,
@@ -343,6 +357,15 @@ export async function seedAndHydratePins(client, guildId) {
     if (hydration.snapshotMissing) {
         for (const state of Object.values(boardStates)) {
             if (!state.hydrated) state.warning = 'waiting for the latest league snapshot';
+        }
+    }
+
+    for (const job of jobs) {
+        const pinId = loadGuildMaddenConfigIfComplete(guildId)?.pins?.[job.key] || pins[job.key] || null;
+        const hasPinnedMessage = await hasVerifiedPinnedBoardMessage(client, guildId, channelMap[job.channelKey], pinId);
+        if (!hasPinnedMessage) {
+            boardStates[job.key].hydrated = false;
+            boardStates[job.key].warning = 'board content updated, but no pinned message exists in the channel yet';
         }
     }
 
