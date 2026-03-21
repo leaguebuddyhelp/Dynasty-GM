@@ -176,7 +176,9 @@ export async function execute(interaction) {
     await interaction.editReply({ content: `Assigned ${r2 ? `"${r1.name}" and "${r2.name}"` : `"${r1.name}"`} to ${target.tag}.` });
     // Refresh available teams pin
     try {
+      const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
       await updateAvailableTeamsPin(interaction.client, interaction.guildId, {
+        leagueId,
         allowCreate: true,
         delayMs: 0,
         retries: 3,

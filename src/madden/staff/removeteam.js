@@ -207,7 +207,9 @@ export async function execute(interaction) {
     }
     await interaction.editReply({ content: `Removed ${r2 ? `"${r1.name}" and "${r2.name}"` : `"${r1.name}"`} from ${target.tag}.${systemsResetMessage || ''}` });
     try {
+      const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
       await updateAvailableTeamsPin(interaction.client, interaction.guildId, {
+        leagueId,
         allowCreate: true,
         delayMs: 0,
         retries: 3,
