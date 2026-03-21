@@ -13,6 +13,18 @@ function normalizeKey(value = '') {
   return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function scoreAutocompleteChoice(name = '', focused = '') {
+  const normalizedName = normalizeKey(name);
+  const normalizedFocused = normalizeKey(focused);
+  if (!normalizedFocused) return 0;
+  if (normalizedName === normalizedFocused) return 400;
+  if (normalizedName.startsWith(normalizedFocused)) return 300;
+  if (normalizedName.includes(normalizedFocused)) return 200;
+  const words = String(name || '').toLowerCase().split(/\s+/);
+  if (words.some((word) => word.startsWith(String(focused || '').toLowerCase()))) return 150;
+  return 0;
+}
+
 function buildCoachRoleNamesFromSnapshot(snapshot) {
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
   return teams.map((team) => {
@@ -184,13 +196,18 @@ export async function execute(interaction) {
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
   const roleMap = loadRoleMapForGuild(interaction.guildId);
-  const focused = interaction.options.getFocused().toLowerCase();
+  const focused = interaction.options.getFocused();
+  const focusedName = interaction.options.getFocused(true)?.name || 'role1';
+  const selectedRole1 = interaction.options.getString('role1');
   const options = [...roleChoices(roleMap), ...coachChoicesFromSnapshot(interaction, roleMap)]
     .filter((item, index, arr) => arr.findIndex((other) => normalizeKey(other.name) === normalizeKey(item.name)) === index)
-    .filter(r => r.name.toLowerCase().includes(focused))
+    .filter((item) => focusedName !== 'role2' || normalizeKey(item.name) !== normalizeKey(selectedRole1))
+    .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) }))
+    .filter((item) => !focused || item.score > 0)
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
     .slice(0, 25);
   try {
-    await interaction.respond(options);
+    await interaction.respond(options.map(({ name, value }) => ({ name, value })));
   } catch (err) {
     // Ignore stale/unknown interaction errors; they occur if the client cancels the autocomplete
     console.warn('[madden-assignrole autocomplete] respond failed:', err?.message || err);

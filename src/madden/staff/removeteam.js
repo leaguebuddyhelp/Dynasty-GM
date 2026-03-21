@@ -50,6 +50,22 @@ function roleNamePriority(name = '') {
   return name.endsWith(' Coach') ? words : 0;
 }
 
+function normalizeKey(value = '') {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function scoreAutocompleteChoice(name = '', focused = '') {
+  const normalizedName = normalizeKey(name);
+  const normalizedFocused = normalizeKey(focused);
+  if (!normalizedFocused) return 0;
+  if (normalizedName === normalizedFocused) return 400;
+  if (normalizedName.startsWith(normalizedFocused)) return 300;
+  if (normalizedName.includes(normalizedFocused)) return 200;
+  const words = String(name || '').toLowerCase().split(/\s+/);
+  if (words.some((word) => word.startsWith(String(focused || '').toLowerCase()))) return 150;
+  return 0;
+}
+
 const roleChoices = (roleMap) => {
   const byRoleId = new Map();
   for (const [name, roleId] of Object.entries(roleMap || {})) {
@@ -211,7 +227,9 @@ export async function execute(interaction) {
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
   const roleMap = loadRoleMapForGuild(interaction.guildId);
-  const focused = interaction.options.getFocused().toLowerCase();
+  const focused = interaction.options.getFocused();
+  const focusedName = interaction.options.getFocused(true)?.name || 'role1';
+  const selectedRole1 = interaction.options.getString('role1');
 
   let filteredRoles = [];
   try {
@@ -235,9 +253,12 @@ export async function autocomplete(interaction) {
   }
 
   const options = filteredRoles
-    .filter(r => r.name.toLowerCase().includes(focused))
+    .filter((item) => focusedName !== 'role2' || normalizeKey(item.name) !== normalizeKey(selectedRole1))
+    .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) }))
+    .filter((item) => !focused || item.score > 0)
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
     .slice(0, 25);
-  await interaction.respond(options);
+  await interaction.respond(options.map(({ name, value }) => ({ name, value })));
 }
 
 export default { data, execute, autocomplete };
