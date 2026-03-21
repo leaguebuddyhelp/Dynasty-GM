@@ -3,13 +3,14 @@ import path from 'path';
 import { EmbedBuilder } from 'discord.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 import { ensureBoardPinMessage } from './board_pin_utils.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
 function loadSnapshot(leagueId) {
-  const file = path.join(process.cwd(), 'data', 'madden', 'leagues', `${leagueId}.json`);
+  const file = getMaddenLeagueSnapshotPath(leagueId);
   const raw = fs.readFileSync(file, 'utf8');
   return JSON.parse(raw);
 }
