@@ -199,9 +199,8 @@ export function buildPostPaymentEmbed() {
     .setDescription([
       '1. Invite LEAGUEbuddy to the server you want to activate.',
       '2. Run `/setup` in that server.',
-      '3. If you are using the manual claim flow, run `/claim-plan` and paste the payment reference from your Stripe receipt email.',
-      '4. Run `/plan` to confirm access.',
-      '5. Continue the setup flow from `/setup`.',
+      '3. Follow the next step `/setup` gives you until setup is complete.',
+      '4. Use `/pricing` in that server if you want to confirm the current package or upgrade.',
     ].join('\n'));
 }
 
@@ -301,19 +300,18 @@ export function buildActivationFollowup({ guildId, plan }) {
     `Plan **${plan}** is now active for guild **${guildId}**.`,
     'Next steps for the commissioner:',
     '• Run `/setup`.',
-    '• Run `/plan` to confirm access.',
-    '• Finish the setup flow before using paid features.',
+    '• Follow the next step `/setup` gives you until setup is complete.',
+    '• Use `/pricing` if you want to confirm the current package.',
   ].join('\n');
 }
 
 export function buildClaimInstructions() {
   return [
-    'How to claim access:',
+    'How to start paid access:',
     '1. Buy from `/pricing` if you need a paid plan.',
     '2. Invite LEAGUEbuddy to your server.',
-    '3. Run `/claim-plan`.',
-    '4. Paste either your one-time claim code or the Stripe payment reference from your receipt email.',
-    '5. Run `/setup`.',
+    '3. Run `/setup`.',
+    '4. Follow the next step `/setup` gives you until setup is complete.',
   ].join('\n');
 }
 

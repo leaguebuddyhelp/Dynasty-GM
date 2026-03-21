@@ -211,10 +211,13 @@ client.on('interactionCreate', async interaction => {
         };
 
         const featureKey = command.featureKey || COMMAND_FEATURE_MAP[interaction.commandName] || null;
-        if (featureKey && !packs.includes(featureKey)) {
+        if (featureKey) {
           const check = hasFeatureAccess(guildId, featureKey);
-          if (!check.ok) {
-            const msg = DEFAULT_DENY_MESSAGE;
+          const packEnabled = packs.includes(featureKey);
+          if (!check.ok || !packEnabled) {
+            const msg = !check.ok
+              ? DEFAULT_DENY_MESSAGE
+              : 'This feature is not configured for this server yet. Run `/setup` to finish enabling it.';
             if (interaction.deferred || interaction.replied) {
               await interaction.editReply({ content: msg });
             } else {
@@ -338,21 +341,25 @@ client.on('interactionCreate', async interaction => {
     const accessMatch = resolveInteractionAccess(interaction);
     if (accessMatch?.featureKey) {
       const { featureKey, ruleId, customId } = accessMatch;
-      if (!hasPackEnabled(interaction.guildId, featureKey)) {
-        const check = hasFeatureAccess(interaction.guildId, featureKey);
-        if (!check.ok) {
-          if (LB_VERBOSE_LOGS) {
-            console.log('[plans] interaction denied', {
-              guildId: interaction.guildId,
-              ruleId,
-              featureKey,
-              customId,
-              reason: check.reason,
-            });
-          }
-          await denyInteraction(interaction, DEFAULT_DENY_MESSAGE);
-          return;
+      const packEnabled = hasPackEnabled(interaction.guildId, featureKey);
+      const check = hasFeatureAccess(interaction.guildId, featureKey);
+      if (!check.ok || !packEnabled) {
+        if (LB_VERBOSE_LOGS) {
+          console.log('[plans] interaction denied', {
+            guildId: interaction.guildId,
+            ruleId,
+            featureKey,
+            customId,
+            reason: check.ok ? 'pack_not_enabled' : check.reason,
+          });
         }
+        await denyInteraction(
+          interaction,
+          !check.ok
+            ? DEFAULT_DENY_MESSAGE
+            : 'This feature is not configured for this server yet. Run `/setup` to finish enabling it.',
+        );
+        return;
       }
     }
   } catch (e) {
