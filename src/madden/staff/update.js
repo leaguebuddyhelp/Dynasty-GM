@@ -163,6 +163,13 @@ function phaseSummaryLabel(phase = {}) {
   if (phase.inPlayoffs) return getMessageForWeek(Number(phase.currentWeekValue || 0), phase.stageForWeek, phase.offSeasonStage || 0);
   return `Regular Season - Week ${Math.max(1, Number(phase.currentWeekValue || 1))}`;
 }
+
+function phaseNameLabel(phase = {}) {
+  if (phase.inOffseason) return 'Offseason';
+  if (phase.inPreseason) return 'Preseason';
+  if (phase.inPlayoffs) return 'Playoffs';
+  return 'Regular Season';
+}
 function median(values = []) {
   const nums = values
     .map((value) => Number(value || 0))
@@ -1626,15 +1633,22 @@ async function execute(interaction) {
     }
 
     const offStageShown = inOffseason ? (summary.offSeasonStage !== undefined ? summary.offSeasonStage : (seasonInfo.offSeasonStage !== undefined ? seasonInfo.offSeasonStage : 0)) : 0;
-    const weekLabelPretty = effectiveCurrentWeek
+    const pulledWeekLabel = currentWeekValue
       ? displayWeekLabel(
         stageForWeek !== undefined ? stageForWeek : summary.stage,
-        effectiveCurrentWeek,
+        currentWeekValue,
         offStageShown,
         seasonInfo.seasonWeekType !== undefined ? seasonInfo.seasonWeekType : (stageForWeek !== undefined ? stageForWeek : summary.stage)
       )
       : (inOffseason ? `Offseason Stage ${offStageShown || 'unknown'}` : 'unknown');
-    const weekFieldValue = weekLabelPretty;
+    const dataWeekLabel = effectiveCurrentWeekUsed
+      ? displayWeekLabel(
+        stageForWeek !== undefined ? stageForWeek : summary.stage,
+        effectiveCurrentWeekUsed,
+        offStageShown,
+        seasonInfo.seasonWeekType !== undefined ? seasonInfo.seasonWeekType : (stageForWeek !== undefined ? stageForWeek : summary.stage)
+      )
+      : pulledWeekLabel;
 
     const partialUpdate = statsPartial;
     const runModeLabel = backfillOnlyAwards
@@ -1654,16 +1668,20 @@ async function execute(interaction) {
       .setColor(partialUpdate ? 0xf1c40f : 0x00cc66)
       .addFields(
         { name: 'Run mode', value: runModeLabel, inline: false },
-        { name: 'Phase', value: phaseSummaryLabel(phase), inline: false },
+        { name: 'Phase', value: phaseNameLabel(phase), inline: false },
         { name: 'Scope', value: runScopeLabel, inline: false },
         { name: 'League', value: String(summary.leagueId), inline: true },
-        { name: 'Week', value: weekFieldValue, inline: true },
+        { name: 'Week pulled', value: pulledWeekLabel, inline: true },
         { name: 'Teams', value: String(summary.teamsCount), inline: true },
         { name: 'Standings', value: String(summary.standingsCount), inline: true },
         { name: 'Games', value: String(summary.gamesCount), inline: true },
         { name: 'Missing player stats', value: missingField, inline: false },
         { name: 'Saved', value: summary.outPath, inline: false }
       );
+
+    if (usedFallbackWeek && dataWeekLabel !== pulledWeekLabel) {
+      embed.addFields({ name: 'Data week used', value: dataWeekLabel, inline: false });
+    }
 
     if (partialUpdate) {
       const notes = [];
