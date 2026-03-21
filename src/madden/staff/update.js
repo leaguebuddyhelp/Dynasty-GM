@@ -1677,8 +1677,12 @@ async function execute(interaction) {
     }
     const weekLabel = (stage, wk, offSeasonStage = 0, seasonWeekType = stage) => {
       const st = seasonWeekType !== undefined ? seasonWeekType : stage;
-      if (st === Stage.PRESEASON && wk >= 0 && wk <= 3) return `Preseason Week ${wk + 1}`;
-      return getMessageForWeek((wk ?? 0) + 1, st, offSeasonStage);
+      const weekIndex = Math.max(0, Number(wk ?? 0));
+      if (st === Stage.PRESEASON && weekIndex <= 3) return `Preseason Week ${weekIndex + 1}`;
+      if (st === Stage.SEASON && weekIndex <= 17) return `Regular Season Week ${weekIndex + 1}`;
+      if (st === 2 || weekIndex >= 18) return getMessageForWeek(weekIndex + 1, 2, 0);
+      if (offSeasonStage > 0) return `Offseason Stage ${offSeasonStage}`;
+      return getMessageForWeek(weekIndex + 1, st, offSeasonStage);
     };
     const displayWeekLabel = (stage, currentWeek, offSeasonStage = 0, seasonWeekType = stage) => {
       const st = seasonWeekType !== undefined ? seasonWeekType : stage;
