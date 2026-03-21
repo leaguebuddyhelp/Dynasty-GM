@@ -1059,6 +1059,7 @@ export function registerThread(threadId, payload = '') {
     homeTeam: info.homeTeam || null,
     awayRoleIds: info.awayRoleIds || [],
     homeRoleIds: info.homeRoleIds || [],
+    staffRoleIds: info.staffRoleIds || [],
   };
   saveState(state);
 }
@@ -1080,7 +1081,7 @@ export async function hydrateThreadStateFromLiveThread(thread, existing = null) 
   if (!thread?.id || !thread?.guildId) return existing;
   const info = existing || getThreadState(thread.id) || {};
   const liveCreatedAt = Number.isFinite(Number(thread.createdTimestamp)) ? Number(thread.createdTimestamp) : null;
-  const roleMap = loadRoleMap(guildId);
+  const roleMap = loadRoleMap(thread.guildId);
   const leagueId = info.leagueId || resolveLeagueIdWithConfig(thread.guildId) || null;
   let snapshot = null;
   let coachStatusByTeam = new Map();
@@ -1134,6 +1135,7 @@ export async function hydrateThreadStateFromLiveThread(thread, existing = null) 
     homeTeam,
     awayRoleIds,
     homeRoleIds,
+    staffRoleIds: Array.isArray(info.staffRoleIds) ? info.staffRoleIds.filter(Boolean) : [],
     awayCoachStatus: coachStatusForTeam(awayTeam, coachStatusByTeam),
     homeCoachStatus: coachStatusForTeam(homeTeam, coachStatusByTeam),
   };
@@ -1148,6 +1150,7 @@ export async function hydrateThreadStateFromLiveThread(thread, existing = null) 
     patched.homeTeam !== (info.homeTeam || null) ||
     patched.awayCoachStatus !== (info.awayCoachStatus || null) ||
     patched.homeCoachStatus !== (info.homeCoachStatus || null) ||
+    JSON.stringify(patched.staffRoleIds || []) !== JSON.stringify(info.staffRoleIds || []) ||
     JSON.stringify(patched.awayRoleIds || []) !== JSON.stringify(info.awayRoleIds || []) ||
     JSON.stringify(patched.homeRoleIds || []) !== JSON.stringify(info.homeRoleIds || []);
   if (!needsSave) return info;
