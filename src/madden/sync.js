@@ -87,6 +87,26 @@ async function loadTokens(guildId = null) {
   if (guildId) {
     const guildTokens = getGuildEATokens(guildId);
     if (guildTokens?.accessToken && guildTokens?.refreshToken) return guildTokens;
+    const dbTokens = loadTokensDb();
+    if (dbTokens && dbTokens.accessToken && dbTokens.refreshToken) {
+      try { saveGuildEATokens(guildId, dbTokens); } catch {}
+      return dbTokens;
+    }
+    try {
+      const txt = await fs.readFile(tokenFile, 'utf-8');
+      const parsed = JSON.parse(txt);
+      if (parsed?.gameYear && `${parsed.gameYear}` !== `${YEAR}`) {
+        console.warn(`[madden-sync] Ignoring cached tokens from year ${parsed.gameYear}, current YEAR=${YEAR}`);
+        try { await fs.unlink(tokenFile); } catch {}
+        return null;
+      }
+      if (parsed?.accessToken && parsed?.refreshToken) {
+        try { saveGuildEATokens(guildId, parsed); } catch {}
+        return parsed;
+      }
+    } catch {
+      // ignore
+    }
     return null;
   }
   const dbTokens = loadTokensDb();
