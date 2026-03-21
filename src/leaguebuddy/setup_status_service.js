@@ -63,7 +63,7 @@ function diffMissingKeys(mapObj, requiredKeys) {
   return requiredKeys.filter((key) => !map[key]);
 }
 
-function displaySetupItemName(key) {
+export function displaySetupItemName(key) {
   return SETUP_ITEM_LABELS[key] || key;
 }
 
