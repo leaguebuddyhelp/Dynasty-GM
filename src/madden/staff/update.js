@@ -170,6 +170,37 @@ function phaseNameLabel(phase = {}) {
   if (phase.inPlayoffs) return 'Playoffs';
   return 'Regular Season';
 }
+
+function explicitPhaseWeekLabel(phase = {}, weekValue = null) {
+  const week = Math.max(0, Number(weekValue || 0));
+  if (phase.inOffseason) return `Offseason Stage ${phase.offSeasonStage || 1}`;
+  if (phase.inPreseason) return `Preseason Week ${Math.max(1, week || 1)}`;
+  if (phase.isRegularSeason) return `Regular Season Week ${Math.max(1, week || 1)}`;
+  if (phase.inPlayoffs) return getMessageForWeek(Math.max(19, week || 19), 2, 0);
+  return `Week ${Math.max(1, week || 1)}`;
+}
+
+function inferCompletedPhaseWeekLabel(phase = {}, snapshot = null, currentWeekValue = 0, fallbackLabel = 'unknown') {
+  const current = Math.max(0, Number(currentWeekValue || 0));
+  if (phase.inPreseason) {
+    if (current > 1) return `Preseason Week ${current - 1}`;
+    return `Offseason Stage ${phase.offSeasonStage || 1}`;
+  }
+  if (phase.isRegularSeason) {
+    if (current > 1) return `Regular Season Week ${current - 1}`;
+    const preseasonWeeks = (snapshot?.schedule?.schedules || [])
+      .filter((game) => Number(game?.stageIndex ?? game?.stage ?? -1) === Stage.PRESEASON)
+      .map((game) => Number(game?.weekIndex ?? game?.week ?? -1))
+      .filter((week) => week >= 0);
+    if (preseasonWeeks.length) return `Preseason Week ${Math.max(...preseasonWeeks) + 1}`;
+    return fallbackLabel;
+  }
+  if (phase.inPlayoffs) {
+    if (current <= 19) return 'Regular Season Week 18';
+    return getMessageForWeek(current - 1, 2, 0);
+  }
+  return fallbackLabel;
+}
 function median(values = []) {
   const nums = values
     .map((value) => Number(value || 0))
@@ -1633,14 +1664,7 @@ async function execute(interaction) {
     }
 
     const offStageShown = inOffseason ? (summary.offSeasonStage !== undefined ? summary.offSeasonStage : (seasonInfo.offSeasonStage !== undefined ? seasonInfo.offSeasonStage : 0)) : 0;
-    const pulledWeekLabel = currentWeekValue
-      ? displayWeekLabel(
-        stageForWeek !== undefined ? stageForWeek : summary.stage,
-        currentWeekValue,
-        offStageShown,
-        seasonInfo.seasonWeekType !== undefined ? seasonInfo.seasonWeekType : (stageForWeek !== undefined ? stageForWeek : summary.stage)
-      )
-      : (inOffseason ? `Offseason Stage ${offStageShown || 'unknown'}` : 'unknown');
+    const pulledWeekLabel = explicitPhaseWeekLabel(phase, currentWeekValue);
     const dataWeekLabel = effectiveCurrentWeekUsed
       ? displayWeekLabel(
         stageForWeek !== undefined ? stageForWeek : summary.stage,
@@ -1651,20 +1675,7 @@ async function execute(interaction) {
       : pulledWeekLabel;
 
     const partialUpdate = statsPartial;
-    const inferredCompletedWeekLabel = (() => {
-      const current = Math.max(0, Number(currentWeekValue || 0));
-      if (phase.inPreseason) {
-        return current > 1 ? `Preseason Week ${current - 1}` : dataWeekLabel;
-      }
-      if (phase.isRegularSeason) {
-        return current > 1 ? `Week ${current - 1}` : dataWeekLabel;
-      }
-      if (phase.inPlayoffs) {
-        if (current <= 19) return 'Week 18';
-        return getMessageForWeek(current - 1, 2, 0);
-      }
-      return dataWeekLabel;
-    })();
+    const inferredCompletedWeekLabel = inferCompletedPhaseWeekLabel(phase, snap, currentWeekValue, dataWeekLabel);
     const completedWeekLabel = usedFallbackWeek && dataWeekLabel !== pulledWeekLabel
       ? dataWeekLabel
       : inferredCompletedWeekLabel;
