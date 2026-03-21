@@ -71,7 +71,7 @@ function uniqueStrings(values = []) {
     return [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))];
 }
 
-const DEFAULT_CHANNEL_SPECS = [
+const CORE_CHANNEL_SPECS = [
     { key: 'League Staff', name: 'lb-league-staff', type: ChannelType.GuildText },
     { key: 'Available Teams', name: 'lb-available-teams', type: ChannelType.GuildText },
     { key: 'Standings', name: 'lb-standings', type: ChannelType.GuildText },
@@ -81,10 +81,10 @@ const DEFAULT_CHANNEL_SPECS = [
     { key: 'Top 100', name: 'lb-top-100', type: ChannelType.GuildText },
     { key: 'Game threads', name: 'lb-game-threads', type: ChannelType.GuildText },
     { key: 'Yearly Awards', name: 'lb-yearly-awards', type: ChannelType.GuildText },
-    { key: 'rulesOps', name: 'lb-rules-ops', type: ChannelType.GuildText },
+];
+
+const STANDARD_PLUS_CHANNEL_SPECS = [
     { key: 'scoutingHub', name: 'lb-scouting-hub', type: ChannelType.GuildText },
-    { key: 'breakdown', name: 'lb-breakdown', type: ChannelType.GuildText },
-    { key: 'LG Logs', name: 'lb-lg-logs', type: ChannelType.GuildText },
 ];
 
 const TRADE_CHANNEL_SPECS = [
@@ -100,6 +100,16 @@ const TRADE_CHANNEL_SPECS = [
 const DEFAULT_CATEGORY_SPECS = [
     { key: 'LB Madden', name: 'LEAGUEbuddy Madden' },
 ];
+
+const LEGACY_UNSUPPORTED_CHANNEL_KEYS = ['rulesOps', 'breakdown', 'LG Logs'];
+
+function channelSpecsForTier(tier, tradeEnabled) {
+    return [
+        ...CORE_CHANNEL_SPECS,
+        ...(tier === 'standard' || tier === 'premium' ? STANDARD_PLUS_CHANNEL_SPECS : []),
+        ...(tradeEnabled ? TRADE_CHANNEL_SPECS : []),
+    ];
+}
 
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -455,13 +465,13 @@ function buildProgressEmbed({ step, details = [], tier = null, tradeEnabled = nu
 function tierSetupNotes(tier, tradeEnabled) {
     if (tier === 'premium') {
         return [
-            'Premium setup includes the full channel pack, trade center, scouting hub, ops channels, recognition, and sportsbook boards.',
+            'Premium setup includes the core league boards, trade center, scouting hub, recognition, and sportsbook boards.',
             'After channels are ready, continue with `/setup-pins`, `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
         ];
     }
     if (tier === 'standard') {
         return [
-            'Standard setup includes the core league boards, trade center, scouting hub, and light staff ops channels.',
+            'Standard setup includes the core league boards, trade center, and scouting hub.',
             'After channels are ready, continue with `/setup-pins`, `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
         ];
     }
@@ -482,6 +492,36 @@ async function withTimeout(promise, ms, label) {
         ]);
     } finally {
         if (timer) clearTimeout(timer);
+    }
+}
+
+async function pruneUnsupportedSetupChannels(guild, cfg, allowedSpecs) {
+    const allowedKeys = new Set(allowedSpecs.map((spec) => spec.key));
+    const categoryId = cfg?.compat?.maddenChannelMap?.['LB Madden'] || null;
+    const category = categoryId
+        ? guild.channels.cache.get(categoryId) || await guild.channels.fetch(categoryId).catch(() => null)
+        : null;
+
+    const removableKeys = [
+        ...LEGACY_UNSUPPORTED_CHANNEL_KEYS,
+        ...(allowedKeys.has('scoutingHub') ? [] : ['scoutingHub']),
+        ...(!allowedKeys.has('tradeSubmit') ? ['tradeSubmit', 'Trade Block', 'Trades', 'Trade Counts', 'Trade Committee', 'Approved trades', 'Denied trades'] : []),
+    ];
+
+    for (const key of removableKeys) {
+        const channelId = cfg?.compat?.maddenChannelMap?.[key];
+        const channel = channelId
+            ? guild.channels.cache.get(channelId) || await guild.channels.fetch(channelId).catch(() => null)
+            : null;
+        const isManagedLeaguebuddyChannel = channel
+            && channel.parentId === category?.id
+            && String(channel.name || '').startsWith('lb-');
+        if (isManagedLeaguebuddyChannel) {
+            await channel.delete('Removing unsupported LEAGUEbuddy setup channel for this package').catch(() => null);
+        }
+        if (cfg?.compat?.maddenChannelMap?.[key]) {
+            delete cfg.compat.maddenChannelMap[key];
+        }
     }
 }
 
@@ -537,6 +577,7 @@ export async function execute(interaction) {
         const tier = tierChoice.tier;
         const packsEnabled = [...(DEFAULT_PACKS[tier] || DEFAULT_PACKS.free)];
         const tradeEnabled = packsEnabled.includes('trades_basic');
+        const activeChannelSpecs = channelSpecsForTier(tier, tradeEnabled);
 
         const cfg = {
             version: 2,
@@ -576,9 +617,10 @@ export async function execute(interaction) {
         }
         const overwritePlan = buildSetupOverwrites(guild, cfg.compat.maddenRoleMap);
         await applyOverwrites(rootCategory, overwritePlan.category);
+        await pruneUnsupportedSetupChannels(guild, cfg, activeChannelSpecs);
 
         // Channels (created under category when possible)
-        for (const spec of [...DEFAULT_CHANNEL_SPECS, ...(tradeEnabled ? TRADE_CHANNEL_SPECS : [])]) {
+        for (const spec of activeChannelSpecs) {
             const ch = await ensureTextChannelInCategoryWithRetry(guild, spec, rootCategory?.id || null);
             await applyOverwrites(ch, overwritePlan.channels[spec.key] || []);
             cfg.compat.maddenChannelMap[spec.key] = ch.id;
