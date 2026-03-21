@@ -4,14 +4,13 @@ import path from 'path';
 import { registerHttpRoute, startHealthcheckServer } from '../leaguebuddy/healthcheck.js';
 import connectionService from './services/export_first_connection_service.js';
 
-function html(body, { autoRefreshMs = 0 } = {}) {
+function html(body, { script = '' } = {}) {
   return `<!doctype html>
   <html>
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <title>LEAGUEbuddy Connect</title>
-      ${autoRefreshMs > 0 ? `<meta http-equiv="refresh" content="${Math.max(1, Math.ceil(autoRefreshMs / 1000))}">` : ''}
       <style>
         :root {
           --lb-bg: #111111;
@@ -143,6 +142,63 @@ function html(body, { autoRefreshMs = 0 } = {}) {
           border-radius: 16px;
           padding: 14px 16px;
           margin: 0 0 18px;
+        }
+        .sync-progress-card {
+          border: 1px solid #eadb95;
+          border-radius: 16px;
+          background: #fffef8;
+          padding: 16px;
+          margin-top: 14px;
+        }
+        .sync-progress-top {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+        .sync-progress-top strong {
+          display: block;
+          font-size: 1rem;
+        }
+        .sync-progress-top span {
+          color: #4b5563;
+          font-size: 0.95rem;
+        }
+        .progress-track {
+          width: 100%;
+          height: 12px;
+          border-radius: 999px;
+          background: #f3ead0;
+          overflow: hidden;
+          box-shadow: inset 0 1px 3px rgba(20, 20, 20, 0.08);
+        }
+        .progress-bar {
+          height: 100%;
+          width: 35%;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #ffcc00 0%, #ffe15a 50%, #ffcc00 100%);
+          background-size: 220px 100%;
+          animation: lb-progress-slide 1.4s linear infinite;
+          transition: width 0.25s ease;
+        }
+        .progress-bar.done {
+          width: 100%;
+          animation: none;
+          background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+        }
+        .progress-bar.error {
+          width: 100%;
+          animation: none;
+          background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+        }
+        .progress-note {
+          margin-top: 10px;
+          color: #4b5563;
+        }
+        @keyframes lb-progress-slide {
+          0% { transform: translateX(-55%); }
+          100% { transform: translateX(240%); }
         }
         .timeline {
           display: grid;
@@ -902,6 +958,7 @@ function html(body, { autoRefreshMs = 0 } = {}) {
     </head>
     <body>
       <div class="shell">${body}</div>
+      ${script ? `<script>${script}</script>` : ''}
     </body>
   </html>`;
 }
@@ -1061,8 +1118,6 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   const syncSucceeded = hasLeague && status === 'connected';
   const syncErrorSummary = describeSyncError(syncError);
   const syncInProgress = status === 'syncing' || syncProgress?.status === 'running';
-  const autoRefreshLimit = 10;
-  const autoRefreshActive = syncInProgress && pulse < autoRefreshLimit;
   const activeLeagueName = selectedLeague?.leagueName || connection?.leagueName || leagueName || 'No league connected yet';
   const activeLeagueId = connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown';
 
@@ -1171,7 +1226,60 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
     return step < nextStep ? ' mobile-collapsed' : '';
   }
 
-  const refreshPath = `/madden/connect?token=${encodeURIComponent(token)}&pulse=${pulse + 1}${notice ? `&notice=${encodeURIComponent(notice)}` : ''}`;
+  const statusApiPath = `/madden/connect/status?token=${encodeURIComponent(token)}`;
+  const syncScript = syncInProgress ? `
+    (() => {
+      const pollUrl = ${JSON.stringify(statusApiPath)};
+      const phaseEl = document.querySelector('[data-sync-phase]');
+      const detailEl = document.querySelector('[data-sync-detail]');
+      const noteEls = Array.from(document.querySelectorAll('[data-sync-note]'));
+      const barEls = Array.from(document.querySelectorAll('[data-sync-bar]'));
+      const setDone = (kind) => {
+        barEls.forEach((el) => {
+          el.classList.remove('error');
+          if (kind === 'done') el.classList.add('done');
+          if (kind === 'error') el.classList.add('error');
+        });
+      };
+      const poll = async () => {
+        try {
+          const res = await fetch(pollUrl, { headers: { accept: 'application/json' } });
+          const data = await res.json();
+          if (!res.ok || !data.ok) return;
+          if (phaseEl) phaseEl.textContent = data.phase || 'Syncing now';
+          if (detailEl) detailEl.textContent = data.detail || 'LEAGUEbuddy is still pulling your first league snapshot.';
+          if (data.status === 'running') {
+            noteEls.forEach((el) => {
+              el.textContent = 'Stay on this page. LEAGUEbuddy is still importing your league data.';
+            });
+            window.setTimeout(poll, 2500);
+            return;
+          }
+          if (data.status === 'succeeded') {
+            setDone('done');
+            noteEls.forEach((el) => {
+              el.textContent = 'Import complete. Updating the page now.';
+            });
+            window.setTimeout(() => window.location.reload(), 900);
+            return;
+          }
+          if (data.status === 'failed') {
+            setDone('error');
+            noteEls.forEach((el) => {
+              el.textContent = 'The first sync needs attention. Updating the page now.';
+            });
+            window.setTimeout(() => window.location.reload(), 900);
+          }
+        } catch {
+          noteEls.forEach((el) => {
+            el.textContent = 'Still working. If this takes too long, use Refresh Status.';
+          });
+          window.setTimeout(poll, 4000);
+        }
+      };
+      window.setTimeout(poll, 2500);
+    })();
+  ` : '';
 
   return html(`
     <section class="hero">
@@ -1209,7 +1317,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             ${syncInProgress ? `
               <div class="summary-item active">
                 <strong>Import Progress</strong>
-                <p><strong>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br />${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your league data. Stay on this page while it updates.')}</p>
+                <p><strong data-sync-phase>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br /><span data-sync-detail>${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your league data. Stay on this page while it updates.')}</span></p>
               </div>
             ` : ''}
             ${syncError ? `
@@ -1437,17 +1545,24 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
           </div>
           ${syncInProgress ? `
-            <div class="subtle">
-              <strong>Import in progress:</strong> ${escapeHtml(syncProgress?.phase || 'Syncing now')}<br />
-              ${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your first league snapshot. This page will refresh automatically.')}
+            <div class="sync-progress-card">
+              <div class="sync-progress-top">
+                <div>
+                  <strong data-sync-phase>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong>
+                  <span data-sync-detail>${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your first league snapshot.')}</span>
+                </div>
+                <span class="step-chip active">Working</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-bar" data-sync-bar></div>
+              </div>
+              <div class="progress-note" data-sync-note>Stay on this page. LEAGUEbuddy is still importing your league data.</div>
             </div>
             <div class="info">
-              ${autoRefreshActive
-                ? 'Stay on this page. LEAGUEbuddy is still working and this screen will update automatically as each import step finishes.'
-                : 'LEAGUEbuddy is still working, but automatic refresh has paused so the page does not loop forever. Tap Refresh Status below to check again.'}
+              Stay on this page while LEAGUEbuddy finishes the first import. This section will update automatically without reloading the whole page.
             </div>
             <div class="inline-actions">
-              <a class="button-link" href="${refreshPath}">Refresh Status</a>
+              <a class="button-link" href="/madden/connect?token=${encodeURIComponent(token)}">Refresh Status</a>
             </div>
           ` : ''}
           <div class="inline-actions">
@@ -1519,7 +1634,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             ${syncInProgress ? `
               <div class="summary-item active">
                 <strong>Import Progress</strong>
-                <p><strong>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br />${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is still importing your league data.')}</p>
+                <p><strong data-sync-phase>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br /><span data-sync-detail>${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is still importing your league data.')}</span></p>
               </div>
             ` : ''}
             ${syncError ? `
@@ -1548,7 +1663,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
         </section>
       </div>
     </div>
-  `, { autoRefreshMs: autoRefreshActive ? 3000 : 0 });
+  `, { script: syncScript });
 }
 
 export function startConnectServer() {
@@ -1588,6 +1703,30 @@ export function startConnectServer() {
       }
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       res.end(renderDashboard({ token, dashboard, notice, pulse }));
+    },
+  });
+
+  registerHttpRoute({
+    method: 'GET',
+    path: '/madden/connect/status',
+    handler: async (req, res) => {
+      const token = parseToken(req);
+      const dashboard = await connectionService.getLeagueConnectionDashboardState(token);
+      if (!dashboard.ok) {
+        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, message: dashboard.message }));
+        return;
+      }
+      const connection = dashboard.connection;
+      const syncProgress = dashboard.session?.syncProgress || {};
+      const status = connection?.status || syncProgress?.status || 'unknown';
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        status: syncProgress?.status === 'running' ? 'running' : status === 'syncing' ? 'running' : status === 'connected' ? 'succeeded' : status === 'sync_error' ? 'failed' : status,
+        phase: syncProgress?.phase || 'Syncing now',
+        detail: syncProgress?.detail || connection?.summary?.lastSyncError || '',
+      }));
     },
   });
 
