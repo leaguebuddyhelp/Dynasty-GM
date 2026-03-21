@@ -26,6 +26,7 @@ const BETA_MADDEN_COMMANDS = new Set([
   'plan',
   'pricing',
   'claim-plan',
+  'setup',
   'start-here',
   'install-league',
   'setup-check',
