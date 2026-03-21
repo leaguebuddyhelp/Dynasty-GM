@@ -58,6 +58,18 @@ async function ensureCoachRole(interaction, roleName) {
   return role;
 }
 
+function persistCoachRoleMapping(guildId, role) {
+  if (!guildId || !role?.id || !/ coach$/i.test(role.name || '')) return;
+  const cfg = loadGuildMaddenConfig(guildId) || {};
+  cfg.compat = cfg.compat || {};
+  cfg.compat.maddenRoleMap = cfg.compat.maddenRoleMap || {};
+  const roleName = role.name;
+  const baseName = roleName.replace(/ coach$/i, '').trim();
+  cfg.compat.maddenRoleMap[roleName] = role.id;
+  cfg.compat.maddenRoleMap[baseName] = cfg.compat.maddenRoleMap[baseName] || role.id;
+  saveGuildMaddenConfig(guildId, cfg);
+}
+
 function roleNamePriority(name = '') {
   if (name === 'LEAGUEbuddy Trade Committee') return 100;
   if (ASSIGNABLE.includes(name)) return 90;
@@ -157,6 +169,8 @@ export async function execute(interaction) {
   try {
     await guildMember.roles.add(r1);
     if (r2) await guildMember.roles.add(r2);
+    persistCoachRoleMapping(interaction.guildId, r1);
+    persistCoachRoleMapping(interaction.guildId, r2);
     const coachGroupRole = getLeaguebuddyCoachesRole(interaction.guild, roleMap);
     if (coachGroupRole && [/ coach$/i.test(r1.name), / coach$/i.test(r2?.name || '')].some(Boolean)) {
       await guildMember.roles.add(coachGroupRole).catch(() => null);

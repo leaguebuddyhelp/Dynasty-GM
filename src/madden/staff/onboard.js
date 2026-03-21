@@ -94,6 +94,18 @@ async function ensureCoachRole(interaction, roleName) {
     return role;
 }
 
+function persistCoachRoleMapping(guildId, role) {
+    if (!guildId || !role?.id || !/ coach$/i.test(role.name || '')) return;
+    const cfg = loadGuildMaddenConfig(guildId) || {};
+    cfg.compat = cfg.compat || {};
+    cfg.compat.maddenRoleMap = cfg.compat.maddenRoleMap || {};
+    const roleName = role.name;
+    const baseName = roleName.replace(/ coach$/i, '').trim();
+    cfg.compat.maddenRoleMap[roleName] = role.id;
+    cfg.compat.maddenRoleMap[baseName] = cfg.compat.maddenRoleMap[baseName] || role.id;
+    saveGuildMaddenConfig(guildId, cfg);
+}
+
 function getLeaguebuddyCoachesRole(guild, roleMap) {
     const roleId = roleMap['Ghost Legacy'] || roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || null;
     return roleId ? guild.roles.cache.get(roleId) || null : null;
@@ -637,6 +649,7 @@ export async function execute(interaction) {
 
     try {
         await guildMember.roles.add(coachRole);
+        persistCoachRoleMapping(interaction.guildId, coachRole);
         const coachGroupRole = getLeaguebuddyCoachesRole(interaction.guild, roleMap);
         if (coachGroupRole) {
             await guildMember.roles.add(coachGroupRole).catch(() => null);
