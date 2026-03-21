@@ -878,6 +878,8 @@ async function execute(interaction) {
     const teams = teamMap(snapshot);
     const rankMaps = buildRankMaps(snapshot);
     const featuredGame = !playoffRound ? selectGameOfWeek(gamesFinal, teams, rankMaps, wkNumeric) : null;
+    const billing = getBillingSummary(interaction.guildId);
+    const isFreePlan = String(billing?.plan || 'free').toLowerCase() === 'free';
     // Stats removed per request; keep flow lean and focused on buttons/strike instructions.
     let created = 0;
     const deadline = Math.floor((Date.now() + 48 * 3600 * 1000) / 1000);
@@ -906,45 +908,64 @@ async function execute(interaction) {
         };
         const homeShort = short(teams[game.homeTeamId]);
         const awayShort = short(teams[game.awayTeamId]);
-        const row = new ActionRowBuilder().addComponents(
+        const threadButtons = [
           new ButtonBuilder().setCustomId(`madden_game_status_complete|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('Game Completed 🏁').setStyle(ButtonStyle.Success),
-          new ButtonBuilder().setCustomId(`madden_game_status_fairsim|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('Fair Sim ⚖️').setStyle(ButtonStyle.Secondary),
+          ...(isFreePlan ? [] : [
+            new ButtonBuilder().setCustomId(`madden_game_status_fairsim|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('Fair Sim ⚖️').setStyle(ButtonStyle.Secondary),
+          ]),
           new ButtonBuilder().setCustomId(`madden_game_status_homewin|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel(`FW ${homeShort} 🏠`).setStyle(ButtonStyle.Secondary),
           new ButtonBuilder().setCustomId(`madden_game_status_awaywin|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel(`FW ${awayShort} 🛫`).setStyle(ButtonStyle.Secondary),
           new ButtonBuilder().setCustomId(`madden_game_status_cpu|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('CPU 🤖').setStyle(ButtonStyle.Secondary),
-        );
-        const staffRow = new ActionRowBuilder().addComponents(
+        ];
+        const row = new ActionRowBuilder().addComponents(...threadButtons);
+        const staffButtons = isFreePlan ? [] : [
           new ButtonBuilder().setCustomId(`madden_game_status_staffstrikeaway|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel(`Apply Strike ${awayShort} 🚫`).setStyle(ButtonStyle.Danger),
           new ButtonBuilder().setCustomId(`madden_game_status_staffstrikehome|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel(`Apply Strike ${homeShort} 🚫`).setStyle(ButtonStyle.Danger),
-        );
+        ];
+        const staffRow = staffButtons.length ? new ActionRowBuilder().addComponents(...staffButtons) : null;
         const embed = {
           title: brandTitle('LEAGUEbuddy Matchup'),
-          description: [
-            `Schedule and play your game in this thread. One outcome button must be used before the advance deadline.`,
-            ``,
-            `🏁 Game Completed`,
-            `Both coaches press this after the game is finished. When one side presses first, the other side will be prompted to confirm.`,
-            ``,
-            `⚖️ Fair Sim`,
-            `Both coaches press this only when both sides agree the game will not be played. Each coach gets 1 non-play strike.`,
-            ``,
-            `🏳️ Opponent Win (Forfeit)`,
-            `Use the button with your opponent's team name when they were ready to play and your side could not get the game done. Your side takes the strike.`,
-            ``,
-            `🤖 CPU`,
-            `Use this only for a CPU matchup. No strikes are applied.`,
-            ``,
-            `🚫 Apply Strike`,
-            `Staff only. Used when the bot's thread evidence supports applying the strike manually.`,
-            `Deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
-          ].join('\n'),
+          description: isFreePlan
+            ? [
+                `Schedule and play your game in this thread. One outcome button must be used before the advance deadline.`,
+                ``,
+                `🏁 Game Completed`,
+                `Both coaches press this after the game is finished. When one side presses first, the other side will be prompted to confirm.`,
+                ``,
+                `🏳️ Opponent Win (Forfeit)`,
+                `Use the button with your opponent's team name when they were ready to play and your side could not get the game done.`,
+                ``,
+                `🤖 CPU`,
+                `Use this only for a CPU matchup.`,
+                ``,
+                `Deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
+              ].join('\n')
+            : [
+                `Schedule and play your game in this thread. One outcome button must be used before the advance deadline.`,
+                ``,
+                `🏁 Game Completed`,
+                `Both coaches press this after the game is finished. When one side presses first, the other side will be prompted to confirm.`,
+                ``,
+                `⚖️ Fair Sim`,
+                `Both coaches press this only when both sides agree the game will not be played. Each coach gets 1 non-play strike.`,
+                ``,
+                `🏳️ Opponent Win (Forfeit)`,
+                `Use the button with your opponent's team name when they were ready to play and your side could not get the game done. Your side takes the strike.`,
+                ``,
+                `🤖 CPU`,
+                `Use this only for a CPU matchup. No strikes are applied.`,
+                ``,
+                `🚫 Apply Strike`,
+                `Staff only. Used when the bot's thread evidence supports applying the strike manually.`,
+                `Deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
+              ].join('\n'),
           color: 0x00b0f4,
           timestamp: new Date().toISOString(),
         };
         await thread.send({
           content: mentionText || null,
           embeds: [embed],
-          components: [row, staffRow],
+          components: [row, ...(staffRow ? [staffRow] : [])],
           allowedMentions: mentionIds?.length ? { roles: mentionIds, parse: [] } : { parse: ['roles'] },
         });
         try {
@@ -1009,8 +1030,6 @@ async function execute(interaction) {
       const announceChannelId = channelMap['Madden League Buddy Announcements'];
       const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
       const coachTag = coachRoleId ? `<@&${coachRoleId}>` : '';
-      const billing = getBillingSummary(interaction.guildId);
-      const isFreePlan = String(billing?.plan || 'free').toLowerCase() === 'free';
       const roundLabel = playoffRound ? formatPlayoffRoundLabel(playoffRound) : `Week ${wkNumeric}`;
       if (announceChannelId) {
         const announce = await interaction.client.channels.fetch(announceChannelId).catch(() => null);

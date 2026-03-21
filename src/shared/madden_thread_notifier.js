@@ -5,7 +5,7 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from './madden_staff_ops.js';
 import { sendCoachReceipt } from './madden_coach_receipts.js';
 import { getMaddenSnapshotContext, loadMaddenChannelMap } from './madden_metadata.js';
-import { getGuildRoleMap } from './madden_guild_config.js';
+import { getGuildRoleMap, loadGuildMaddenConfig } from './madden_guild_config.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
 const STATE_FILE = getMaddenDataFilePath('thread_reminders.json');
@@ -126,6 +126,11 @@ function loadRoleMap(guildId = null) {
   } catch {
     return {};
   }
+}
+
+function strikeSystemEnabled(guildId) {
+  const tier = String(loadGuildMaddenConfig(guildId)?.license?.tier || 'free').toLowerCase();
+  return tier !== 'free';
 }
 
 async function coachUserIds(guild, roleIds = [], candidateUserIds = []) {
@@ -746,7 +751,9 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
         logNotifierDecision({ enabled: debugDecisions, threadId, info: trackedInfo, participation, decision: 'sent', reason: 'game_complete_prompt' });
       }
       if (!trackedInfo.warnedTwentyFourAt && sinceCreated >= TWENTY_FOUR_HOURS) {
+        const strikesEnabled = strikeSystemEnabled(thread.guildId);
         const shouldUseStrikePicture =
+          strikesEnabled &&
           coachState === 'coach_both' &&
           !participation.activeBackAndForth &&
           !['game_complete_signal', 'scheduled_next_day', 'locked_time', 'soft_availability', 'connection_issue', 'off_topic_conflict'].includes(participation.conversationState) &&
@@ -882,7 +889,7 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
           logNotifierDecision({ enabled: debugDecisions, threadId, info: trackedInfo, participation, decision: 'sent', reason: '24h_game_check' });
         }
       }
-      if (coachState === 'coach_both' && !trackedInfo.warnedDeadlineAt && deadlineAt && deadlineAt > now && deadlineAt - now <= ONE_HOUR) {
+      if (strikeSystemEnabled(thread.guildId) && coachState === 'coach_both' && !trackedInfo.warnedDeadlineAt && deadlineAt && deadlineAt > now && deadlineAt - now <= ONE_HOUR) {
         const coachAndStaffMention = buildCoachAndStaffMention(trackedInfo);
         const projected = buildProjectedOutcome(trackedInfo, participation);
         const recommendedLine = projected?.recommended?.label

@@ -8,8 +8,14 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_
 import { queueRemovalReview, queueImmediateRemedyReview } from '../shared/madden_removal_review.js';
 import { sendCoachReceipt } from '../shared/madden_coach_receipts.js';
 import { consumeRecognitionPerk, hasRecognitionPerk } from '../shared/league_recognition.js';
+import { loadGuildMaddenConfig } from '../shared/madden_guild_config.js';
 
 export const customId = /^madden_apply_determined_strikes\|([^|]+)$/;
+
+function strikeSystemEnabled(guildId) {
+  const tier = String(loadGuildMaddenConfig(guildId)?.license?.tier || 'free').toLowerCase();
+  return tier !== 'free';
+}
 
 function seasonKeyFromSnapshot(snapshot) {
   const yr = snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear
@@ -79,6 +85,10 @@ function consumeUsersPerk({ guildId, seasonKey, weekKey, userIds = [], perkKey, 
 export async function execute(interaction) {
   if (!(interaction instanceof ButtonInteraction)) return;
   const [, threadId] = interaction.customId.match(customId) || [];
+  if (!strikeSystemEnabled(interaction.guildId)) {
+    await interaction.reply({ content: 'Determined strikes are not available on Free.', ephemeral: true });
+    return;
+  }
   const roleMap = loadRoleMap();
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
