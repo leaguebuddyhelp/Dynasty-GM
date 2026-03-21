@@ -1273,7 +1273,7 @@ async function execute(interaction) {
       }
     } else if (!backfillOnlyAwards && !inPreseason && !inOffseason) {
       try {
-        await updateStatLeaders(interaction.client, leagueId);
+        await updateStatLeaders(interaction.client, leagueId, interaction.guildId);
       } catch (e) {
         criticalFailures.push('Stat leaders');
         console.warn('[madden-weeklyupdate] stat leaders update skipped:', e?.message || e);
@@ -1307,13 +1307,13 @@ async function execute(interaction) {
       }
     } else if (!backfillOnlyAwards && !inPreseason && !inOffseason) {
       try {
-        await updateStandings(interaction.client, leagueId);
+        await updateStandings(interaction.client, leagueId, interaction.guildId);
       } catch (e) {
         criticalFailures.push('Standings');
         console.warn('[madden-weeklyupdate] standings update skipped:', e?.message || e);
       }
       try {
-        await updatePlayoffPicture(interaction.client, leagueId);
+        await updatePlayoffPicture(interaction.client, leagueId, interaction.guildId);
       } catch (e) {
         criticalFailures.push('Playoff picture');
         console.warn('[madden-weeklyupdate] playoff picture update skipped:', e?.message || e);
