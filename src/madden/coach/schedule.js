@@ -401,6 +401,10 @@ function phaseMenuOptions(snapshot, kind, selectedWeek) {
   })).slice(0, 25);
 }
 
+function fallbackSelectOption(label, value = 'none') {
+  return [{ label: label.slice(0, 100), value }];
+}
+
 export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null, phaseKind = null) {
   const ledger = loadWeeklyGameLog(leagueId);
   const { names } = buildTeamMaps(snapshot);
@@ -428,6 +432,23 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null, phas
     if (ledgerEntry?.played) return true;
     return ['played', 'played_inferred'].includes(inferredGameStatus(snapshot, game));
   });
+  const weekOptions = phaseMenuOptions(snapshot, activePhaseKind, clampedWeek);
+  const gameOptions = (playedGames.length ? playedGames : games.slice(0, 1))
+    .map((game) => {
+      const awayName = names.get(Number(game.awayTeamId)) || 'Away';
+      const homeName = names.get(Number(game.homeTeamId)) || 'Home';
+      const scoreView = gameDisplayScores(snapshot, game, leagueId);
+      const awayScore = scoreView?.awayScore ?? Number(game.awayScore || 0);
+      const homeScore = scoreView?.homeScore ?? Number(game.homeScore || 0);
+      const label = playedGames.length
+        ? `${teamShortName(awayName)} ${awayScore} vs ${homeScore} ${teamShortName(homeName)}`
+        : 'No played games';
+      return {
+        label: label.slice(0, 100),
+        value: String(game.scheduleId || `${clampedWeek}:${game.awayTeamId}:${game.homeTeamId}`),
+      };
+    })
+    .slice(0, 25);
 
   const embed = new EmbedBuilder()
     .setColor(0x00b0f4)
@@ -444,8 +465,9 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null, phas
   const weekRow = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId(`madden_schedule_page|${activePhaseKind}`)
-      .setPlaceholder(phaseWeekLabel(activePhaseKind, clampedWeek))
-      .addOptions(phaseMenuOptions(snapshot, activePhaseKind, clampedWeek)),
+      .setPlaceholder(weekOptions.length ? phaseWeekLabel(activePhaseKind, clampedWeek) : 'No schedule weeks')
+      .setDisabled(!weekOptions.length)
+      .addOptions(weekOptions.length ? weekOptions : fallbackSelectOption('No schedule weeks', `${activePhaseKind}:0`)),
   );
 
   const gameRow = new ActionRowBuilder().addComponents(
@@ -453,22 +475,7 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null, phas
       .setCustomId(`madden_schedule_game|${activePhaseKind}|${clampedWeek}`)
       .setPlaceholder(playedGames.length ? 'View Game Stats' : 'No played games this week')
       .setDisabled(!playedGames.length)
-      .addOptions(
-        (playedGames.length ? playedGames : games.slice(0, 1)).map((game) => {
-          const awayName = names.get(Number(game.awayTeamId)) || 'Away';
-          const homeName = names.get(Number(game.homeTeamId)) || 'Home';
-          const scoreView = gameDisplayScores(snapshot, game, leagueId);
-          const awayScore = scoreView?.awayScore ?? Number(game.awayScore || 0);
-          const homeScore = scoreView?.homeScore ?? Number(game.homeScore || 0);
-          const label = playedGames.length
-            ? `${teamShortName(awayName)} ${awayScore} vs ${homeScore} ${teamShortName(homeName)}`
-            : 'No played games';
-          return {
-            label: label.slice(0, 100),
-            value: String(game.scheduleId || `${clampedWeek}:${game.awayTeamId}:${game.homeTeamId}`),
-          };
-        }),
-      ),
+      .addOptions(gameOptions.length ? gameOptions : fallbackSelectOption('No played games', `${activePhaseKind}:${clampedWeek}:none`)),
   );
 
   return { embed, components: [gameRow, weekRow], weekIndex: clampedWeek, phaseKind: activePhaseKind };

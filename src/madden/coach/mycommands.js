@@ -32,44 +32,40 @@ async function execute(interaction) {
   const staffEmbed = new EmbedBuilder()
     .setColor(0xffd700)
     .setTitle(coachVoiceTitle('staffCommands', 'Admin Commands'))
-    .setDescription('Use this as the quick-start board for a new LEAGUEbuddy server.')
+    .setDescription('Use this as the quick-start board for a LEAGUEbuddy server.')
     .addFields(
       {
-        name: 'Free Quick Start',
+        name: 'Setup Flow',
         value: [
-          '1. Invite LEAGUEbuddy',
-          '2. `/connectleague`',
-          '3. Finish the dashboard flow',
-          '4. `/setup`',
-          '5. Do the one next step it shows',
-          '6. Run `/setup` again until it says complete',
-          '7. `/create-threads`',
-          '8. `/weeklyupdate`',
+          '1. `/connectleague`',
+          '2. `/setup`',
+          '3. Do the one next step it shows',
+          '4. Rerun `/setup` until complete',
         ].join('\n'),
       },
       {
-        name: 'Staffing',
+        name: 'Weekly Flow',
         value: [
           '`/member assign`',
           '`/member remove`',
-          '`/member onboard` for Standard/Premium',
+          '`/create-threads`',
+          '`/delete-threads`',
+          '`/weeklyupdate`',
         ].join('\n'),
       },
       {
-        name: 'After Setup',
+        name: 'Tier Adds',
         value: [
-          '1. Assign coaches to team roles',
-          '2. Tell coaches to run `/help`',
-          '3. Run `/create-threads`',
-          '4. After games finish, run `/weeklyupdate`',
-          '5. Repeat that thread/update loop every week',
+          'Standard: `/member onboard`, `/bigboard`, `/scout`, `/myscouts`, `/draftprimer`, `/mockdraft`, `/tradeblock`, `/streamlink`',
+          'Premium: `/gamestrategy`, `/franchisehub`',
         ].join('\n'),
       },
       {
-        name: 'Billing Support',
+        name: 'Core Commands',
         value: [
           '`/pricing`',
-          'Package upgrades and billing are handled from the LEAGUEbuddy site.',
+          '`/setup`, `/connectleague`, `/disconnectleague`, `/league-status`, `/sync`',
+          '`/setup-channels`, `/setup-pins`, `/setup-roles`, `/setup-reset`',
         ].join('\n'),
       },
     )
@@ -78,24 +74,28 @@ async function execute(interaction) {
   const coachEmbed = new EmbedBuilder()
     .setColor(0x1e90ff)
     .setTitle(coachVoiceTitle('coachCommands', 'Coach Commands'))
-    .setDescription('This menu shows the customer commands that matter for the current league tier.')
+    .setDescription('This menu shows the commands coaches and commissioners should actually use.')
     .addFields(
       {
         name: 'Start Here',
         value: [
-          '`/help`, `/pricing`',
-          '`/setup` for the next server step',
+          '`/help`',
+          '`/schedule`, `/roster`, `/playersearch`',
         ].join('\n'),
       },
       {
         name: 'Free Commands',
         value: [
+          '`/pricing`, `/setup`, `/connectleague`, `/disconnectleague`, `/league-status`, `/sync`',
+          '`/setup-channels`, `/setup-pins`, `/setup-roles`, `/setup-reset`',
+          '`/member assign`, `/member remove`, `/create-threads`, `/delete-threads`, `/weeklyupdate`',
           '`/schedule`, `/roster`, `/playersearch`',
         ].join('\n'),
       },
       {
         name: 'Standard Adds',
         value: [
+          '`/member onboard`',
           '`/tradeblock`',
           '`/streamlink`',
           '`/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`',
