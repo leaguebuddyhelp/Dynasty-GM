@@ -1,4 +1,5 @@
 import { buildRecruitingEmbed, safeLoadRecruiting } from '../madden/helpers/recruiting_helpers.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../madden/madden_data.js';
 
 // Regex customId picked up by the interaction router
 export const customId = /^madden_recruiting_page_(\d+)$/;
@@ -8,7 +9,9 @@ export async function execute(interaction) {
   const match = interaction.customId.match(customId);
   if (!match) return;
 
-  const recruits = safeLoadRecruiting();
+  const leagueId = requireLeagueIdForGuild(interaction.guildId);
+  const snapshot = loadLeagueSnapshot(leagueId);
+  const recruits = safeLoadRecruiting(snapshot);
   if (!recruits || !recruits.length) {
     await interaction.update({ content: 'No recruiting data found.', embeds: [], components: [] });
     return;

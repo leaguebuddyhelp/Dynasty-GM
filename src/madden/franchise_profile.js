@@ -12,6 +12,7 @@ import {
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadRoleMap } from './staff/staffUtils.js';
 import { getScoutSummaryForSeason } from './coach/scout_store.js';
+import { getMaddenDraftClassId } from '../shared/madden_draft_class.js';
 
 const STRIKES_PATH = path.join(process.cwd(), 'data', 'madden', 'fairsims.json');
 const SCOUT_POINTS_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_points.json');
@@ -945,15 +946,7 @@ export function buildFranchiseProfile(ctx, teamName, options = {}) {
   if (teamId == null) return null;
   const seasonYear = Number(ctx?.seasonContext?.calendarYear || ctx?.league?.info?.careerHubInfo?.seasonInfo?.calendarYear || new Date().getFullYear());
   const weekNumber = Number(ctx?.seasonContext?.currentWeek || ctx?.league?.currentWeek || 1);
-  const classId = (() => {
-    const seasonInfo = ctx.league?.info?.careerHubInfo?.seasonInfo || {};
-    const seasonOrdinal = Number(seasonInfo?.seasonYear ?? ctx.league?.info?.seasonYear ?? ctx.league?.seasonYear);
-    if (Number.isFinite(seasonOrdinal) && seasonOrdinal >= 0 && seasonOrdinal < 50) {
-      return `cus_${String(seasonOrdinal + 1).padStart(2, '0')}`;
-    }
-    const calendarYear = Number(seasonInfo?.calendarYear || ctx.league?.info?.calendarYear || ctx.league?.calendarYear || 2025);
-    return `cus_${String(Math.max(1, calendarYear - 2024)).padStart(2, '0')}`;
-  })();
+  const classId = getMaddenDraftClassId(ctx.league);
 
   const standing = resolveStandingRecord(ctx.league, ctx.standingsById.get(teamId));
   const teamNeeds = ctx.needsByTeam[normalizeName(teamName)] || ['BPA'];

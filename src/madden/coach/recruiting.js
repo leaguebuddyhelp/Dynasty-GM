@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { safeLoadRecruiting, buildRecruitingEmbed } from '../../../madden/helpers/recruiting_helpers.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 
@@ -8,7 +9,9 @@ export const data = new SlashCommandBuilder()
   .setDMPermission(false);
 
 export async function execute(interaction) {
-  const recruits = safeLoadRecruiting();
+  const leagueId = requireLeagueIdForGuild(interaction.guildId);
+  const snapshot = loadLeagueSnapshot(leagueId);
+  const recruits = safeLoadRecruiting(snapshot);
   if (!recruits || !recruits.length) {
     await interaction.reply({ content: coachErrorBlurb('noRecruiting', 'No recruiting data found.'), ephemeral: true });
     return;

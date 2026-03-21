@@ -7,13 +7,13 @@ import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getDataFilePath, getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
+import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 
 export const featureKey = 'scouting_draft';
 
 let currentCalendarYear = 2025;
 const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
-const CURRENT_CLASS_ID = 'CUS02';
 // Utility: pick latest league snapshot
 function getLatestLeagueFile() {
   const dir = getMaddenLeaguesDir();
@@ -661,9 +661,10 @@ function loadDraftClass() {
   if (!fs.existsSync(DRAFT_CLASS_DIR)) return [];
   const files = fs.readdirSync(DRAFT_CLASS_DIR).filter(f => f.toLowerCase().endsWith('.json'));
   if (!files.length) return [];
+  const currentClassId = getMaddenDraftClassId({ calendarYear: currentCalendarYear });
 
   const target = files
-    .filter(f => f.toLowerCase().includes(CURRENT_CLASS_ID.toLowerCase()) && f.toLowerCase().includes('big board'))
+    .filter(f => f.toLowerCase().includes(currentClassId.toLowerCase()) && f.toLowerCase().includes('big board'))
     .sort()[0];
   if (!target) return [];
 

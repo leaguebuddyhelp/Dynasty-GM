@@ -11,6 +11,7 @@ import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_s
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
+import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 
 // Plan gating (LEAGUEbuddy packsEnabled / plan enforcement)
 export const featureKey = 'scouting_draft';
@@ -20,7 +21,6 @@ const SCOUT_PATH = getMaddenDataFilePath('scout_points.json');
 const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
 const DRAFT_PRIMER_HISTORY_PATH = getMaddenDataFilePath('draft_primer_history.json');
 const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
-const CURRENT_CLASS_ID = 'CUS02';
 const POS_ALIAS = { EDGE: 'REDG', REDGE: 'REDG', LEDGE: 'LEDG' };
 const POSITION_NEEDS = {
     // Offense
@@ -565,17 +565,7 @@ function saveDraftPrimerWeek(history, { leagueId, userId, seasonKey, weekKey, te
 }
 
 function classIdForLeague(league) {
-    const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
-    const seasonOrdinal = Number(
-        seasonInfo?.seasonYear
-        ?? league?.info?.seasonYear
-        ?? league?.seasonYear
-    );
-    if (Number.isFinite(seasonOrdinal) && seasonOrdinal >= 0 && seasonOrdinal < 50) {
-        return `cus_${String(seasonOrdinal + 1).padStart(2, '0')}`;
-    }
-    const calendarYear = Number(seasonInfo?.calendarYear || league?.info?.calendarYear || league?.calendarYear || 2025);
-    return `cus_${String(Math.max(1, calendarYear - 2024)).padStart(2, '0')}`;
+    return getMaddenDraftClassId(league);
 }
 
 function scoutStatusForProspect(userScout = {}, classKey, weekKey, playerName) {
@@ -781,11 +771,11 @@ function qbDepthStatus(teamName, league) {
     return { wantDepthQB, starterOvr, backupOvr, qbCount: count };
 }
 
-function loadDraftClass() {
+function loadDraftClass(classId) {
     const dir = DRAFT_CLASS_DIR;
     if (!fs.existsSync(dir)) return [];
     const files = fs.readdirSync(dir)
-        .filter(f => f.toLowerCase().includes(CURRENT_CLASS_ID.toLowerCase()) && f.toLowerCase().includes('big board') && f.endsWith('.json'))
+        .filter(f => f.toLowerCase().includes(String(classId || '').toLowerCase()) && f.toLowerCase().includes('big board') && f.endsWith('.json'))
         .sort();
     if (!files.length) return [];
     const data = JSON.parse(fs.readFileSync(path.join(dir, files[0]), 'utf8'));
@@ -962,7 +952,7 @@ export async function execute(interaction) {
         // Clamp needs to top 5 after adjustments
         needs = needs.slice(0, 5);
     }
-    const draftClass = loadDraftClass()
+    const draftClass = loadDraftClass(classKey)
         .sort((a, b) => (a.RNK ?? a.rank ?? a.order ?? 9999) - (b.RNK ?? b.rank ?? b.order ?? 9999))
         .map((p, i) => ({ ...p, __idx: i }));
     // Precompute QB prospects with projected round to diversify QB suggestions

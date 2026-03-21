@@ -1,15 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 
 const RECRUITING_DIR = path.resolve('data/draft_classes/madden');
-const CURRENT_CLASS_ID = 'CUS02';
 const PAGE_SIZE = 10;
 
-const safeLoadRecruiting = () => {
+const safeLoadRecruiting = (snapshotOrLeague = null) => {
   try {
+    const currentClassId = getMaddenDraftClassId(snapshotOrLeague);
     const target = fs.readdirSync(RECRUITING_DIR)
-      .filter(f => f.toLowerCase().includes(`${CURRENT_CLASS_ID.toLowerCase()} - recruiting`.toLowerCase()))
+      .filter(f => f.toLowerCase().includes(`${currentClassId.toLowerCase()} - recruiting`.toLowerCase()))
       .sort();
     const file = target[0];
     if (!file) return null;

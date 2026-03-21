@@ -9,6 +9,7 @@ import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/l
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getNflBrandAsset } from '../../shared/madden_assets.js';
+import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -104,18 +105,7 @@ function appendScoutLog(entry) {
 }
 
 function classIdForSnapshot(snapshot) {
-  const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-  const seasonOrdinal = Number(
-    seasonInfo?.seasonYear
-    ?? snapshot?.info?.seasonYear
-    ?? snapshot?.seasonYear
-  );
-  if (Number.isFinite(seasonOrdinal) && seasonOrdinal >= 0 && seasonOrdinal < 50) {
-    return `cus_${String(seasonOrdinal + 1).padStart(2, '0')}`;
-  }
-  const calendarYear = Number(seasonInfo?.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear || 2025);
-  const idx = Math.max(1, calendarYear - 2024);
-  return `cus_${String(idx).padStart(2, '0')}`;
+  return getMaddenDraftClassId(snapshot);
 }
 
 function findClassFile(classId) {

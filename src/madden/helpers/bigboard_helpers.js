@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { EmbedBuilder } from 'discord.js';
 import { resolveLeagueIdWithConfig } from '../madden_data.js';
+import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 
 const DRAFT_DIR = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
 
@@ -10,8 +11,7 @@ function safeReadJSON(file, fallback = null) {
 }
 
 function classIdForSeason(calendarYear) {
-  const idx = Math.max(1, (calendarYear || 2025) - 2025 + 1);
-  return `cus_${String(idx).padStart(2, '0')}`;
+  return getMaddenDraftClassId({ calendarYear });
 }
 
 function findClassFile(classId) {

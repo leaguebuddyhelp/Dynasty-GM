@@ -6,6 +6,7 @@ import { loadRoleMap } from './staff/staffUtils.js';
 import { getFullTeamName, getFullTeamNameFromParts } from '../shared/madden_team_names.js';
 import { ensureStrikeSeason, weightedCount, formatBreakdown } from '../shared/madden_strikes.js';
 import { buildFranchiseProfileContext, buildFranchiseProfile } from './franchise_profile.js';
+import { getMaddenDraftClassId } from '../shared/madden_draft_class.js';
 
 const ACTIVE_TRADES_PATH = path.join(process.cwd(), 'data', 'madden', 'active_trades.json');
 const PENDING_PROOFS_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.json');
@@ -1182,14 +1183,7 @@ function recordScore(standing) {
 }
 
 function classIdForLeague(league) {
-  const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
-  const seasonOrdinal = Number(seasonInfo?.seasonYear ?? league?.info?.seasonYear ?? league?.seasonYear);
-  if (Number.isFinite(seasonOrdinal) && seasonOrdinal >= 0 && seasonOrdinal < 50) {
-    return `CUS${String(seasonOrdinal + 1).padStart(2, '0')}`;
-  }
-  const calendarYear = Number(seasonInfo?.calendarYear || league?.info?.calendarYear || league?.calendarYear || 2025);
-  const idx = Math.max(1, calendarYear - 2024);
-  return `CUS${String(idx).padStart(2, '0')}`;
+  return getMaddenDraftClassId(league).toUpperCase();
 }
 
 function resolveDraftDir() {
