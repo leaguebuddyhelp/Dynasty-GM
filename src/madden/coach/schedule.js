@@ -5,6 +5,7 @@ import {
   StringSelectMenuBuilder,
 } from 'discord.js';
 import { loadLeagueSnapshot, currentWeek, requireLeagueIdForGuild } from '../../../madden/madden_data.js';
+import { getMessageForWeek } from '../madden_utils.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadWeeklyGameLog } from '../weekly_game_log.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
@@ -48,28 +49,114 @@ function labelForTeam(teamName) {
   return teamShortName(teamName);
 }
 
-function regularSeasonGames(snapshot) {
-  return (snapshot?.schedule?.schedules || [])
-    .filter((game) => Number(game?.stageIndex ?? game?.stage ?? -1) === 1)
+function snapshotSeasonInfo(snapshot) {
+  return snapshot?.info?.careerHubInfo?.seasonInfo || {};
+}
+
+function currentSeasonIndex(snapshot) {
+  const seasonInfo = snapshotSeasonInfo(snapshot);
+  const explicit = Number(seasonInfo?.seasonIndex);
+  if (Number.isFinite(explicit)) return explicit;
+  const seasonIndexes = (snapshot?.schedule?.schedules || [])
+    .map((game) => Number(game?.seasonIndex ?? game?.seasonId ?? NaN))
+    .filter((value) => Number.isFinite(value));
+  return seasonIndexes.length ? Math.max(...seasonIndexes) : null;
+}
+
+function currentSeasonGames(snapshot) {
+  const targetSeasonIndex = currentSeasonIndex(snapshot);
+  const allGames = snapshot?.schedule?.schedules || [];
+  if (targetSeasonIndex === null) return allGames;
+  const matches = allGames.filter((game) => Number(game?.seasonIndex ?? game?.seasonId ?? NaN) === targetSeasonIndex);
+  return matches.length ? matches : allGames;
+}
+
+function currentSchedulePhase(snapshot) {
+  const seasonInfo = snapshotSeasonInfo(snapshot);
+  const stage = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? snapshot?.stage ?? 1);
+  const offSeasonStage = Number(seasonInfo.offSeasonStage ?? 0) || 0;
+  const displayWeekRaw = Number(
+    seasonInfo.displayWeek
+    ?? snapshot?.currentWeek
+    ?? seasonInfo.seasonWeek
+    ?? 1,
+  );
+  const currentWeekValue = Number.isFinite(displayWeekRaw) && displayWeekRaw > 0 ? displayWeekRaw : 1;
+  const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && stage !== 1;
+
+  if (stage === 0) {
+    return { kind: 'preseason', stage, offSeasonStage, currentWeekValue };
+  }
+  if (offSeasonStage > 0 || stage === 3 || stage === 8 || draftInactive) {
+    return { kind: 'offseason', stage, offSeasonStage, currentWeekValue };
+  }
+  if (stage === 2 || currentWeekValue >= 19) {
+    return { kind: 'playoffs', stage: 2, offSeasonStage, currentWeekValue };
+  }
+  return { kind: 'regular', stage: 1, offSeasonStage, currentWeekValue };
+}
+
+function phaseWeekLabel(kind, weekIndex) {
+  if (kind === 'preseason') return `Preseason Week ${Number(weekIndex) + 1}`;
+  if (kind === 'playoffs') return getMessageForWeek(Number(weekIndex) + 1, 2, 0);
+  return `Week ${Number(weekIndex) + 1}`;
+}
+
+function phaseFooterLabel(snapshot) {
+  const phase = currentSchedulePhase(snapshot);
+  if (phase.kind === 'preseason') return `Preseason Week ${Math.max(1, Number(phase.currentWeekValue || 1))}`;
+  if (phase.kind === 'playoffs') return getMessageForWeek(Number(phase.currentWeekValue || 19), 2, 0);
+  if (phase.kind === 'offseason') return `Offseason Stage ${phase.offSeasonStage || 1}`;
+  return `Week ${Math.max(1, Number(phase.currentWeekValue || 1))}`;
+}
+
+function gamesForPhase(snapshot, kind = 'regular') {
+  return currentSeasonGames(snapshot)
+    .filter((game) => {
+      const stage = Number(game?.stageIndex ?? game?.stage ?? -1);
+      const weekIndex = Number(game?.weekIndex ?? -1);
+      if (kind === 'preseason') return stage === 0;
+      if (kind === 'playoffs') return stage === 2 || (stage === 1 && weekIndex >= 18);
+      if (kind === 'regular') return stage === 1 && weekIndex >= 0 && weekIndex <= 17;
+      return false;
+    })
     .slice()
     .sort((a, b) => Number(a.weekIndex ?? 0) - Number(b.weekIndex ?? 0) || Number(a.scheduleId ?? 0) - Number(b.scheduleId ?? 0));
 }
 
-function totalRegularWeeks(snapshot) {
-  const weeks = regularSeasonGames(snapshot).map((game) => Number(game.weekIndex ?? -1));
-  return weeks.length ? Math.max(...weeks) + 1 : 18;
+function totalWeeksForPhase(snapshot, kind = 'regular') {
+  const weeks = gamesForPhase(snapshot, kind).map((game) => Number(game.weekIndex ?? -1));
+  return weeks.length ? Math.max(...weeks) + 1 : (kind === 'preseason' ? 4 : kind === 'regular' ? 18 : 23);
 }
 
-function weekGames(snapshot, weekIndex) {
-  return regularSeasonGames(snapshot).filter((game) => Number(game.weekIndex ?? -1) === Number(weekIndex));
+function phaseWeekGames(snapshot, kind, weekIndex) {
+  return gamesForPhase(snapshot, kind).filter((game) => Number(game.weekIndex ?? -1) === Number(weekIndex));
 }
 
-function latestCompletedRegularWeekIndex(snapshot) {
+function latestCompletedWeekIndexForStage(snapshot, stage) {
+  const phase = currentSchedulePhase(snapshot);
   const weeks = (snapshot?.weeklyStats || [])
-    .filter((week) => Number(week?.stage ?? week?.stageIndex ?? 0) === 1)
+    .filter((week) => Number(week?.stage ?? week?.stageIndex ?? 0) === Number(stage))
     .map((week) => Number(week?.weekIndex ?? -1))
     .filter((week) => week >= 0);
-  return weeks.length ? Math.max(...weeks) : -1;
+  const latest = weeks.length ? Math.max(...weeks) : -1;
+  if (stage === 0) {
+    const cap = phase.kind === 'preseason' ? Math.max(-1, Number(phase.currentWeekValue || 1) - 2) : 3;
+    return Math.min(latest, cap);
+  }
+  if (stage === 1) {
+    const cap = phase.kind === 'regular'
+      ? Math.max(-1, Number(phase.currentWeekValue || 1) - 2)
+      : 17;
+    return Math.min(latest, cap);
+  }
+  if (stage === 2) {
+    const cap = phase.kind === 'playoffs'
+      ? Math.max(-1, Number(phase.currentWeekValue || 19) - 2)
+      : latest;
+    return Math.min(latest, cap);
+  }
+  return latest;
 }
 
 function gameStatus(game) {
@@ -82,7 +169,8 @@ function gameStatus(game) {
 function inferredGameStatus(snapshot, game) {
   const explicit = gameStatus(game);
   if (explicit === 'played') return 'played';
-  const latestCompleted = latestCompletedRegularWeekIndex(snapshot);
+  const stage = Number(game?.stageIndex ?? game?.stage ?? 1);
+  const latestCompleted = latestCompletedWeekIndexForStage(snapshot, stage);
   const weekIndex = Number(game?.weekIndex ?? -1);
   if (weekIndex >= 0 && weekIndex <= latestCompleted) return 'played_inferred';
   return explicit;
@@ -303,26 +391,26 @@ function weekMenuOptions(totalWeeks, selectedWeek) {
   })).slice(0, 25);
 }
 
-function getScheduleLeaguePhaseLabel(snapshot) {
-  const liveWeek = Number(currentWeek(snapshot) || 1);
-  if (!Number.isFinite(liveWeek) || liveWeek <= 0) return 'Week 1';
-  if (liveWeek >= 1 && liveWeek <= 18) return `Week ${liveWeek}`;
-  if (liveWeek === 19) return 'Wild Card';
-  if (liveWeek === 20) return 'Divisional Round';
-  if (liveWeek === 21) return 'Conference Championship';
-  if (liveWeek >= 22) return 'Super Bowl';
-  return `Week ${liveWeek}`;
+function phaseMenuOptions(snapshot, kind, selectedWeek) {
+  const weeks = [...new Set(gamesForPhase(snapshot, kind).map((game) => Number(game.weekIndex ?? -1)).filter((week) => week >= 0))]
+    .sort((a, b) => a - b);
+  return weeks.map((weekIndex) => ({
+    label: phaseWeekLabel(kind, weekIndex),
+    value: `${kind}:${weekIndex}`,
+    default: weekIndex === Number(selectedWeek),
+  })).slice(0, 25);
 }
 
-export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
+export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null, phaseKind = null) {
   const ledger = loadWeeklyGameLog(leagueId);
   const { names } = buildTeamMaps(snapshot);
   const standings = standingsMap(snapshot);
-  const totalWeeks = totalRegularWeeks(snapshot);
+  const activePhaseKind = phaseKind || currentSchedulePhase(snapshot).kind;
+  const totalWeeks = totalWeeksForPhase(snapshot, activePhaseKind);
   const clampedWeek = Math.max(0, Math.min(totalWeeks - 1, Number(weekIndex || 0)));
-  const snapshotGames = weekGames(snapshot, clampedWeek);
+  const snapshotGames = phaseWeekGames(snapshot, activePhaseKind, clampedWeek);
   const ledgerGames = (ledger?.games || []).filter((entry) =>
-    Number(entry?.stageIndex ?? 0) === 1 &&
+    Number(entry?.stageIndex ?? 0) === (activePhaseKind === 'preseason' ? 0 : activePhaseKind === 'playoffs' ? 2 : 1) &&
     Number(entry?.weekIndex ?? -1) === clampedWeek
   );
   const games = snapshotGames.map((game) => {
@@ -343,26 +431,26 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
 
   const embed = new EmbedBuilder()
     .setColor(0x00b0f4)
-    .setTitle(`Madden Schedule — Week ${clampedWeek + 1}`)
+    .setTitle(`Madden Schedule — ${phaseWeekLabel(activePhaseKind, clampedWeek)}`)
     .setDescription(
       games.length
         ? games.map((game) => compactGameLine(snapshot, game, names, standings, ledger)).join('\n')
         : (ledgerGames.length
           ? ledgerGames.map((game) => compactGameLine(snapshot, game, names, standings, ledger)).join('\n')
-          : 'No regular-season games found for this week.'),
+          : `No ${activePhaseKind === 'preseason' ? 'preseason' : activePhaseKind === 'playoffs' ? 'playoff' : 'regular-season'} games found for this week.`),
     )
-    .setFooter({ text: `Regular season only • current league phase: ${getScheduleLeaguePhaseLabel(snapshot)}` });
+    .setFooter({ text: `Current league phase: ${phaseFooterLabel(snapshot)}` });
 
   const weekRow = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
-      .setCustomId('madden_schedule_page')
-      .setPlaceholder(`Week ${clampedWeek + 1}`)
-      .addOptions(weekMenuOptions(totalWeeks, clampedWeek)),
+      .setCustomId(`madden_schedule_page|${activePhaseKind}`)
+      .setPlaceholder(phaseWeekLabel(activePhaseKind, clampedWeek))
+      .addOptions(phaseMenuOptions(snapshot, activePhaseKind, clampedWeek)),
   );
 
   const gameRow = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
-      .setCustomId(`madden_schedule_game|${clampedWeek}`)
+      .setCustomId(`madden_schedule_game|${activePhaseKind}|${clampedWeek}`)
       .setPlaceholder(playedGames.length ? 'View Game Stats' : 'No played games this week')
       .setDisabled(!playedGames.length)
       .addOptions(
@@ -383,7 +471,7 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
       ),
   );
 
-  return { embed, components: [gameRow, weekRow], weekIndex: clampedWeek };
+  return { embed, components: [gameRow, weekRow], weekIndex: clampedWeek, phaseKind: activePhaseKind };
 }
 
 function teamTotalsLine(totals) {
@@ -408,11 +496,12 @@ function playerStatLine(row, type) {
   return `${playerName(row)} • ${Number(row.defTotalTackles || 0)} tk • ${Number(row.defSacks || 0)} sacks • ${Number(row.defInts || 0)} INT`;
 }
 
-export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = null) {
+export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = null, phaseKind = null) {
   const ledger = loadWeeklyGameLog(leagueId);
   const { names } = buildTeamMaps(snapshot);
   const standings = standingsMap(snapshot);
-  const games = weekGames(snapshot, weekIndex);
+  const activePhaseKind = phaseKind || currentSchedulePhase(snapshot).kind;
+  const games = phaseWeekGames(snapshot, activePhaseKind, weekIndex);
   const game = games.find((entry) => String(entry.scheduleId || `${weekIndex}:${entry.awayTeamId}:${entry.homeTeamId}`) === String(scheduleId));
   if (!game) return null;
 
@@ -456,7 +545,7 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = 
 
   const embed = new EmbedBuilder()
     .setColor(0x00b0f4)
-    .setTitle(`Week ${weekIndex + 1} — Game Stats`)
+    .setTitle(`${phaseWeekLabel(activePhaseKind, weekIndex)} — Game Stats`)
     .setDescription([
       matchupLine,
       resultLine,
@@ -497,10 +586,10 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = 
   const components = [
     new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
-        .setCustomId(`madden_schedule_game|${weekIndex}`)
+        .setCustomId(`madden_schedule_game|${activePhaseKind}|${weekIndex}`)
         .setPlaceholder('View Game Stats')
         .addOptions(
-          weekGames(snapshot, weekIndex)
+          phaseWeekGames(snapshot, activePhaseKind, weekIndex)
             .filter((entry) => {
               const logged = ledgerEntryForGame(ledger, entry);
               if (logged?.played) return true;
@@ -520,9 +609,9 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = 
     ),
     new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
-        .setCustomId('madden_schedule_page')
-        .setPlaceholder(`Week ${weekIndex + 1}`)
-        .addOptions(weekMenuOptions(totalRegularWeeks(snapshot), weekIndex)),
+        .setCustomId(`madden_schedule_page|${activePhaseKind}`)
+        .setPlaceholder(phaseWeekLabel(activePhaseKind, weekIndex))
+        .addOptions(phaseMenuOptions(snapshot, activePhaseKind, weekIndex)),
     ),
   ];
 
@@ -534,8 +623,12 @@ export async function execute(interaction) {
   try {
     const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
-    const initialWeek = Math.max(0, Math.min(totalRegularWeeks(snapshot) - 1, Number(currentWeek(snapshot) || 1) - 1));
-    const view = buildScheduleWeekView(snapshot, initialWeek, leagueId);
+    const phase = currentSchedulePhase(snapshot);
+    const currentWeekValue = Math.max(1, Number(snapshotSeasonInfo(snapshot).displayWeek ?? currentWeek(snapshot) ?? 1));
+    const initialWeek = phase.kind === 'playoffs'
+      ? Math.max(18, currentWeekValue - 1)
+      : Math.max(0, currentWeekValue - 1);
+    const view = buildScheduleWeekView(snapshot, initialWeek, leagueId, phase.kind);
     await interaction.editReply({ embeds: [view.embed], components: view.components });
   } catch (err) {
     await interaction.editReply({ content: `Failed to load schedule: ${err.message}` });
