@@ -28,7 +28,7 @@ function normalizeColumns(columns = []) {
 function itemHeight(item) {
   if (item?.type === 'section') return 38;
   const meta = String(item?.meta || '').trim();
-  return meta ? 68 : 54;
+  return meta ? 76 : 58;
 }
 
 function columnHeight(column) {
@@ -49,7 +49,7 @@ export async function renderLeagueBoardImage({
   const boardWidth = columnCount === 1 ? 920 : 1420;
   const outerPad = 28;
   const gutter = 22;
-  const headerHeight = subtitle ? 112 : 92;
+  const headerHeight = subtitle ? 116 : 96;
   const footerHeight = 24;
   const columnWidth = Math.floor((boardWidth - (outerPad * 2) - (gutter * (columnCount - 1))) / columnCount);
   const tallestColumn = Math.max(...normalizedColumns.map(columnHeight));
@@ -68,12 +68,12 @@ export async function renderLeagueBoardImage({
     '</defs>',
     `<rect x="0" y="0" width="${boardWidth}" height="${boardHeight}" rx="26" fill="url(#bg)"/>`,
     `<rect x="${outerPad}" y="${outerPad}" width="${boardWidth - (outerPad * 2)}" height="${boardHeight - (outerPad * 2)}" rx="22" fill="#111827" stroke="${accentColor}" stroke-opacity="0.22" />`,
-    `<text x="${outerPad + 28}" y="${outerPad + 38}" fill="#F8FAFC" font-size="34" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeXml(truncate(title, 70))}</text>`
+    `<text x="${outerPad + 28}" y="${outerPad + 40}" fill="#F8FAFC" font-size="36" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeXml(truncate(title, 70))}</text>`
   );
 
   if (subtitle) {
     svg.push(
-      `<text x="${outerPad + 28}" y="${outerPad + 70}" fill="#CBD5E1" font-size="18" font-family="Arial, Helvetica, sans-serif" font-weight="500">${escapeXml(truncate(subtitle, 120))}</text>`
+      `<text x="${outerPad + 28}" y="${outerPad + 74}" fill="#CBD5E1" font-size="19" font-family="Arial, Helvetica, sans-serif" font-weight="500">${escapeXml(truncate(subtitle, 120))}</text>`
     );
   }
 
@@ -85,7 +85,7 @@ export async function renderLeagueBoardImage({
 
     svg.push(
       `<rect x="${colX}" y="${colY}" width="${columnWidth}" height="${columnHeight(column)}" rx="18" fill="#0B1220" stroke="#334155" stroke-opacity="0.65"/>`,
-      `<text x="${colX + 22}" y="${colY + 34}" fill="#E2E8F0" font-size="24" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeXml(truncate(column.title || 'Board', 30))}</text>`
+      `<text x="${colX + 22}" y="${colY + 36}" fill="#E2E8F0" font-size="25" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeXml(truncate(column.title || 'Board', 30))}</text>`
     );
 
     for (const item of column.items) {
@@ -104,17 +104,17 @@ export async function renderLeagueBoardImage({
       const logoX = colX + 18;
       const logoY = rowY + 12;
       const textX = colX + 64;
-      const meta = truncate(item?.meta || '', 54);
-      const label = truncate(item?.label || '', 34);
+      const meta = truncate(item?.meta || '', 44);
+      const label = truncate(item?.label || '', 32);
 
       svg.push(
         `<rect x="${colX + 12}" y="${rowY}" width="${columnWidth - 24}" height="${rowHeight - 6}" rx="14" fill="#172033"/>`,
-        `<text x="${textX}" y="${rowY + 28}" fill="#F8FAFC" font-size="21" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeXml(label)}</text>`
+        `<text x="${textX}" y="${rowY + 30}" fill="#F8FAFC" font-size="22" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeXml(label)}</text>`
       );
 
       if (meta) {
         svg.push(
-          `<text x="${textX}" y="${rowY + 50}" fill="#CBD5E1" font-size="15" font-family="Arial, Helvetica, sans-serif" font-weight="500">${escapeXml(meta)}</text>`
+          `<text x="${textX}" y="${rowY + 56}" fill="#D7E0EE" font-size="16" font-family="Arial, Helvetica, sans-serif" font-weight="500">${escapeXml(meta)}</text>`
         );
       }
 
