@@ -1,7 +1,5 @@
 import { PermissionFlagsBits } from 'discord.js';
 
-import { inviteLinkFor } from '../../leaguebuddy/upgrade_ux.js';
-
 const REQUIRED_SETUP_PERMISSIONS = [
   { bit: PermissionFlagsBits.ViewChannel, label: 'View Channels' },
   { bit: PermissionFlagsBits.SendMessages, label: 'Send Messages' },
@@ -18,7 +16,6 @@ function roleNames(roles = [], limit = 5) {
 export async function inspectSetupReadiness(guild) {
   if (!guild) {
     return {
-      inviteUrl: inviteLinkFor(),
       missingPermissions: [],
       hasRequiredPermissions: false,
       hierarchyWarning: null,
@@ -48,7 +45,6 @@ export async function inspectSetupReadiness(guild) {
     : [];
 
   return {
-    inviteUrl: inviteLinkFor(),
     missingPermissions,
     hasRequiredPermissions: missingPermissions.length === 0,
     hierarchyWarning: higherRoles.length
@@ -75,10 +71,8 @@ export function buildSetupReadinessLines(report) {
 export function buildSetupReadinessNextSteps(report) {
   if (!report?.hasRequiredPermissions) {
     return [
-      report?.inviteUrl
-        ? `Re-invite LEAGUEbuddy with the correct setup permissions: ${report.inviteUrl}`
-        : 'Re-invite LEAGUEbuddy with the correct setup permissions, then run `/setup` again.',
-      'Then run `/setup` again.',
+      'A server admin needs to fix the LEAGUEbuddy bot role permissions in Discord.',
+      'After the permissions are fixed, run `/setup` again.',
       report?.hierarchyWarning ? 'After that, move the bot role higher in Server Settings > Roles.' : null,
     ].filter(Boolean).join('\n');
   }

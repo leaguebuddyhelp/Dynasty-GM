@@ -1,8 +1,5 @@
 import fs from 'fs';
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   EmbedBuilder,
   MessageFlags,
   PermissionFlagsBits,
@@ -139,7 +136,7 @@ export async function execute(interaction) {
         value: buildCurrentSummary({ leagueId, snapshotOk, status, billing }),
       },
       {
-        name: 'Invite And Permissions',
+        name: 'Permissions And Hierarchy',
         value: buildSetupReadinessLines(readiness),
       },
       {
@@ -158,18 +155,7 @@ export async function execute(interaction) {
     });
   }
 
-  const components = readiness.inviteUrl
-    ? [
-        new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setStyle(ButtonStyle.Link)
-            .setLabel('Invite LEAGUEbuddy')
-            .setURL(readiness.inviteUrl),
-        ),
-      ]
-    : [];
-
-  await interaction.editReply({ embeds: [embed], components, content: '' });
+  await interaction.editReply({ embeds: [embed], content: '' });
 }
 
 export default { data, execute, deferOnDispatch };

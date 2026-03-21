@@ -565,9 +565,9 @@ export async function execute(interaction) {
                     '**Madden v2 setup failed**',
                     'The bot is missing required Discord permissions before channel setup can start.',
                     ...readiness.missingPermissions.map((name) => `- ${name}`),
-                    readiness.inviteUrl ? `Re-invite LEAGUEbuddy with the correct permissions: ${readiness.inviteUrl}` : 'Re-invite URL is not configured.',
+                    'A server admin needs to fix the LEAGUEbuddy bot role permissions in Discord.',
                     readiness.hierarchyWarning ? readiness.hierarchyWarning : null,
-                    'After that, run `/setup-check`, then `/setup-channels` again.',
+                    'After that, run `/setup`, then `/setup-channels` again.',
                 ].join('\n'),
             });
             return;
@@ -578,9 +578,8 @@ export async function execute(interaction) {
                     '**Before You Continue**',
                     readiness.hierarchyWarning,
                     '',
-                    readiness.inviteUrl ? `Invite link: ${readiness.inviteUrl}` : null,
                     'This usually will not block channel creation, but it can block `/setup-roles` later.',
-                    'Move the LEAGUEbuddy role higher in Server Settings > Roles, then rerun `/setup-check` or `/setup-channels`.',
+                    'Move the LEAGUEbuddy role higher in Server Settings > Roles, then rerun `/setup` or `/setup-channels`.',
                 ].filter(Boolean).join('\n'),
             });
             return;
