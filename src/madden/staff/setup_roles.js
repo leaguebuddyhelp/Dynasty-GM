@@ -1,4 +1,4 @@
-import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { loadGuildMaddenConfig, saveGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 import { getLeagueForGuild } from '../madden_config.js';
 import { loadLeagueSnapshot } from '../madden_data.js';
@@ -12,6 +12,21 @@ export const data = new SlashCommandBuilder()
 
 export const deferOnDispatch = { flags: 64 };
 
+function buildRolesProgressEmbed({ step, details = [], tier = null, tradeEnabled = null }) {
+  return new EmbedBuilder()
+    .setColor(0xffd700)
+    .setTitle('Setup Roles')
+    .setDescription(`Current step: **${step}**`)
+    .addFields(
+      ...(tier ? [{ name: 'Package', value: String(tier), inline: true }] : []),
+      ...(tradeEnabled === null ? [] : [{ name: 'Trade Roles', value: tradeEnabled ? 'included' : 'not included', inline: true }]),
+      {
+        name: 'Live Progress',
+        value: details.filter(Boolean).map((detail) => `• ${detail}`).join('\n') || 'Working...',
+      },
+    );
+}
+
 export async function execute(interaction) {
   const guild = interaction.guild;
   if (!guild) {
@@ -19,8 +34,11 @@ export async function execute(interaction) {
     return;
   }
 
-  const updateProgress = async (lines) => {
-    await interaction.editReply({ content: lines.join('\n') });
+  const updateProgress = async (step, details = [], meta = {}) => {
+    await interaction.editReply({
+      content: '',
+      embeds: [buildRolesProgressEmbed({ step, details, ...meta })],
+    });
   };
 
   const cfg = loadGuildMaddenConfig(guild.id);
@@ -31,12 +49,11 @@ export async function execute(interaction) {
 
   const tradeEnabled = Array.isArray(cfg.packsEnabled) && cfg.packsEnabled.includes('trades_basic');
   const tier = String(cfg?.license?.tier || 'free');
-  await updateProgress([
-    '**Setup Roles**',
-    'Trying the role-only pass for this server.',
-    `Current package: ${tier}`,
+  await updateProgress('checking server role setup', [
+    'Starting the role-only pass for this server',
+    'Creating or verifying staff roles first',
     tradeEnabled ? 'Trade roles are included in this package.' : 'Trade roles are not included in this package.',
-  ]);
+  ], { tier, tradeEnabled });
   const staffSpecs = [...DEFAULT_ROLE_SPECS, ...(tradeEnabled ? TRADE_ROLE_SPECS : [])];
   const staffSummary = await syncRoleSpecs(guild, staffSpecs, { logger: console, retries: 0 });
 
@@ -59,11 +76,11 @@ export async function execute(interaction) {
   let coachSummaryText = 'Coach roles skipped (no synced league snapshot).';
   const canContinueToCoachRoles = staffSummary.failed.length === 0;
   if (leagueId && canContinueToCoachRoles) {
-    await updateProgress([
-      '**Setup Roles**',
-      'Staff role pass finished.',
-      'Trying coach roles from the synced league snapshot.',
-    ]);
+    await updateProgress('creating coach roles', [
+      `Staff roles ready: created ${staffSummary.created.length}, existing ${staffSummary.existing.length}, verified ${staffSummary.verified.length}`,
+      'Loading the synced league snapshot',
+      'Creating the coach role set for all teams',
+    ], { tier, tradeEnabled });
     try {
       const snapshot = loadLeagueSnapshot(leagueId);
       const coachSpecs = buildCoachRoleSpecs(snapshot);
@@ -94,6 +111,11 @@ export async function execute(interaction) {
 
   saveGuildMaddenConfig(guild.id, cfg);
 
+  await updateProgress('refreshing channel permissions', [
+    'Updating channel permissions with the new role map',
+    'Applying the LEAGUEbuddy visibility rules across all setup channels',
+  ], { tier, tradeEnabled });
+
   const overwritePlan = buildSetupOverwrites(guild, cfg.compat?.maddenRoleMap || {});
   const channelMap = cfg.compat?.maddenChannelMap || {};
   const categoryId = channelMap['LB Madden'];
@@ -108,25 +130,45 @@ export async function execute(interaction) {
   }
 
   await interaction.editReply({
-    content: [
-      '**Setup Roles Complete**',
-      `Package: **${tier}**`,
-      '',
-      '**What this command did**',
-      '- Created or verified staff roles',
-      tradeEnabled ? '- Created or verified trade roles' : '- Skipped trade roles because they are not included in this plan',
-      '- Refreshed channel permissions after the role pass',
-      '',
-      `Staff roles: created ${staffSummary.created.length}, existing ${staffSummary.existing.length}, verified ${staffSummary.verified.length}, failed ${staffSummary.failed.length}`,
-      ...(staffSummary.failed.length ? [`Failures: ${staffSummary.failed.map((item) => item.name).join(', ')}`] : []),
-      '',
-      coachSummaryText,
-      '',
-      'Channel permissions were refreshed after the role pass.',
-      staffSummary.failed.length
-        ? 'Next: fix the Discord role-create issue in this server, then rerun `/setup-roles`.'
-        : 'Next: run `/syncsetupstatus`, then `/server-check`.',
-    ].join('\n'),
+    content: '',
+    embeds: [
+      new EmbedBuilder()
+        .setColor(staffSummary.failed.length ? 0xf39c12 : 0x57f287)
+        .setTitle('Setup Roles Complete')
+        .setDescription(`Package: **${tier}**`)
+        .addFields(
+          {
+            name: 'What this command did',
+            value: [
+              '• Created or verified staff roles',
+              tradeEnabled ? '• Created or verified trade roles' : '• Skipped trade roles because they are not included in this plan',
+              '• Refreshed channel permissions after the role pass',
+            ].join('\n'),
+          },
+          {
+            name: 'Staff roles',
+            value: [
+              `Created: ${staffSummary.created.length}`,
+              `Existing: ${staffSummary.existing.length}`,
+              `Verified: ${staffSummary.verified.length}`,
+              `Failed: ${staffSummary.failed.length}`,
+              ...(staffSummary.failed.length ? [`Failures: ${staffSummary.failed.map((item) => item.name).join(', ')}`] : []),
+            ].join('\n').slice(0, 1024),
+            inline: false,
+          },
+          {
+            name: 'Coach roles',
+            value: coachSummaryText.slice(0, 1024),
+            inline: false,
+          },
+          {
+            name: 'Next',
+            value: staffSummary.failed.length
+              ? 'Some Discord roles still failed to create. Fix the server role issue, then rerun `/setup-roles`.'
+              : 'Roles are ready. Next run `/syncsetupstatus`, then `/server-check`.',
+          },
+        ),
+    ],
   });
 }
 

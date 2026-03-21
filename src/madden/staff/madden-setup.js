@@ -3,6 +3,7 @@ import {
     PermissionFlagsBits,
     ChannelType,
     MessageFlags,
+    EmbedBuilder,
 } from 'discord.js';
 
 import {
@@ -12,11 +13,10 @@ import {
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getLeagueForGuild } from '../madden_config.js';
 import { loadLeagueSnapshot } from '../madden_data.js';
-import { seedAndHydratePins } from './setup-pins.js';
 
 export const data = new SlashCommandBuilder()
     .setName('setup-channels')
-    .setDescription('Admin-only: build the category, channels, pins, and config for this server\'s current package.')
+    .setDescription('Admin-only: build the category, channels, and config for this server\'s current package.')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addStringOption(o =>
         o.setName('tier')
@@ -338,25 +338,29 @@ async function ensureTextChannelInCategoryWithRetry(guild, spec, categoryId = nu
     throw lastError;
 }
 
-function buildProgressLines(step, details = []) {
-    return [
-        '**Madden v2 setup**',
-        `Current step: ${step}`,
-        ...details.filter(Boolean).map((detail) => `- ${detail}`),
-    ].join('\n');
+function buildProgressEmbed({ step, details = [], tier = null, tradeEnabled = null }) {
+    return new EmbedBuilder()
+        .setColor(0xffd700)
+        .setTitle('Setup Channels')
+        .setDescription(`Current step: **${step}**`)
+        .addFields(
+            ...(tier ? [{ name: 'Package', value: String(tier), inline: true }] : []),
+            ...(tradeEnabled === null ? [] : [{ name: 'Trade Center', value: tradeEnabled ? 'included' : 'not included', inline: true }]),
+            { name: 'Live Progress', value: details.filter(Boolean).map((detail) => `• ${detail}`).join('\n') || 'Working...' },
+        );
 }
 
 function tierSetupNotes(tier, tradeEnabled) {
     if (tier === 'premium') {
         return [
             'Premium setup includes the full channel pack, trade center, scouting hub, ops channels, recognition, and sportsbook boards.',
-            'After channels are ready, continue with `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
+            'After channels are ready, continue with `/setup-pins`, `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
         ];
     }
     if (tier === 'standard') {
         return [
             'Standard setup includes the core league boards, trade center, scouting hub, and light staff ops channels.',
-            'After channels are ready, continue with `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
+            'After channels are ready, continue with `/setup-pins`, `/setup-roles`, `/syncsetupstatus`, and `/server-check`.',
         ];
     }
     return [
@@ -389,11 +393,12 @@ export async function execute(interaction) {
     let currentStep = 'starting';
     const updateProgress = async (step, details = []) => {
         currentStep = step;
-        await interaction.editReply({ content: buildProgressLines(step, details) });
+        await interaction.editReply({ content: '', embeds: [buildProgressEmbed({ step, details })] });
     };
 
     await interaction.reply({
-        content: buildProgressLines('starting', ['Checking tier, packs, and existing server config']),
+        content: '',
+        embeds: [buildProgressEmbed({ step: 'starting', details: ['Checking tier, packs, and existing server config'] })],
         flags: MessageFlags.Ephemeral,
     });
 
@@ -487,10 +492,18 @@ export async function execute(interaction) {
         cfg.status = 'incomplete';
         saveGuildMaddenConfig(guild.id, cfg);
 
-        await updateProgress('saving server config', [
-            'Overlay config saved',
-            'Channels and base pins can now be created before any role pass',
-        ]);
+        await interaction.editReply({
+            content: '',
+            embeds: [buildProgressEmbed({
+                step: 'saving server config',
+                tier,
+                tradeEnabled,
+                details: [
+                    'Overlay config saved',
+                    'Channels are ready for the next setup commands',
+                ],
+            })],
+        });
 
         let snapshotReady = false;
         if (leagueId) {
@@ -501,61 +514,52 @@ export async function execute(interaction) {
             }
         }
 
-        let pinsSummary = null;
-        await updateProgress('seeding pins', [
-            'Creating or updating pinned league boards',
-            snapshotReady ? 'Hydrating boards from the synced snapshot' : 'Some boards may stay placeholders until `/sync` runs',
-        ]);
-        try {
-            const out = await withTimeout(
-                seedAndHydratePins(interaction.client, guild.id),
-                30000,
-                'pin seeding',
-            );
-            const ok = Array.isArray(out?.results)
-                ? out.results.filter(r => String(r).includes('✅')).length
-                : null;
-            pinsSummary = (ok === null) ? 'Pins: attempted' : `Pins: seeded ${ok}/6`;
-        } catch {
-            pinsSummary = 'Pins: attempted (some failed)';
-        }
-        const pinsNeedRetry = /some failed/i.test(pinsSummary);
+        await interaction.editReply({
+            content: '',
+            embeds: [
+                new EmbedBuilder()
+                    .setColor(0x57f287)
+                    .setTitle('Setup Channels Complete')
+                    .setDescription(`Package: **${tier}**`)
+                    .addFields(
+                        {
+                            name: 'What this command did',
+                            value: [
+                                '• Created or verified the LEAGUEbuddy category',
+                                '• Created the plan-appropriate channels',
+                                '• Saved the overlay config for this server',
+                            ].join('\n'),
+                        },
+                        {
+                            name: 'Plan notes',
+                            value: tierSetupNotes(tier, tradeEnabled).map((line) => `• ${line}`).join('\n'),
+                        },
+                        {
+                            name: 'Next',
+                            value: snapshotReady
+                                ? 'Run `/setup-pins`, then `/setup-roles`.'
+                                : 'Run `/setup-pins` next. If the league snapshot is still missing, connect the league first and rerun `/setup-pins` after `/league-status` looks healthy.',
+                        },
+                    ),
+            ],
+        });
 
         cfg.status = 'complete';
         saveGuildMaddenConfig(guild.id, cfg);
-
-        await interaction.editReply({
-            content: [
-                '**Madden v2 setup complete**',
-                `Package: **${tier}**`,
-                `Packs: ${packsEnabled.join(', ')}`,
-                '',
-                '**What this command did**',
-                '- Created or verified the LEAGUEbuddy category',
-                '- Created the plan-appropriate channels',
-                '- Seeded the first pin pass',
-                '- Saved the overlay config for this server',
-                '',
-                '**Plan notes**',
-                ...tierSetupNotes(tier, tradeEnabled).map((line) => `- ${line}`),
-                '',
-                `Pins: ${pinsSummary.replace(/^Pins:\s*/, '')}`,
-                !snapshotReady
-                    ? 'Next: finish `/connectleague` so LEAGUEbuddy has live league data, then rerun `/setup-channels` if you want the boards hydrated with real data.'
-                    : pinsNeedRetry
-                        ? 'Next: run `/setup-roles`. If any seeded board is still missing, use `/setup-pins` as a repair command after setup.'
-                        : 'Next: run `/setup-roles`, then `/syncsetupstatus`.'
-            ].join('\n'),
-        });
     } catch (error) {
         console.error('[setup] failed', { guildId: guild.id, step: currentStep, error: error?.message || error });
         await interaction.editReply({
-            content: [
-                '**Madden v2 setup failed**',
-                `Step: ${currentStep}`,
-                `Reason: ${error?.message || error}`,
-                'If this keeps happening, check the bot role has Manage Roles and Manage Channels, and that its role sits above the roles it needs to manage.',
-            ].join('\n'),
+            content: '',
+            embeds: [
+                new EmbedBuilder()
+                    .setColor(0xed4245)
+                    .setTitle('Setup Channels Failed')
+                    .setDescription(`Step: **${currentStep}**`)
+                    .addFields(
+                        { name: 'Reason', value: String(error?.message || error) },
+                        { name: 'Fix', value: 'Check the bot role has Manage Roles and Manage Channels, and that its role sits above the roles it needs to manage.' },
+                    ),
+            ],
         });
     }
 }

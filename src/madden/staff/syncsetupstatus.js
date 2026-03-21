@@ -33,7 +33,7 @@ export async function execute(interaction) {
             '',
             rec.setupCompleted
                 ? 'Next: run `/server-check`.'
-                : 'Next: run `/setup-channels`, then `/setup-roles`, then rerun `/syncsetupstatus`.',
+                : 'Next: run `/setup-channels`, then `/setup-pins`, then `/setup-roles`, then rerun `/syncsetupstatus`.',
         ].join('\n'),
     });
 }

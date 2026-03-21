@@ -7,10 +7,10 @@ export const TRADE_ROLE_SPECS = [
   { key: 'Trade Committee', name: 'LEAGUEbuddy Trade Committee', color: 0xFEE75C, hoist: true },
 ];
 
-export const ROLE_CREATE_TIMEOUT_MS = 15000;
+export const ROLE_CREATE_TIMEOUT_MS = 10000;
 export const ROLE_CREATE_RETRIES = 1;
-export const ROLE_CREATE_BACKOFF_MS = 3000;
-export const ROLE_CREATE_SPACING_MS = 3000;
+export const ROLE_CREATE_BACKOFF_MS = 1000;
+export const ROLE_CREATE_SPACING_MS = 250;
 
 const ACTIVE_ROLE_SYNC = new Map();
 

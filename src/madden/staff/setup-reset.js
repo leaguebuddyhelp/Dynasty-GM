@@ -184,7 +184,7 @@ export async function execute(interaction) {
 
     if (cfg && !deleteChannels && !deleteRoles) {
         lines.push('');
-        lines.push('Tip: re-run `/setup-channels`, then `/setup-roles` right after this to test tiers quickly.');
+        lines.push('Tip: re-run `/setup-channels`, then `/setup-pins`, then `/setup-roles` right after this to test tiers quickly.');
         lines.push('Optional: run `/setup-reset delete_channels:true delete_roles:true` to cleanup Discord artifacts too.');
     }
 

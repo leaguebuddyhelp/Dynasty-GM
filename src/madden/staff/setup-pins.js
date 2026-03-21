@@ -225,6 +225,17 @@ export const data = new SlashCommandBuilder()
 
 export const deferOnDispatch = { flags: 64 };
 
+function buildPinsProgressEmbed({ step, details = [] }) {
+    return new EmbedBuilder()
+        .setColor(0xffd700)
+        .setTitle('Setup Pins')
+        .setDescription(`Current step: **${step}**`)
+        .addFields({
+            name: 'Live Progress',
+            value: details.filter(Boolean).map((detail) => `• ${detail}`).join('\n') || 'Working...',
+        });
+}
+
 export async function seedAndHydratePins(client, guildId) {
     const cfg = loadGuildMaddenConfigIfComplete(guildId);
     if (!cfg) {
@@ -304,20 +315,46 @@ export async function execute(interaction) {
         return;
     }
 
+    const updateProgress = async (step, details = []) => {
+        await interaction.editReply({
+            content: '',
+            embeds: [buildPinsProgressEmbed({ step, details })],
+        });
+    };
+
+    await updateProgress('checking setup', [
+        'Verifying the LEAGUEbuddy channel map for this server',
+        'Preparing the league boards and pinned messages',
+    ]);
+
+    await updateProgress('seeding and hydrating pins', [
+        'Refreshing the standings, stat, ranking, playoff, and team boards',
+        'Updating the trade submit button if this plan includes it',
+    ]);
+
     const out = await seedAndHydratePins(interaction.client, guildId);
     const hasFailures = out.results.some((line) => /❌|⚠️/.test(String(line)));
 
     await interaction.editReply({
-        content: [
-            '**Setup Pins Complete**',
-            'This command refreshes the pinned league boards and trade submit button for the channels created by `/setup-channels`.',
-            '',
-            ...out.results.map((line) => `- ${line}`),
-            '',
-            hasFailures
-                ? 'Next: if a board says snapshot missing, run `/sync` first. Then rerun `/setup-pins`. After pins are healthy, continue with `/setup-roles`.'
-                : 'Next: run `/setup-roles`, then `/syncsetupstatus`.',
-        ].join('\n'),
+        content: '',
+        embeds: [
+            new EmbedBuilder()
+                .setColor(hasFailures ? 0xf39c12 : 0x57f287)
+                .setTitle('Setup Pins Complete')
+                .setDescription('This command refreshes the pinned league boards and trade submit button for the channels created by `/setup-channels`.')
+                .addFields(
+                    {
+                        name: 'What this command did',
+                        value: out.results.map((line) => `• ${line}`).join('\n').slice(0, 1024),
+                    },
+                    {
+                        name: 'Next',
+                        value: hasFailures
+                            ? 'Some league boards still need a clean snapshot. Run `/sync` if needed, rerun `/setup-pins`, then continue with `/setup-roles`.'
+                            : 'Pins are ready. Next run `/setup-roles`, then `/syncsetupstatus`.',
+                    },
+                ),
+        ],
     });
 
     return out;

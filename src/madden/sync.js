@@ -543,7 +543,7 @@ async function execute(interaction) {
         { name: 'Rosters', value: `${summary.rosterCount} teams${summary.hasFreeAgents ? ' + FA' : ''}`, inline: true },
         { name: 'Stats Weeks', value: String(summary.statsWeeks), inline: true },
         { name: 'Saved', value: summary.outPath, inline: false },
-        { name: 'Next', value: 'Run `/setup-channels`.', inline: false }
+        { name: 'Next', value: 'Run `/setup-channels`, then `/setup-pins`, then `/setup-roles`.', inline: false }
       );
 
     await interaction.editReply({ embeds: [embed] });

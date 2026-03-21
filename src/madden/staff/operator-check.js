@@ -31,7 +31,7 @@ function nextSteps({ tokenOk, stripeStandardOk, stripePremiumOk, leagueId, setup
   if (!snapshotExists(leagueId)) return 'Reconnect the league from `/connectleague` if needed, then run `/league-status` and continue setup.';
   if (!setupStatus.overlayStatus.exists) return 'Run `/setup-channels`.';
   if (setupStatus.syncNeeded) return 'Run `/syncsetupstatus`.';
-  if (!setupStatus.overlayStatus.isComplete || !setupStatus.setupCompleted) return 'Run `/setup-roles`, then `/syncsetupstatus`.';
+  if (!setupStatus.overlayStatus.isComplete || !setupStatus.setupCompleted) return 'Run `/setup-pins`, then `/setup-roles`, then `/syncsetupstatus`.';
   if ((billing?.plan || 'free') === 'free') return 'Ready on free. Run `/plan` to review the customer view.';
   if (!['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'))) return 'Run `/activateplan`.';
   return 'Ready. Run `/plan` to verify the customer view.';

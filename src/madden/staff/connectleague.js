@@ -43,14 +43,14 @@ export async function execute(interaction) {
           '4. Choose your Madden account/persona.',
           '5. Choose your league.',
           '6. Return to Discord and confirm the link: `/league-status`.',
-          '7. Continue the normal setup flow: `/setup-channels` -> `/setup-roles` -> `/syncsetupstatus` -> `/server-check`.',
+          '7. Continue the normal setup flow: `/setup-channels` -> `/setup-pins` -> `/setup-roles` -> `/syncsetupstatus` -> `/server-check`.',
         ].join('\n'))
         .addFields(
           { name: 'Discord Server', value: interaction.guild?.name || 'Unknown Server', inline: false },
           { name: 'Dashboard Link', value: setupUrl, inline: false },
           { name: 'EA Step', value: 'The dashboard will walk you through the reverse EA login flow and league selection.', inline: false },
           { name: 'Expires', value: `<t:${Math.floor(new Date(session.expiresAt).getTime() / 1000)}:R>`, inline: false },
-          { name: 'Next', value: 'After the dashboard looks right, run `/league-status`, then `/setup-channels`. If you need to restart from zero later, run `/disconnectleague`.', inline: false },
+          { name: 'Next', value: 'After the dashboard looks right, run `/league-status`, then `/setup-channels`, `/setup-pins`, and `/setup-roles`. If you need to restart from zero later, run `/disconnectleague`.', inline: false },
         ),
     ],
     components: [row],
