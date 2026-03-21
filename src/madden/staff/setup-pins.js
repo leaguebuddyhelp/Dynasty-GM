@@ -19,6 +19,7 @@ import { updateStatLeaders } from '../../../madden/stat_leaders.js';
 import { updatePlayoffPicture } from '../../../madden/playoff_picture.js';
 import { updatePowerRankings } from '../../../madden/power_rankings.js';
 import { updateTopPlayers } from '../../../madden/top_players.js';
+import { setPinId } from '../pins_store.js';
 import { loadTradeCounts, updateTradeCountsEmbed } from '../../../shared/madden_trade_utils.js';
 
 function fmtBool(v) {
@@ -56,7 +57,8 @@ async function ensurePinnedEmbedMessage(channel, embed, existingMessageId = null
         if (existing) {
             await existing.edit({ embeds: [embed], content: null, components: [] }).catch(() => null);
             try { await existing.pin(); } catch { }
-            return existing;
+            const refreshed = await channel.messages.fetch(existing.id).catch(() => existing);
+            return refreshed?.pinned ? refreshed : null;
         }
     }
 
@@ -70,7 +72,8 @@ async function ensurePinnedEmbedMessage(channel, embed, existingMessageId = null
     const sent = await channel.send({ embeds: [embed] }).catch(() => null);
     if (!sent) return null;
     try { await sent.pin(); } catch { }
-    return sent;
+    const refreshed = await channel.messages.fetch(sent.id).catch(() => sent);
+    return refreshed?.pinned ? refreshed : null;
 }
 
 async function ensurePinnedActionMessage(channel, { embed, components, existingMessageId = null, matchTitle }) {
@@ -81,7 +84,8 @@ async function ensurePinnedActionMessage(channel, { embed, components, existingM
         if (existing) {
             await existing.edit({ embeds: [embed], components, content: null }).catch(() => null);
             try { await existing.pin(); } catch { }
-            return existing;
+            const refreshed = await channel.messages.fetch(existing.id).catch(() => existing);
+            return refreshed?.pinned ? refreshed : null;
         }
     }
 
@@ -98,7 +102,8 @@ async function ensurePinnedActionMessage(channel, { embed, components, existingM
     const sent = await channel.send({ embeds: [embed], components }).catch(() => null);
     if (!sent) return null;
     try { await sent.pin(); } catch { }
-    return sent;
+    const refreshed = await channel.messages.fetch(sent.id).catch(() => sent);
+    return refreshed?.pinned ? refreshed : null;
 }
 
 async function hasVerifiedPinnedBoardMessage(client, guildId, channelId, expectedMessageId = null) {
@@ -310,6 +315,7 @@ export async function seedAndHydratePins(client, guildId) {
         }
 
         upsertGuildPin(guildId, job.key, msg.id);
+        setPinId(job.key, msg.id);
         boardStates[job.key].seeded = true;
     }
 
