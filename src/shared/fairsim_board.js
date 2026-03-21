@@ -12,6 +12,7 @@ import {
 } from './madden_strikes.js';
 import { getMaddenSeasonKey, loadMaddenChannelMap } from './madden_metadata.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
+import { loadGuildMaddenConfig } from './madden_guild_config.js';
 
 const BOARD_FILE = getMaddenDataFilePath('fairsim_board.json');
 const TEAM_EMOJI_FILE = getMaddenDataFilePath('team_emojis.json');
@@ -151,6 +152,11 @@ async function upsertBoardMessage(client, guildId, content) {
 }
 
 export async function updateFairSimBoard(client, guildId) {
+  const tier = String(loadGuildMaddenConfig(guildId)?.license?.tier || 'free').toLowerCase();
+  if (tier === 'free') {
+    clearGuildBoardState(guildId);
+    return false;
+  }
   let snapshot = null;
   try {
     const leagueId = resolveLeagueIdWithConfig(guildId);

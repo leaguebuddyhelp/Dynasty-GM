@@ -12,12 +12,12 @@ const CORE_REQUIRED_CHANNEL_KEYS = [
   'Power Rankings',
   'Playoff Picture',
   'Game threads',
-  'Yearly Awards',
 ];
 
 const STANDARD_REQUIRED_CHANNEL_KEYS = [
   'scoutingHub',
   'Top 100',
+  'Yearly Awards',
 ];
 
 const TRADE_REQUIRED_CHANNEL_KEYS = [

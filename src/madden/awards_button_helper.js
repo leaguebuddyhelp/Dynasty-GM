@@ -1,10 +1,13 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { getPinId, setPinId } from './pins_store.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { loadGuildMaddenConfig } from '../shared/madden_guild_config.js';
 
 export async function ensureMaddenAwardsButton(client) {
   // Use the first guild's overlay if present; this helper is typically called in a single-guild process.
   const firstGuildId = client?.guilds?.cache?.first?.()?.id || null;
+  const tier = String(loadGuildMaddenConfig(firstGuildId)?.license?.tier || 'free').toLowerCase();
+  if (tier !== 'standard' && tier !== 'premium') return;
   const channelMap = loadMaddenChannelMap(firstGuildId);
   const channelId = channelMap['Yearly Awards'] || channelMap['Awards'] || '1459456657229873419';
   if (!channelId) return;
