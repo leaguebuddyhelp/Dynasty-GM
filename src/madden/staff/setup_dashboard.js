@@ -81,11 +81,11 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
         : 'The LEAGUEbuddy channel layout has not been created yet.',
     };
   }
-  if (!status.channels.mappedKeys.includes('Available Teams') || !status.channels.mappedKeys.includes('Top 100')) {
+  if (status.missingRequiredPins.length > 0) {
     return {
       title: 'Seed the pins',
       action: 'Run `/setup-pins`, then rerun `/setup`.',
-      details: 'Pinned boards need to be refreshed after channels are ready.',
+      details: `Still missing: ${formatMissingItems(status.missingRequiredPins)}`,
     };
   }
   if (status.missingRequiredRoles.length > 0) {

@@ -40,6 +40,15 @@ const TRADE_REQUIRED_ROLE_KEYS = [
   'Trade Committee',
 ];
 
+const CORE_REQUIRED_PIN_KEYS = [
+  'available_teams',
+  'standings',
+  'stat_leaders',
+  'playoff_picture',
+  'power_rankings',
+  'top100',
+];
+
 const SETUP_ITEM_LABELS = {
   'Ghost Legacy Commish': 'LB Commish',
   'Ghost Legacy Co-Commish': 'LB Co-Commish',
@@ -127,6 +136,7 @@ export function getSetupStatus(guildId) {
   const overlayCompleteConfig = overlayRepository.getCompleteGuildConfig(guildId);
   const channelMap = overlayConfig?.compat?.maddenChannelMap || {};
   const roleMap = overlayConfig?.compat?.maddenRoleMap || {};
+  const pinsMap = overlayConfig?.pins || {};
   const packsEnabled = Array.isArray(overlayConfig?.packsEnabled) ? overlayConfig.packsEnabled : [];
   const overlayExists = !!overlayConfig;
   const overlayComplete = !!overlayCompleteConfig;
@@ -134,8 +144,10 @@ export function getSetupStatus(guildId) {
   const syncNeeded = overlayComplete !== setupCompleted;
   const channels = summarizeMappedEntries(channelMap);
   const roles = summarizeMappedEntries(roleMap);
+  const pins = summarizeMappedEntries(pinsMap);
   const requiredChannelKeys = requiredChannelKeysForSetup(overlayConfig);
   const requiredRoleKeys = requiredRoleKeysForSetup(overlayConfig);
+  const missingRequiredPins = diffMissingKeys(pinsMap, CORE_REQUIRED_PIN_KEYS);
   const missingRequiredChannels = diffMissingKeys(channelMap, requiredChannelKeys);
   const missingRequiredRoles = diffMissingKeys(roleMap, requiredRoleKeys);
   const { unlockedFeatures, blockedFeatures } = buildFeatureSummary(guildId, packsEnabled);
@@ -156,6 +168,8 @@ export function getSetupStatus(guildId) {
     packsEnabled,
     channels,
     roles,
+    pins,
+    missingRequiredPins,
     missingRequiredChannels,
     missingRequiredRoles,
     unlockedFeatures,
