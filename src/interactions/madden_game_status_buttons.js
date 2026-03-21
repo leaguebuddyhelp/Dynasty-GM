@@ -2,7 +2,7 @@ import { ButtonInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from
 import fs from 'fs';
 import path from 'path';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
-import { markThreadDone, getThreadState, collectParticipation } from '../shared/madden_thread_notifier.js';
+import { markThreadDone, getThreadState, collectParticipation, hydrateThreadStateFromLiveThread } from '../shared/madden_thread_notifier.js';
 import { updateFairSimBoard } from '../shared/fairsim_board.js';
 import { registerThread } from '../shared/madden_thread_notifier.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
@@ -288,8 +288,8 @@ export async function execute(interaction) {
     await respond(interaction, { content: 'Thread not found for this button.' });
     return;
   }
-  const threadState = getThreadState(threadId);
   const strikesEnabled = strikeSystemEnabled(interaction.guildId);
+  let threadState = getThreadState(threadId);
   if (threadState && threadState.status && threadState.status !== 'pending' && !isNaN(Date.now())) {
     await respond(interaction, { content: 'This matchup has already been resolved by the system or staff. Ask staff if it needs to be reopened.' });
     return;
@@ -321,6 +321,24 @@ export async function execute(interaction) {
   const isHomeCoach = hasRole(homeCoachRoles);
   const isStaff = hasRole(staffRoles);
   console.log('[game_status] roleCheck', { awayCoachRoles, homeCoachRoles, staffRoles, isAwayCoach, isHomeCoach, isStaff });
+
+  if (!threadState || !threadState.awayTeam || !threadState.homeTeam || !Number.isFinite(Number(threadState.weekIndex))) {
+    try {
+      registerThread(threadId, {
+        guildId: interaction.guildId,
+        createdAt: thread.createdTimestamp,
+        leagueId: resolveLeagueIdWithConfig(interaction.guildId) || null,
+        awayTeam: away || null,
+        homeTeam: home || null,
+        awayRoleIds: awayCoachRoles,
+        homeRoleIds: homeCoachRoles,
+      });
+      threadState = (await hydrateThreadStateFromLiveThread(thread, getThreadState(threadId))) || getThreadState(threadId);
+    } catch (e) {
+      console.warn('[game_status] failed to seed thread state', e?.message || e);
+      threadState = getThreadState(threadId);
+    }
+  }
 
   const allowed = (() => {
     if (isStaff) return true;
@@ -557,7 +575,7 @@ export async function execute(interaction) {
         byUser: interaction.user.id,
         forcedByStaff: true,
       });
-      await respond(interaction, { content: 'Marked complete by staff. Reminders stopped.' });
+      await respond(interaction, { content: 'Marked complete by staff.' });
       return;
     }
 
@@ -571,7 +589,7 @@ export async function execute(interaction) {
     }
     const pending = setPendingFair(key, side);
     if (!(pending.away && pending.home)) {
-      const waitMsg = 'Game completed pending. Your opponent still needs to press Game Completed to confirm and stop reminders.';
+      const waitMsg = 'Game completed pending. Your opponent still needs to press Game Completed to confirm.';
       await respond(interaction, { content: waitMsg });
       const otherTeam = side === 'away' ? home : away;
       const otherMentions = await buildCoachMentions(interaction.guild, otherTeam, roleMap);
@@ -599,7 +617,7 @@ export async function execute(interaction) {
       home,
       byUser: interaction.user.id,
     });
-    await respond(interaction, { content: 'Marked complete. Reminders stopped.' });
+    await respond(interaction, { content: 'Marked complete.' });
     return;
   }
 
@@ -627,7 +645,7 @@ export async function execute(interaction) {
           forcedByStaff: true,
           strikeSystem: 'disabled',
         });
-        await respond(interaction, { content: 'Fair sim logged by staff. Reminders stopped.' });
+        await respond(interaction, { content: 'Fair sim logged by staff.' });
         return;
       }
 
@@ -667,7 +685,7 @@ export async function execute(interaction) {
         byUser: interaction.user.id,
         strikeSystem: 'disabled',
       });
-      await respond(interaction, { content: 'Fair sim logged and reminders stopped.' });
+      await respond(interaction, { content: 'Fair sim logged.' });
       return;
     }
 
@@ -726,7 +744,7 @@ export async function execute(interaction) {
         byUser: interaction.user.id,
         forcedByStaff: true,
       });
-      await respond(interaction, { content: 'Fair sim logged by staff. Reminders stopped.' });
+      await respond(interaction, { content: 'Fair sim logged by staff.' });
       await maybeQueueRemovalReview(interaction.client, interaction.guild, seasonKey, away, awayCoachRoles, awayUserIds);
       await maybeQueueRemovalReview(interaction.client, interaction.guild, seasonKey, home, homeCoachRoles, homeUserIds);
       return;
@@ -830,7 +848,7 @@ export async function execute(interaction) {
         { name: 'Thread', value: `<#${threadId}>` },
       ],
     }).catch(() => null);
-    await respond(interaction, { content: 'Fair sim logged and commish notified. Reminders stopped.' });
+    await respond(interaction, { content: 'Fair sim logged and commish notified.' });
     await maybeQueueRemovalReview(interaction.client, interaction.guild, seasonKey, away, awayCoachRoles, awayUserIds);
     await maybeQueueRemovalReview(interaction.client, interaction.guild, seasonKey, home, homeCoachRoles, homeUserIds);
     return;
@@ -858,7 +876,7 @@ export async function execute(interaction) {
         chargedTeam,
         byUser: interaction.user.id,
       });
-      await respond(interaction, { content: 'Forfeit logged and reminders stopped.' });
+      await respond(interaction, { content: 'Forfeit logged.' });
       clearPendingFair(threadId);
       return;
     }
@@ -914,7 +932,7 @@ export async function execute(interaction) {
       color: 0xED4245,
     }).catch(() => null);
     await postLeagueStaffOpsSnapshot(interaction.client, interaction.guildId, 'force win logged').catch(() => null);
-    await respond(interaction, { content: 'Force-win request sent and reminders stopped.' });
+    await respond(interaction, { content: 'Force-win request sent.' });
     if (action === 'homewin') await maybeQueueRemovalReview(interaction.client, interaction.guild, seasonKey, away, awayCoachRoles, chargeUsers);
     if (action === 'awaywin') await maybeQueueRemovalReview(interaction.client, interaction.guild, seasonKey, home, homeCoachRoles, chargeUsers);
     clearPendingFair(threadId);

@@ -133,6 +133,47 @@ function strikeSystemEnabled(guildId) {
   return tier !== 'free';
 }
 
+function reminderTrackingEnabled(guildId) {
+  return strikeSystemEnabled(guildId);
+}
+
+function baseThreadState(threadId, createdAt = Date.now()) {
+  return {
+    threadId,
+    status: 'pending',
+    created: createdAt,
+  };
+}
+
+function minimalThreadState(threadId, info = {}, existing = null) {
+  const createdAt = Number.isFinite(Number(info.createdAt))
+    ? Number(info.createdAt)
+    : (Number.isFinite(Number(info.created)) ? Number(info.created) : (Number.isFinite(Number(existing?.created)) ? Number(existing.created) : Date.now()));
+  const current = existing || {};
+  return {
+    ...baseThreadState(threadId, createdAt),
+    status: String(info.status || current.status || 'pending'),
+    leagueId: info.leagueId || current.leagueId || null,
+    seasonKey: info.seasonKey || current.seasonKey || null,
+    stageIndex: Number.isFinite(Number(info.stageIndex))
+      ? Number(info.stageIndex)
+      : (Number.isFinite(Number(current.stageIndex)) ? Number(current.stageIndex) : null),
+    weekIndex: Number.isFinite(Number(info.weekIndex))
+      ? Number(info.weekIndex)
+      : (Number.isFinite(Number(current.weekIndex)) ? Number(current.weekIndex) : null),
+    scheduleId: info.scheduleId || current.scheduleId || null,
+    awayTeamId: info.awayTeamId || current.awayTeamId || null,
+    homeTeamId: info.homeTeamId || current.homeTeamId || null,
+    awayTeam: info.awayTeam || current.awayTeam || null,
+    homeTeam: info.homeTeam || current.homeTeam || null,
+  };
+}
+
+function trimFreeThreadState(threadId, guildId, patch = {}) {
+  if (!guildId || reminderTrackingEnabled(guildId)) return null;
+  return minimalThreadState(threadId, patch, state.threads?.[threadId] || null);
+}
+
 async function coachUserIds(guild, roleIds = [], candidateUserIds = []) {
   const users = new Set();
   for (const roleId of roleIds) {
@@ -540,6 +581,12 @@ function retirePendingThread(threadId, status = 'ignored', note = '') {
 
 function persistThreadRuntimeState(threadId, patch = {}) {
   if (!threadId || !patch || typeof patch !== 'object') return null;
+  const freeState = trimFreeThreadState(threadId, patch.guildId || patch.guild_id || null, patch);
+  if (freeState) {
+    state.threads = state.threads || {};
+    state.threads[threadId] = freeState;
+    return state.threads[threadId];
+  }
   state.threads = state.threads || {};
   const current = state.threads[threadId] || { threadId, status: 'pending', created: Date.now(), lastReminder: Date.now() };
   state.threads[threadId] = {
@@ -622,6 +669,7 @@ async function buildLiveStartupThreadEntries(client, { debugDecisions = false, g
   }
   for (const thread of liveThreads) {
     const threadId = String(thread.id);
+    if (!reminderTrackingEnabled(thread.guildId)) continue;
     const existing = state.threads?.[threadId] || { threadId, status: 'pending' };
     if (existing.status && existing.status !== 'pending') continue;
     const hydrated = await hydrateThreadStateFromLiveThread(thread, existing) || existing;
@@ -681,8 +729,17 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
         continue;
       }
       const hydratedInfo = await hydrateThreadStateFromLiveThread(thread, info) || info;
+      if (!reminderTrackingEnabled(thread.guildId)) {
+        state.threads[threadId] = minimalThreadState(threadId, {
+          ...hydratedInfo,
+          guildId: thread.guildId,
+        }, state.threads?.[threadId] || null);
+        logNotifierDecision({ enabled: debugDecisions, threadId, info: hydratedInfo, decision: 'skip', reason: 'free_tier_reminders_disabled' });
+        continue;
+      }
       const trackedInfo = persistThreadRuntimeState(threadId, {
         ...hydratedInfo,
+        guildId: thread.guildId,
         status: hydratedInfo.status || 'pending',
       }) || hydratedInfo;
       const context = getMaddenSnapshotContext(thread.guildId, { leagueId: hydratedInfo.leagueId || null }) || null;
@@ -1048,6 +1105,11 @@ export function registerThread(threadId, payload = '') {
   state.threads = state.threads || {};
   const info = typeof payload === 'string' ? { mention: payload || '' } : { ...(payload || {}) };
   const createdAt = Number.isFinite(Number(info.createdAt)) ? Number(info.createdAt) : Date.now();
+  if (!reminderTrackingEnabled(info.guildId || null)) {
+    state.threads[threadId] = minimalThreadState(threadId, info, state.threads[threadId] || null);
+    saveState(state);
+    return;
+  }
   state.threads[threadId] = {
     threadId,
     status: 'pending',
@@ -1073,6 +1135,13 @@ export function registerThread(threadId, payload = '') {
 
 export function updateThreadState(threadId, patch = {}) {
   if (!threadId || !patch || typeof patch !== 'object') return null;
+  const freeState = trimFreeThreadState(threadId, patch.guildId || patch.guild_id || null, patch);
+  if (freeState) {
+    state.threads = state.threads || {};
+    state.threads[threadId] = freeState;
+    saveThreadState();
+    return state.threads[threadId];
+  }
   state.threads = state.threads || {};
   const current = state.threads[threadId] || { threadId, status: 'pending', created: Date.now(), lastReminder: Date.now() };
   state.threads[threadId] = {
@@ -1130,6 +1199,7 @@ export async function hydrateThreadStateFromLiveThread(thread, existing = null) 
     deadlineAt = parseDeadlineFromText(starterText);
   }
   const patched = {
+    guildId: thread.guildId,
     created: liveCreatedAt || (Number.isFinite(Number(info.created)) ? Number(info.created) : Date.now()),
     leagueId,
     deadlineAt: deadlineAt || null,
@@ -1165,7 +1235,11 @@ export async function hydrateThreadStateFromLiveThread(thread, existing = null) 
 }
 
 export function markThreadDone(threadId, status = 'done') {
-  if (!state.threads || !state.threads[threadId]) return;
+  if (!threadId) return;
+  state.threads = state.threads || {};
+  if (!state.threads[threadId]) {
+    state.threads[threadId] = baseThreadState(threadId);
+  }
   state.threads[threadId].status = status;
   saveState(state);
 }
@@ -1173,7 +1247,9 @@ export function markThreadDone(threadId, status = 'done') {
 export function resetThread(threadId) {
   if (!state.threads || !state.threads[threadId]) return;
   state.threads[threadId].status = 'pending';
-  state.threads[threadId].lastReminder = Date.now();
+  if (Object.prototype.hasOwnProperty.call(state.threads[threadId], 'lastReminder')) {
+    state.threads[threadId].lastReminder = Date.now();
+  }
   saveState(state);
 }
 

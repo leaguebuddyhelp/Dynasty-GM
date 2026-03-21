@@ -1020,6 +1020,7 @@ async function execute(interaction) {
           const awayRoleIds = await resolveGuildRoleIds(interaction.guild, coachRoleIds(teams[game.awayTeamId], roleMap));
           const homeRoleIds = await resolveGuildRoleIds(interaction.guild, coachRoleIds(teams[game.homeTeamId], roleMap));
           registerThread(thread.id, {
+            guildId: interaction.guildId,
             createdAt: thread.createdTimestamp,
             mention: mentionText || '',
             staffRoleIds: commishIds,
