@@ -40,6 +40,15 @@ const TRADE_REQUIRED_ROLE_KEYS = [
   'Trade Committee',
 ];
 
+const SETUP_ITEM_LABELS = {
+  'Ghost Legacy Commish': 'LB Commish',
+  'Ghost Legacy Co-Commish': 'LB Co-Commish',
+  'Ghost Legacy': 'LEAGUEbuddy Coaches',
+  'Trade Committee': 'LEAGUEbuddy Trade Committee',
+  tradeSubmit: 'Submit Trade',
+  scoutingHub: 'Scouting Hub',
+};
+
 function summarizeMappedEntries(mapObj) {
   const entries = Object.entries(mapObj && typeof mapObj === 'object' ? mapObj : {}).filter(([, value]) => !!value);
   return {
@@ -52,6 +61,10 @@ function summarizeMappedEntries(mapObj) {
 function diffMissingKeys(mapObj, requiredKeys) {
   const map = mapObj && typeof mapObj === 'object' ? mapObj : {};
   return requiredKeys.filter((key) => !map[key]);
+}
+
+function displaySetupItemName(key) {
+  return SETUP_ITEM_LABELS[key] || key;
 }
 
 function requiredChannelKeysForSetup(overlayConfig) {
@@ -104,11 +117,7 @@ function buildRecommendedNextAction({ overlayExists, overlayComplete, setupCompl
   if (!overlayComplete) return 'Finish the LEAGUEbuddy setup flow: rerun /setup-channels, then /setup-pins, then /setup-roles, then /syncsetupstatus.';
   if (syncNeeded) return 'Run /syncsetupstatus so LEAGUEbuddy access state matches the completed Madden overlay.';
   if (!setupCompleted) return 'Mark setup complete by syncing setup status after verifying the overlay configuration.';
-  const upgradeBlocked = blockedFeatures.filter((item) => item.reason === 'plan_too_low');
-  if (upgradeBlocked.length) return 'Upgrade the guild plan to unlock the remaining paid features.';
-  const inactiveBlocked = blockedFeatures.filter((item) => item.reason === 'subscription_inactive');
-  if (inactiveBlocked.length) return 'Set the subscription status to active or trialing for paid plan access to apply.';
-  return 'Setup and access state are aligned. No immediate action required.';
+  return 'Setup is complete. Use /server-check for server readiness and plan status.';
 }
 
 export function getSetupStatus(guildId) {
@@ -173,4 +182,5 @@ export default {
   getSetupStatus,
   requiredChannelKeysForSetup,
   requiredRoleKeysForSetup,
+  displaySetupItemName,
 };

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
+import { displaySetupItemName, getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
 import {
     buildSetupReadinessLines,
     buildSetupReadinessNextSteps,
@@ -8,7 +8,38 @@ import {
 
 export const data = new SlashCommandBuilder()
     .setName('setup-check')
-    .setDescription('View your server setup, plan, and unlocked Madden features.');
+    .setDescription('View only the Madden setup progress for this server.');
+
+function describeSetupStage(status) {
+    if (!status.overlayStatus.exists) {
+        return 'Setup has not started yet. Begin with `/connectleague`, then `/setup-channels`.';
+    }
+    if (!status.overlayStatus.isComplete) {
+        return 'Final setup is still missing. Run `/setup-roles` to finish the LEAGUEbuddy role pass, then run `/syncsetupstatus`.';
+    }
+    if (status.syncNeeded) {
+        return 'One final setup step is left: run `/syncsetupstatus` so LEAGUEbuddy access matches the completed setup.';
+    }
+    if (!status.setupCompleted) {
+        return 'Run `/syncsetupstatus` to mark setup complete.';
+    }
+    return 'Setup is complete. The next check should be `/server-check`.';
+}
+
+function setupStepLines(status) {
+    return [
+        `${status.overlayStatus.exists ? '✅' : '❌'} League connected and setup started`,
+        `${status.missingRequiredChannels.length === 0 && status.overlayStatus.exists ? '✅' : '❌'} Channels created`,
+        `${status.overlayStatus.exists ? '✅' : '❌'} Pins seeded`,
+        `${status.missingRequiredRoles.length === 0 ? '✅' : '❌'} Roles created`,
+        `${status.overlayStatus.isComplete ? '✅' : '❌'} Final setup pass finished`,
+        `${status.syncNeeded ? '❌' : status.setupCompleted ? '✅' : '❌'} Setup synced to LEAGUEbuddy access`,
+    ].join('\n');
+}
+
+function formatMissingSetupItems(items = []) {
+    return items.map((item) => displaySetupItemName(item)).join(', ');
+}
 
 export async function execute(interaction) {
     const guildId = interaction.guildId;
@@ -19,19 +50,7 @@ export async function execute(interaction) {
 
     const status = getSetupStatus(guildId);
     const readiness = await inspectSetupReadiness(interaction.guild);
-    const setupSummary = status.syncNeeded && status.overlayStatus.isComplete
-        ? 'One fix left: run `/syncsetupstatus` so LEAGUEbuddy access matches the completed overlay setup.'
-        : [
-            `Overlay setup: ${status.overlayStatus.isComplete ? '✅ complete' : status.overlayStatus.exists ? '⚠️ incomplete' : '❌ not started'}`,
-            `LEAGUEbuddy access setup: ${status.setupCompleted ? '✅ complete' : '❌ incomplete'}`,
-            `Plan: **${status.plan}**`,
-            `Subscription: **${status.subscriptionStatus}**`,
-            `Packs: ${status.packsEnabled.length ? status.packsEnabled.join(', ') : '(none)'}`,
-        ].join('\n');
-    const unlockedNow = status.unlockedFeatures.map((item) => `• ${item.label}`).join('\n') || '• None yet';
-    const blockedNow = status.blockedFeatures
-        .map((item) => `• ${item.label} (${item.reason === 'plan_too_low' ? 'upgrade required' : item.reason === 'setup_incomplete' ? 'finish setup' : item.reason === 'subscription_inactive' ? 'subscription inactive' : item.reason})`)
-        .join('\n') || '• None';
+    const setupSummary = describeSetupStage(status);
 
     const embed = new EmbedBuilder()
         .setTitle('Madden Setup Check')
@@ -39,21 +58,8 @@ export async function execute(interaction) {
         .setDescription(setupSummary)
         .addFields(
             {
-                name: 'Status',
-                value: [
-                    `${status.overlayStatus.exists ? '✅' : '❌'} Overlay config exists`,
-                    `${status.overlayStatus.isComplete ? '✅' : '❌'} Overlay setup is complete`,
-                    `${status.setupCompleted ? '✅' : '❌'} Access setup is complete`,
-                    `${status.syncNeeded ? '❌' : '✅'} Overlay and access states match`,
-                ].join('\n'),
-            },
-            {
-                name: 'Unlocked Now',
-                value: unlockedNow,
-            },
-            {
-                name: 'Blocked / Needs Action',
-                value: blockedNow,
+                name: 'Setup Steps',
+                value: setupStepLines(status),
             },
             {
                 name: 'Bot Setup Readiness',
@@ -84,10 +90,10 @@ export async function execute(interaction) {
 
     if (status.missingRequiredChannels.length || status.missingRequiredRoles.length) {
         embed.addFields({
-            name: 'Missing Setup Items',
+            name: 'Missing Final Setup Items',
             value: [
-                status.missingRequiredChannels.length ? `Channels: ${status.missingRequiredChannels.join(', ')}` : 'Channels: none',
-                status.missingRequiredRoles.length ? `Roles: ${status.missingRequiredRoles.join(', ')}` : 'Roles: none',
+                status.missingRequiredChannels.length ? `Channels: ${formatMissingSetupItems(status.missingRequiredChannels)}` : 'Channels: none',
+                status.missingRequiredRoles.length ? `Roles: ${formatMissingSetupItems(status.missingRequiredRoles)}` : 'Roles: none',
             ].join('\n'),
         });
     }
