@@ -481,6 +481,13 @@ function tierSetupNotes(tier, tradeEnabled) {
     ];
 }
 
+function formatChannelList(specs = []) {
+    const names = specs
+        .map((spec) => `• #${spec.name}`)
+        .join('\n');
+    return names.slice(0, 1024) || 'No LEAGUEbuddy channels selected for this package.';
+}
+
 async function withTimeout(promise, ms, label) {
     let timer = null;
     try {
@@ -677,6 +684,10 @@ export async function execute(interaction) {
                         {
                             name: 'Plan notes',
                             value: tierSetupNotes(tier, tradeEnabled).map((line) => `• ${line}`).join('\n'),
+                        },
+                        {
+                            name: 'Channels In This Package',
+                            value: formatChannelList(activeChannelSpecs),
                         },
                         {
                             name: 'Next',
