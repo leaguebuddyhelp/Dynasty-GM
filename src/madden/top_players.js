@@ -1765,7 +1765,7 @@ function computeSeasonTop100FromHistory(leagueId) {
 }
 
 function buildPageEmbed(list, page, leagueId, meta = {}) {
-  const perPage = 8;
+  const perPage = 10;
   const totalPages = Math.max(1, Math.ceil(list.length / perPage));
   const safePage = Math.min(Math.max(1, page), totalPages);
   const start = (safePage - 1) * perPage;
