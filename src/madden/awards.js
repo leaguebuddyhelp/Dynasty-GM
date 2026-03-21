@@ -839,7 +839,8 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     };
   };
 
-  const coachTag = roleMap['Ghost Legacy'] ? `<@&${roleMap['Ghost Legacy']}>` : null;
+  const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
+  const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
   const embed = new EmbedBuilder()
     .setTitle(`Weekly Awards — Week ${awardsWeek}${isPlayoffs ? ' (Playoffs)' : ''}`)
     .setDescription(null)
@@ -860,7 +861,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
 
   if (interaction) {
     const content = isPublic ? coachTag : null;
-    const payload = { content, embeds: [embed], files, allowedMentions: isPublic && coachTag ? { parse: [], roles: [roleMap['Ghost Legacy']] } : { parse: [] } };
+    const payload = { content, embeds: [embed], files, allowedMentions: isPublic && coachTag ? { parse: [], roles: [coachRoleId] } : { parse: [] } };
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(payload);
     } else {
@@ -871,7 +872,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       content: coachTag || null,
       embeds: [embed],
       files,
-      allowedMentions: coachTag ? { parse: [], roles: [roleMap['Ghost Legacy']] } : { parse: [] },
+      allowedMentions: coachTag ? { parse: [], roles: [coachRoleId] } : { parse: [] },
     }).catch(() => null);
   }
   awardsStore[leagueId] = { ...leagueStore, [awardsWeek]: winners };

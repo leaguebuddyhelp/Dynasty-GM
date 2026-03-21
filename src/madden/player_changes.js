@@ -213,7 +213,7 @@ export async function updatePlayerChanges(client, leagueId, guildId = null) {
     return;
   }
   const roleMap = loadJson(ROLE_MAP_FILE) || {};
-  const commishMentions = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish']
+  const commishMentions = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish']
     .map(r => roleMap[r] ? `<@&${roleMap[r]}>` : null)
     .filter(Boolean)
     .join(' ');

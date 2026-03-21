@@ -164,7 +164,7 @@ export async function maybePostDraftGrades(client, leagueId) {
 
     const channel = await client.channels.fetch(draftChannelId).catch(() => null);
     if (channel && channel.isTextBased()) {
-      const coachRoleId = roleMap['Ghost Legacy'];
+      const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
       const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
       await channel.send({ content: coachTag ?? undefined, embeds: [embed] });
       state[leagueId][seasonKey] = { fetchedAt: snapshot.fetchedAt, seasonYear };

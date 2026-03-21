@@ -33,9 +33,9 @@ const TRADE_REQUIRED_CHANNEL_KEYS = [
 ];
 
 const BASE_REQUIRED_ROLE_KEYS = [
-  'Ghost Legacy Commish',
-  'Ghost Legacy Co-Commish',
-  'Ghost Legacy',
+  'LB Commish',
+  'LB Co-Commish',
+  'LEAGUEbuddy Coaches',
 ];
 
 const TRADE_REQUIRED_ROLE_KEYS = [
@@ -55,9 +55,9 @@ const STANDARD_REQUIRED_PIN_KEYS = [
 ];
 
 const SETUP_ITEM_LABELS = {
-  'Ghost Legacy Commish': 'LB Commish',
-  'Ghost Legacy Co-Commish': 'LB Co-Commish',
-  'Ghost Legacy': 'LEAGUEbuddy Coaches',
+  'LB Commish': 'LB Commish',
+  'LB Co-Commish': 'LB Co-Commish',
+  'LEAGUEbuddy Coaches': 'LEAGUEbuddy Coaches',
   'Trade Committee': 'LEAGUEbuddy Trade Committee',
   tradeSubmit: 'Submit Trade',
   scoutingHub: 'Scouting Hub',

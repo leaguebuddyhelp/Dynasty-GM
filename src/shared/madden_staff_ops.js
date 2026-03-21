@@ -271,7 +271,7 @@ export async function queueScheduledRumorMill(client, guildId, force = false) {
 
   const channelMap = loadChannelMap();
   const roleMap = loadRoleMap();
-  const ghostRoleId = roleMap['Ghost Legacy'];
+  const ghostRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
   if (!channelMap['Rumor Mill']) {
     appendMaddenStaffLog({ type: 'rumor_queue_skip', guildId, detail: 'Skipped rumor queue: Rumor Mill channel not configured.' });
     await postRumorStatus('Skipped rumor queue: Rumor Mill channel not configured.');

@@ -208,8 +208,8 @@ function roleIdFor(roleMap = {}, aliases = []) {
 export function buildSetupOverwrites(guild, roleMap = {}) {
     const everyoneId = guild.roles.everyone.id;
     const botRoleId = guild.members.me?.roles?.botRole?.id || null;
-    const commishId = roleIdFor(roleMap, ['Ghost Legacy Commish', 'LB Commish']);
-    const coCommishId = roleIdFor(roleMap, ['Ghost Legacy Co-Commish', 'LB Co-Commish']);
+    const commishId = roleIdFor(roleMap, ['LB Commish', 'Ghost Legacy Commish']);
+    const coCommishId = roleIdFor(roleMap, ['LB Co-Commish', 'Ghost Legacy Co-Commish']);
     const tradeCommitteeId = roleIdFor(roleMap, [
         'Trade Committee',
         'Ghost Legacy Trade Committee',
@@ -218,7 +218,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         'LB Trade Committee',
         'LEAGUEbuddy Trade Committee',
     ]);
-    const coachGroupId = roleIdFor(roleMap, ['Ghost Legacy', 'LEAGUEbuddy Coaches', 'LB Coaches']);
+    const coachGroupId = roleIdFor(roleMap, ['LEAGUEbuddy Coaches', 'LB Coaches', 'Ghost Legacy']);
 
     const botAccess = botRoleId ? [{
         id: botRoleId,

@@ -329,9 +329,9 @@ function firstBetBoostState(card = {}) {
   return `Available • your first bet of the season pays ${FIRST_BET_BOOST_MULTIPLIER}x profit if it wins`;
 }
 
-function isCoachOrGhostLegacy(member, roleMap) {
+function isCoachOrLeaguebuddy(member, roleMap) {
   return member.roles.cache.some((role) => {
-    if (role.id === roleMap['Ghost Legacy']) return true;
+    if (role.id === (roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'])) return true;
     return Object.entries(roleMap).some(([name, id]) => /coach$/i.test(name) && id === role.id);
   });
 }
@@ -830,7 +830,7 @@ function sportsbookHeaderEmbed(weekNumber, seasonKey, intel = null, guildId = nu
     .setTitle(brandTitle(`LB Sportsbook • Week ${weekNumber}`))
     .setDescription([
       `Open the private board below to view this week's lines, check your card, and place bets.`,
-      `Eligible: coaches and <@&${roleMap?.['Ghost Legacy'] || 'Ghost Legacy'}>`,
+      `Eligible: coaches and <@&${roleMap?.['LEAGUEbuddy Coaches'] || roleMap?.['LB Coaches'] || roleMap?.['Ghost Legacy'] || 'LEAGUEbuddy Coaches'}>`,
       ``,
       `Markets: spread, moneyline, over/under`,
       `Rules: current week only • max ${MAX_GAME_MARKETS} markets per game`,
@@ -943,8 +943,8 @@ function linePrice(line, market, selection) {
 
 export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNumber, gameId, market, selection, wager }) {
   const roleMap = loadRoleMap(guildId);
-  if (!isCoachOrGhostLegacy(member, roleMap)) {
-    return { ok: false, message: 'Only coaches and Ghost Legacy members can use the sportsbook.' };
+  if (!isCoachOrLeaguebuddy(member, roleMap)) {
+    return { ok: false, message: 'Only coaches and LEAGUEbuddy Coaches can use the sportsbook.' };
   }
   const liveContext = getSportsbookContextForGuild(guildId);
   if (!liveContext?.seasonKey || !liveContext?.weekNumber) {

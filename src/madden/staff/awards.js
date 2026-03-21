@@ -13,7 +13,7 @@ export const data = new SlashCommandBuilder()
   )
   .addBooleanOption(opt =>
     opt.setName('public')
-      .setDescription('Post publicly in this channel and tag Ghost Legacy')
+      .setDescription('Post publicly in this channel and tag LEAGUEbuddy Coaches')
   )
   .setDefaultMemberPermissions(null);
 
@@ -34,7 +34,7 @@ export async function execute(interaction) {
   try {
     const member = await interaction.guild.members.fetch(interaction.user.id);
     if (!hasStaffRole(member, roleMap)) {
-      return interaction.editReply({ content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+      return interaction.editReply({ content: 'Only LB Commish/Co-Commish can use this command.' });
     }
   } catch (err) {
     console.error('[madden-awards] role check error:', err);

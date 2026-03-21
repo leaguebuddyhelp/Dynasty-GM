@@ -310,14 +310,14 @@ export const data = new SlashCommandBuilder()
   )
   .addBooleanOption(opt =>
     opt.setName('public')
-      .setDescription('Post publicly and tag Ghost Legacy')
+      .setDescription('Post publicly and tag LEAGUEbuddy Coaches')
   );
 
 export async function execute(interaction, options = {}) {
   const isButton = interaction.isButton && interaction.isButton();
   let isPublic = interaction.options?.getBoolean?.('public') ?? options.public ?? false;
   const roleMap = loadRoleMap();
-  const ghostRoleId = roleMap['Ghost Legacy'] || '1460399406397522145';
+  const ghostRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'] || '1460399406397522145';
 
   // Defer replies
   if (!isButton) {
@@ -335,7 +335,7 @@ export async function execute(interaction, options = {}) {
   try {
     const member = await interaction.guild.members.fetch(interaction.user.id);
     if (!hasStaffRole(member, roleMap)) {
-      const msg = 'Only Ghost Legacy Commish/Co-Commish can use this command.';
+      const msg = 'Only LB Commish/Co-Commish can use this command.';
       if (isButton) return interaction.update({ content: msg, components: [], embeds: [] });
       return interaction.editReply({ content: msg });
     }
@@ -381,7 +381,7 @@ export async function execute(interaction, options = {}) {
   secondTeam = ensureCenter(secondTeam, sorted, used);
 
   const scopeLabel = scope === 'season' ? 'Season' : `Week ${weekIdx + 1}`;
-  const leagueName = leagueId === '16594549' ? 'Ghost Legacy' : leagueId;
+  const leagueName = leagueId;
   const [embed1, embed2] = buildAllProEmbeds(firstTeam, secondTeam, leagueName, scopeLabel, roleMap);
   const content = isPublic ? `<@&${ghostRoleId}>` : undefined;
 

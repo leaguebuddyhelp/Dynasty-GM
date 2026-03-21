@@ -7,7 +7,7 @@ import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 
 function safeEditReply(interaction, payload) {
   return interaction.editReply(payload).catch(async (err) => {
@@ -156,7 +156,7 @@ export async function execute(interaction) {
     const roleMap = loadRoleMap();
     const member = await interaction.guild.members.fetch(interaction.user.id);
     if (!STAFF_ROLES.some(r => roleMap[r] && member.roles.cache.has(roleMap[r]))) {
-      await safeEditReply(interaction, { content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+      await safeEditReply(interaction, { content: 'Only LB Commish/Co-Commish can use this command.' });
       return;
     }
 

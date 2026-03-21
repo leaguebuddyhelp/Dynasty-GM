@@ -16,7 +16,6 @@ const ASSIGNABLE = [
   'Madden Trade Committe',
   'LB Trade Committee',
   'LEAGUEbuddy Trade Committee',
-  'Ghost Legacy',
   'LB Coaches',
   'LEAGUEbuddy Coaches',
 ];
@@ -49,14 +48,13 @@ function hasAnyCoachRole(member, roleMap) {
 }
 
 function getLeaguebuddyCoachesRole(guild, roleMap) {
-  const roleId = roleMap['Ghost Legacy'] || roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || null;
+  const roleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'] || null;
   return roleId ? guild.roles.cache.get(roleId) || null : null;
 }
 
 function roleNamePriority(name = '') {
   if (name === 'LEAGUEbuddy Coaches') return 95;
   if (name === 'LB Coaches') return 94;
-  if (name === 'Ghost Legacy') return 93;
   if (name === 'LEAGUEbuddy Trade Committee') return 100;
   if (ASSIGNABLE.includes(name)) return 90;
   const words = String(name).trim().split(/\s+/).length;
@@ -83,7 +81,6 @@ function baseRoleBoost(name = '', optionName = 'role1') {
   if (optionName !== 'role2') return 0;
   if (name === 'LEAGUEbuddy Coaches') return 1000;
   if (name === 'LB Coaches') return 950;
-  if (name === 'Ghost Legacy') return 900;
   if (name === 'LEAGUEbuddy Trade Committee') return 850;
   if (name === 'LB Trade Committee') return 800;
   if (name === 'Trade Committee') return 750;

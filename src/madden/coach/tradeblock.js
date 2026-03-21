@@ -80,7 +80,7 @@ function loadRoleMap(guildId = null) {
 }
 
 async function announce(client, roleMap, channelMap, teamName, cleanLabelText, detailText, positionText, rosterId) {
-  const coachRoleId = roleMap['Ghost Legacy'];
+  const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
   const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
   const tradeChannelId = channelMap['Trade Block'] || channelMap['Pending Trades'] || channelMap['Transaction Log'];
   if (!tradeChannelId) return;

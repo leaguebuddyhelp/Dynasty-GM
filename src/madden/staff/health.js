@@ -339,7 +339,7 @@ export async function execute(interaction) {
 
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
-    await interaction.editReply({ content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+    await interaction.editReply({ content: 'Only LB Commish/Co-Commish can use this command.' });
     return;
   }
 

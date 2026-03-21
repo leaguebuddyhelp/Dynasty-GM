@@ -21,7 +21,7 @@ function isStaff(member) {
   } catch {
     // ignore and fall back to name check
   }
-  const fallbackNames = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+  const fallbackNames = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
   return member?.roles?.cache?.some(r => fallbackNames.includes(r.name)) ?? false;
 }
 

@@ -24,7 +24,7 @@ export const data = new SlashCommandBuilder()
   )
   .addBooleanOption(opt =>
     opt.setName('public')
-      .setDescription('Post publicly (tags Ghost Legacy). Default: private')
+      .setDescription('Post publicly (tags LEAGUEbuddy Coaches). Default: private')
   )
   .addIntegerOption(opt =>
     opt.setName('week')
@@ -41,9 +41,9 @@ export async function execute(interaction, options = {}) {
   let member;
   try {
     roleMap = loadRoleMap();
-    ghostRoleId = roleMap['Ghost Legacy'] || ghostRoleId;
+    ghostRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'] || ghostRoleId;
     member = await interaction.guild.members.fetch(interaction.user.id);
-    const noAccessMsg = 'Only Ghost Legacy Commish/Co-Commish can use this command.';
+    const noAccessMsg = 'Only LB Commish/Co-Commish can use this command.';
     if (!hasStaffRole(member, roleMap)) {
       if (isButton) {
         const responder = interaction.deferred || interaction.replied ? interaction.followUp.bind(interaction) : interaction.reply.bind(interaction);
@@ -282,7 +282,7 @@ export async function execute(interaction, options = {}) {
       return `${start + idx + 1}. ${emoji} ${pos} - ${p.name} | Grade: ${grade}`;
     });
     // Map leagueId to display name (hardcoded for now)
-    let leagueDisplayName = leagueId === '16594549' ? 'Ghost Legacy' : leagueId;
+    let leagueDisplayName = leagueId;
     const titleScope = scope === 'season' ? 'Season' : `Week ${week + 1}`;
     const baseButtons = [
       new ButtonBuilder()

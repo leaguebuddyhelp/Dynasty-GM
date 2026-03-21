@@ -12,7 +12,7 @@ const AVP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_avp.json');
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const TEAM_EMOJI_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 // Specific fallback pin/message id provided by user
 const FALLBACK_PIN_ID = '1469153107207393465';
 
@@ -273,7 +273,7 @@ async function execute(interaction) {
   const channelMap = loadChannelMap(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
-    await safeEditReply(interaction, { content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+    await safeEditReply(interaction, { content: 'Only LB Commish/Co-Commish can use this command.' });
     return;
   }
 

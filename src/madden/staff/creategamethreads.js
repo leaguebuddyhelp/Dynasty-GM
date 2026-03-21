@@ -969,7 +969,7 @@ async function execute(interaction) {
     }
     try {
       const announceChannelId = channelMap['Madden League Buddy Announcements'];
-      const coachRoleId = roleMap['Ghost Legacy'];
+      const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
       const coachTag = coachRoleId ? `<@&${coachRoleId}>` : '';
       if (announceChannelId) {
         const announce = await interaction.client.channels.fetch(announceChannelId).catch(() => null);

@@ -841,7 +841,7 @@ export async function execute(interaction) {
   const channelMap = loadMaddenChannelMap(interaction.guildId);
   const roleMap = loadRoleMapForGuild(interaction.guildId);
   const streamingChannelId = channelMap['Streaming links'];
-  const ghostRoleId = roleMap['Ghost Legacy'];
+  const ghostRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
   const channel = streamingChannelId ? await interaction.client.channels.fetch(streamingChannelId).catch(() => null) : null;
 
   if (!streamingChannelId) {

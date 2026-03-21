@@ -4,7 +4,7 @@ import path from 'path';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 
-const STAFF_ROLES = ['Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
@@ -35,7 +35,7 @@ export async function execute(interaction) {
   const channelMap = loadMaddenChannelMap(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
-    await interaction.editReply({ content: 'Only Ghost Legacy Commish/Co-Commish can use this command.' });
+    await interaction.editReply({ content: 'Only LB Commish/Co-Commish can use this command.' });
     return;
   }
 
@@ -51,7 +51,7 @@ export async function execute(interaction) {
     return;
   }
 
-  const coachRoleId = roleMap['Ghost Legacy'];
+  const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
   const coachTag = coachRoleId ? `<@&${coachRoleId}>` : '';
   const deadline = Math.floor((Date.now() + 24 * 3600 * 1000) / 1000);
 

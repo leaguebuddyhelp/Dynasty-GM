@@ -107,7 +107,7 @@ function persistCoachRoleMapping(guildId, role) {
 }
 
 function getLeaguebuddyCoachesRole(guild, roleMap) {
-    const roleId = roleMap['Ghost Legacy'] || roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || null;
+    const roleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'] || null;
     return roleId ? guild.roles.cache.get(roleId) || null : null;
 }
 
