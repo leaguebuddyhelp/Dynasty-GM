@@ -124,9 +124,8 @@ function computeGrades(snapshot, emojiMap) {
   return grades;
 }
 
-export async function maybePostDraftGrades(client, leagueId) {
+export async function maybePostDraftGrades(client, leagueId, guildId = null) {
   try {
-    const guildId = client?.guilds?.cache?.first?.()?.id || null;
     const snapshot = loadLeagueSnapshot(leagueId);
     if (!snapshot) return;
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
@@ -140,7 +139,7 @@ export async function maybePostDraftGrades(client, leagueId) {
     const roleMap = (getGuildRoleMap(guildId) && Object.keys(getGuildRoleMap(guildId)).length)
       ? getGuildRoleMap(guildId)
       : loadJson(path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json'));
-    const draftChannelId = channelMap['Draft Grades'] || channelMap['Draft grades'] || '1459445684703989800';
+    const draftChannelId = channelMap['Draft Grades'] || channelMap['Draft grades'] || null;
     if (!draftChannelId) return;
 
     const state = loadJson(STATE_FILE, {});

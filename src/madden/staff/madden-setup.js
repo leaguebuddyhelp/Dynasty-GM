@@ -81,6 +81,10 @@ const STANDARD_PLUS_CHANNEL_SPECS = [
     { key: 'scoutingHub', name: 'lb-scouting-hub', type: ChannelType.GuildText },
     { key: 'Top 100', name: 'lb-top-100', type: ChannelType.GuildText },
     { key: 'Yearly Awards', name: 'lb-yearly-awards', type: ChannelType.GuildText },
+    { key: 'Streaming links', name: 'lb-streamlink', type: ChannelType.GuildText },
+    { key: 'Strike Board', name: 'lb-strike-board', type: ChannelType.GuildText },
+    { key: 'Draft Grades', name: 'lb-draft-grades', type: ChannelType.GuildText },
+    { key: 'Activity Checks', name: 'lb-activitycheck', type: ChannelType.GuildText },
 ];
 
 const TRADE_CHANNEL_SPECS = [
@@ -314,6 +318,20 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         ...staffRoleAccess,
     ]);
 
+    const publicReactionCheck = withBotAccess([
+        {
+            id: everyoneId,
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.AddReactions,
+                PermissionFlagsBits.UseApplicationCommands,
+            ),
+            deny: deny(PermissionFlagsBits.SendMessages),
+        },
+        ...staffRoleAccess,
+    ]);
+
     const publicInteractiveWithCoachAccess = withBotAccess([
         {
             id: everyoneId,
@@ -380,6 +398,10 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             'Playoff Picture': publicReadOnly,
             'Top 100': publicReadOnly,
             'Yearly Awards': publicReadOnly,
+            'Streaming links': publicReadOnly,
+            'Strike Board': staffOnly,
+            'Draft Grades': publicReadOnly,
+            'Activity Checks': publicReactionCheck,
             'Transaction Log': publicReadOnly,
             'Injuries Log': publicReadOnly,
             'Player Change Log': publicReadOnly,
@@ -493,10 +515,13 @@ async function pruneUnsupportedSetupChannels(guild, cfg, allowedSpecs) {
         ? guild.channels.cache.get(categoryId) || await guild.channels.fetch(categoryId).catch(() => null)
         : null;
 
+    const optionalManagedKeys = [
+        ...STANDARD_PLUS_CHANNEL_SPECS.map((spec) => spec.key),
+        ...TRADE_CHANNEL_SPECS.map((spec) => spec.key),
+    ];
     const removableKeys = [
         ...LEGACY_UNSUPPORTED_CHANNEL_KEYS,
-        ...(allowedKeys.has('scoutingHub') ? [] : ['scoutingHub']),
-        ...(!allowedKeys.has('tradeSubmit') ? ['tradeSubmit', 'Trade Block', 'Trades', 'Trade Counts', 'Trade Committee', 'Approved trades', 'Denied trades'] : []),
+        ...optionalManagedKeys.filter((key) => !allowedKeys.has(key)),
     ];
 
     for (const key of removableKeys) {

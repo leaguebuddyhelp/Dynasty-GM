@@ -22,6 +22,10 @@ const STANDARD_REQUIRED_CHANNEL_KEYS = [
   'scoutingHub',
   'Top 100',
   'Yearly Awards',
+  'Streaming links',
+  'Strike Board',
+  'Draft Grades',
+  'Activity Checks',
 ];
 
 const TRADE_REQUIRED_CHANNEL_KEYS = [
@@ -62,6 +66,10 @@ const SETUP_ITEM_LABELS = {
   'Trade Committee': 'LEAGUEbuddy Trade Committee',
   tradeSubmit: 'Submit Trade',
   scoutingHub: 'Scouting Hub',
+  'Streaming links': 'Stream Links',
+  'Strike Board': 'Strike Board',
+  'Draft Grades': 'Draft Grades',
+  'Activity Checks': 'Activity Checks',
 };
 
 function summarizeMappedEntries(mapObj) {

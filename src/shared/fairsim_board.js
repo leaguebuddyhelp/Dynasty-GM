@@ -58,7 +58,7 @@ function clearGuildBoardState(guildId) {
 
 function resolveBoardChannelId(guildId) {
   const channelMap = loadMaddenChannelMap(guildId);
-  return channelMap?.['League Staff'] || channelMap?.['LG Logs'] || null;
+  return channelMap?.['Strike Board'] || channelMap?.['League Staff'] || channelMap?.['LG Logs'] || null;
 }
 
 async function buildLines(snapshot, fairData, season, guild) {
