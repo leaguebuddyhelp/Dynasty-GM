@@ -211,6 +211,10 @@ function safeFieldValue(lines = [], fallback = 'No data yet.') {
   return out ? `${out}\n...` : fallback;
 }
 
+function trimLeaderboard(lines = [], limit = 5) {
+  return Array.isArray(lines) ? lines.slice(0, limit) : [];
+}
+
 async function resolveStatLeadersMessage(channel, pinId) {
   if (pinId) {
     const direct = await channel.messages.fetch(pinId).catch(() => null);
@@ -325,7 +329,7 @@ export async function updateStatLeaders(client, leagueId, guildId = null) {
   ];
 
   sections.forEach(([title, fn]) => {
-    const lines = fn(weeklyStats, teams);
+    const lines = trimLeaderboard(fn(weeklyStats, teams), 5);
     fields.push({
       name: title,
       value: safeFieldValue(lines, 'No data yet.'),

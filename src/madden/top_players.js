@@ -1765,7 +1765,7 @@ function computeSeasonTop100FromHistory(leagueId) {
 }
 
 function buildPageEmbed(list, page, leagueId, meta = {}) {
-  const perPage = 10;
+  const perPage = 8;
   const totalPages = Math.max(1, Math.ceil(list.length / perPage));
   const safePage = Math.min(Math.max(1, page), totalPages);
   const start = (safePage - 1) * perPage;
@@ -1776,7 +1776,10 @@ function buildPageEmbed(list, page, leagueId, meta = {}) {
     const rank = start + idx + 1;
     const gradeRaw = p.seasonGrade ?? p.grade ?? p.weeklyGrade ?? p.score ?? 0;
     const grade = Number(gradeRaw).toFixed(2);
-    return `${rank}. ${p.name} (${p.position}, ${p.team}) — ${grade}`;
+    const position = String(p.position || '').trim();
+    const team = String(p.team || '').trim();
+    const detail = [position, team].filter(Boolean).join(' • ');
+    return `#${rank} ${p.name} — ${grade}${detail ? `\n${detail}` : ''}`;
   });
   const embed = new EmbedBuilder()
     .setTitle(`Madden Player Grades — ${titleLabel}`)
