@@ -53,21 +53,53 @@ function snapshotSeasonInfo(snapshot) {
   return snapshot?.info?.careerHubInfo?.seasonInfo || {};
 }
 
-function currentSeasonIndex(snapshot) {
+function scheduleEntries(snapshot) {
+  return snapshot?.schedule?.schedules || [];
+}
+
+function gameWeekIndex(game) {
+  return Number(game?.weekIndex ?? game?.week ?? -1);
+}
+
+function gameStageIndex(game) {
+  return Number(game?.stageIndex ?? game?.stage ?? -1);
+}
+
+function gameSeasonIndex(game) {
+  return Number(game?.seasonIndex ?? game?.seasonId ?? NaN);
+}
+
+function currentSeasonIndex(snapshot, phase = null) {
   const seasonInfo = snapshotSeasonInfo(snapshot);
   const explicit = Number(seasonInfo?.seasonIndex);
-  if (Number.isFinite(explicit)) return explicit;
-  const seasonIndexes = (snapshot?.schedule?.schedules || [])
-    .map((game) => Number(game?.seasonIndex ?? game?.seasonId ?? NaN))
+  const activePhase = phase || currentSchedulePhase(snapshot);
+  const allGames = scheduleEntries(snapshot);
+  const targetWeekIndex = Math.max(0, Number(activePhase?.currentWeekValue || 1) - 1);
+  const phaseMatches = allGames.filter((game) => {
+    const weekIndex = gameWeekIndex(game);
+    const stage = gameStageIndex(game);
+    if (weekIndex !== targetWeekIndex) return false;
+    if (activePhase?.kind === 'preseason') return stage === 0;
+    if (activePhase?.kind === 'playoffs') return stage === 2 || (stage === 1 && weekIndex >= 18);
+    if (activePhase?.kind === 'regular') return stage === 1 && weekIndex >= 0 && weekIndex <= 17;
+    return false;
+  });
+  const matchedSeasonIndexes = phaseMatches
+    .map((game) => gameSeasonIndex(game))
+    .filter((value) => Number.isFinite(value));
+  if (matchedSeasonIndexes.length) return Math.max(...matchedSeasonIndexes);
+  if (Number.isFinite(explicit) && allGames.some((game) => gameSeasonIndex(game) === explicit)) return explicit;
+  const seasonIndexes = allGames
+    .map((game) => gameSeasonIndex(game))
     .filter((value) => Number.isFinite(value));
   return seasonIndexes.length ? Math.max(...seasonIndexes) : null;
 }
 
-function currentSeasonGames(snapshot) {
-  const targetSeasonIndex = currentSeasonIndex(snapshot);
-  const allGames = snapshot?.schedule?.schedules || [];
+function currentSeasonGames(snapshot, phase = null) {
+  const targetSeasonIndex = currentSeasonIndex(snapshot, phase);
+  const allGames = scheduleEntries(snapshot);
   if (targetSeasonIndex === null) return allGames;
-  const matches = allGames.filter((game) => Number(game?.seasonIndex ?? game?.seasonId ?? NaN) === targetSeasonIndex);
+  const matches = allGames.filter((game) => gameSeasonIndex(game) === targetSeasonIndex);
   return matches.length ? matches : allGames;
 }
 
@@ -83,15 +115,29 @@ function currentSchedulePhase(snapshot) {
   );
   const currentWeekValue = Number.isFinite(displayWeekRaw) && displayWeekRaw > 0 ? displayWeekRaw : 1;
   const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && stage !== 1;
+  const allGames = scheduleEntries(snapshot);
+  const currentWeekIndex = Math.max(0, currentWeekValue - 1);
+  const preseasonEvidence = allGames.some((game) =>
+    gameWeekIndex(game) === currentWeekIndex && gameStageIndex(game) === 0
+  );
+  const regularEvidence = allGames.some((game) =>
+    gameWeekIndex(game) === currentWeekIndex && gameStageIndex(game) === 1 && currentWeekIndex <= 17
+  );
+  const playoffEvidence = allGames.some((game) =>
+    gameWeekIndex(game) === currentWeekIndex && (gameStageIndex(game) === 2 || (gameStageIndex(game) === 1 && currentWeekIndex >= 18))
+  );
 
-  if (stage === 0) {
+  if (stage === 0 || (currentWeekValue <= 3 && preseasonEvidence && !regularEvidence)) {
     return { kind: 'preseason', stage, offSeasonStage, currentWeekValue };
+  }
+  if ((stage === 1 && currentWeekValue >= 1 && currentWeekValue <= 18 && regularEvidence) || (regularEvidence && !preseasonEvidence && !playoffEvidence)) {
+    return { kind: 'regular', stage: 1, offSeasonStage: 0, currentWeekValue };
+  }
+  if (stage === 2 || currentWeekValue >= 19 || playoffEvidence) {
+    return { kind: 'playoffs', stage: 2, offSeasonStage: 0, currentWeekValue };
   }
   if (offSeasonStage > 0 || stage === 3 || stage === 8 || draftInactive) {
     return { kind: 'offseason', stage, offSeasonStage, currentWeekValue };
-  }
-  if (stage === 2 || currentWeekValue >= 19) {
-    return { kind: 'playoffs', stage: 2, offSeasonStage, currentWeekValue };
   }
   return { kind: 'regular', stage: 1, offSeasonStage, currentWeekValue };
 }
@@ -111,10 +157,11 @@ function phaseFooterLabel(snapshot) {
 }
 
 function gamesForPhase(snapshot, kind = 'regular') {
-  return currentSeasonGames(snapshot)
+  const phase = currentSchedulePhase(snapshot);
+  return currentSeasonGames(snapshot, phase)
     .filter((game) => {
-      const stage = Number(game?.stageIndex ?? game?.stage ?? -1);
-      const weekIndex = Number(game?.weekIndex ?? -1);
+      const stage = gameStageIndex(game);
+      const weekIndex = gameWeekIndex(game);
       if (kind === 'preseason') return stage === 0;
       if (kind === 'playoffs') return stage === 2 || (stage === 1 && weekIndex >= 18);
       if (kind === 'regular') return stage === 1 && weekIndex >= 0 && weekIndex <= 17;
@@ -401,6 +448,23 @@ function phaseMenuOptions(snapshot, kind, selectedWeek) {
   })).slice(0, 25);
 }
 
+function scheduleTimelineOptions(snapshot, selectedKind, selectedWeek) {
+  const phaseOrder = ['preseason', 'regular', 'playoffs'];
+  const options = [];
+  for (const kind of phaseOrder) {
+    const weeks = [...new Set(gamesForPhase(snapshot, kind).map((game) => gameWeekIndex(game)).filter((week) => week >= 0))]
+      .sort((a, b) => a - b);
+    for (const weekIndex of weeks) {
+      options.push({
+        label: phaseWeekLabel(kind, weekIndex),
+        value: `${kind}:${weekIndex}`,
+        default: kind === selectedKind && weekIndex === Number(selectedWeek),
+      });
+    }
+  }
+  return options.slice(0, 25);
+}
+
 function fallbackSelectOption(label, value = 'none') {
   return [{ label: label.slice(0, 100), value }];
 }
@@ -432,7 +496,7 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null, phas
     if (ledgerEntry?.played) return true;
     return ['played', 'played_inferred'].includes(inferredGameStatus(snapshot, game));
   });
-  const weekOptions = phaseMenuOptions(snapshot, activePhaseKind, clampedWeek);
+  const weekOptions = scheduleTimelineOptions(snapshot, activePhaseKind, clampedWeek);
   const gameOptions = (playedGames.length ? playedGames : games.slice(0, 1))
     .map((game) => {
       const awayName = names.get(Number(game.awayTeamId)) || 'Away';
@@ -464,7 +528,7 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null, phas
 
   const weekRow = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
-      .setCustomId(`madden_schedule_page|${activePhaseKind}`)
+      .setCustomId('madden_schedule_page')
       .setPlaceholder(weekOptions.length ? phaseWeekLabel(activePhaseKind, clampedWeek) : 'No schedule weeks')
       .setDisabled(!weekOptions.length)
       .addOptions(weekOptions.length ? weekOptions : fallbackSelectOption('No schedule weeks', `${activePhaseKind}:0`)),
@@ -618,7 +682,7 @@ export function buildGameDetailView(snapshot, weekIndex, scheduleId, leagueId = 
       new StringSelectMenuBuilder()
         .setCustomId(`madden_schedule_page|${activePhaseKind}`)
         .setPlaceholder(phaseWeekLabel(activePhaseKind, weekIndex))
-        .addOptions(phaseMenuOptions(snapshot, activePhaseKind, weekIndex)),
+        .addOptions(scheduleTimelineOptions(snapshot, activePhaseKind, weekIndex)),
     ),
   ];
 
