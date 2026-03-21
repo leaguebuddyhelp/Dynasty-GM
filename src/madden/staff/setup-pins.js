@@ -62,7 +62,7 @@ function buildPinsNextStepText(results = []) {
         return 'Pins refreshed, but Discord is still blocking one or more pin actions. Fix the bot role/channel permissions, rerun `/setup-pins`, then rerun `/setup`.';
     }
     if (/Preseason|Offseason|will appear once the regular season starts|placeholder/i.test(joined)) {
-        return 'Pins are healthy for the current phase. Some boards stay as preseason/offseason placeholders until the regular season starts. Rerun `/setup` for the next step.';
+        return 'Pins are healthy for the current phase. Season boards stay visible from last year through offseason and preseason, then reset at Regular Season Week 1. Rerun `/setup` for the next step.';
     }
     return 'Some league boards still need data. Run `/sync` if the league was just connected, rerun `/setup-pins`, then rerun `/setup`.';
 }

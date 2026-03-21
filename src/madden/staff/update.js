@@ -1203,8 +1203,10 @@ async function execute(interaction) {
     }
 
     const inPreseason = phase.inPreseason;
-    // Allow pin updates when in regular season or when a week override was provided
-    const allowPinnedUpdates = !inPreseason || backfillOnlyAwards;
+    const shouldResetSeasonBoards =
+      !backfillOnlyAwards &&
+      Number(stageForWeek) === Stage.SEASON &&
+      Number(currentWeekValue || 0) === 1;
     await updateProgress(2, 'Refreshing pins, boards, and week-specific league state.');
 
     // Open/reset scouting at Week 1 of the regular season
@@ -1239,8 +1241,9 @@ async function execute(interaction) {
       }
     }
 
-    // Offseason/preseason: keep placeholders instead of forcing live board updates.
-    if (inPreseason || inOffseason) {
+    // Keep last season's boards visible through offseason and preseason.
+    // Only clear them when the new regular season actually starts.
+    if (shouldResetSeasonBoards) {
       try {
         await resetStatLeaders(interaction.client, interaction.guildId);
       } catch (e) {
@@ -1261,20 +1264,41 @@ async function execute(interaction) {
       } catch (e) {
         console.warn('[madden-weeklyupdate] power rankings reset skipped:', e?.message || e);
       }
-    } else if (!backfillOnlyAwards) {
+    } else if (!backfillOnlyAwards && !inPreseason && !inOffseason) {
       try {
         await updateStatLeaders(interaction.client, leagueId);
       } catch (e) {
         criticalFailures.push('Stat leaders');
         console.warn('[madden-weeklyupdate] stat leaders update skipped:', e?.message || e);
       }
+    } else if (!backfillOnlyAwards && (inPreseason || inOffseason)) {
+      console.warn('[madden-weeklyupdate] stat leaders kept from the previous season during offseason/preseason');
     } else if (backfillOnlyAwards) {
       console.warn('[madden-weeklyupdate] stat leaders skipped: backfill mode only updates requested week outputs');
     } else {
       console.warn('[madden-weeklyupdate] stat leaders skipped: no eligible update path');
     }
 
-    if (!backfillOnlyAwards && allowPinnedUpdates && !inOffseason) {
+    if (shouldResetSeasonBoards) {
+      try {
+        await resetStandings(interaction.client, interaction.guildId);
+      } catch (e) {
+        criticalFailures.push('Standings');
+        console.warn('[madden-weeklyupdate] standings reset skipped:', e?.message || e);
+      }
+      try {
+        await resetPlayoffPicture(interaction.client, interaction.guildId);
+      } catch (e) {
+        criticalFailures.push('Playoff picture');
+        console.warn('[madden-weeklyupdate] playoff picture reset skipped:', e?.message || e);
+      }
+      try {
+        await resetPowerRankings(interaction.client, interaction.guildId);
+      } catch (e) {
+        criticalFailures.push('Power rankings');
+        console.warn('[madden-weeklyupdate] power rankings reset skipped:', e?.message || e);
+      }
+    } else if (!backfillOnlyAwards && !inPreseason && !inOffseason) {
       try {
         await updateStandings(interaction.client, leagueId);
       } catch (e) {
@@ -1293,10 +1317,12 @@ async function execute(interaction) {
         criticalFailures.push('Power rankings');
         console.warn('[madden-weeklyupdate] power rankings update skipped:', e?.message || e);
       }
+    } else if (!backfillOnlyAwards && (inPreseason || inOffseason)) {
+      console.warn('[madden-weeklyupdate] standings/playoff picture/power rankings kept from the previous season during offseason/preseason');
     } else {
       console.warn(backfillOnlyAwards
         ? '[madden-weeklyupdate] standings/playoff picture/power rankings skipped: backfill mode only updates requested week outputs'
-        : '[madden-weeklyupdate] standings/playoff picture/power rankings skipped (offseason/preseason or after Wild Card)');
+        : '[madden-weeklyupdate] standings/playoff picture/power rankings skipped: no eligible update path');
     }
     let weeklyGameLog = null;
     const recognitionSeasonKey = getMaddenSeasonKey(snap);
@@ -1654,12 +1680,12 @@ async function execute(interaction) {
     if (inPreseason) {
       embed.addFields({
         name: 'Preseason behavior',
-        value: 'Preseason keeps threads, announcements, and league logs active while standings, playoff picture, and power rankings stay in placeholder mode until the regular season starts.',
+        value: 'Preseason keeps threads, announcements, and league logs active while the season boards stay visible from last year. They reset when Regular Season Week 1 starts.',
       });
     } else if (inOffseason) {
       embed.addFields({
         name: 'Offseason behavior',
-        value: 'Offseason keeps setup, logs, and offseason workflows active while in-season boards stay in placeholder mode until preseason or the regular season begins.',
+        value: 'Offseason keeps setup, logs, and offseason workflows active while the season boards stay visible from last year. They reset when Regular Season Week 1 starts.',
       });
     } else if (phase.inPlayoffs) {
       embed.addFields({
