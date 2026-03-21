@@ -543,9 +543,6 @@ export function saveLeagueConnectionSetup({
   if (!normalizedLeagueName) {
     return { ok: false, code: 'missing_league_name', message: 'League name is required.' };
   }
-  if (!normalizedLeaguePassword) {
-    return { ok: false, code: 'missing_league_password', message: 'League password is required.' };
-  }
 
   const existingSummary = dashboard.connection?.summary || {};
   const connection = connectionRepository.upsertLeagueConnection({
