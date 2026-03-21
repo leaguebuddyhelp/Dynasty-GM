@@ -11,8 +11,8 @@ function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
 }
 
-function loadChannelMap() {
-  return loadMaddenChannelMap();
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
 function teamNameMap(snapshot) {
@@ -154,7 +154,7 @@ function lastCompletedWeek(snapshot) {
   return { st: currentStage, wk: targetIdx };
 }
 
-export async function updateTransactions(client, leagueId) {
+export async function updateTransactions(client, leagueId, guildId = null) {
   const currPath = path.join(LEAGUE_DIR, `${leagueId}.json`);
   const prevPath = path.join(PREV_DIR, `${leagueId}.json`);
   const curr = loadJson(currPath);
@@ -163,7 +163,7 @@ export async function updateTransactions(client, leagueId) {
     console.warn('[transactions] Missing snapshot(s); skipping transactions.');
     return;
   }
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Transaction Log'];
   if (!channelId) {
     console.warn('[transactions] Transaction Log channel missing.');

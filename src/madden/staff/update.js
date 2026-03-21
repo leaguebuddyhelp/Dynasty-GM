@@ -1313,7 +1313,7 @@ async function execute(interaction) {
     // Post weekly transactions
     if (!backfillOnlyAwards) {
       try {
-        await updateTransactions(interaction.client, leagueId);
+        await updateTransactions(interaction.client, leagueId, interaction.guildId);
       } catch (e) {
         console.warn('[madden-weeklyupdate] transactions update skipped:', e?.message || e);
       }
@@ -1322,7 +1322,7 @@ async function execute(interaction) {
     // Player change log (position/attribute/dev changes) — skip bye week
     if (!backfillOnlyAwards && !isSuperBowlBye) {
       try {
-        await updatePlayerChanges(interaction.client, leagueId);
+        await updatePlayerChanges(interaction.client, leagueId, interaction.guildId);
       } catch (e) {
         console.warn('[madden-weeklyupdate] player changes update skipped:', e?.message || e);
       }

@@ -19,8 +19,8 @@ function saveJson(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-function loadChannelMap() {
-  return loadMaddenChannelMap();
+function loadChannelMap(guildId = null) {
+  return loadMaddenChannelMap(guildId);
 }
 
 function teamNameMap(snapshot) {
@@ -197,7 +197,7 @@ function lastCompletedWeek(snapshot) {
   return { st: currentStage, wk: targetIdx };
 }
 
-export async function updatePlayerChanges(client, leagueId) {
+export async function updatePlayerChanges(client, leagueId, guildId = null) {
   const currPath = path.join(LEAGUE_DIR, `${leagueId}.json`);
   const prevPath = path.join(PREV_DIR, `${leagueId}.json`);
   const curr = loadJson(currPath);
@@ -206,7 +206,7 @@ export async function updatePlayerChanges(client, leagueId) {
     console.warn('[player_changes] Missing snapshot(s); skipping changes.');
     return;
   }
-  const channelMap = loadChannelMap();
+  const channelMap = loadChannelMap(guildId);
   const channelId = channelMap['Player Change Log'];
   if (!channelId) {
     console.warn('[player_changes] Player Change Log channel missing.');
