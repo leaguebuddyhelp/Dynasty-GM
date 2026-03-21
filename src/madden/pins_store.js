@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { getGuildPinsMap } from '../shared/madden_guild_config.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
