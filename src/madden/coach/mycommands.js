@@ -56,6 +56,16 @@ async function execute(interaction) {
         ].join('\n'),
       },
       {
+        name: 'After Setup',
+        value: [
+          '1. Assign coaches to team roles',
+          '2. Tell coaches to run `/help`',
+          '3. Run `/create-threads`',
+          '4. After games finish, run `/weeklyupdate`',
+          '5. Repeat that thread/update loop every week',
+        ].join('\n'),
+      },
+      {
         name: 'Billing Support',
         value: [
           '`/pricing`',

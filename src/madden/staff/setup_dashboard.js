@@ -43,6 +43,26 @@ function buildFlowLines() {
   ].join('\n');
 }
 
+function buildLaunchLines(tier = 'free') {
+  const base = [
+    '1. Assign coaches to their team roles with `/member assign`.',
+    '2. Have coaches run `/help` to see their commands.',
+    '3. Run `/create-threads` to open the current week.',
+    '4. Play the games.',
+    '5. Run `/weeklyupdate` when the week is over.',
+    '6. Repeat `/create-threads` -> games -> `/weeklyupdate` every week.',
+  ];
+  if (String(tier).toLowerCase() === 'standard' || String(tier).toLowerCase() === 'premium') {
+    base.splice(1, 0, '2. Use `/member onboard` if you want the DM onboarding pack too.');
+    base[2] = '3. Have coaches run `/help` to see their commands.';
+    base[3] = '4. Run `/create-threads` to open the current week.';
+    base[4] = '5. Play the games.';
+    base[5] = '6. Run `/weeklyupdate` when the week is over.';
+    base[6] = '7. Repeat `/create-threads` -> games -> `/weeklyupdate` every week.';
+  }
+  return base.join('\n');
+}
+
 function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk }) {
   if (!readiness.hasRequiredPermissions) {
     return {
@@ -142,6 +162,8 @@ export async function execute(interaction) {
   const billing = getBillingSummary(guildId);
   const billingOk = ['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'));
   const decision = buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk });
+  const setupComplete = decision.title === 'Setup complete';
+  const tier = status.overlayStatus.tier || billing?.plan || 'free';
 
   const embed = new EmbedBuilder()
     .setTitle('LEAGUEbuddy Setup')
@@ -166,6 +188,10 @@ export async function execute(interaction) {
         name: 'Repeat Loop',
         value: buildFlowLines(),
       },
+      ...(setupComplete ? [{
+        name: 'Start The League',
+        value: buildLaunchLines(tier),
+      }] : []),
     );
 
   await interaction.editReply({ embeds: [embed], content: '' });
