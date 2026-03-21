@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { EmbedBuilder } from 'discord.js';
-import { draftOrder, applyPickTrades } from './coach/mockdraft.js';
 import { loadLeagueSnapshot } from './madden_data.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
@@ -82,36 +81,6 @@ function formatTeamName(team) {
   return getFullTeamName(team, `Team ${team?.teamId}`);
 }
 
-function buildPickMap(league) {
-  if (!league) return new Map();
-  let order = [];
-  try {
-    const seasonYear =
-      league?.info?.careerHubInfo?.seasonInfo?.calendarYear ||
-      league?.info?.calendarYear ||
-      league?.calendarYear;
-    order = applyPickTrades(draftOrder(league), seasonYear);
-  } catch {
-    return new Map();
-  }
-  const map = new Map();
-  order.forEach((pick, idx) => {
-    const ownerName = pick.name || pick.nick || '';
-    const keys = [
-      normalizeKey(ownerName),
-      normalizeKey(ownerName.split(/\s+/).pop() || ownerName),
-    ].filter(Boolean);
-    if (!keys.length) return;
-    const entry = { num: idx + 1, via: pick.via };
-    keys.forEach(k => {
-      const list = map.get(k) || [];
-      list.push(entry);
-      map.set(k, list);
-    });
-  });
-  return map;
-}
-
 function roleNamePriority(name = '') {
   const words = String(name).trim().split(/\s+/).length;
   return words;
@@ -168,8 +137,7 @@ function buildTeamEntries(league, roleMap) {
   }));
 }
 
-function formatAssignments(guild, roles, opts = {}) {
-  const { pickMap = new Map(), isOffseason = false, teamInfoByName = new Map() } = opts;
+function formatAssignments(guild, roles) {
   return roles.map(r => {
     const role = guild.roles.cache.get(r.roleId);
     if (!role) return { team: r.team, value: 'Open' };
@@ -178,31 +146,7 @@ function formatAssignments(guild, roles, opts = {}) {
     const names = members.length
       ? members.map(m => m.displayName || m.user?.username || m.user?.tag || m.id).join(', ')
       : 'Open';
-    let value = names;
-    if (members.length === 0 && isOffseason) {
-      const teamInfo = teamInfoByName.get(normalizeKey(r.team));
-      const fullName = teamInfo ? formatTeamName(teamInfo) : r.team;
-      const keys = [
-        normalizeKey(fullName),
-        normalizeKey(fullName.split(/\s+/).pop() || fullName),
-        normalizeKey(r.team),
-      ].filter(Boolean);
-      let merged = [];
-      const seen = new Set();
-      for (const key of keys) {
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const picks = pickMap.get(key);
-        if (picks?.length) merged = merged.concat(picks);
-      }
-      const unique = [...new Map(merged.map((pick) => [`${pick.num}|${pick.via || ''}`, pick])).values()]
-        .sort((a, b) => a.num - b.num)
-        .slice(0, 5);
-      if (unique.length) {
-        value = `Open\nOwns picks: ${unique.map((pick) => pick.via ? `${pick.num} via ${pick.via}` : `${pick.num}`).join(', ')}`;
-      }
-    }
-    return { team: r.team, value, rawTeam: r.team };
+    return { team: r.team, value: names, rawTeam: r.team };
   });
 }
 
@@ -255,14 +199,12 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
     const isOffseason = (seasonInfo.seasonWeekType === 8) ||
       (seasonInfo.seasonTitle || '').toLowerCase().includes('offseason') ||
       (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && seasonInfo.seasonWeekType !== 1);
-    const pickMap = buildPickMap(league);
     const debug = process.env.MOCK_DEBUG === 'true';
     if (debug) {
       console.log('[available-teams] seasonInfo', seasonInfo);
       console.log('[available-teams] isOffseason', isOffseason);
     }
-    const teamInfoByName = new Map((league?.teams?.leagueTeamInfoList || []).map((team) => [normalizeKey(formatTeamName(team)), team]));
-    const assignments = formatAssignments(guild, roles, { pickMap, isOffseason, teamInfoByName });
+    const assignments = formatAssignments(guild, roles);
 
     const byConf = { AFC: [], NFC: [] };
     assignments.forEach(a => {
