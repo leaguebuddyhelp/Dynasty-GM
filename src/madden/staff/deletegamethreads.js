@@ -5,8 +5,9 @@ import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
 export const data = new SlashCommandBuilder()
   .setName('delete-threads')
-  .setDescription('Delete the current week or playoff game threads for this server.')
-  .addIntegerOption(o => o.setName('week').setDescription('Optional regular-season week override. Leave empty during playoffs.').setRequired(false))
+  .setDescription('Delete the current preseason, regular-season, or playoff game threads for this server.')
+  .addIntegerOption(o => o.setName('preseason_week').setDescription('Optional preseason week override. Use this during preseason.').setRequired(false))
+  .addIntegerOption(o => o.setName('week').setDescription('Optional regular-season week override. Use this during the regular season.').setRequired(false))
   .addStringOption(o =>
     o.setName('playoff_round')
       .setDescription('Optional playoff round. Use this instead of week during the postseason.')
@@ -30,6 +31,11 @@ export async function execute(interaction) {
     return;
   }
   const playoffRound = interaction.options.getString('playoff_round');
+  const preseasonWeek = interaction.options.getInteger('preseason_week');
+  if ([Boolean(preseasonWeek), Boolean(interaction.options.getInteger('week')), Boolean(playoffRound)].filter(Boolean).length > 1) {
+    await interaction.editReply({ content: 'Use only one of `preseason_week`, `week`, or `playoff_round` at a time.' });
+    return;
+  }
   const playoffMap = {
     wildcard: 19,
     divisional: 20,
@@ -44,10 +50,12 @@ export async function execute(interaction) {
   };
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   let week = interaction.options.getInteger('week');
-  if (!week && !playoffRound) {
+  if (!week && !playoffRound && !preseasonWeek) {
     try {
       const snap = loadLeagueSnapshot(leagueId);
-      week = snap?.currentWeek || 1;
+      const seasonInfo = snap?.info?.careerHubInfo?.seasonInfo || {};
+      const inPreseason = Number(seasonInfo.seasonWeekType ?? snap?.stage ?? 1) === 0 && Number(seasonInfo.offSeasonStage || 0) <= 0;
+      week = inPreseason ? null : (snap?.currentWeek || 1);
     } catch {
       week = 1;
     }
@@ -68,7 +76,7 @@ export async function execute(interaction) {
     const allThreads = new Map([...active.threads, ...archived.threads]);
     let deleted = 0;
     const roundNum = playoffRound ? playoffMap[playoffRound] : null;
-    const match = roundNum ? [`PO-${playoffRound}`] : [`W${week}`];
+    const match = roundNum ? [`PO-${playoffRound}`] : preseasonWeek ? [`Preseason Week ${preseasonWeek}`] : [`W${week}`];
     for (const [, thread] of allThreads) {
       if (match.some(m => thread.name.includes(m))) {
         await thread.delete('Madden game thread cleanup');
@@ -76,7 +84,7 @@ export async function execute(interaction) {
       }
     }
     await interaction.editReply({
-      content: `Deleted ${deleted} threads for ${playoffRound ? playoffLabels[playoffRound] || playoffRound : `Week ${week}`}.`,
+      content: `Deleted ${deleted} threads for ${playoffRound ? playoffLabels[playoffRound] || playoffRound : preseasonWeek ? `Preseason Week ${preseasonWeek}` : `Week ${week}`}.`,
     });
   } catch (err) {
     if (err.code === 50001) {

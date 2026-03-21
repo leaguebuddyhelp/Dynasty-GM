@@ -56,6 +56,17 @@ function createBoardState(title) {
     return { title, seeded: false, hydrated: false, warning: null, info: null };
 }
 
+function buildPinsNextStepText(results = []) {
+    const joined = results.join('\n');
+    if (/missing Discord permission|Pin Messages|Manage Messages/i.test(joined)) {
+        return 'Pins refreshed, but Discord is still blocking one or more pin actions. Fix the bot role/channel permissions, rerun `/setup-pins`, then rerun `/setup`.';
+    }
+    if (/Preseason|Offseason|will appear once the regular season starts|placeholder/i.test(joined)) {
+        return 'Pins are healthy for the current phase. Some boards stay as preseason/offseason placeholders until the regular season starts. Rerun `/setup` for the next step.';
+    }
+    return 'Some league boards still need data. Run `/sync` if the league was just connected, rerun `/setup-pins`, then rerun `/setup`.';
+}
+
 function renderBoardState(state) {
     if (state.hydrated) return `✅ ${state.title}: ready`;
     if (state.seeded && !state.warning) return `✅ ${state.title}: seeded`;
@@ -531,7 +542,7 @@ export async function execute(interaction) {
                     {
                         name: 'Next',
                         value: hasFailures
-                            ? 'Some league boards still need data. Run `/sync` if the league was just connected, rerun `/setup-pins`, then rerun `/setup`.'
+                            ? buildPinsNextStepText(out.results)
                             : 'Pins are ready. Rerun `/setup` for the next step.',
                     },
                 ),

@@ -103,6 +103,13 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
     isRegularSeason: kind === 'regular',
   };
 }
+
+function phaseSummaryLabel(phase = {}) {
+  if (phase.inOffseason) return `Offseason Stage ${phase.offSeasonStage || 1}`;
+  if (phase.inPreseason) return `Preseason Week ${Math.max(1, Number(phase.currentWeekValue || 1))}`;
+  if (phase.inPlayoffs) return getMessageForWeek(Number(phase.currentWeekValue || 0), phase.stageForWeek, phase.offSeasonStage || 0);
+  return `Regular Season - Week ${Math.max(1, Number(phase.currentWeekValue || 1))}`;
+}
 function median(values = []) {
   const nums = values
     .map((value) => Number(value || 0))
@@ -1569,6 +1576,7 @@ async function execute(interaction) {
       .setColor(partialUpdate ? 0xf1c40f : 0x00cc66)
       .addFields(
         { name: 'Run mode', value: runModeLabel, inline: false },
+        { name: 'Phase', value: phaseSummaryLabel(phase), inline: false },
         { name: 'Scope', value: runScopeLabel, inline: false },
         { name: 'League', value: String(summary.leagueId), inline: true },
         { name: 'Week', value: weekFieldValue, inline: true },
@@ -1589,6 +1597,22 @@ async function execute(interaction) {
       embed.addFields({
         name: 'Needs attention',
         value: `Some outputs need a follow-up check: ${[...new Set(criticalFailures)].join(', ')}`.slice(0, 1024),
+      });
+    }
+    if (inPreseason) {
+      embed.addFields({
+        name: 'Preseason behavior',
+        value: 'Preseason keeps threads, announcements, and league logs active while standings, playoff picture, and power rankings stay in placeholder mode until the regular season starts.',
+      });
+    } else if (inOffseason) {
+      embed.addFields({
+        name: 'Offseason behavior',
+        value: 'Offseason keeps setup, logs, and offseason workflows active while in-season boards stay in placeholder mode until preseason or the regular season begins.',
+      });
+    } else if (phase.inPlayoffs) {
+      embed.addFields({
+        name: 'Playoff behavior',
+        value: 'Playoff updates stay phase-aware for playoff rounds, threads, and board refreshes. Regular-season-only outputs stay gated when they no longer apply.',
       });
     }
     if (!backfillOnlyAwards) {
