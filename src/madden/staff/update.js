@@ -1671,7 +1671,7 @@ async function execute(interaction) {
         { name: 'Phase', value: phaseNameLabel(phase), inline: false },
         { name: 'Scope', value: runScopeLabel, inline: false },
         { name: 'League', value: String(summary.leagueId), inline: true },
-        { name: 'Week pulled', value: pulledWeekLabel, inline: true },
+        { name: 'Current league week', value: pulledWeekLabel, inline: true },
         { name: 'Teams', value: String(summary.teamsCount), inline: true },
         { name: 'Standings', value: String(summary.standingsCount), inline: true },
         { name: 'Games', value: String(summary.gamesCount), inline: true },
@@ -1680,7 +1680,7 @@ async function execute(interaction) {
       );
 
     if (usedFallbackWeek && dataWeekLabel !== pulledWeekLabel) {
-      embed.addFields({ name: 'Data week used', value: dataWeekLabel, inline: false });
+      embed.addFields({ name: 'Completed week processed', value: dataWeekLabel, inline: false });
     }
 
     if (partialUpdate) {
