@@ -11,13 +11,13 @@ const CORE_REQUIRED_CHANNEL_KEYS = [
   'Stat Leaders',
   'Power Rankings',
   'Playoff Picture',
-  'Top 100',
   'Game threads',
   'Yearly Awards',
 ];
 
 const STANDARD_REQUIRED_CHANNEL_KEYS = [
   'scoutingHub',
+  'Top 100',
 ];
 
 const TRADE_REQUIRED_CHANNEL_KEYS = [
@@ -46,6 +46,9 @@ const CORE_REQUIRED_PIN_KEYS = [
   'stat_leaders',
   'playoff_picture',
   'power_rankings',
+];
+
+const STANDARD_REQUIRED_PIN_KEYS = [
   'top100',
 ];
 
@@ -91,6 +94,14 @@ function requiredRoleKeysForSetup(overlayConfig) {
   return [
     ...BASE_REQUIRED_ROLE_KEYS,
     ...(packsEnabled.includes('trades_basic') ? TRADE_REQUIRED_ROLE_KEYS : []),
+  ];
+}
+
+function requiredPinKeysForSetup(overlayConfig) {
+  const tier = String(overlayConfig?.license?.tier || 'free').toLowerCase();
+  return [
+    ...CORE_REQUIRED_PIN_KEYS,
+    ...((tier === 'standard' || tier === 'premium') ? STANDARD_REQUIRED_PIN_KEYS : []),
   ];
 }
 
@@ -147,7 +158,7 @@ export function getSetupStatus(guildId) {
   const pins = summarizeMappedEntries(pinsMap);
   const requiredChannelKeys = requiredChannelKeysForSetup(overlayConfig);
   const requiredRoleKeys = requiredRoleKeysForSetup(overlayConfig);
-  const missingRequiredPins = diffMissingKeys(pinsMap, CORE_REQUIRED_PIN_KEYS);
+  const missingRequiredPins = diffMissingKeys(pinsMap, requiredPinKeysForSetup(overlayConfig));
   const missingRequiredChannels = diffMissingKeys(channelMap, requiredChannelKeys);
   const missingRequiredRoles = diffMissingKeys(roleMap, requiredRoleKeys);
   const { unlockedFeatures, blockedFeatures } = buildFeatureSummary(guildId, packsEnabled);

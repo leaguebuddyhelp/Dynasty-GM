@@ -79,13 +79,13 @@ const CORE_CHANNEL_SPECS = [
     { key: 'Stat Leaders', name: 'lb-stat-leaders', type: ChannelType.GuildText },
     { key: 'Power Rankings', name: 'lb-power-rankings', type: ChannelType.GuildText },
     { key: 'Playoff Picture', name: 'lb-playoff-picture', type: ChannelType.GuildText },
-    { key: 'Top 100', name: 'lb-top-100', type: ChannelType.GuildText },
     { key: 'Game threads', name: 'lb-game-threads', type: ChannelType.GuildText },
     { key: 'Yearly Awards', name: 'lb-yearly-awards', type: ChannelType.GuildText },
 ];
 
 const STANDARD_PLUS_CHANNEL_SPECS = [
     { key: 'scoutingHub', name: 'lb-scouting-hub', type: ChannelType.GuildText },
+    { key: 'Top 100', name: 'lb-top-100', type: ChannelType.GuildText },
 ];
 
 const TRADE_CHANNEL_SPECS = [

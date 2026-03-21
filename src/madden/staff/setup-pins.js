@@ -263,7 +263,8 @@ function buildTradeSubmitComponents() {
     ];
 }
 
-async function hydrateSeededPins(interaction, guildId, channelMap, snapshot) {
+async function hydrateSeededPins(interaction, guildId, channelMap, snapshot, options = {}) {
+    const top100Included = options.top100Included !== false;
     const leagueId = getLeagueForGuild(guildId);
     if (!leagueId || !snapshot) {
         return { snapshotMissing: true, results: [] };
@@ -306,23 +307,27 @@ async function hydrateSeededPins(interaction, guildId, channelMap, snapshot) {
         results.power_rankings = { warning: formatPinError(error) };
     }
 
-    try {
-        const topPlayersWeekValue = Number(
-            snapshot?.currentWeek
-            ?? snapshot?.info?.careerHubInfo?.seasonInfo?.displayWeek
-            ?? snapshot?.info?.careerHubInfo?.seasonInfo?.seasonWeek
-            ?? 0,
-        );
-        await updateTopPlayers(
-            interaction.client,
-            leagueId,
-            snapshot,
-            topPlayersWeekValue,
-            { postChannelId: channelMap['Top 100'] || null },
-        );
-        results.top100 = { hydrated: true };
-    } catch (error) {
-        results.top100 = { warning: formatPinError(error) };
+    if (top100Included && channelMap['Top 100']) {
+        try {
+            const topPlayersWeekValue = Number(
+                snapshot?.currentWeek
+                ?? snapshot?.info?.careerHubInfo?.seasonInfo?.displayWeek
+                ?? snapshot?.info?.careerHubInfo?.seasonInfo?.seasonWeek
+                ?? 0,
+            );
+            await updateTopPlayers(
+                interaction.client,
+                leagueId,
+                snapshot,
+                topPlayersWeekValue,
+                { postChannelId: channelMap['Top 100'] || null },
+            );
+            results.top100 = { hydrated: true };
+        } catch (error) {
+            results.top100 = { warning: formatPinError(error) };
+        }
+    } else {
+        results.top100 = { info: 'not included in this tier' };
     }
 
     if (channelMap['Trade Counts']) {
@@ -366,6 +371,8 @@ export async function seedAndHydratePins(client, guildId) {
     const channelMap = cfg?.compat?.maddenChannelMap || {};
     const pins = cfg?.pins || {};
     const embeds = buildEmbeds();
+    const tier = String(cfg?.license?.tier || 'free').toLowerCase();
+    const top100Included = tier === 'standard' || tier === 'premium';
 
     const jobs = [
         { key: 'available_teams', channelKey: 'Available Teams', title: 'Available Teams', repairTitles: ['Available Teams'] },
@@ -373,7 +380,9 @@ export async function seedAndHydratePins(client, guildId) {
         { key: 'stat_leaders', channelKey: 'Stat Leaders', title: 'Stat Leaders', repairTitles: ['Stat Leaders', 'Madden Stat Leaders'] },
         { key: 'playoff_picture', channelKey: 'Playoff Picture', title: 'Playoff Picture', repairTitles: ['Playoff Picture', 'Madden Playoff Picture'] },
         { key: 'power_rankings', channelKey: 'Power Rankings', title: 'Power Rankings', repairTitles: ['Power Rankings', 'Madden Power Rankings'] },
-        { key: 'top100', channelKey: 'Top 100', title: 'Top 100', repairTitles: ['Top 100', 'Madden Player Grades'] },
+        ...(top100Included
+            ? [{ key: 'top100', channelKey: 'Top 100', title: 'Top 100', repairTitles: ['Top 100', 'Madden Player Grades'] }]
+            : []),
     ];
 
     const boardStates = Object.fromEntries(jobs.map((job) => [job.key, createBoardState(job.title)]));
@@ -431,7 +440,7 @@ export async function seedAndHydratePins(client, guildId) {
         }
     }
 
-    const hydration = await hydrateSeededPins({ client }, guildId, channelMap, snapshot);
+    const hydration = await hydrateSeededPins({ client }, guildId, channelMap, snapshot, { top100Included });
     for (const [key, stateUpdate] of Object.entries(hydration.results || {})) {
         if (!boardStates[key]) continue;
         if (stateUpdate.hydrated) {
@@ -468,6 +477,7 @@ export async function seedAndHydratePins(client, guildId) {
 
     const results = [
         ...jobs.map((job) => renderBoardState(boardStates[job.key])),
+        ...(!top100Included ? ['ℹ️ Top 100: not included in this tier'] : []),
         ...extraResults,
         hydration.results?.trade_counts?.hydrated
             ? '✅ Trade Counts: ready'
