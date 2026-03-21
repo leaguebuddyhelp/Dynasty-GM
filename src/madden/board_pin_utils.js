@@ -34,7 +34,10 @@ export async function ensureBoardPinMessage(channel, {
 
   const existing = await findBoardMessage(channel, pinKey, guildId, matchTitle);
   if (existing) {
-    await existing.edit(payload);
+    const editPayload = Array.isArray(payload?.files) && payload.files.length > 0
+      ? payload
+      : { ...payload, attachments: [] };
+    await existing.edit(editPayload);
     if (!existing.pinned) {
       await existing.pin().catch(() => null);
     }
