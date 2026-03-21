@@ -31,7 +31,7 @@ import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 import { getMessageForWeek } from '../madden_utils.js';
 import connectionService from '../services/export_first_connection_service.js';
-import { getGuildEATokens } from '../../../madden/ea_guild_auth.js';
+import { getGuildEATokens } from '../ea_guild_auth.js';
 
 export const featureKey = 'core';
 
