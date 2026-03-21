@@ -7,6 +7,7 @@ import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildPinsMap, getGuildRoleMap, upsertGuildPin } from '../shared/madden_guild_config.js';
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
+import { getMessageForWeek } from './madden_utils.js';
 
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 const PIN_FILE = getMaddenDataFilePath('pins_available_teams.json');
@@ -218,9 +219,11 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
       else if (isConferenceTeam(CONFERENCES.NFC, a.rawTeam) || isConferenceTeam(CONFERENCES.NFC, a.team)) byConf.NFC.push(a);
     });
 
-    const seasonLabel = isOffseason
-      ? `Offseason${seasonInfo.offSeasonStage ? ` Stage ${seasonInfo.offSeasonStage}` : ''}`
-      : `Week ${seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? '?'}`;
+    const seasonLabel = getMessageForWeek(
+      seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? 0,
+      seasonInfo.seasonWeekType,
+      seasonInfo.offSeasonStage || 0,
+    );
 
     const boardImage = await renderLeagueBoardImage({
       title: 'Available Teams',

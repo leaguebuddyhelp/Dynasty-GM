@@ -30,6 +30,7 @@ import { getCoachAssignmentMap, setCoachAssignment } from '../../shared/madden_c
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
+import { getMessageForWeek } from '../madden_utils.js';
 
 export const featureKey = 'core';
 
@@ -1451,16 +1452,8 @@ async function execute(interaction) {
     }
     const weekLabel = (stage, wk, offSeasonStage = 0, seasonWeekType = stage) => {
       const st = seasonWeekType !== undefined ? seasonWeekType : stage;
-      if (offSeasonStage > 0 && st === Stage.PRESEASON) return `Offseason Stage ${offSeasonStage}`;
       if (st === Stage.PRESEASON && wk >= 0 && wk <= 3) return `Preseason Week ${wk + 1}`;
-      const display = wk + 1;
-      if (st === Stage.SEASON && display >= 1 && display <= 18) return `Week ${display}`;
-      if (display === 19) return 'Wildcard Round';
-      if (display === 20) return 'Divisional Round';
-      if (display === 21) return 'Conference Championship';
-      if (display === 22) return 'Super Bowl Bye';
-      if (display === 23) return 'Super Bowl';
-      return `Stage ${st} Week ${wk + 1}`;
+      return getMessageForWeek((wk ?? 0) + 1, st, offSeasonStage);
     };
     const displayWeekLabel = (stage, currentWeek, offSeasonStage = 0, seasonWeekType = stage) => {
       const st = seasonWeekType !== undefined ? seasonWeekType : stage;
@@ -1581,7 +1574,9 @@ async function execute(interaction) {
             targetWeek: recapTargetWeek,
             variantSeed: Date.now() + Math.floor(Math.random() * 1000000),
           });
-          const weekLabel = recap.currentWeek == null ? 'League Update Recap' : `Week ${recap.currentWeek + 1} Recap`;
+          const weekLabel = recap.currentWeek == null
+            ? 'League Update Recap'
+            : `${getMessageForWeek(recap.currentWeek + 1)} Recap`;
           const recapEmbed = new EmbedBuilder()
             .setColor(0x57f287)
             .setTitle(brandTitle(weekLabel))

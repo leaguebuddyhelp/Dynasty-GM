@@ -6,6 +6,7 @@ import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 import { ensureBoardPinMessage } from './board_pin_utils.js';
+import { getMessageForWeek } from './madden_utils.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
@@ -151,6 +152,7 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const displayWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? 0;
+  const weekLabel = getMessageForWeek(displayWeek || 0, seasonInfo.seasonWeekType, seasonInfo.offSeasonStage || 0);
   const hasSeasonData = (snapshot?.weeklyStats || []).some(w => Number(w.weekIndex ?? -1) >= 0) ||
     (snapshot?.standings?.teamStandingInfoList || []).length > 0;
   const inPreseason = displayWeek <= 0 && !hasSeasonData;
@@ -208,7 +210,7 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
 
   const boardImage = await renderLeagueBoardImage({
     title: 'Power Rankings',
-    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • Week ${displayWeek || '?'}`,
+    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • ${weekLabel}`,
     attachmentName: 'power_rankings_board.png',
     accentColor: '#FFCC00',
     columns: [

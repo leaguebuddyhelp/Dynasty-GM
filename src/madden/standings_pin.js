@@ -5,6 +5,7 @@ import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 import { ensureBoardPinMessage } from './board_pin_utils.js';
+import { getMessageForWeek } from './madden_utils.js';
 
 function loadSnapshot(leagueId) {
   const file = getMaddenLeagueSnapshotPath(leagueId);
@@ -84,6 +85,7 @@ export async function updateStandings(client, leagueId, guildId = null) {
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const seasonWeekType = seasonInfo.seasonWeekType;
   const displayWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? 0;
+  const weekLabel = getMessageForWeek(displayWeek || 0, seasonWeekType, seasonInfo.offSeasonStage || 0);
   const hasSeasonData = (snapshot?.weeklyStats || []).some(w => Number(w.weekIndex ?? -1) >= 0) ||
     (snapshot?.standings?.teamStandingInfoList || []).length > 0;
   const inPreseason = (seasonWeekType === 0 || displayWeek <= 0) && !hasSeasonData;
@@ -151,7 +153,7 @@ export async function updateStandings(client, leagueId, guildId = null) {
 
   const boardImage = await renderLeagueBoardImage({
     title: 'Standings',
-    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • Week ${displayWeek || '?'}`,
+    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • ${weekLabel}`,
     attachmentName: 'standings_board.png',
     accentColor: '#00B0F4',
     columns: [

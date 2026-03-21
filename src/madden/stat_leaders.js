@@ -6,6 +6,7 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
+import { getMessageForWeek } from './madden_utils.js';
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -347,8 +348,8 @@ export async function updateStatLeaders(client, leagueId, guildId = null) {
     title: 'Madden Stat Leaders (Season-to-Date)',
     color: 0x00b0f4,
     description: inPostseason || inOffseason
-      ? `Final regular-season leaders through Week ${latestReliableWeekIndex + 1}.`
-      : `Updated through Week ${latestReliableWeekIndex + 1}.`,
+      ? `Final regular-season leaders through ${getMessageForWeek(latestReliableWeekIndex + 1, Stage.SEASON)}.`
+      : `Updated through ${getMessageForWeek(latestReliableWeekIndex + 1, Stage.SEASON)}.`,
     fields,
     timestamp: new Date().toISOString(),
   };

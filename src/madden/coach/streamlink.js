@@ -9,6 +9,7 @@ import { getSportsbookLineForMatchup } from '../../shared/madden_sportsbook.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { formatTeamLabelWithEmoji, RECOGNITION_EMOJIS } from '../../shared/madden_visuals.js';
 import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
+import { getMessageForWeek } from '../madden_utils.js';
 
 export const featureKey = 'recognition';
 
@@ -142,7 +143,7 @@ function currentWeekInfo(snapshot) {
 
 function weekLabel(snapshot) {
   const { weekType, displayWeek, offSeasonStage } = currentWeekInfo(snapshot);
-  if (weekType === 2) return `Postseason ${snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || ''}`.trim();
+  if (weekType === 2 || (weekType === 1 && displayWeek >= 19)) return getMessageForWeek(displayWeek, weekType, offSeasonStage);
   if (weekType === 1) return `Week ${displayWeek}`;
   if (offSeasonStage === 1) return 'Re-sign Period';
   if (offSeasonStage === 2) return 'Free Agency';

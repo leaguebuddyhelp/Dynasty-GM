@@ -530,7 +530,7 @@ async function execute(interaction) {
     });
     const weekLabel = summary.currentWeek === null || summary.currentWeek === undefined
       ? 'unknown'
-      : `${summary.currentWeek} (${getMessageForWeek(summary.currentWeek)})`;
+      : getMessageForWeek(summary.currentWeek);
     const embed = new EmbedBuilder()
       .setTitle('Madden Sync')
       .setColor(0x00cc66)

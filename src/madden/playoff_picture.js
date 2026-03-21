@@ -5,6 +5,7 @@ import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 import { ensureBoardPinMessage } from './board_pin_utils.js';
+import { getMessageForWeek } from './madden_utils.js';
 
 function loadSnapshot(leagueId) {
   const file = getMaddenLeagueSnapshotPath(leagueId);
@@ -63,6 +64,7 @@ export async function updatePlayoffPicture(client, leagueId, guildId = null) {
   const snapshot = loadSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const displayWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? 0;
+  const weekLabel = getMessageForWeek(displayWeek || 0, seasonInfo.seasonWeekType, seasonInfo.offSeasonStage || 0);
   const standings = snapshot?.standings?.teamStandingInfoList || [];
   const hasSeasonData = (snapshot?.weeklyStats || []).some(w => Number(w.weekIndex ?? -1) >= 0) || standings.length > 0;
   const inPreseason = displayWeek <= 0 && !hasSeasonData;
@@ -83,7 +85,7 @@ export async function updatePlayoffPicture(client, leagueId, guildId = null) {
 
   const boardImage = await renderLeagueBoardImage({
     title: 'Playoff Picture',
-    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • Week ${displayWeek || '?'}`,
+    subtitle: `Season ${seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? 'Current'} • ${weekLabel}`,
     attachmentName: 'playoff_picture_board.png',
     accentColor: '#00B0F4',
     columns: [
