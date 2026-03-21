@@ -8,8 +8,6 @@ import { loadLeagueSnapshot, currentWeek, requireLeagueIdForGuild } from '../../
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadWeeklyGameLog } from '../weekly_game_log.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
-import { getMessageForWeek } from '../madden_utils.js';
-
 export const data = new SlashCommandBuilder()
   .setName('schedule')
   .setDescription(coachCommandDescription('schedule'));
@@ -305,10 +303,15 @@ function weekMenuOptions(totalWeeks, selectedWeek) {
   })).slice(0, 25);
 }
 
-function currentLeaguePhaseLabel(snapshot) {
+function getScheduleLeaguePhaseLabel(snapshot) {
   const liveWeek = Number(currentWeek(snapshot) || 1);
   if (!Number.isFinite(liveWeek) || liveWeek <= 0) return 'Week 1';
-  return getMessageForWeek(liveWeek);
+  if (liveWeek >= 1 && liveWeek <= 18) return `Week ${liveWeek}`;
+  if (liveWeek === 19) return 'Wild Card';
+  if (liveWeek === 20) return 'Divisional Round';
+  if (liveWeek === 21) return 'Conference Championship';
+  if (liveWeek >= 22) return 'Super Bowl';
+  return `Week ${liveWeek}`;
 }
 
 export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
@@ -348,7 +351,7 @@ export function buildScheduleWeekView(snapshot, weekIndex, leagueId = null) {
           ? ledgerGames.map((game) => compactGameLine(snapshot, game, names, standings, ledger)).join('\n')
           : 'No regular-season games found for this week.'),
     )
-    .setFooter({ text: `Regular season only • current league phase: ${currentLeaguePhaseLabel(snapshot)}` });
+    .setFooter({ text: `Regular season only • current league phase: ${getScheduleLeaguePhaseLabel(snapshot)}` });
 
   const weekRow = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
