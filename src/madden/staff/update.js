@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import { resolveLeagueIdWithConfig } from '../../../madden/madden_data.js';
 import { runSync } from '../sync.js';
-import { getMessageForWeek } from '../../../madden/madden_utils.js';
 import { SnallabotProvider } from '../../../madden/providers/SnallabotProvider.js';
 import { updateStatLeaders, resetStatLeaders } from '../../../madden/stat_leaders.js';
 import { updateStandings, resetStandings } from '../../../madden/standings_pin.js';
