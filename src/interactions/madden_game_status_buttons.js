@@ -335,8 +335,8 @@ export async function execute(interaction) {
     return;
   }
 
-  if (!strikesEnabled && (action === 'fairsim' || action === 'staffstrikeaway' || action === 'staffstrikehome')) {
-    await respond(interaction, { content: 'This outcome is not available on Free. Use Game Completed, FW, or CPU instead.' });
+  if (!strikesEnabled && (action === 'staffstrikeaway' || action === 'staffstrikehome')) {
+    await respond(interaction, { content: 'This outcome is not available on Free.' });
     return;
   }
 
@@ -606,6 +606,71 @@ export async function execute(interaction) {
   // ...remaining actions (complete / fairsim / force wins / staff strikes) below...
 
   if (action === 'fairsim') {
+    if (!strikesEnabled) {
+      if (isStaff && !isAwayCoach && !isHomeCoach) {
+        clearPendingFair(threadId);
+        markThreadDone(threadId, 'fairsim');
+        trackRecognitionOutcome(false);
+        baseEmbed
+          .setTitle('Fair Sim Logged')
+          .setColor(0xFEE75C)
+          .setDescription(`Confirmed by staff: ${interaction.user}\nTeams: ${away || 'Away'} vs ${home || 'Home'}`);
+        await thread.send({ content: commishMention || null, embeds: [baseEmbed], allowedMentions: { parse: ['roles'] } });
+        try { await disableButtons(interaction); } catch { }
+        appendMaddenStaffLog({
+          type: 'fair_sim',
+          guildId: interaction.guildId,
+          threadId,
+          away,
+          home,
+          byUser: interaction.user.id,
+          forcedByStaff: true,
+          strikeSystem: 'disabled',
+        });
+        await respond(interaction, { content: 'Fair sim logged by staff. Reminders stopped.' });
+        return;
+      }
+
+      const side = isAwayCoach ? 'away' : isHomeCoach ? 'home' : 'staff';
+      const existing = pendingFair.get(threadId) || { away: false, home: false };
+      if ((side === 'away' && existing.away) || (side === 'home' && existing.home)) {
+        await respond(interaction, { content: 'Still waiting for the other side to press Fair Sim.' });
+        return;
+      }
+      const pending = setPendingFair(threadId, side);
+      if (!(pending.away && pending.home)) {
+        const waitMsg = 'Fair sim pending. Your opponent still needs to press Fair Sim to confirm the non-play result.';
+        await respond(interaction, { content: waitMsg });
+        const otherTeam = side === 'away' ? home : away;
+        const otherMentions = await buildCoachMentions(interaction.guild, otherTeam, roleMap);
+        const mentionText = [...otherMentions].join(' ');
+        const coachPrompt = `${mentionText} Your opponent requested **Fair Sim**. Press **Fair Sim** too only if both sides agree the game will not be played.`.trim();
+        try { await thread.send({ content: coachPrompt, allowedMentions: { parse: ['roles', 'users'] } }); } catch { }
+        return;
+      }
+
+      clearPendingFair(threadId);
+      markThreadDone(threadId, 'fairsim');
+      trackRecognitionOutcome(false);
+      baseEmbed
+        .setTitle('Fair Sim Logged')
+        .setColor(0xFEE75C)
+        .setDescription(`Confirmed by both coaches\nTeams: ${away || 'Away'} vs ${home || 'Home'}`);
+      await thread.send({ content: commishMention || null, embeds: [baseEmbed], allowedMentions: { parse: ['roles'] } });
+      try { await disableButtons(interaction); } catch { }
+      appendMaddenStaffLog({
+        type: 'fair_sim',
+        guildId: interaction.guildId,
+        threadId,
+        away,
+        home,
+        byUser: interaction.user.id,
+        strikeSystem: 'disabled',
+      });
+      await respond(interaction, { content: 'Fair sim logged and reminders stopped.' });
+      return;
+    }
+
     if (isStaff && !isAwayCoach && !isHomeCoach) {
       const over = fairCountExceeded(userIds, seasonData);
       if (over.length) {

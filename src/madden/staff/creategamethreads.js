@@ -910,9 +910,7 @@ async function execute(interaction) {
         const awayShort = short(teams[game.awayTeamId]);
         const threadButtons = [
           new ButtonBuilder().setCustomId(`madden_game_status_complete|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('Game Completed 🏁').setStyle(ButtonStyle.Success),
-          ...(isFreePlan ? [] : [
-            new ButtonBuilder().setCustomId(`madden_game_status_fairsim|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('Fair Sim ⚖️').setStyle(ButtonStyle.Secondary),
-          ]),
+          new ButtonBuilder().setCustomId(`madden_game_status_fairsim|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('Fair Sim ⚖️').setStyle(ButtonStyle.Secondary),
           new ButtonBuilder().setCustomId(`madden_game_status_homewin|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel(`FW ${homeShort} 🏠`).setStyle(ButtonStyle.Secondary),
           new ButtonBuilder().setCustomId(`madden_game_status_awaywin|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel(`FW ${awayShort} 🛫`).setStyle(ButtonStyle.Secondary),
           new ButtonBuilder().setCustomId(`madden_game_status_cpu|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('CPU 🤖').setStyle(ButtonStyle.Secondary),
@@ -931,6 +929,9 @@ async function execute(interaction) {
                 ``,
                 `🏁 Game Completed`,
                 `Both coaches press this after the game is finished. When one side presses first, the other side will be prompted to confirm.`,
+                ``,
+                `⚖️ Fair Sim`,
+                `Both coaches press this only when both sides agree the game will not be played.`,
                 ``,
                 `🏳️ Opponent Win (Forfeit)`,
                 `Use the button with your opponent's team name when they were ready to play and your side could not get the game done.`,
