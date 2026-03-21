@@ -53,7 +53,7 @@ function playerLabel(p) {
   return `${pos} ${name} - ${ovr} OVR`;
 }
 
-function chunkLines(lines, maxLen = 3400) {
+function chunkLines(lines, maxLen = 900) {
   const chunks = [];
   let current = [];
   let len = 0;
@@ -232,10 +232,10 @@ export async function updateInjuries(client, leagueId, guildId = null) {
       weekLabel,
       lines,
     });
-    for (const guild of client.guilds.cache.values()) {
+    if (guildId) {
       await postMaddenStaffLog(
         client,
-        guild.id,
+        guildId,
         'Notable Injury Watch',
         `${weekLabel}: major injury movement worth staff attention.`,
         [{ name: 'Highlights', value: lines.join('\n') }],

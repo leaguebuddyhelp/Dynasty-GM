@@ -117,7 +117,7 @@ function buildLines(teamId, change, teamMeta) {
   return lines;
 }
 
-function chunkLines(lines, maxLen = 3500) {
+function chunkLines(lines, maxLen = 900) {
   const chunks = [];
   let current = [];
   let len = 0;
