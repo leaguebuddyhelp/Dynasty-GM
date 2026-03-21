@@ -11,6 +11,9 @@ const CORE_REQUIRED_CHANNEL_KEYS = [
   'Stat Leaders',
   'Power Rankings',
   'Playoff Picture',
+  'Transaction Log',
+  'Injuries Log',
+  'Player Change Log',
   'Game threads',
 ];
 
@@ -23,7 +26,6 @@ const STANDARD_REQUIRED_CHANNEL_KEYS = [
 const TRADE_REQUIRED_CHANNEL_KEYS = [
   'tradeSubmit',
   'Trade Block',
-  'Trades',
   'Trade Counts',
   'Trade Committee',
   'Approved trades',

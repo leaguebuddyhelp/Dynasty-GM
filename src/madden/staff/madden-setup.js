@@ -79,6 +79,9 @@ const CORE_CHANNEL_SPECS = [
     { key: 'Stat Leaders', name: 'lb-stat-leaders', type: ChannelType.GuildText },
     { key: 'Power Rankings', name: 'lb-power-rankings', type: ChannelType.GuildText },
     { key: 'Playoff Picture', name: 'lb-playoff-picture', type: ChannelType.GuildText },
+    { key: 'Transaction Log', name: 'lb-transactions', type: ChannelType.GuildText },
+    { key: 'Injuries Log', name: 'lb-injuries-log', type: ChannelType.GuildText },
+    { key: 'Player Change Log', name: 'lb-player-change-log', type: ChannelType.GuildText },
     { key: 'Game threads', name: 'lb-game-threads', type: ChannelType.GuildText },
 ];
 
@@ -91,7 +94,6 @@ const STANDARD_PLUS_CHANNEL_SPECS = [
 const TRADE_CHANNEL_SPECS = [
     { key: 'tradeSubmit', name: 'lb-submit-trade', type: ChannelType.GuildText },
     { key: 'Trade Block', name: 'lb-trade-block', type: ChannelType.GuildText },
-    { key: 'Trades', name: 'lb-transactions', type: ChannelType.GuildText },
     { key: 'Trade Counts', name: 'lb-trade-counts', type: ChannelType.GuildText },
     { key: 'Trade Committee', name: 'lb-trade-committee', type: ChannelType.GuildText },
     { key: 'Approved trades', name: 'lb-approved-trades', type: ChannelType.GuildText },
@@ -683,8 +685,8 @@ export async function execute(interaction) {
             return;
         }
 
-        if (tradeEnabled && cfg.compat.maddenChannelMap['Trades']) {
-            cfg.compat.maddenChannelMap['Transaction Log'] = cfg.compat.maddenChannelMap['Trades'];
+        if (cfg.compat.maddenChannelMap['Transaction Log']) {
+            cfg.compat.maddenChannelMap['Trades'] = cfg.compat.maddenChannelMap['Transaction Log'];
         }
         if (tradeEnabled && cfg.compat.maddenChannelMap['Trade Committee']) {
             cfg.compat.maddenChannelMap['Pending Trades'] = cfg.compat.maddenChannelMap['Trade Committee'];
