@@ -9,7 +9,17 @@ import { removeCoachAssignment } from '../../shared/madden_coach_assignments.js'
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
-const ASSIGNABLE = ['Trade Committee', 'Ghost Legacy Trade Committee', 'Madden Trade Committee', 'Madden Trade Committe', 'LB Trade Committee', 'LEAGUEbuddy Trade Committee'];
+const ASSIGNABLE = [
+  'Trade Committee',
+  'Ghost Legacy Trade Committee',
+  'Madden Trade Committee',
+  'Madden Trade Committe',
+  'LB Trade Committee',
+  'LEAGUEbuddy Trade Committee',
+  'Ghost Legacy',
+  'LB Coaches',
+  'LEAGUEbuddy Coaches',
+];
 
 // Founder/test-protection: removing the founder's coach role for testing shouldn't wipe their state.
 // Add IDs here as needed.
@@ -44,6 +54,9 @@ function getLeaguebuddyCoachesRole(guild, roleMap) {
 }
 
 function roleNamePriority(name = '') {
+  if (name === 'LEAGUEbuddy Coaches') return 95;
+  if (name === 'LB Coaches') return 94;
+  if (name === 'Ghost Legacy') return 93;
   if (name === 'LEAGUEbuddy Trade Committee') return 100;
   if (ASSIGNABLE.includes(name)) return 90;
   const words = String(name).trim().split(/\s+/).length;
@@ -110,7 +123,8 @@ export async function execute(interaction) {
 
   const resolveRole = (name) => {
     const id = roleMap[name];
-    return id ? interaction.guild.roles.cache.get(id) : null;
+    if (id) return interaction.guild.roles.cache.get(id) || null;
+    return interaction.guild.roles.cache.find((role) => role.name === name) || null;
   };
 
   // Resolve role1; if target doesn't have it, fall back to first assignable role they do have.

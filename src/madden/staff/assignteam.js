@@ -7,7 +7,16 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/m
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { saveGuildMaddenConfig, loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 
-const ASSIGNABLE = ['Trade Committee', 'Ghost Legacy Trade Committee', 'Madden Trade Committee', 'LB Trade Committee', 'LEAGUEbuddy Trade Committee'];
+const ASSIGNABLE = [
+  'Trade Committee',
+  'Ghost Legacy Trade Committee',
+  'Madden Trade Committee',
+  'LB Trade Committee',
+  'LEAGUEbuddy Trade Committee',
+  'Ghost Legacy',
+  'LB Coaches',
+  'LEAGUEbuddy Coaches',
+];
 
 function normalizeKey(value = '') {
   return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -71,6 +80,9 @@ function persistCoachRoleMapping(guildId, role) {
 }
 
 function roleNamePriority(name = '') {
+  if (name === 'LEAGUEbuddy Coaches') return 95;
+  if (name === 'LB Coaches') return 94;
+  if (name === 'Ghost Legacy') return 93;
   if (name === 'LEAGUEbuddy Trade Committee') return 100;
   if (ASSIGNABLE.includes(name)) return 90;
   const words = String(name).trim().split(/\s+/).length;
