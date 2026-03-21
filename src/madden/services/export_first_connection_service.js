@@ -1009,6 +1009,120 @@ export async function importFromExportSource({
   }
 }
 
+export async function refreshExportSourceForGuild(guildId) {
+  if (!guildId) {
+    return { ok: false, code: 'missing_guild', message: 'Guild ID is required.' };
+  }
+
+  const connection = connectionRepository.getLeagueConnectionByGuildId(guildId);
+  if (!connection) {
+    return { ok: false, code: 'missing_connection', message: 'No league connection was found for this server.' };
+  }
+
+  const exportSource = connectionRepository
+    .getExportSourcesByGuildId(guildId)
+    .find((source) => String(source?.status || 'active') === 'active');
+
+  if (!exportSource) {
+    return { ok: false, code: 'missing_export_source', message: 'No active export source is saved for this server.' };
+  }
+
+  const reachabilityError = getExportUrlReachabilityError(exportSource.exportUrl);
+  if (reachabilityError) {
+    connectionRepository.updateExportSource(exportSource.id, {
+      lastImportStatus: 'failed',
+      lastImportAt: new Date().toISOString(),
+      lastImportError: reachabilityError,
+    });
+    return {
+      ok: false,
+      code: 'unreachable_export_url',
+      message: reachabilityError,
+    };
+  }
+
+  try {
+    const response = await fetch(exportSource.exportUrl, {
+      headers: {
+        accept: 'application/json,text/plain,*/*',
+      },
+    });
+
+    if (!response.ok) {
+      connectionRepository.updateExportSource(exportSource.id, {
+        lastImportStatus: 'failed',
+        lastImportAt: new Date().toISOString(),
+        lastImportError: `HTTP ${response.status}`,
+      });
+      return {
+        ok: false,
+        code: 'fetch_failed',
+        message: `Export link returned HTTP ${response.status}.`,
+      };
+    }
+
+    const bodyText = await response.text();
+    const payload = parseJsonPayload(bodyText);
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      connectionRepository.updateExportSource(exportSource.id, {
+        lastImportStatus: 'failed',
+        lastImportAt: new Date().toISOString(),
+        lastImportError: 'Export did not return a JSON object.',
+      });
+      return {
+        ok: false,
+        code: 'invalid_export_payload',
+        message: 'Export link did not return a valid JSON object.',
+      };
+    }
+
+    const result = createSnapshotForGuild({
+      guildId: String(guildId),
+      connectSessionId: null,
+      payload,
+      sourceType: connection?.sourceType || 'dashboard_export',
+    });
+
+    connectionRepository.updateExportSource(exportSource.id, {
+      lastImportStatus: 'succeeded',
+      lastImportAt: result.snapshot.createdAt,
+      lastImportError: null,
+    });
+
+    return {
+      ok: true,
+      connection: result.connection,
+      snapshot: result.snapshot,
+      summary: result.summary,
+      exportSource: connectionRepository.getExportSourceById(exportSource.id),
+    };
+  } catch (error) {
+    connectionRepository.updateExportSource(exportSource.id, {
+      lastImportStatus: 'failed',
+      lastImportAt: new Date().toISOString(),
+      lastImportError: error?.message || 'Unknown import error',
+    });
+    connectionRepository.upsertLeagueConnection({
+      guildId: String(guildId),
+      leagueName: connection.leagueName,
+      leagueExternalId: connection.leagueExternalId,
+      sourceType: connection.sourceType || 'dashboard_export',
+      status: 'sync_error',
+      lastImportJobId: connection.lastImportJobId || null,
+      lastSnapshotId: connection.lastSnapshotId || null,
+      summary: {
+        ...(connection.summary || {}),
+        lastSyncError: error?.message || 'Unknown import error',
+      },
+    });
+    return {
+      ok: false,
+      code: 'import_failed',
+      message: `Import failed: ${error?.message || 'Unknown error'}`,
+    };
+  }
+}
+
 export function loadDemoLeague(token) {
   const dashboard = getLeagueConnectionDashboard(token);
   if (!dashboard.ok) return dashboard;
@@ -1108,5 +1222,6 @@ export default {
   addLeagueExportSource,
   loadDemoLeague,
   importFromExportSource,
+  refreshExportSourceForGuild,
   ingestImportedPayload,
 };

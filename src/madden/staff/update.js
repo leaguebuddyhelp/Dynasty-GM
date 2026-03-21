@@ -30,6 +30,8 @@ import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 import { getMessageForWeek } from '../madden_utils.js';
+import connectionService from '../services/export_first_connection_service.js';
+import { getGuildEATokens } from '../../../madden/ea_guild_auth.js';
 
 export const featureKey = 'core';
 
@@ -915,7 +917,24 @@ async function execute(interaction) {
       return;
     }
     const provider = new SnallabotProvider();
-    const summary = await runSync(leagueId, provider, { week: weekOverride });
+    const guildTokens = getGuildEATokens(interaction.guildId);
+    const connectionStatus = connectionService.getLeagueConnectionStatus(interaction.guildId);
+    const hasExportSource = Array.isArray(connectionStatus?.exportSources) && connectionStatus.exportSources.length > 0;
+    let summary = null;
+    if (!guildTokens && hasExportSource) {
+      const refresh = await connectionService.refreshExportSourceForGuild(interaction.guildId);
+      if (!refresh?.ok) {
+        throw new Error(refresh?.message || 'This server could not refresh from its saved export source.');
+      }
+      summary = {
+        currentWeek: Number(refresh?.summary?.week || 0) || null,
+        stage: undefined,
+        offSeasonStage: 0,
+        missingWeeks: [],
+      };
+    } else {
+      summary = await runSync(leagueId, provider, { guildId: interaction.guildId, week: weekOverride });
+    }
     const weeklyUpdateOverrides = loadWeeklyUpdateOverrides();
     const leagueOverride = weeklyUpdateOverrides?.[leagueId] || {};
     const forceAwardsOnce = forceAwardsOption || leagueOverride?.forceAwardsOnce === true;
