@@ -118,6 +118,43 @@ function teamRoles(roleMap) {
   return [...byRoleId.values()];
 }
 
+function resolveCoachRoleIdForTeam(team, roleMap) {
+  const fullName = formatTeamName(team);
+  const nickName = String(team?.displayName || team?.nickName || '').trim();
+  const aliases = [
+    `${fullName} Coach`,
+    `${nickName} Coach`,
+    fullName,
+    nickName,
+  ].filter(Boolean);
+  for (const alias of aliases) {
+    const exact = roleMap?.[alias];
+    if (exact) return exact;
+  }
+  const normalizedAliases = aliases.map((alias) => normalizeKey(alias));
+  for (const [name, roleId] of Object.entries(roleMap || {})) {
+    if (!roleId) continue;
+    if (normalizedAliases.includes(normalizeKey(name))) return roleId;
+  }
+  return null;
+}
+
+function buildTeamEntries(league, roleMap) {
+  const snapshotTeams = league?.teams?.leagueTeamInfoList || [];
+  if (snapshotTeams.length) {
+    return snapshotTeams.map((team) => ({
+      team: formatTeamName(team),
+      rawTeam: String(team?.displayName || team?.nickName || formatTeamName(team)).trim(),
+      roleId: resolveCoachRoleIdForTeam(team, roleMap),
+    }));
+  }
+  return teamRoles(roleMap).map((entry) => ({
+    team: entry.team,
+    rawTeam: entry.team,
+    roleId: entry.roleId,
+  }));
+}
+
 function formatAssignments(guild, roles, opts = {}) {
   const { pickMap = new Map(), isOffseason = false, teamInfoByName = new Map() } = opts;
   return roles.map(r => {
@@ -199,8 +236,8 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
       return false;
     }
 
-    const roles = teamRoles(roleMap).sort((a, b) => a.team.localeCompare(b.team));
     const league = loadLeagueSnapshotForOptions(options);
+    const roles = buildTeamEntries(league, roleMap).sort((a, b) => a.team.localeCompare(b.team));
     const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
     const isOffseason = (seasonInfo.seasonWeekType === 8) ||
       (seasonInfo.seasonTitle || '').toLowerCase().includes('offseason') ||
