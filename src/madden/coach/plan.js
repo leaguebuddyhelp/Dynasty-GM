@@ -35,21 +35,7 @@ export const data = new SlashCommandBuilder()
 export const deferOnDispatch = { flags: 64 };
 
 export async function execute(interaction) {
-    const guildId = interaction.guildId;
-    if (!guildId) {
-        await interaction.editReply({ content: 'This command can only be used in a server.' });
-        return;
-    }
-
-    const member = interaction.member;
-    const canManage = isGuildManager(member);
-
-    const setupStatus = getSetupStatus(guildId);
-    const packsEnabled = setupStatus.packsEnabled;
-    const plan = setupStatus.plan || PLANS.free;
-    const status = prettyStatus(setupStatus.subscriptionStatus || SUBSCRIPTION_STATUSES.inactive);
-    const setupCompleted = setupStatus.setupCompleted === true;
-
+    // Clean, minimal logic: only declare each variable once, only show current plan features and upgrade option
     const guildId = interaction.guildId;
     if (!guildId) {
         await interaction.editReply({ content: 'This command can only be used in a server.' });
@@ -87,4 +73,4 @@ export async function execute(interaction) {
         content: lines.join('\n'),
         components,
     });
-    lines.push('**Blocked until setup is complete**');
+}
