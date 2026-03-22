@@ -1,3 +1,7 @@
+// Normalize a string for fuzzy matching (used for player/team names)
+export function normalizeName(str) {
+  return (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
 
 export function deriveAge(player) {
   // If birthdate exists, compute as of Oct 20 of current season year (season 1 -> 2025)
