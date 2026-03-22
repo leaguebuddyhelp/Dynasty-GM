@@ -143,7 +143,15 @@ function buildFeatureSummary(guildId, packsEnabled = []) {
     if (check.ok) {
       unlockedFeatures.push({ ...row, source: 'plan_access' });
     } else {
-      blockedFeatures.push({ ...row, reason: check.reason });
+      // Add planEligible property: true if user's plan is high enough for this feature
+      let planEligible = false;
+      if (check.reason === 'setup_incomplete') {
+        // If the only reason is setup_incomplete, check if plan is high enough
+        const userPlan = planRepository.getGuild(guildId, { createIfMissing: false })?.plan || 'free';
+        const requiredPlan = feature?.minPlan || 'free';
+        planEligible = (userPlan === requiredPlan || (userPlan === 'premium' && requiredPlan !== 'premium'));
+      }
+      blockedFeatures.push({ ...row, reason: check.reason, planEligible });
     }
   }
 

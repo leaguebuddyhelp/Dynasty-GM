@@ -21,8 +21,9 @@ function prettyStatus(status) {
 }
 
 function summarizeBlocked(status, reason) {
+    // Only show features as setup-blocked if they are not also blocked by plan
     return status.blockedFeatures
-        .filter((item) => item.reason === reason)
+        .filter((item) => item.reason === reason && item.planEligible)
         .map((item) => `• ${item.label}`)
         .join('\n');
 }
@@ -72,10 +73,17 @@ export async function execute(interaction) {
         ? setupStatus.unlockedFeatures.map((item) => `• ${item.label}${item.source === 'pack_enabled' ? ' (enabled by pack)' : ''}`).join('\n')
         : '(none)');
 
+    // Mark features as planEligible if the only reason they're blocked is setup_incomplete
+    // Otherwise, if they're also blocked by plan, don't show them as setup-blocked
+    setupStatus.blockedFeatures.forEach(item => {
+        // If the user's plan is high enough for this feature, but setup is incomplete, mark as planEligible
+        item.planEligible = (item.reason === 'setup_incomplete' && setupStatus.plan && item.minPlan &&
+            (setupStatus.plan === item.minPlan || (setupStatus.plan === 'premium' && item.minPlan !== 'premium')));
+    });
     const setupBlocked = summarizeBlocked(setupStatus, 'setup_incomplete');
     const planBlocked = setupStatus.blockedFeatures
-        .filter((item) => item.reason === 'plan_too_low' || item.reason === 'subscription_inactive')
-        .map((item) => `• ${item.label} (${item.reason === 'plan_too_low' ? 'upgrade required' : 'subscription inactive'})`)
+        .filter((item) => item.reason === 'plan_too_low' || item.reason === 'subscription_inactive' || (item.reason === 'setup_incomplete' && !item.planEligible))
+        .map((item) => `• ${item.label} (${item.reason === 'plan_too_low' ? 'upgrade required' : item.reason === 'subscription_inactive' ? 'subscription inactive' : 'setup required (but not on your plan)'})`)
         .join('\n');
 
     lines.push('');
