@@ -66,7 +66,7 @@ export async function execute(interaction) {
   } catch {
     return;
   }
-  const [prefix, draftId] = interaction.customId.split('|');
+  // File removed: 2K-only feature
   const side = prefix.includes('yours') ? 'yourTeamId' : 'otherTeamId';
   const draft = getTradeDraft(draftId);
   if (!draft) {
@@ -98,7 +98,7 @@ export async function execute(interaction) {
   };
   const userOverride = USER_TEAM_OVERRIDES[interaction.user.id];
 
-  if (draft.mode === '2k') {
+  if (draft.mode === '2k') { // This line and the following block should be removed
     const resolved = (() => {
       if (userOverride && side === 'yourTeamId') return userOverride;
       if (/timberwolves/i.test(selected)) return 'Minnesota Timberwolves';

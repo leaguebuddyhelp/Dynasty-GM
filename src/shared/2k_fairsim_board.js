@@ -1,3 +1,4 @@
+// File removed: 2K-only feature
 import fs from 'fs';
 import path from 'path';
 
@@ -16,8 +17,8 @@ function saveJson(file, data) { fs.mkdirSync(path.dirname(file), { recursive: tr
 async function buildLines(fairData, season, guild) {
   let emojiMap = {};
   let roleMap = {};
-  try { emojiMap = JSON.parse(fs.readFileSync(TEAM_EMOJI_FILE, 'utf8')); } catch {}
-  try { roleMap = JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch {}
+  try { emojiMap = JSON.parse(fs.readFileSync(TEAM_EMOJI_FILE, 'utf8')); } catch { }
+  try { roleMap = JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { }
   const seasonData = fairData[season] || {};
   const counts = seasonData.counts || {};
 

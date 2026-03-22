@@ -107,7 +107,7 @@ export async function execute(interaction) {
   activeWaives.add(lockKey);
 
   // Load team roster
-  const teamData = readRoster(team, { force2k: true });
+  const teamData = readRoster(team);
   console.log('[waive_player] loaded roster', {
     team,
     hasRoster: !!teamData?.roster,
@@ -146,7 +146,7 @@ export async function execute(interaction) {
   saveRoster(teamPath || team, { ...rosterObj, players: rosterArr });
 
   // Add to free agency pool
-  const faData = readRoster(FREE_AGENCY_PATH, { force2k: true }) || { rosterPath: null, roster: { players: [], picks: [] } };
+  const faData = readRoster(FREE_AGENCY_PATH) || { rosterPath: null, roster: { players: [], picks: [] } };
   if (!faData.rosterPath) {
     await interaction.editReply({ content: 'Free agency file not found.' });
     return;

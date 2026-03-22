@@ -395,21 +395,7 @@ client.on('interactionCreate', async interaction => {
       await setGameInfo.execute_modal_set_game_info(interaction);
       return;
     }
-    // Route 2K set_game_info| modals/buttons (disabled in Madden-only mode)
-    if (!MADDEN_ONLY) {
-      if (interaction.isModalSubmit() && interaction.customId.startsWith('set_game_info_modal|')) {
-        console.log('[router] 2K set_game_info modal', interaction.customId);
-        // const setGameInfo2k = await import('./2k/set_game_info.js'); // 2K feature removed
-        await setGameInfo2k.execute_modal(interaction);
-        return;
-      }
-      if (interaction.isButton() && interaction.customId.startsWith('set_game_info|')) {
-        console.log('[router] 2K set_game_info button', interaction.customId);
-        // const setGameInfo2k = await import('./2k/set_game_info.js'); // 2K feature removed
-        await setGameInfo2k.execute(interaction);
-        return;
-      }
-    }
+    // 2K set_game_info modal/button routing removed for Madden-only mode
 
     // Route Madden live mock draft pick select menu (search results)
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('madden_mockdraft_pick|')) {

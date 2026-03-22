@@ -1,126 +1,130 @@
 [
     {
-        "name": "Atlanta Hawks",
-        "url": "https://www.2kratings.com/teams/atlanta-hawks"
+        "name": "Arizona Cardinals",
+        "url": "https://www.azcardinals.com/"
     },
     {
-        "name": "Boston Celtics",
-        "url": "https://www.2kratings.com/teams/boston-celtics"
+        "name": "Atlanta Falcons",
+        "url": "https://www.atlantafalcons.com/"
     },
     {
-        "name": "Brooklyn Nets",
-        "url": "https://www.2kratings.com/teams/brooklyn-nets"
+        "name": "Baltimore Ravens",
+        "url": "https://www.baltimoreravens.com/"
     },
     {
-        "name": "Charlotte Hornets",
-        "url": "https://www.2kratings.com/teams/charlotte-hornets"
+        "name": "Buffalo Bills",
+        "url": "https://www.buffalobills.com/"
     },
     {
-        "name": "Chicago Bulls",
-        "url": "https://www.2kratings.com/teams/chicago-bulls"
+        "name": "Carolina Panthers",
+        "url": "https://www.panthers.com/"
     },
     {
-        "name": "Cleveland Cavaliers",
-        "url": "https://www.2kratings.com/teams/cleveland-cavaliers"
+        "name": "Chicago Bears",
+        "url": "https://www.chicagobears.com/"
     },
     {
-        "name": "Dallas Mavericks",
-        "url": "https://www.2kratings.com/teams/dallas-mavericks"
+        "name": "Cincinnati Bengals",
+        "url": "https://www.bengals.com/"
     },
     {
-        "name": "Denver Nuggets",
-        "url": "https://www.2kratings.com/teams/denver-nuggets"
+        "name": "Cleveland Browns",
+        "url": "https://www.clevelandbrowns.com/"
     },
     {
-        "name": "Detroit Pistons",
-        "url": "https://www.2kratings.com/teams/detroit-pistons"
+        "name": "Dallas Cowboys",
+        "url": "https://www.dallascowboys.com/"
     },
     {
-        "name": "Golden State Warriors",
-        "url": "https://www.2kratings.com/teams/golden-state-warriors"
+        "name": "Denver Broncos",
+        "url": "https://www.denverbroncos.com/"
     },
     {
-        "name": "Houston Rockets",
-        "url": "https://www.2kratings.com/teams/houston-rockets"
+        "name": "Detroit Lions",
+        "url": "https://www.detroitlions.com/"
     },
     {
-        "name": "Indiana Pacers",
-        "url": "https://www.2kratings.com/teams/indiana-pacers"
+        "name": "Green Bay Packers",
+        "url": "https://www.packers.com/"
     },
     {
-        "name": "Los Angeles Clippers",
-        "url": "https://www.2kratings.com/teams/los-angeles-clippers"
+        "name": "Houston Texans",
+        "url": "https://www.houstontexans.com/"
     },
     {
-        "name": "Los Angeles Lakers",
-        "url": "https://www.2kratings.com/teams/los-angeles-lakers"
+        "name": "Indianapolis Colts",
+        "url": "https://www.colts.com/"
     },
     {
-        "name": "Memphis Grizzlies",
-        "url": "https://www.2kratings.com/teams/memphis-grizzlies"
+        "name": "Jacksonville Jaguars",
+        "url": "https://www.jaguars.com/"
     },
     {
-        "name": "Miami Heat",
-        "url": "https://www.2kratings.com/teams/miami-heat"
+        "name": "Kansas City Chiefs",
+        "url": "https://www.chiefs.com/"
     },
     {
-        "name": "Milwaukee Bucks",
-        "url": "https://www.2kratings.com/teams/milwaukee-bucks"
+        "name": "Las Vegas Raiders",
+        "url": "https://www.raiders.com/"
     },
     {
-        "name": "Minnesota Timberwolves",
-        "url": "https://www.2kratings.com/teams/minnesota-timberwolves"
+        "name": "Los Angeles Chargers",
+        "url": "https://www.chargers.com/"
     },
     {
-        "name": "New Orleans Pelicans",
-        "url": "https://www.2kratings.com/teams/new-orleans-pelicans"
+        "name": "Los Angeles Rams",
+        "url": "https://www.therams.com/"
     },
     {
-        "name": "New York Knicks",
-        "url": "https://www.2kratings.com/teams/new-york-knicks"
+        "name": "Miami Dolphins",
+        "url": "https://www.miamidolphins.com/"
     },
     {
-        "name": "Oklahoma City Thunder",
-        "url": "https://www.2kratings.com/teams/oklahoma-city-thunder"
+        "name": "Minnesota Vikings",
+        "url": "https://www.vikings.com/"
     },
     {
-        "name": "Orlando Magic",
-        "url": "https://www.2kratings.com/teams/orlando-magic"
+        "name": "New England Patriots",
+        "url": "https://www.patriots.com/"
     },
     {
-        "name": "Philadelphia 76ers",
-        "url": "https://www.2kratings.com/teams/philadelphia-76ers"
+        "name": "New Orleans Saints",
+        "url": "https://www.neworleanssaints.com/"
     },
     {
-        "name": "Phoenix Suns",
-        "url": "https://www.2kratings.com/teams/phoenix-suns"
+        "name": "New York Giants",
+        "url": "https://www.giants.com/"
     },
     {
-        "name": "Portland Trail Blazers",
-        "url": "https://www.2kratings.com/teams/portland-trail-blazers"
+        "name": "New York Jets",
+        "url": "https://www.newyorkjets.com/"
     },
     {
-        "name": "Sacramento Kings",
-        "url": "https://www.2kratings.com/teams/sacramento-kings"
+        "name": "Philadelphia Eagles",
+        "url": "https://www.philadelphiaeagles.com/"
     },
     {
-        "name": "San Antonio Spurs",
-        "url": "https://www.2kratings.com/teams/san-antonio-spurs"
+        "name": "Pittsburgh Steelers",
+        "url": "https://www.steelers.com/"
     },
     {
-        "name": "Toronto Raptors",
-        "url": "https://www.2kratings.com/teams/toronto-raptors"
+        "name": "San Francisco 49ers",
+        "url": "https://www.49ers.com/"
     },
     {
-        "name": "Utah Jazz",
-        "url": "https://www.2kratings.com/teams/utah-jazz"
+        "name": "Seattle Seahawks",
+        "url": "https://www.seahawks.com/"
     },
     {
-        "name": "Washington Wizards",
-        "url": "https://www.2kratings.com/teams/washington-wizards"
+        "name": "Tampa Bay Buccaneers",
+        "url": "https://www.buccaneers.com/"
     },
     {
-        "name": "Free Agency",
-        "url": "https://www.2kratings.com/teams/free-agency"
+        "name": "Tennessee Titans",
+        "url": "https://www.tennesseetitans.com/"
+    },
+    {
+        "name": "Washington Commanders",
+        "url": "https://www.commanders.com/"
     }
 ]

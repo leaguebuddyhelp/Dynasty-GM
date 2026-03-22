@@ -1,3 +1,17 @@
+// File removed: 2K-only feature
+import 'dotenv/config';
+import { Client, GatewayIntentBits } from 'discord.js';
+import { loadActiveTrades2k, computeApprovedTradeCounts2k, saveTradeCounts2k, updateTradeCountsEmbed2k } from '../shared/nba_trade_utils.js';
+
+async function main() {
+  const token = process.env.DISCORD_TOKEN || process.env.BOT_TOKEN;
+  if (!token) {
+    console.error('DISCORD_TOKEN (or BOT_TOKEN) is required');
+    process.exit(1);
+  }
+
+  // ...existing code...
+}
 import 'dotenv/config';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { loadActiveTrades2k, computeApprovedTradeCounts2k, saveTradeCounts2k, updateTradeCountsEmbed2k } from '../shared/nba_trade_utils.js';

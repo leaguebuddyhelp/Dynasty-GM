@@ -1,3 +1,4 @@
+// File removed: 2K-only feature
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -12,7 +13,7 @@ import {
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { computePlayerValue, buildValueMap, parsePickValue, getMaddenPickContext } from './madden_trade_modal_submit.js';
 import { getTradeDraft, saveTradeDraft } from '../shared/trade_draft_store.js';
-import { readRoster, normalizeName, resolveTeamNameForRoster, computePlayerValue2k, computePickValue2k, parsePickValue2k } from '../shared/rosterUtils.js';
+import { readRoster, normalizeName, resolveTeamNameForRoster } from '../shared/rosterUtils.js';
 import { getFirstRoundPickLabelsForTeam } from '../madden/pick_overrides_store.js';
 import fs from 'fs';
 import path from 'path';
@@ -236,212 +237,17 @@ function summarizeAssets(draft, valueMap, seasonYear, pickOptions = {}) {
   };
 }
 
-// ---------- NBA (2K) helpers ----------
-function rosterForTeam2k(teamName) {
-  // Restrict to 2K rosters directory and avoid cross-league fallbacks
-  const dir = path.join(process.cwd(), 'data', '2k', 'teams_rosters');
-  const candidates = [
-    `${teamName || ''}.json`,
-    `${(teamName || '').replace(/ /g, '_')}.json`,
-    `${(teamName || '').replace(/_/g, ' ')}.json`,
-  ].map(s => s.toLowerCase());
-  let file = null;
-  try {
-    const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
-    file = files.find(f => candidates.includes(f.toLowerCase()));
-  } catch { /* ignore */ }
-  if (!file) {
-    console.warn('[rosterForTeam2k] roster file not found for', teamName, { dir, candidates });
-    return { players: [], picks: [] };
-  }
-  try {
-    const data = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
-    if (Array.isArray(data)) return { players: data, picks: [] };
-    return {
-      players: Array.isArray(data?.players) ? data.players : [],
-      picks: Array.isArray(data?.picks) ? data.picks : [],
-    };
-  } catch (err) {
-    console.error('[rosterForTeam2k] failed to read', file, err);
-    return { players: [], picks: [] };
-  }
-}
-
-function buildAssetSelectRows2k(side, draftId, teamName) {
-  const draft = getTradeDraft(draftId);
-  const seasonYear = draft?.seasonYear || new Date().getFullYear();
-  console.log('[buildAssetSelectRows2k]', { draftId, side, teamName, userId: draft?.userId });
-  const { players } = rosterForTeam2k(teamName);
-  // Generate pick options: 2026-2030 1st/2nd; protections (top3/5/10/lottery) only for next 3 seasons
-  const baseYear = seasonYear;
-  const yearsFirst = [baseYear, baseYear + 1, baseYear + 2, baseYear + 3, baseYear + 4];
-  const yearsProtected = [baseYear, baseYear + 1, baseYear + 2];
-  const protectionTags = ['top 3 protected', 'top 5 protected', 'top 10 protected', 'lottery protected'];
-  const picks = [];
-  yearsFirst.forEach(y => {
-    picks.push(`${y} Round 1`);
-    protectionTags.forEach(tag => {
-      if (yearsProtected.includes(y)) picks.push(`${y} Round 1 (${tag})`);
-    });
-    picks.push(`${y} Round 2`);
-  });
-
-  // Include any VIA picks already on the roster (keep their original labels)
-  rosterForTeam2k(teamName).picks?.forEach(p => {
-    const label = typeof p === 'string' ? p : p?.pick || '';
-    if (label && !picks.includes(label)) picks.push(label);
-  });
-  if (!players.length && !picks.length) return [];
-  const buckets = [
-    { key: 'guards', label: 'Guards', items: [] },
-    { key: 'wings', label: 'Wings/Forwards', items: [] },
-    { key: 'bigs', label: 'Bigs', items: [] },
-  ];
-  players
-    .slice()
-    .sort((a, b) => (Number(b.ovr || 0)) - (Number(a.ovr || 0)))
-    .forEach(p => {
-      const posRaw = (p.position || '').toUpperCase();
-      const primary = posRaw.split(/[\\/]/)[0].trim().split(/\s+/)[0] || posRaw;
-      const val = computePlayerValue2k(p);
-      const sal = currentYearSalary(p);
-      const salText = sal ? ` | ${String(sal).replace(/[$,]/g, '').match(/^[0-9.]+$/) ? `$${Number(String(sal).replace(/[$,]/g,'')).toLocaleString()}` : sal}` : '';
-      const desc = `${p.position || 'UNK'} | OVR ${p.ovr || '??'} | Val ${val}${salText}`;
-      const opt = new StringSelectMenuOptionBuilder()
-        .setLabel((p.name || 'Player').slice(0, 90))
-        .setDescription(desc.slice(0, 100))
-        .setValue(`player:${p.name}`);
-      if (primary === 'PG' || primary === 'SG') buckets[0].items.push(opt);
-      else if (primary === 'SF' || primary === 'PF') buckets[1].items.push(opt);
-      else if (primary === 'C') buckets[2].items.push(opt);
-      else buckets[1].items.push(opt); // default unknowns to wings
-    });
-
-  const rows = buckets
-    .map(b => b.items.slice(0, 25))
-    .filter(arr => arr.length)
-    .map((opts, idx) =>
-      new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`trade_builder_select_assets|${side}|${draftId}|${buckets[idx].key}|0`)
-          .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} ${buckets[idx].label}`)
-          .setMinValues(1)
-          .setMaxValues(Math.min(5, opts.length))
-          .addOptions(opts)
-      )
-    );
-
-  if (picks.length) {
-    const pickOpts = picks.slice(0, 25).map(p => {
-      const parsed = parsePickValue2k(p, draft.seasonYear) || {};
-      return {
-        label: p,
-        value: `pick:${p}`,
-        description: `Val ${Number(parsed?.value || 0).toFixed(1)}`.slice(0, 100),
-      };
-    });
-    rows.push(
-      new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`trade_builder_select_assets|${side}|${draftId}|picks|0`)
-          .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} picks`)
-          .setMinValues(1)
-          .setMaxValues(Math.min(5, pickOpts.length))
-          .addOptions(pickOpts)
-      )
-    );
-  }
-  return rows;
-}
-
-function summarizeAssets2k(draft) {
-  const parseSalary = (p) => {
-    if (!p) return 0;
-    if (typeof p.salaryPerYear === 'number') return p.salaryPerYear;
-    const salaryStr = p.salaryPerYear || p.salary || (Array.isArray(p.contractYears) && p.contractYears[0]?.salary) || '';
-    if (!salaryStr) return 0;
-    const cleaned = String(salaryStr).replace(/[$,]/g, '').trim();
-    const m = cleaned.match(/([0-9]*\.?[0-9]+)/);
-    if (!m) return 0;
-    let val = Number(m[1]);
-    if (/m/i.test(cleaned)) val *= 1_000_000;
-    return Number.isFinite(val) ? val : 0;
-  };
-
-  const formatSalary = (n) => {
-    if (!n) return '$0';
-    const m = n / 1_000_000;
-    return m >= 1 ? `$${m.toFixed(1)}M` : `$${n.toLocaleString()}`;
-  };
-
-  // currentYearSalary defined at top-level
-
-  const summarize = (arr) => {
-    let total = 0;
-    let salary = 0;
-    const lines = [];
-    arr.forEach(item => {
-      if (item.type === 'player') {
-        const val = computePlayerValue2k(item);
-        total += val;
-        const sal = parseSalary(item);
-        salary += sal;
-        lines.push(`${item.label} (${item.pos || 'UNK'}) — ${val.toFixed(1)}`);
-      } else if (item.type === 'pick') {
-        const raw = item.raw || '';
-        // Prevent revaluation if pick string contains 'VIA'
-        if (raw.includes('VIA')) {
-          lines.push(raw);
-        } else {
-          const parsed = parsePickValue2k(raw, draft.seasonYear);
-          const val = item.value ?? parsed?.value ?? 0;
-          const label = parsed?.label || raw || 'Pick';
-          total += val;
-          lines.push(`${label} — ${val.toFixed(1)}`);
-        }
-      }
-    });
-    return { total, lines, salary, salaryPretty: formatSalary(salary) };
-  };
-  return {
-    your: summarize(draft.assets?.your || []),
-    other: summarize(draft.assets?.other || []),
-  };
-}
 
 export function buildButtons(draftId) {
   const draft = getTradeDraft(draftId);
-  const is2k = draft?.mode === '2k';
-  // 2K: only allow manual pick entry in offseason when order known.
-  let allowManualCurrentPick = !is2k;
-  if (is2k) {
-    // Only allow manual pick entry in the offseason when draft order is known
-    try {
-      const seasonPath = path.join(process.cwd(), 'data', 'season.json');
-      if (fs.existsSync(seasonPath)) {
-        const season = JSON.parse(fs.readFileSync(seasonPath, 'utf8'));
-        allowManualCurrentPick = (season.phase || '').toLowerCase() === 'offseason';
-      }
-    } catch { /* ignore */ }
-    if (!allowManualCurrentPick) allowManualCurrentPick = false;
-  }
-  const submitId = draft?.mode === '2k'
-    ? `trade_preview_submit|${draftId}`
-    : `madden_trade_preview_submit|${draftId}`;
+  const submitId = `madden_trade_preview_submit|${draftId}`;
   const rows = [
     new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId(`trade_builder_add|yours|${draftId}`).setLabel('Add your assets').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId(`trade_builder_add|other|${draftId}`).setLabel("Add their assets").setStyle(ButtonStyle.Secondary),
     ),
   ];
-
   const actionRow = new ActionRowBuilder();
-  if (is2k && allowManualCurrentPick) {
-    actionRow.addComponents(
-      new ButtonBuilder().setCustomId(`trade_builder_pick_manual|yours|${draftId}`).setLabel('Type pick (yours)').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId(`trade_builder_pick_manual|other|${draftId}`).setLabel('Type pick (theirs)').setStyle(ButtonStyle.Secondary),
-    );
-  }
   actionRow.addComponents(
     new ButtonBuilder().setCustomId(`trade_builder_reset|${draftId}`).setLabel('Reset').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId(submitId).setLabel('Submit').setStyle(ButtonStyle.Success),
@@ -460,45 +266,7 @@ async function refreshBuilder(interaction, draft, snapshot) {
     return interaction.update(payload);
   };
 
-  if (draft.mode === '2k') {
-    const summary = summarizeAssets2k(draft);
-    const gap = summary.your.total - summary.other.total;
-    const GAP_LIMIT = 50;
-    // Salary matching validation per team (NBA 2025-26 rules)
-    const yourSalary = summary.your.salary;
-    const otherSalary = summary.other.salary;
-
-    // Compute current team payrolls from 2K rosters (more tolerant matching)
-    const embed = new EmbedBuilder()
-      .setTitle('Trade Builder')
-      .setDescription(
-        [
-          `Value gap (you - them): ${gap.toFixed(1)}${Math.abs(gap) > GAP_LIMIT ? ' — exceeds limit' : ' — within limit'}`,
-        ].join('\n')
-      )
-      .addFields(
-        {
-          name: `Your team: ${draft.yourTeamName || '—'} (Total ${summary.your.total.toFixed(1)})`,
-          value: summary.your.lines.length ? summary.your.lines.join('\n') : 'No assets yet.',
-          inline: false,
-        },
-        {
-          name: `Other team: ${draft.otherTeamName || '—'} (Total ${summary.other.total.toFixed(1)})`,
-          value: summary.other.lines.length ? summary.other.lines.join('\n') : 'No assets yet.',
-          inline: false,
-        },
-      )
-      .setColor(0x5865f2);
-    draft.assetsSent = summary.your.lines.join('\n');
-    draft.assetsReceived = summary.other.lines.join('\n');
-    saveTradeDraft(draft.draftId, draft);
-    await doUpdate({
-      content: null,
-      embeds: [embed],
-      components: buildButtons(draft.draftId),
-    });
-    return;
-  }
+  // Madden/NFL only
   const valueMap = buildValueMap(snapshot);
   const seasonYear = snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear
     || snapshot?.info?.calendarYear
@@ -543,23 +311,12 @@ export async function execute(interaction) {
   const draftId = interaction.customId.split('|')[1];
   const draft = getTradeDraft(draftId);
   const leagueId = draft?.leagueId || resolveLeagueIdWithConfig(interaction.guildId);
-  const isNBA = draft?.mode === '2k';
   if (RESET_CUSTOM_ID.test(interaction.customId)) {
     const draftId = interaction.customId.split('|')[1];
     const draft = getTradeDraft(draftId);
     if (!draft) return;
     draft.assets = { your: [], other: [] };
-    // Also clear team selections in 2K so the user can re-pick cleanly
-    if (draft.mode === '2k') {
-      draft.otherTeamName = null;
-      draft.otherTeamId = null;
-      draft.otherTeam = null;
-    }
     saveTradeDraft(draftId, draft);
-    if (draft.mode === '2k') {
-      await refreshBuilder(interaction, draft, null);
-      return;
-    }
     if (!leagueId) return;
     const snapshot = loadLeagueSnapshot(leagueId);
     await refreshBuilder(interaction, draft, snapshot);
@@ -568,28 +325,8 @@ export async function execute(interaction) {
   if (ADD_CUSTOM_ID.test(interaction.customId)) {
     const [, side, draftId] = interaction.customId.split('|');
     const draft = getTradeDraft(draftId);
-    if (!draft || !(draft.mode === '2k' ? draft[side === 'yours' ? 'yourTeamName' : 'otherTeamName'] : draft[side === 'yours' ? 'yourTeamId' : 'otherTeamId'])) {
+    if (!draft || !draft[side === 'yours' ? 'yourTeamId' : 'otherTeamId']) {
       await interaction.reply(buildPrivatePayload(interaction, { content: 'Select both teams first.' }));
-      return;
-    }
-    if (draft.mode === '2k') {
-      // Hard override: specific user forced to Timberwolves to avoid wrong roster
-      const forceTeam = (draft.userId === '840269359578611753' && side === 'yours')
-        ? 'Minnesota Timberwolves'
-        : null;
-      const teamName = forceTeam || (side === 'yours' ? draft.yourTeamName : draft.otherTeamName);
-      const rows = buildAssetSelectRows2k(side === 'yours' ? 'yours' : 'other', draftId, teamName);
-      if (!rows?.length) {
-        await interaction.reply(buildPrivatePayload(interaction, { content: 'No assets found for that team.' }));
-        return;
-      }
-      await interaction.reply(buildPrivatePayload(interaction, { content: `Select assets for ${side === 'yours' ? 'your' : 'their'} team`, components: rows.slice(0, 5) }));
-      if (rows.length > 5) {
-        await interaction.followUp(buildPrivatePayload(interaction, {
-          content: 'More options (picks / remaining positions):',
-          components: rows.slice(5, 10),
-        }));
-      }
       return;
     }
     if (!leagueId) return;
@@ -610,58 +347,6 @@ export async function execute(interaction) {
     const draft = getTradeDraft(draftId);
     if (!draft) {
       await interaction.reply(buildPrivatePayload(interaction, { content: 'Trade builder expired. Start again.' }));
-      return;
-    }
-    if (draft.mode === '2k') {
-      const rosterData = rosterForTeam2k(side === 'yours' ? draft.yourTeamName : draft.otherTeamName);
-      const rosterMap = new Map(rosterData.players.map(p => [normalizeName(p.name), p]));
-      const sel = interaction.values || [];
-      const assetsArr = draft.assets?.[side === 'yours' ? 'your' : 'other'] || [];
-      sel.forEach(v => {
-        if (v.startsWith('player:')) {
-          const name = v.slice('player:'.length);
-          const p = rosterMap.get(normalizeName(name));
-          if (!p) return;
-          if (assetsArr.find(a => a.type === 'player' && normalizeName(a.label) === normalizeName(name))) return;
-          const salary = (Array.isArray(p.contractYears) && p.contractYears[0]?.salary) ? Number(String(p.contractYears[0].salary).replace(/[^0-9.]/g, '')) : 0;
-          const yearsInNBA = Number(p.yearsInNBA || 0);
-          const ageVal = (() => {
-            if (p.birthdate) return p.birthdate; // keep birthdate string if available
-            if (p.age) return Number(p.age);
-            if (yearsInNBA) return yearsInNBA + 19;
-            return null;
-          })();
-          assetsArr.push({
-            type: 'player',
-            label: p.name,
-            pos: p.position,
-            ovr: Number(p.ovr) || 0,
-            age: ageVal,
-            salary,
-            yearsLeft: Array.isArray(p.contractYears) ? p.contractYears.length : 0,
-            contractYears: p.contractYears,
-            yearsInNBA
-          });
-        } else if (v.startsWith('pick:')) {
-          const raw = v.slice('pick:'.length);
-          if (assetsArr.find(a => a.type === 'pick' && a.raw === raw)) return;
-          const parsed = parsePickValue2k(raw, draft.seasonYear) || {};
-          assetsArr.push({
-            type: 'pick',
-            raw,
-            year: parsed.year,
-            round: parsed.round,
-            pickNum: parsed.pickNum,
-            protection: parsed.protection,
-            value: parsed.value,
-            label: parsed.label,
-          });
-        }
-      });
-      draft.assets = draft.assets || { your: [], other: [] };
-      draft.assets[side === 'yours' ? 'your' : 'other'] = assetsArr;
-      saveTradeDraft(draftId, draft);
-      await refreshBuilder(interaction, draft, null);
       return;
     }
     if (!leagueId) return;
@@ -701,11 +386,9 @@ export async function execute(interaction) {
           ? (pickNum ? `${year} ${rnd}${suffix} pick ${pickNum}` : `${year} ${rnd}${suffix}`)
           : rawValue;
         if (assetsArr.find(a => a.type === 'pick' && a.raw === raw)) return;
-        const parsed = draft.mode === '2k'
-          ? parsePickValue2k(raw, draft.seasonYear)
-          : parsePickValue(raw, draftYearBase, {
-            currentYearExactAllowed: getMaddenPickContext(snapshot).currentYearExactAllowed,
-          });
+        const parsed = parsePickValue(raw, draftYearBase, {
+          currentYearExactAllowed: getMaddenPickContext(snapshot).currentYearExactAllowed,
+        });
         assetsArr.push({
           type: 'pick',
           raw: parsed?.canonical || raw,
@@ -730,11 +413,6 @@ export async function execute(interaction) {
   }
 
   if (PICK_MANUAL_BTN.test(interaction.customId)) {
-    const draft = getTradeDraft(interaction.customId.split('|')[2]);
-    if (draft?.mode === '2k') {
-      await interaction.reply(buildPrivatePayload(interaction, { content: 'For NBA, add picks from the Picks menu.' }));
-      return;
-    }
     const [, side, draftId] = interaction.customId.split('|');
     const modalId = `trade_builder_pick_modal|${side}|${draftId}`;
     const modal = new ModalBuilder()
@@ -768,13 +446,11 @@ export async function execute(interaction) {
     const pickContext = getMaddenPickContext(snapshot);
     const draftYearBase = Math.max(2027, pickContext.draftBaseYear);
     const rawInput = interaction.fields.getTextInputValue('pickLabel') || '';
-    const parsed = draft.mode === '2k'
-      ? parsePickValue2k(rawInput, draft.seasonYear)
-      : parsePickValue(rawInput, draftYearBase, {
-        currentYearExactAllowed: pickContext.currentYearExactAllowed,
-      });
+    const parsed = parsePickValue(rawInput, draftYearBase, {
+      currentYearExactAllowed: pickContext.currentYearExactAllowed,
+    });
     if (!parsed) {
-      await interaction.reply(buildPrivatePayload(interaction, { content: 'Could not parse that pick. Try formats like \"2027 Round 1\", \"2027 Round 1 via Jets\", or \"2027 Round 1 Pick 4 via Jets\".' }));
+      await interaction.reply(buildPrivatePayload(interaction, { content: 'Could not parse that pick. Try formats like "2027 Round 1", "2027 Round 1 via Jets", or "2027 Round 1 Pick 4 via Jets".' }));
       return;
     }
     draft.assets = draft.assets || { your: [], other: [] };

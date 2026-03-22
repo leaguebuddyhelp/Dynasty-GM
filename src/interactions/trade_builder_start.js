@@ -7,7 +7,7 @@ import { normalizeName } from '../shared/rosterUtils.js';
 import { resolveTeamNameForRoster } from '../shared/rosterUtils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 
-export const customId = /^trade_builder_start(?:_2k)?$/;
+export const customId = /^trade_builder_start$/;
 
 async function safeReply(interaction, payload) {
   try {
@@ -21,82 +21,12 @@ async function safeReply(interaction, payload) {
 export async function execute(interaction) {
   if (!interaction.isButton()) return;
   if (!customId.test(interaction.customId)) return;
-  const forceMode2k = interaction.customId.endsWith('_2k');
   let leagueId = null;
-  if (!forceMode2k) {
-    try {
-      leagueId = requireLeagueIdForGuild(interaction.guildId);
-    } catch (error) {
-      await safeReply(interaction, { content: error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', flags: 64 });
-      return;
-    }
-  }
-
-  // ---------- NBA (2K) fallback ----------
-  const east = [
-    'Atlanta Hawks', 'Boston Celtics', 'Brooklyn Nets', 'Charlotte Hornets', 'Chicago Bulls',
-    'Cleveland Cavaliers', 'Detroit Pistons', 'Indiana Pacers', 'Miami Heat', 'Milwaukee Bucks',
-    'New York Knicks', 'Orlando Magic', 'Philadelphia 76ers', 'Toronto Raptors', 'Washington Wizards'
-  ];
-  const west = [
-    'Dallas Mavericks', 'Denver Nuggets', 'Golden State Warriors', 'Houston Rockets', 'Los Angeles Clippers',
-    'Los Angeles Lakers', 'Memphis Grizzlies', 'Minnesota Timberwolves', 'New Orleans Pelicans', 'Oklahoma City Thunder',
-    'Phoenix Suns', 'Portland Trail Blazers', 'Sacramento Kings', 'San Antonio Spurs', 'Utah Jazz'
-  ];
-  const nbaTeams = [...east, ...west];
-
-  // Robust coach team detection for 2K
-  const coachMapPath = path.join(process.cwd(), 'data/coachRoleMap.json');
-  let coachMap = {};
-  try { coachMap = JSON.parse(fs.readFileSync(coachMapPath, 'utf8')); } catch { }
-  const userRoles = interaction.member?.roles?.cache || new Map();
-  const userRoleIds = Array.from(userRoles.keys());
-  const USER_TEAM_OVERRIDES = {
-    // Timberwolves coach user
-    '840269359578611753': 'Minnesota Timberwolves',
-  };
-
-  // Helper to normalize role/team strings
-  const normSlug = (str = '') => str.toLowerCase().replace(/coach/g, '').replace(/[^a-z0-9]/g, '');
-  const rosterFiles = (() => {
-    try {
-      const dir = path.join(process.cwd(), 'data', '2k', 'teams_rosters');
-      return fs.readdirSync(dir)
-        .filter(f => f.endsWith('.json'))
-        .filter(f => !/free[_ ]?agency/i.test(f))
-        .map(f => f.replace('.json', ''));
-    } catch { return []; }
-  })();
-
-  const roleToTeam = Object.entries(coachMap).reduce((acc, [team, roleId]) => { acc[roleId] = team; return acc; }, {});
-
-  // Collect all possible matches; if more than one, leave null to force manual pick
-  const matches = new Set();
-
-  // Priority 0: explicit user override
-  const overrideTeam = USER_TEAM_OVERRIDES[interaction.user.id];
-  if (overrideTeam) matches.add(overrideTeam);
-
-  // Priority 1: exact roleId mapping
-  userRoleIds.forEach(id => { if (roleToTeam[id]) matches.add(roleToTeam[id]); });
-
-  // Hard overrides for known role ids
-  if (userRoleIds.includes('1460736451473051739')) {
-    matches.clear();
-    matches.add('Minnesota Timberwolves');
-  } else if (userRoleIds.includes('1460734654901653525')) {
-    matches.clear();
-    matches.add('Milwaukee Bucks');
-  } else if (interaction.user.id === '1076243288056664234') {
-    matches.clear();
-    matches.add('Cleveland Cavaliers');
-  }
-
-  // Priority 2: role name matches roster slug
-  for (const [, role] of userRoles) {
-    const slug = normSlug(role.name);
-    const hit = rosterFiles.find(t => normSlug(t.replace(/_/g, ' ')) === slug);
-    if (hit) matches.add(hit.replace(/_/g, ' '));
+  try {
+    leagueId = requireLeagueIdForGuild(interaction.guildId);
+  } catch (error) {
+    await safeReply(interaction, { content: error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', flags: 64 });
+    return;
   }
 
   let detectedTeam = null;
@@ -104,7 +34,7 @@ export async function execute(interaction) {
     const only = Array.from(matches)[0];
     detectedTeam = /timberwolves/i.test(only) ? 'Minnesota Timberwolves'
       : /bucks/i.test(only) ? 'Milwaukee Bucks'
-      : resolveTeamNameForRoster(only);
+        : resolveTeamNameForRoster(only);
   }
   console.log('[trade_builder_start][detect]', {
     userId: interaction.user.id,

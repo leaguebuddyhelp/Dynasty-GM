@@ -41,71 +41,7 @@ export async function execute(interaction) {
         }
     }
 
-    function teamToFile(team) {
-        const map = {
-            "cavaliers": "cleveland_cavaliers.json",
-            "cleveland cavaliers": "cleveland_cavaliers.json",
-            "hawks": "atlanta_hawks.json",
-            "atlanta hawks": "atlanta_hawks.json",
-            "celtics": "boston_celtics.json",
-            "boston celtics": "boston_celtics.json",
-            "nets": "brooklyn_nets.json",
-            "brooklyn nets": "brooklyn_nets.json",
-            "hornets": "charlotte_hornets.json",
-            "charlotte hornets": "charlotte_hornets.json",
-            "bulls": "chicago_bulls.json",
-            "chicago bulls": "chicago_bulls.json",
-            "mavericks": "dallas_mavericks.json",
-            "dallas mavericks": "dallas_mavericks.json",
-            "nuggets": "denver_nuggets.json",
-            "denver nuggets": "denver_nuggets.json",
-            "pistons": "detroit_pistons.json",
-            "detroit pistons": "detroit_pistons.json",
-            "warriors": "golden_state_warriors.json",
-            "golden state warriors": "golden_state_warriors.json",
-            "rockets": "houston_rockets.json",
-            "houston rockets": "houston_rockets.json",
-            "pacers": "indiana_pacers.json",
-            "indiana pacers": "indiana_pacers.json",
-            "clippers": "los_angeles_clippers.json",
-            "los angeles clippers": "los_angeles_clippers.json",
-            "lakers": "los_angeles_lakers.json",
-            "los angeles lakers": "los_angeles_lakers.json",
-            "grizzlies": "memphis_grizzlies.json",
-            "memphis grizzlies": "memphis_grizzlies.json",
-            "heat": "miami_heat.json",
-            "miami heat": "miami_heat.json",
-            "bucks": "milwaukee_bucks.json",
-            "milwaukee bucks": "milwaukee_bucks.json",
-            "timberwolves": "minnesota_timberwolves.json",
-            "minnesota timberwolves": "minnesota_timberwolves.json",
-            "knicks": "new_york_knicks.json",
-            "new york knicks": "new_york_knicks.json",
-            "thunder": "oklahoma_city_thunder.json",
-            "oklahoma city thunder": "oklahoma_city_thunder.json",
-            "magic": "orlando_magic.json",
-            "orlando magic": "orlando_magic.json",
-            "76ers": "philadelphia_76ers.json",
-            "philadelphia 76ers": "philadelphia_76ers.json",
-            "suns": "phoenix_suns.json",
-            "phoenix suns": "phoenix_suns.json",
-            "trail blazers": "portland_trail_blazers.json",
-            "portland trail blazers": "portland_trail_blazers.json",
-            "kings": "sacramento_kings.json",
-            "sacramento kings": "sacramento_kings.json",
-            "spurs": "san_antonio_spurs.json",
-            "san antonio spurs": "san_antonio_spurs.json",
-            "raptors": "toronto_raptors.json",
-            "toronto raptors": "toronto_raptors.json",
-            "jazz": "utah_jazz.json",
-            "utah jazz": "utah_jazz.json",
-            "wizards": "washington_wizards.json",
-            "washington wizards": "washington_wizards.json"
-        };
-        const key = team.toLowerCase().trim();
-        if (map[key]) return map[key];
-        return key.replace(/ /g, '_') + '.json';
-    }
+    // Madden-only: teamToFile not needed, remove NBA/2K mapping
 
     // Load pendingTrades.json and get trade/votes for this interaction/message
     const messageId = interaction.message?.id || interaction.id;
@@ -141,7 +77,7 @@ export async function execute(interaction) {
     // Threshold: first to 3 decides
     let finalized = false;
     if (approveCount >= 3) {
-        entry.trade.status = 'approved_pending_2k';
+        entry.trade.status = 'approved';
         finalized = true;
     } else if (denyCount >= 3) {
         entry.trade.status = 'denied';
@@ -188,70 +124,7 @@ export async function execute(interaction) {
     embed.setColor(trade.status === 'approved' || trade.status === 'approved_pending_2k' ? 0x57F287 : trade.status === 'denied' ? 0xED4245 : 0x5865F2);
 
     // Only update rosters/picks and post to correct channel based on trade status
-    if (finalized && trade.status === 'approved_pending_2k') {
-        // Avoid duplicate prompts
-        if (entry.proofRequested) {
-            await interaction.reply({ content: 'Proof request already sent. Waiting for 2K proof.', flags: 64 });
-            return;
-        }
-        entry.proofRequested = true;
-        pendingTrades[messageId] = entry;
-        try { fs.writeFileSync(pendingPath, JSON.stringify(pendingTrades, null, 2)); } catch { }
-
-        const coachRoleA = getCoachRole(trade.yourTeam);
-        const coachRoleB = getCoachRole(trade.otherTeam);
-        const proofEmbed = new EmbedBuilder()
-            .setTitle("Trade Approved — 2K Proof Required")
-            .setDescription("Proposer: upload a 2K screenshot showing **Valid Trade** for this exact deal. Once submitted, rosters will update.")
-            .addFields(
-                { name: "Your Team", value: trade.yourTeam, inline: true },
-                { name: "Other Team", value: trade.otherTeam, inline: true },
-                { name: "Assets Sent", value: trade.assetsSent || 'N/A', inline: false },
-                { name: "Assets Received", value: trade.assetsReceived || 'N/A', inline: false }
-            )
-            .setColor(0x57F287);
-        const proofButtons = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId(`trade_2k_proof|${trade.tradeId}`).setLabel('Upload 2K Proof').setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId(`trade_2k_cancel|${trade.tradeId}`).setLabel('Cancel Trade').setStyle(ButtonStyle.Danger),
-        );
-
-        // Notify committee channel we're waiting for proof
-        try {
-            const approvedChannel = await interaction.client.channels.fetch(APPROVED_CHANNEL_ID);
-            if (approvedChannel) {
-                // Always read from the pending trade data for team names
-                const pendingPath = path.join(process.cwd(), 'data/pendingTrades.json');
-                let pendingTrades = {};
-                if (fs.existsSync(pendingPath)) {
-                    try {
-                        pendingTrades = JSON.parse(fs.readFileSync(pendingPath, 'utf8'));
-                    } catch { }
-                }
-                // Find the entry for this trade
-                let entry = Object.values(pendingTrades).find(e => e?.trade?.tradeId === trade.tradeId);
-                let yourTeam = entry?.trade?.yourTeam || trade.yourTeam;
-                let otherTeam = entry?.trade?.otherTeam || trade.otherTeam;
-                const coachRoleA = getCoachRole(yourTeam);
-                const coachRoleB = getCoachRole(otherTeam);
-                let tags = '';
-                if (coachRoleA && coachRoleB) {
-                    tags = `<@&${coachRoleA}> <@&${coachRoleB}>`;
-                } else if (coachRoleA) {
-                    tags = `<@&${coachRoleA}>`;
-                } else if (coachRoleB) {
-                    tags = `<@&${coachRoleB}>`;
-                }
-                console.log('[DEBUG][approved-trades] yourTeam:', yourTeam, 'otherTeam:', otherTeam, 'coachRoleA:', coachRoleA, 'coachRoleB:', coachRoleB, 'tags:', tags);
-                await approvedChannel.send({
-                    content: `${tags} Trade approved by committee. Waiting for 2K proof.`.trim(),
-                    embeds: [proofEmbed],
-                    components: [proofButtons],
-                });
-            }
-        } catch (err) {
-            console.error('[trade_committee_vote] Failed to post waiting-for-proof notice', err);
-        }
-    } else if (finalized && trade.status === 'approved') {
+    if (finalized && trade.status === 'approved') {
         // Post to denied channel
         let deniedChannel;
         try {

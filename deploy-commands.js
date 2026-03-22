@@ -74,8 +74,7 @@ async function loadCommandsForDeployment() {
       ['madden', 'staff'],
     ]
     : [
-      ['2k', 'staff'],
-      ['2k', 'coach'],
+      // 2K commands removed
       ['madden'],
       ['madden', 'coach'],
       ['madden', 'staff'],
