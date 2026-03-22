@@ -1,5 +1,5 @@
 import { ButtonInteraction } from 'discord.js';
-import { runAdvanceSeason } from '../2k/staff/advanceseason.js';
+
 
 export const customId = /^advanceseason_(confirm|cancel)_/;
 
@@ -15,16 +15,8 @@ export async function execute(interaction) {
     await interaction.update({ content: 'Advance season canceled.', components: [] });
     return;
   }
-  await interaction.update({ content: `Advancing to Season ${seasonno}...`, components: [] });
-  try {
-    const { teamsCount } = await runAdvanceSeason(seasonno, interaction.guild);
-    await interaction.followUp({ content: `Started season ${seasonno}. Teams initialized: ${teamsCount}. Masters unchanged.`, flags: 64 });
-  } catch (err) {
-    console.error('[advanceseason_confirm] Failed:', err);
-    try {
-      await interaction.followUp({ content: 'Failed to advance season. Check logs.', flags: 64 });
-    } catch {}
-  }
+  await interaction.update({ content: `Advancing season is currently unavailable. Please contact an admin to enable this feature for Madden.`, components: [] });
+  // Madden-only: No advance season logic implemented yet.
 }
 
 export default { customId, execute };
