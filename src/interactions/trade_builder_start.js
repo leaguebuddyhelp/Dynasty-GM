@@ -29,20 +29,10 @@ export async function execute(interaction) {
     return;
   }
 
+  // Madden-only: detectedTeam logic can be implemented here if needed
   let detectedTeam = null;
-  if (matches.size === 1) {
-    const only = Array.from(matches)[0];
-    detectedTeam = /timberwolves/i.test(only) ? 'Minnesota Timberwolves'
-      : /bucks/i.test(only) ? 'Milwaukee Bucks'
-        : resolveTeamNameForRoster(only);
-  }
-  console.log('[trade_builder_start][detect]', {
-    userId: interaction.user.id,
-    userRoles: userRoleIds,
-    roleMatches: Array.from(matches),
-    detectedTeam,
-    overrideTeam: USER_TEAM_OVERRIDES[interaction.user.id] || null,
-  });
+  // Example: You could detect the user's team based on their Discord roles here in the future
+  // For now, detectedTeam remains null
 
   // Only Madden/NFL mode supported
   let snapshot = null;
