@@ -1,3 +1,5 @@
+
+# Redeploy trigger: 2026-03-22
 # LEAGUEbuddy
 
 This repo contains multiple feature areas, but the **v2 setup flow is Madden-only**.
