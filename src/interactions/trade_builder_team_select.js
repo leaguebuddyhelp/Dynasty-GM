@@ -57,6 +57,10 @@ export async function execute(interaction) {
   } catch {
     return;
   }
+  // Extract prefix (e.g., 'yours', 'other_afc', 'other_nfc') from customId
+  const match = interaction.customId.match(/^trade_builder_team_(yours|other_afc|other_nfc)\|(.+)$/);
+  const prefix = match ? match[1] : '';
+  const draftId = match ? match[2] : '';
   const side = prefix.includes('yours') ? 'yourTeamId' : 'otherTeamId';
   const draft = getTradeDraft(draftId);
   if (!draft) {
