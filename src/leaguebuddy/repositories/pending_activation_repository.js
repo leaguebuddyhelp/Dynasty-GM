@@ -72,8 +72,20 @@ export function getClaimByCode(claimCode) {
   if (!claimCode) return null;
   const normalized = String(claimCode).trim().toUpperCase();
   const claims = listClaims();
-  const found = claims.find((claim) => String(claim?.claimCode || '').toUpperCase() === normalized) || null;
-  // Debug: log claim code lookup
+  let found = null;
+  for (const claim of claims) {
+    const claimCodeRaw = claim?.claimCode;
+    const claimCodeNorm = String(claimCodeRaw || '').toUpperCase();
+    console.log('[getClaimByCode] Comparing:', {
+      input: { value: claimCode, normalized, type: typeof claimCode },
+      claim: { value: claimCodeRaw, normalized: claimCodeNorm, type: typeof claimCodeRaw }
+    });
+    if (claimCodeNorm === normalized) {
+      found = claim;
+      break;
+    }
+  }
+  // Debug: log claim code lookup result
   console.log('[pending_activation_repository] getClaimByCode:', claimCode, 'normalized:', normalized, 'found:', !!found);
   return found;
 }
