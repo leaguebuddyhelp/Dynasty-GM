@@ -77,9 +77,9 @@ console.log('LB_STRIPE_CLAIMS_WEBHOOK_ENABLED:', process.env.LB_STRIPE_CLAIMS_WE
 validateStartupConfig();
 startHealthcheckServer();
 
-// Productization toggle: run Madden-only to simplify deployments and avoid loading 2K features.
-// Default: true (Madden-only) unless explicitly disabled.
-const MADDEN_ONLY = String(process.env.MADDEN_ONLY ?? 'true').toLowerCase() !== 'false';
+
+// Madden-only mode: ignore all 2K features and handlers
+const MADDEN_ONLY = true;
 
 const client = new Client({
   intents: [
@@ -153,20 +153,19 @@ await startOptionalService({
   },
 });
 
-// Register startseason_confirm button handler
+
+// Register only Madden interaction handlers (ignore 2K)
 import * as startseasonConfirm from './interactions/startseason_confirm.js';
-// Dynamically load all interaction handlers from src/interactions
 const interactionsPath = join(process.cwd(), 'src', 'interactions');
 const interactionFiles = readdirSync(interactionsPath).filter(f => f.endsWith('.js'));
 for (const file of interactionFiles) {
+  if (file.startsWith('2k_')) continue; // Ignore 2K handlers
   const filePath = join(interactionsPath, file);
   const handlerModule = await import(pathToFileURL(filePath).href);
   const handler = handlerModule.default || handlerModule;
-  // Register main button/select handlers
   if (handler.customId && typeof handler.execute === 'function') {
     client.interactionHandlers.push({ customId: handler.customId, execute: handler.execute });
   }
-  // Register modal customIds if present
   for (const key of Object.keys(handler)) {
     if (key.startsWith('customId_')) {
       const customIdValue = handler[key];

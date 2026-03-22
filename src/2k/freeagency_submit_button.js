@@ -9,7 +9,9 @@ import {
 } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+
 import { readRoster, saveRoster, upsertPlayer, removePlayerFromOtherRostersFuzzy, normalizeName } from '../shared/rosterUtils.js';
+import { getUserTeam } from '../shared/user_team_lookup.js';
 
 const STORE_PATH = path.join(process.cwd(), 'data', 'freeagency_entries.json');
 const STAFF_MAP_PATH = path.join(process.cwd(), 'data', 'staffRoleMap.main.json');
@@ -44,25 +46,7 @@ function readCoachRoleMap() {
   }
 }
 
-function getTeamFromMemberRoles(member) {
-  const map = readCoachRoleMap(); // Team -> roleId
-  if (!member?.roles?.cache) return null;
-  const USER_TEAM_OVERRIDES = {
-    '840269359578611753': 'Minnesota Timberwolves',
-  };
-  if (USER_TEAM_OVERRIDES[member.user?.id]) return USER_TEAM_OVERRIDES[member.user.id];
-  const roleToTeam = Object.entries(map).reduce((acc, [team, roleId]) => {
-    if (roleId) acc[roleId] = team;
-    return acc;
-  }, {});
-  // Explicit override: Timberwolves coach role id
-  if (member.roles.cache.has('1460736451473051739')) return 'Minnesota Timberwolves';
-  if (member.roles.cache.has('1460734654901653525')) return 'Milwaukee Bucks';
-  for (const [roleId] of member.roles.cache) {
-    if (roleToTeam[roleId]) return roleToTeam[roleId];
-  }
-  return null;
-}
+
 
 function findPlayerDataAcrossRosters(targetName) {
   const targetNorm = normalizeName(targetName);
@@ -207,19 +191,19 @@ export async function execute(interaction) {
     return;
   }
 
-    if (interaction.customId === 'freeagency_staff_add_button') {
-      // Staff gate
-      try {
-        const staffMap = JSON.parse(fs.readFileSync(STAFF_MAP_PATH, 'utf8'));
-        const allowedRoleIds = [
-          ...STAFF_ROLES.map(r => staffMap[r]).filter(Boolean),
-          ...COMMISH_ROLE_IDS,
-        ];
-        const memberRoles = interaction.member?.roles?.cache;
-        const isStaff = allowedRoleIds.length ? allowedRoleIds.some(rid => memberRoles?.has(rid)) : true;
-        if (!isStaff) {
-          await interaction.reply({ content: 'Staff only.', ephemeral: true });
-          return;
+  if (interaction.customId === 'freeagency_staff_add_button') {
+    // Staff gate
+    try {
+      const staffMap = JSON.parse(fs.readFileSync(STAFF_MAP_PATH, 'utf8'));
+      const allowedRoleIds = [
+        ...STAFF_ROLES.map(r => staffMap[r]).filter(Boolean),
+        ...COMMISH_ROLE_IDS,
+      ];
+      const memberRoles = interaction.member?.roles?.cache;
+      const isStaff = allowedRoleIds.length ? allowedRoleIds.some(rid => memberRoles?.has(rid)) : true;
+      if (!isStaff) {
+        await interaction.reply({ content: 'Staff only.', ephemeral: true });
+        return;
       }
     } catch {
       // allow if map missing

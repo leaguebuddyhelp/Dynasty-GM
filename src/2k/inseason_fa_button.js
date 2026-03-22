@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import { readRoster, saveRoster, upsertPlayer, removePlayerFromOtherRostersFuzzy, normalizeName } from '../shared/rosterUtils.js';
 import { getSeasonState } from '../shared/seasonUtils.js';
+import { getUserTeam } from '../shared/user_team_lookup.js';
 
 const FA_CHANNEL_ID = '1455148525179502602';
 const ANNOUNCE_CHANNEL_ID = '1455152984089694218'; // offseason announcements channel
@@ -73,18 +74,7 @@ function writePending(data) {
   }
 }
 
-function getTeamFromMemberRoles(member) {
-  const map = readCoachRoleMap(); // Team -> roleId
-  if (!member?.roles?.cache) return null;
-  const roleToTeam = Object.entries(map).reduce((acc, [team, roleId]) => {
-    if (roleId) acc[roleId] = team;
-    return acc;
-  }, {});
-  for (const [roleId] of member.roles.cache) {
-    if (roleToTeam[roleId]) return roleToTeam[roleId];
-  }
-  return null;
-}
+
 
 function computeSeasonAge(birthdate) {
   if (!birthdate) return null;
@@ -151,7 +141,7 @@ function findRoster2k(team) {
     const dir = path.join(process.cwd(), "data", "2k", "teams_rosters");
     const files = fs.readdirSync(dir).filter(f => f.endsWith(".json"));
     console.warn("[inseason_fa][findRoster2k] not found", { team, resolved, files });
-  } catch {}
+  } catch { }
   return null;
 }
 
@@ -234,10 +224,10 @@ export async function execute(interaction) {
       }
       return;
     }
-    const team = getTeamFromMemberRoles(interaction.member);
+    const team = getUserTeam(interaction.guildId, interaction.user.id);
     if (!team) {
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: 'Could not detect your team from roles. Contact staff.', flags: 64 });
+        await interaction.reply({ content: 'Could not detect your team assignment. Contact staff.', flags: 64 });
       }
       return;
     }
@@ -283,9 +273,9 @@ async function handleModalSubmit(interaction) {
   }
   const encoded = interaction.customId.replace('inseason_fa_modal_', '');
   const playerName = Buffer.from(encoded, 'base64').toString('utf8');
-  const team = getTeamFromMemberRoles(interaction.member);
+  const team = getUserTeam(interaction.guildId, interaction.user.id);
   if (!team) {
-    await interaction.editReply({ content: 'Could not detect your team from roles. Contact staff.' });
+    await interaction.editReply({ content: 'Could not detect your team assignment. Contact staff.' });
     return;
   }
   const faPlayers = loadFreeAgents();
@@ -360,7 +350,7 @@ async function handleModalSubmit(interaction) {
         msg = await reviewChannel.messages.fetch(existingId).catch(() => null);
       }
 
-  // Staff announcement temporarily removed during testing (no Ghost Paradise tag either)
+      // Staff announcement temporarily removed during testing (no Ghost Paradise tag either)
     }
   } catch (err) {
     console.error('[inseason_fa] Failed to send staff review:', err);
@@ -457,7 +447,7 @@ async function handleApproval(interaction, approve) {
       const dir = path.join(process.cwd(), 'data', '2k', 'teams_rosters');
       const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
       console.warn('[inseason_fa][approve] roster not found', { entryTeam: entry.team, teamName, files });
-    } catch {}
+    } catch { }
     await interaction.editReply({ content: `Roster not found for ${teamName}.` });
     return;
   }

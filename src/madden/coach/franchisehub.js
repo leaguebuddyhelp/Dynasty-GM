@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { loadRoleMapForGuild } from '../staff/staffUtils.js';
+import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { buildFranchiseProfileContext, buildFranchiseProfile } from '../franchise_profile.js';
 import { getLegacyOpportunityForTeam, getRecognitionPerkState, getRecognitionGameOfWeek, getRecognitionLeaderboard, getRecognitionPurchaseReceipts, getRecognitionUserSummary, getRecognitionWeeklyOpportunity, inferRecognitionContext, recordRecognitionThreadReply } from '../../shared/league_recognition.js';
 import { formatImpactValue, getSportsbookOpenBetOpportunity, getSportsbookUserCard } from '../../shared/madden_sportsbook.js';
@@ -27,29 +27,7 @@ function sameTeamLabel(left = '', right = '') {
   return leftNorm === rightNorm || leftNorm.endsWith(rightNorm) || rightNorm.endsWith(leftNorm);
 }
 
-function findCoachTeam(member, snapshot) {
-  const roleMap = loadRoleMapForGuild(member?.guild?.id);
-  const teamInfos = snapshot?.teams?.leagueTeamInfoList || [];
-  const teamCandidates = teamInfos.map((team) => ({
-    teamId: Number(team.teamId),
-    fullName: getFullTeamName(team, `Team ${team.teamId}`),
-    mascot: String(team.displayName || team.nickName || '').trim(),
-    city: String(team.cityName || '').trim(),
-    abbr: String(team.abbrName || '').trim(),
-  }));
-  for (const role of member?.roles?.cache?.values?.() || []) {
-    for (const [name] of Object.entries(roleMap || {})) {
-      if (!/ coach$/i.test(name)) continue;
-      if (name !== role.name) continue;
-      const base = name.replace(/ coach$/i, '').trim();
-      const norm = normalizeName(base);
-      const match = teamCandidates.find((team) =>
-        [team.fullName, team.mascot, team.city, team.abbr].some((value) => normalizeName(value) === norm));
-      if (match) return match.fullName;
-    }
-  }
-  return null;
-}
+
 
 function recordForTeam(snapshot, teamName) {
   // Use standings as the source of truth for record (and allow franchise_profile to
@@ -542,7 +520,7 @@ export async function execute(interaction) {
     return;
   }
 
-  const teamName = findCoachTeam(interaction.member, snapshot);
+  const teamName = getUserTeam(interaction.guildId, interaction.user.id);
   const recognitionContext = inferRecognitionContext('madden', interaction.guildId);
   if (teamName && recognitionContext?.seasonKey && recognitionContext?.weekKey) {
     const currentSummary = getRecognitionUserSummary({

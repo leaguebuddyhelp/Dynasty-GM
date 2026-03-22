@@ -1,7 +1,9 @@
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+
 import { canTrade, getSeasonState } from '../shared/seasonUtils.js';
+import { getUserTeam } from '../shared/user_team_lookup.js';
 
 const COACH_ROLE_MAP_PATH = path.join(process.cwd(), 'data', 'coachRoleMap.json');
 
@@ -13,18 +15,7 @@ function readCoachRoleMap() {
   }
 }
 
-function getTeamFromMemberRoles(member) {
-  const map = readCoachRoleMap(); // Team -> roleId
-  if (!member?.roles?.cache) return null;
-  const roleToTeam = Object.entries(map).reduce((acc, [team, roleId]) => {
-    if (roleId) acc[roleId] = team;
-    return acc;
-  }, {});
-  for (const [roleId] of member.roles.cache) {
-    if (roleToTeam[roleId]) return roleToTeam[roleId];
-  }
-  return null;
-}
+
 
 export const customId = /^trade_for/;
 
@@ -64,7 +55,7 @@ export async function execute(interaction) {
     return;
   }
 
-  const yourTeam = getTeamFromMemberRoles(interaction.member) || '';
+  const yourTeam = getUserTeam(interaction.guildId, interaction.user.id) || '';
 
   const modal = new ModalBuilder()
     .setCustomId('trade_modal_submit')

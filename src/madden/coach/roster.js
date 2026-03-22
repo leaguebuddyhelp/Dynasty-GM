@@ -1,3 +1,4 @@
+import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden_data.js';
 import { computePlayerValue } from '../madden_trade_modal_submit.js';
@@ -112,7 +113,7 @@ export function buildRosterEmbeds(snapshot, teamName) {
 }
 
 export async function execute(interaction) {
-  const teamInput = interaction.options.getString('team');
+  let teamInput = interaction.options.getString('team');
   let leagueId;
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
@@ -125,6 +126,14 @@ export async function execute(interaction) {
     if (!snapshot) {
       await interaction.reply({ content: coachErrorBlurb('noSnapshot', 'Could not load the current Madden league snapshot.'), ephemeral: true });
       return;
+    }
+    // If no team provided, use assignment system
+    if (!teamInput) {
+      teamInput = getUserTeam(interaction.guildId, interaction.user.id);
+      if (!teamInput) {
+        await interaction.reply({ content: 'Could not determine your assigned team.', ephemeral: true });
+        return;
+      }
     }
     await interaction.deferReply({ ephemeral: true });
     const result = buildRosterEmbeds(snapshot, teamInput);

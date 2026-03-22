@@ -6,6 +6,7 @@ import { computePlayerValue as computeValueBase } from '../../../madden/madden_t
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
+import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
@@ -46,24 +47,7 @@ function computeTradeValue(player) {
   }
 }
 
-function findCoachTeam(member, roleMap, snapshot) {
-  const coachRoles = Object.entries(roleMap).filter(([name]) => name.endsWith(' Coach'));
-  const memberRole = coachRoles.find(([, id]) => member.roles.cache.has(id));
-  if (!memberRole) return null;
-  const raw = memberRole[0].replace(/ Coach$/, '');
-  const target = normalizeName(raw);
-  const teams = snapshot?.teams?.leagueTeamInfoList || [];
-  for (const t of teams) {
-    const names = [
-      t.displayName,
-      t.nickName,
-      t.abbrName,
-      t.cityName,
-    ].map(normalizeName);
-    if (names.includes(target)) return t.teamId;
-  }
-  return null;
-}
+
 
 function getRoster(snapshot, teamId) {
   return snapshot?.rosters?.teams?.[teamId]?.rosterInfoList || [];
@@ -217,11 +201,17 @@ async function autocomplete(interaction) {
   }, 1500);
   try {
     const focused = interaction.options.getFocused(true);
-    const roleMap = loadRoleMap(interaction.guildId);
     const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
-    const teamId = findCoachTeam(interaction.member, roleMap, snapshot);
-    if (!teamId) throw new Error('no team');
+    const userTeamName = getUserTeam(interaction.guildId, interaction.user.id);
+    if (!userTeamName) throw new Error('no team');
+    const teams = snapshot?.teams?.leagueTeamInfoList || [];
+    const teamObj = teams.find(t => {
+      const candidates = [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName);
+      return candidates.includes(normalizeName(userTeamName));
+    });
+    if (!teamObj) throw new Error('no team');
+    const teamId = teamObj.teamId;
     const action = interaction.options.getString('action');
     const positionChoice = interaction.options.getString('position');
     const positionFilter = positionChoice === 'ALL' ? null : positionChoice;
@@ -269,13 +259,22 @@ async function execute(interaction) {
     const playerName = interaction.options.getString('player');
     const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
-    const roleMap = loadRoleMap(interaction.guildId);
     const channelMap = loadChannelMap(interaction.guildId);
-    const teamId = findCoachTeam(interaction.member, roleMap, snapshot);
-    if (!teamId) {
-      await interaction.editReply({ content: 'Could not determine your team from your coach role.' });
+    const userTeamName = getUserTeam(interaction.guildId, interaction.user.id);
+    if (!userTeamName) {
+      await interaction.editReply({ content: 'Could not determine your team assignment.' });
       return;
     }
+    const teams = snapshot?.teams?.leagueTeamInfoList || [];
+    const teamObj = teams.find(t => {
+      const candidates = [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName);
+      return candidates.includes(normalizeName(userTeamName));
+    });
+    if (!teamObj) {
+      await interaction.editReply({ content: 'Could not match your assigned team to a league team.' });
+      return;
+    }
+    const teamId = teamObj.teamId;
     const roster = getRoster(snapshot, teamId);
     const block = loadJson(BLOCK_FILE);
     block[teamId] = block[teamId] || [];

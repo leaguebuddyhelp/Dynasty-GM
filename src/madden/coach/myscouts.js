@@ -1,3 +1,4 @@
+import { getUserTeam } from '../../shared/user_team_lookup.js';
 import fs from 'fs';
 import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
@@ -49,30 +50,14 @@ function normalizeTeamName(name = '') {
   return String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function resolveCoachTeamFromMember(member, snapshot) {
-  const roleNames = new Set(
-    (member?.roles?.cache?.values?.() || [])
-      .map((role) => String(role?.name || '').trim())
-      .filter((name) => / coach$/i.test(name))
-      .map((name) => name.replace(/ coach$/i, '').trim()),
-  );
-  if (!roleNames.size) return null;
-  const teams = snapshot?.teams?.leagueTeamInfoList || [];
-  for (const team of teams) {
-    const fullName = getFullTeamName(team, `Team ${team.teamId}`);
-    const candidates = [fullName, team.displayName, team.nickName, team.cityName, team.abbrName]
-      .map((value) => String(value || '').trim())
-      .filter(Boolean);
-    for (const roleName of roleNames) {
-      const target = normalizeTeamName(roleName);
-      if (candidates.some((value) => normalizeTeamName(value) === target)) return fullName;
-    }
-  }
-  return null;
+
+function resolveCoachTeamFromMember(member, snapshot, guildId, userId) {
+  // Use assignment system for robust, multi-guild lookup
+  return getUserTeam(guildId, userId);
 }
 
-function resolveTeamNeedsForCoach(member, snapshot) {
-  const teamName = resolveCoachTeamFromMember(member, snapshot);
+function resolveTeamNeedsForCoach(member, snapshot, guildId, userId) {
+  const teamName = resolveCoachTeamFromMember(member, snapshot, guildId, userId);
   if (!teamName) return [];
   const needsByTeam = deriveTeamNeeds(snapshot);
   const target = normalizeTeamName(teamName);
@@ -217,7 +202,7 @@ function getSuggestedScoutCandidates(member, userId, userData, classKey, weekKey
     return validStored;
   }
 
-  const topNeeds = resolveTeamNeedsForCoach(member, snapshot).slice(0, 3);
+  const topNeeds = resolveTeamNeedsForCoach(member, snapshot, guildId, userId).slice(0, 3);
   const prospects = Object.values(draftData || {});
   const needUsage = new Map();
   const pickedNames = new Set();
