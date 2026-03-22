@@ -496,7 +496,7 @@ async function handleApproval(interaction, approve) {
       new ButtonBuilder().setCustomId(`noop2_${id}`).setLabel('Deny').setStyle(ButtonStyle.Danger).setDisabled(true)
     );
     await interaction.message.edit({ components: [disabledRow] });
-  } catch {}
+  } catch { }
 
   if (!approve) {
     delete pending[id];
