@@ -47,6 +47,11 @@ async function readRawBody(req) {
 
 async function handleStripeWebhook(req, res) {
   try {
+    console.log('[stripe-claims] webhook received', {
+      headers: req.headers,
+      method: req.method,
+      url: req.url,
+    });
     const secret = String(process.env.LB_STRIPE_WEBHOOK_SECRET || '').trim();
     if (!secret) {
       res.writeHead(503, { 'content-type': 'application/json; charset=utf-8' });
@@ -58,6 +63,11 @@ async function handleStripeWebhook(req, res) {
     const rawBody = rawBuffer.toString('utf8');
     const signature = req.headers['stripe-signature'];
     if (!verifyStripeSignature(rawBody, signature, secret)) {
+      console.warn('[stripe-claims] invalid signature', {
+        signature,
+        secretPresent: !!secret,
+        rawBody,
+      });
       res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: false, error: 'invalid_signature' }));
       return;
