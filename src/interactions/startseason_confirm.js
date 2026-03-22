@@ -30,10 +30,10 @@ export async function execute(interaction) {
         let errorMsg = '';
         console.log('[startseason_confirm] Button handler triggered for seasonno:', seasonno, 'guild:', interaction.guild?.id);
         try {
-            const { resetSeasonData } = await import('../2k/staff/startseason.js');
-            console.log('[startseason_confirm] Imported resetSeasonData:', typeof resetSeasonData);
-            await resetSeasonData(seasonno, interaction.guild, 'button');
-            console.log('[startseason_confirm] resetSeasonData completed.');
+            // const { resetSeasonData } = await import('../2k/staff/startseason.js');
+            // 2K startseason removed. Madden-only logic not implemented.
+            await interaction.followUp({ content: 'Start season is currently unavailable. Please contact an admin to enable this feature for Madden.', ephemeral: true });
+            return;
             // Only update standings pin after successful reset
             try {
                 const standingsChannelId = '1428159168904167535';

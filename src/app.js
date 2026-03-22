@@ -399,13 +399,13 @@ client.on('interactionCreate', async interaction => {
     if (!MADDEN_ONLY) {
       if (interaction.isModalSubmit() && interaction.customId.startsWith('set_game_info_modal|')) {
         console.log('[router] 2K set_game_info modal', interaction.customId);
-        const setGameInfo2k = await import('./2k/set_game_info.js');
+        // const setGameInfo2k = await import('./2k/set_game_info.js'); // 2K feature removed
         await setGameInfo2k.execute_modal(interaction);
         return;
       }
       if (interaction.isButton() && interaction.customId.startsWith('set_game_info|')) {
         console.log('[router] 2K set_game_info button', interaction.customId);
-        const setGameInfo2k = await import('./2k/set_game_info.js');
+        // const setGameInfo2k = await import('./2k/set_game_info.js'); // 2K feature removed
         await setGameInfo2k.execute(interaction);
         return;
       }
@@ -553,7 +553,7 @@ client.once('clientReady', (readyClient) => {
 });
 
 
-// Load all commands from src/commands/2k/{coach,staff} and src/commands/madden
+// Load all commands from src/commands/madden only (2K removed)
 async function loadCommands() {
   const commandFolders = MADDEN_ONLY
     ? [

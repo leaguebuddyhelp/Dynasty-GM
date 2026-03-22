@@ -1,6 +1,6 @@
-import { handleScoutSelect } from "../2k/coach/scout.js";
+
 
 export const customId = "scout_select_2";
 export async function execute(interaction) {
-    await handleScoutSelect(interaction, 2);
+    await interaction.reply({ content: 'Scouting is currently unavailable. Please contact an admin to enable this feature for Madden.', ephemeral: true });
 }

@@ -10,7 +10,7 @@ export async function execute(interaction) {
   const classNo = parseInt(match[1], 10);
   try {
     await interaction.deferUpdate();
-  } catch {}
+  } catch { }
   await interaction.followUp({ content: 'Draft merging is currently unavailable. Please contact an admin to enable this feature for Madden.', ephemeral: true });
   // Madden-only: No mergedraft logic implemented yet.
 }
