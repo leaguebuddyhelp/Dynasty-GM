@@ -44,17 +44,11 @@ export async function execute(interaction) {
     overrideTeam: USER_TEAM_OVERRIDES[interaction.user.id] || null,
   });
 
-  // Try Madden first; if not configured or empty snapshot, switch to NBA mode
+  // Only Madden/NFL mode supported
   let snapshot = null;
   let teams = [];
-  let mode = forceMode2k ? '2k' : 'madden';
-  if (!forceMode2k && leagueId) {
-    try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
-    teams = snapshot?.teams?.leagueTeamInfoList || [];
-    if (!teams.length) mode = '2k';
-  } else {
-    mode = '2k';
-  }
+  try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
+  teams = snapshot?.teams?.leagueTeamInfoList || [];
 
   const limitOptions = (opts, keepValue) => {
     if (opts.length <= 25) return opts;
@@ -87,103 +81,53 @@ export async function execute(interaction) {
     seasonYear = new Date().getFullYear();
   }
 
-  if (mode === 'madden') {
-    saveTradeDraft(draftId, {
-      draftId,
-      userId: interaction.user.id,
-      guildId: interaction.guildId,
-      leagueId,
-      mode: 'madden',
-      yourTeamId: null,
-      otherTeamId: null,
-      assets: { your: [], other: [] },
-    });
-  } else {
-    const initialTeam = detectedTeam || USER_TEAM_OVERRIDES[interaction.user.id] || null;
-    saveTradeDraft(draftId, {
-      draftId,
-      userId: interaction.user.id,
-      guildId: interaction.guildId,
-      mode: '2k',
-      yourTeamName: initialTeam,
-      yourTeamId: initialTeam,
-      otherTeamName: null,
-      seasonYear,
-      assets: { your: [], other: [] },
-    });
-  }
+  saveTradeDraft(draftId, {
+    draftId,
+    userId: interaction.user.id,
+    guildId: interaction.guildId,
+    leagueId,
+    mode: 'madden',
+    yourTeamId: null,
+    otherTeamId: null,
+    assets: { your: [], other: [] },
+  });
 
-  let rows;
-  if (mode === 'madden') {
-    const optionsAll = teams.map(t => ({
+  const optionsAll = teams.map(t => ({
+    label: getFullTeamName(t, 'Unknown'),
+    value: String(t.teamId ?? t.teamIndex ?? t.displayName ?? t.nickName),
+  }));
+  const optionsAFC = teams
+    .filter(t => (t.divName || '').toUpperCase().includes('AFC'))
+    .map(t => ({
       label: getFullTeamName(t, 'Unknown'),
       value: String(t.teamId ?? t.teamIndex ?? t.displayName ?? t.nickName),
     }));
-    const optionsAFC = teams
-      .filter(t => (t.divName || '').toUpperCase().includes('AFC'))
-      .map(t => ({
-        label: getFullTeamName(t, 'Unknown'),
-        value: String(t.teamId ?? t.teamIndex ?? t.displayName ?? t.nickName),
-      }));
-    const optionsNFC = teams
-      .filter(t => (t.divName || '').toUpperCase().includes('NFC'))
-      .map(t => ({
-        label: getFullTeamName(t, 'Unknown'),
-        value: String(t.teamId ?? t.teamIndex ?? t.displayName ?? t.nickName),
-      }));
-    rows = [
-      new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`trade_builder_team_yours|${draftId}`)
-          .setPlaceholder('Your team')
-          .addOptions(limitOptions(optionsAll))
-      ),
-      new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`trade_builder_team_other_afc|${draftId}`)
-          .setPlaceholder('Select other team (AFC)')
-          .addOptions(limitOptions(optionsAFC))
-      ),
-      new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`trade_builder_team_other_nfc|${draftId}`)
-          .setPlaceholder('Select other team (NFC)')
-          .addOptions(limitOptions(optionsNFC))
-      ),
-    ];
-  } else {
-    const toOption = name => ({ label: name, value: name });
-    const optionsEast = east.map(toOption);
-    const optionsWest = west.map(toOption);
-    // Put detected team (if any) at top of a combined list for convenience
-    const allOptions = nbaTeams.map(toOption);
-    const uniq = (arr) => Array.from(new Map(arr.map(o => [o.value, o])).values());
-    const yourTeamOptions = detectedTeam
-      ? uniq([toOption(detectedTeam), ...allOptions]).slice(0, 25)
-      : allOptions.slice(0, 25);
-    const lockYourTeam = !!(detectedTeam || USER_TEAM_OVERRIDES[interaction.user.id]);
-    rows = [
-      new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`trade_builder_team_yours|${draftId}`)
-          .setPlaceholder(detectedTeam ? `Your team (auto): ${detectedTeam}` : 'Select your team')
-          .setDisabled(lockYourTeam)
-          .addOptions(yourTeamOptions)
-      ),
-      new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`trade_builder_team_other_afc|${draftId}`)
-          .setPlaceholder('Select other team (East)')
-          .addOptions(optionsEast.slice(0, 25))
-      ),
-      new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`trade_builder_team_other_nfc|${draftId}`)
-          .setPlaceholder('Select other team (West)')
-          .addOptions(optionsWest.slice(0, 25))
-      ),
-    ];
-  }
+  const optionsNFC = teams
+    .filter(t => (t.divName || '').toUpperCase().includes('NFC'))
+    .map(t => ({
+      label: getFullTeamName(t, 'Unknown'),
+      value: String(t.teamId ?? t.teamIndex ?? t.displayName ?? t.nickName),
+    }));
+  const rows = [
+    new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(`trade_builder_team_yours|${draftId}`)
+        .setPlaceholder('Your team')
+        .addOptions(limitOptions(optionsAll))
+    ),
+    new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(`trade_builder_team_other_afc|${draftId}`)
+        .setPlaceholder('Select other team (AFC)')
+        .addOptions(limitOptions(optionsAFC))
+    ),
+    new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(`trade_builder_team_other_nfc|${draftId}`)
+        .setPlaceholder('Select other team (NFC)')
+        .addOptions(limitOptions(optionsNFC))
+    ),
+  ];
 
   await safeReply(interaction, {
     content: 'Select teams to start building the trade.',
