@@ -23,16 +23,7 @@ async function safeMessage(interaction, content) {
   return interaction.reply(interaction.inGuild() ? { ...payload, flags: 64 } : payload);
 }
 
-const EAST = [
-  'Atlanta Hawks', 'Boston Celtics', 'Brooklyn Nets', 'Charlotte Hornets', 'Chicago Bulls',
-  'Cleveland Cavaliers', 'Detroit Pistons', 'Indiana Pacers', 'Miami Heat', 'Milwaukee Bucks',
-  'New York Knicks', 'Orlando Magic', 'Philadelphia 76ers', 'Toronto Raptors', 'Washington Wizards'
-];
-const WEST = [
-  'Dallas Mavericks', 'Denver Nuggets', 'Golden State Warriors', 'Houston Rockets', 'Los Angeles Clippers',
-  'Los Angeles Lakers', 'Memphis Grizzlies', 'Minnesota Timberwolves', 'New Orleans Pelicans', 'Oklahoma City Thunder',
-  'Phoenix Suns', 'Portland Trail Blazers', 'Sacramento Kings', 'San Antonio Spurs', 'Utah Jazz'
-];
+
 
 function buildTeamOptions(snapshot, conference) {
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
@@ -66,7 +57,6 @@ export async function execute(interaction) {
   } catch {
     return;
   }
-  // File removed: 2K-only feature
   const side = prefix.includes('yours') ? 'yourTeamId' : 'otherTeamId';
   const draft = getTradeDraft(draftId);
   if (!draft) {
@@ -75,54 +65,28 @@ export async function execute(interaction) {
   }
   let leagueId = draft.leagueId || null;
   let snapshot = null;
-  if (draft.mode !== '2k') {
-    if (!leagueId) {
-      try {
-        leagueId = requireLeagueIdForGuild(interaction.guildId);
-      } catch (error) {
-        await safeMessage(interaction, error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.');
-        return;
-      }
+  if (!leagueId) {
+    try {
+      leagueId = requireLeagueIdForGuild(interaction.guildId);
+    } catch (error) {
+      await safeMessage(interaction, error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.');
+      return;
     }
-    try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
   }
+  try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
 
   const selected = interaction.values[0];
   const prevYour = draft.yourTeamId;
   const prevOther = draft.otherTeamId;
   draft[side] = selected;
-
-  // Hard user override for Timberwolves coach user ID
-  const USER_TEAM_OVERRIDES = {
-    '840269359578611753': 'Minnesota Timberwolves',
-  };
-  const userOverride = USER_TEAM_OVERRIDES[interaction.user.id];
-
-  if (draft.mode === '2k') { // This line and the following block should be removed
-    const resolved = (() => {
-      if (userOverride && side === 'yourTeamId') return userOverride;
-      if (/timberwolves/i.test(selected)) return 'Minnesota Timberwolves';
-      if (/bucks/i.test(selected)) return 'Milwaukee Bucks';
-      return resolveTeamNameForRoster(selected);
-    })();
-    if (side === 'yourTeamId') {
-      draft.yourTeamName = resolved;
-      draft.yourTeamId = resolved;
-    } else {
-      draft.otherTeamName = resolved;
-      draft.otherTeamId = resolved;
-      draft.otherTeam = resolved;
-    }
-  } else {
-    const optionsAll = limitOptions(buildTeamOptions(snapshot), draft.yourTeamId);
-    const optionsAFC = limitOptions(buildTeamOptions(snapshot, 'AFC'));
-    const optionsNFC = limitOptions(buildTeamOptions(snapshot, 'NFC'));
-    const team = (snapshot?.teams?.leagueTeamInfoList || []).find(t => String(t.teamId ?? t.teamIndex) === String(selected));
-    if (side === 'yourTeamId') draft.yourTeamName = getFullTeamName(team, selected);
-    if (side === 'otherTeamId') draft.otherTeamName = getFullTeamName(team, selected);
-    draft.yourTeam = draft.yourTeamName || draft.yourTeamId || draft.yourTeam;
-    draft.otherTeam = draft.otherTeamName || draft.otherTeamId || draft.otherTeam;
-  }
+  const optionsAll = limitOptions(buildTeamOptions(snapshot), draft.yourTeamId);
+  const optionsAFC = limitOptions(buildTeamOptions(snapshot, 'AFC'));
+  const optionsNFC = limitOptions(buildTeamOptions(snapshot, 'NFC'));
+  const team = (snapshot?.teams?.leagueTeamInfoList || []).find(t => String(t.teamId ?? t.teamIndex) === String(selected));
+  if (side === 'yourTeamId') draft.yourTeamName = getFullTeamName(team, selected);
+  if (side === 'otherTeamId') draft.otherTeamName = getFullTeamName(team, selected);
+  draft.yourTeam = draft.yourTeamName || draft.yourTeamId || draft.yourTeam;
+  draft.otherTeam = draft.otherTeamName || draft.otherTeamId || draft.otherTeam;
   // If team selection changed, clear cached assets so roster list refreshes correctly.
   if (side === 'yourTeamId' && prevYour && prevYour !== selected && draft.assets?.your) {
     draft.assets.your = [];
@@ -136,61 +100,40 @@ export async function execute(interaction) {
 
   const yourOptions = draft.yourTeamId
     ? [{ label: draft.yourTeamName || 'Your team', value: String(draft.yourTeamId) }]
-    : (draft.mode === '2k'
-      ? [...EAST, ...WEST].map(t => ({ label: t, value: t })).slice(0, 25)
-      : limitOptions(buildTeamOptions(snapshot), draft.yourTeamId));
+    : limitOptions(buildTeamOptions(snapshot), draft.yourTeamId);
   components.push(
     new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`trade_builder_team_yours|${draftId}`)
         .setPlaceholder(draft.yourTeamName ? `Your team: ${draft.yourTeamName}` : 'Select your team')
-        // Keep 2K selectable to override wrong auto-detection; Madden still locks after pick
-        .setDisabled(draft.mode === '2k' ? false : !!draft.yourTeamId)
+        .setDisabled(!!draft.yourTeamId)
         .addOptions(yourOptions)
     )
   );
 
-  const otherEastOptions = draft.mode === '2k'
-    ? (draft.otherTeamName && EAST.includes(draft.otherTeamName)
-      ? [{ label: draft.otherTeamName, value: draft.otherTeamName }]
-      : EAST.map(t => ({ label: t, value: t })))
-    : limitOptions(buildTeamOptions(snapshot, 'AFC'));
+  const otherAFCOptions = limitOptions(buildTeamOptions(snapshot, 'AFC'));
   components.push(
     new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`trade_builder_team_other_afc|${draftId}`)
-        .setPlaceholder(draft.mode === '2k'
-          ? (draft.otherTeamName && EAST.includes(draft.otherTeamName) ? `Other team: ${draft.otherTeamName}` : 'Select other team (East)')
-          : 'Select other team (AFC)')
-        .setDisabled(!!draft.otherTeamId && draft.mode === '2k' && EAST.includes(draft.otherTeamName))
-        .addOptions(draft.mode === '2k'
-          ? otherEastOptions.slice(0, 25)
-          : otherEastOptions)
+        .setPlaceholder('Select other team (AFC)')
+        .setDisabled(!!draft.otherTeamId)
+        .addOptions(otherAFCOptions)
     )
   );
 
-  const otherWestOptions = draft.mode === '2k'
-    ? (draft.otherTeamName && WEST.includes(draft.otherTeamName)
-      ? [{ label: draft.otherTeamName, value: draft.otherTeamName }]
-      : WEST.map(t => ({ label: t, value: t })))
-    : limitOptions(buildTeamOptions(snapshot, 'NFC'));
+  const otherNFCOptions = limitOptions(buildTeamOptions(snapshot, 'NFC'));
   components.push(
     new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`trade_builder_team_other_nfc|${draftId}`)
-        .setPlaceholder(draft.mode === '2k'
-          ? (draft.otherTeamName && WEST.includes(draft.otherTeamName) ? `Other team: ${draft.otherTeamName}` : 'Select other team (West)')
-          : 'Select other team (NFC)')
-        .setDisabled(!!draft.otherTeamId && draft.mode === '2k' && WEST.includes(draft.otherTeamName))
-        .addOptions(draft.mode === '2k'
-          ? otherWestOptions.slice(0, 25)
-          : otherWestOptions)
+        .setPlaceholder('Select other team (NFC)')
+        .setDisabled(!!draft.otherTeamId)
+        .addOptions(otherNFCOptions)
     )
   );
 
-  const haveBothTeams = draft.mode === '2k'
-    ? (draft.yourTeamName && draft.otherTeamName)
-    : (draft.yourTeamId && draft.otherTeamId);
+  const haveBothTeams = draft.yourTeamId && draft.otherTeamId;
   if (haveBothTeams) {
     components.push(...buildButtons(draftId));
     // keep at most 5 rows to satisfy Discord limits
