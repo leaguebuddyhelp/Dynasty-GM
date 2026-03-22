@@ -78,7 +78,7 @@ validateStartupConfig();
 startHealthcheckServer();
 
 
-// Madden-only mode: ignore all 2K features and handlers
+// Madden-only mode
 const MADDEN_ONLY = true;
 
 const client = new Client({
@@ -154,12 +154,12 @@ await startOptionalService({
 });
 
 
-// Register only Madden interaction handlers (ignore 2K)
+// Register only Madden interaction handlers
 import * as startseasonConfirm from './interactions/startseason_confirm.js';
 const interactionsPath = join(process.cwd(), 'src', 'interactions');
 const interactionFiles = readdirSync(interactionsPath).filter(f => f.endsWith('.js'));
 for (const file of interactionFiles) {
-  if (file.startsWith('2k_')) continue; // Ignore 2K handlers
+  if (file.startsWith('2k_')) continue;
   const filePath = join(interactionsPath, file);
   const handlerModule = await import(pathToFileURL(filePath).href);
   const handler = handlerModule.default || handlerModule;
@@ -395,7 +395,7 @@ client.on('interactionCreate', async interaction => {
       await setGameInfo.execute_modal_set_game_info(interaction);
       return;
     }
-    // 2K set_game_info modal/button routing removed for Madden-only mode
+
 
     // Route Madden live mock draft pick select menu (search results)
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('madden_mockdraft_pick|')) {
@@ -539,21 +539,13 @@ client.once('clientReady', (readyClient) => {
 });
 
 
-// Load all commands from src/commands/madden only (2K removed)
+// Load all commands from src/commands/madden only
 async function loadCommands() {
-  const commandFolders = MADDEN_ONLY
-    ? [
-      ['madden'],
-      ['madden', 'coach'],
-      ['madden', 'staff'],
-    ]
-    : [
-      ['2k', 'coach'],
-      ['2k', 'staff'],
-      ['madden'],
-      ['madden', 'coach'],
-      ['madden', 'staff'],
-    ];
+  const commandFolders = [
+    ['madden'],
+    ['madden', 'coach'],
+    ['madden', 'staff'],
+  ];
   // Only scan the primary command directories (old src/commands stubs are ignored)
   const roots = [
     join(process.cwd(), 'src'),
