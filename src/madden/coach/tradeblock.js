@@ -204,7 +204,13 @@ async function autocomplete(interaction) {
     const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     const userTeamName = getUserTeam(interaction.guildId, interaction.user.id);
-    if (!userTeamName) throw new Error('no team');
+    if (!userTeamName) {
+      // Debug: show all teams assigned to this user in this guild
+      const { getAllUserTeams } = await import('../../shared/user_team_lookup.js');
+      const allTeams = getAllUserTeams(interaction.guildId, interaction.user.id);
+      await interaction.editReply({ content: `Could not determine your team assignment. (Debug: assigned teams: ${JSON.stringify(allTeams)})` });
+      return;
+    }
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
     const teamObj = teams.find(t => {
       const candidates = [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName);
@@ -262,16 +268,37 @@ async function execute(interaction) {
     const channelMap = loadChannelMap(interaction.guildId);
     const userTeamName = getUserTeam(interaction.guildId, interaction.user.id);
     if (!userTeamName) {
-      await interaction.editReply({ content: 'Could not determine your team assignment.' });
+      // Debug: show all teams assigned to this user in this guild
+      const { getAllUserTeams } = await import('../../shared/user_team_lookup.js');
+      const allTeams = getAllUserTeams(interaction.guildId, interaction.user.id);
+      await interaction.editReply({ content: `Could not determine your team assignment. (Debug: assigned teams: ${JSON.stringify(allTeams)})` });
       return;
     }
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
-    const teamObj = teams.find(t => {
+    const normalizedUserTeam = normalizeName(userTeamName);
+    let teamObj = teams.find(t => {
       const candidates = [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName);
-      return candidates.includes(normalizeName(userTeamName));
+      return candidates.includes(normalizedUserTeam);
     });
     if (!teamObj) {
-      await interaction.editReply({ content: 'Could not match your assigned team to a league team.' });
+      // Try fuzzy match: check if userTeamName is a substring of any official team name
+      teamObj = teams.find(t => {
+        const candidates = [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName);
+        return candidates.some(c => c.includes(normalizedUserTeam) || normalizedUserTeam.includes(c));
+      });
+    }
+    if (!teamObj) {
+      // Show debug info: list all official team names (normalized)
+      const officialNames = teams.map(t => {
+        return {
+          displayName: t.displayName,
+          nickName: t.nickName,
+          abbrName: t.abbrName,
+          cityName: t.cityName,
+          normalized: [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName).join(' | ')
+        };
+      });
+      await interaction.editReply({ content: `Could not match your assigned team (\`${userTeamName}\`) to a league team.\n\nOfficial team names (normalized):\n\n\`${JSON.stringify(officialNames, null, 2)}\`` });
       return;
     }
     const teamId = teamObj.teamId;

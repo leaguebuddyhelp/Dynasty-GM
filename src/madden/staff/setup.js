@@ -29,9 +29,8 @@ export async function execute(interaction) {
     const before = getGuildRecord(guildId, { createIfMissing: false });
     const rec = ensureGuildActivated(guildId, { actor, source: 'command:/lb-activate' });
 
-    const complete = interaction.options.getBoolean('complete');
-    const setupCompleted = complete === null ? true : !!complete;
-    const updated = setSetupCompleted(guildId, setupCompleted, { actor, source: 'command:/lb-activate' });
+    // Always mark setup as complete when this command is run
+    const updated = setSetupCompleted(guildId, true, { actor, source: 'command:/lb-activate' });
 
     const created = !before;
     const content = [
