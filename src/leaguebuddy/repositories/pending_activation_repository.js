@@ -70,12 +70,14 @@ export function getClaimById(claimId) {
 
 export function getClaimByCode(claimCode) {
   if (!claimCode) return null;
-  const normalized = String(claimCode).trim().toUpperCase();
+  // Normalize: remove dashes and non-alphanumerics, uppercase
+  const normalize = (code) => String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const normalized = normalize(claimCode);
   const claims = listClaims();
   let found = null;
   for (const claim of claims) {
     const claimCodeRaw = claim?.claimCode;
-    const claimCodeNorm = String(claimCodeRaw || '').toUpperCase();
+    const claimCodeNorm = normalize(claimCodeRaw);
     console.log('[getClaimByCode] Comparing:', {
       input: { value: claimCode, normalized, type: typeof claimCode },
       claim: { value: claimCodeRaw, normalized: claimCodeNorm, type: typeof claimCodeRaw }
