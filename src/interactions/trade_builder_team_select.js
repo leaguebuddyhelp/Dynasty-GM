@@ -1,6 +1,7 @@
 import { ActionRowBuilder, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getTradeDraft, saveTradeDraft } from '../shared/trade_draft_store.js';
+import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 import { buildButtons } from './trade_builder_add_assets.js';
 import { resolveTeamNameForRoster } from '../shared/rosterUtils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
@@ -63,6 +64,18 @@ export async function execute(interaction) {
   const draftId = match ? match[2] : '';
   const side = prefix.includes('yours') ? 'yourTeamId' : 'otherTeamId';
   const draft = getTradeDraft(draftId);
+
+  // Auto-detect user's team if not already set
+  if (side === 'yourTeamId' && !draft.yourTeamId && interaction.member) {
+    try {
+      const { userToTeams } = getCoachAssignmentMap({ guildId: interaction.guildId });
+      const userTeams = userToTeams?.[interaction.user.id];
+      if (userTeams && userTeams.length > 0) {
+        draft.yourTeamId = String(userTeams[0].teamId ?? userTeams[0].teamIndex ?? userTeams[0].displayName ?? userTeams[0].nickName);
+        draft.yourTeamName = userTeams[0].teamName || userTeams[0].displayName || userTeams[0].nickName;
+      }
+    } catch (e) { /* ignore if mapping fails */ }
+  }
   if (!draft) {
     await safeMessage(interaction, 'Trade builder expired. Press Start Trade Builder again.');
     return;
