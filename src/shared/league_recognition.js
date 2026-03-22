@@ -295,7 +295,7 @@ function getMaddenWeekSideForUser({ guildId, userId, weekKey = null }) {
   const weekNumber = weekKey ? Number(String(weekKey).replace(/^week_/, '')) : Number(snap?.currentWeek ?? snap?.info?.careerHubInfo?.seasonInfo?.displayWeek ?? snap?.info?.careerHubInfo?.seasonInfo?.seasonWeek ?? 0);
   if (!weekNumber) return null;
   const assignments = getCoachAssignmentMap({ guildId });
-  const teams = assignments?.userToTeams?.get?.(String(userId)) || [];
+  const teams = assignments?.userToTeams?.get(String(userId)) || [];
   if (!teams.length) return null;
   const activeGame = (snap?.schedule?.schedules || []).find((game) =>
     Number(game.stageIndex ?? game.stage ?? 1) === 1 &&

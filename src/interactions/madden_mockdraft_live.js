@@ -413,7 +413,7 @@ async function buildCoachInviteOptions(guild, session) {
   const membersById = new Map();
 
   const assignments = getCoachAssignmentMap({ guildId: guild.id });
-  for (const userId of assignments?.userToTeams?.keys?.() || []) {
+  for (const userId of assignments?.userToTeams?.keys() || []) {
     const member = guild.members.cache.get(userId) || await guild.members.fetch(userId).catch(() => null);
     if (!member?.user || member.user.bot) continue;
     membersById.set(member.id, member);
@@ -451,7 +451,7 @@ async function buildCoachInviteOptions(guild, session) {
     .map((member) => {
       const display = member.displayName || member.user?.globalName || member.user?.username || member.id;
       const username = member.user?.username || member.id;
-      const assignedTeams = (assignments?.userToTeams?.get?.(member.id) || coachTeamsForMember({ guildId: guild.id, userId: member.id }) || []).filter(Boolean);
+      const assignedTeams = (assignments?.userToTeams?.get(member.id) || coachTeamsForMember({ guildId: guild.id, userId: member.id }) || []).filter(Boolean);
       const teamLabel = assignedTeams.length ? assignedTeams.join(' / ') : 'Unassigned Team';
       const joined = session.participants?.some((participant) => participant.userId === member.id);
       const inRoom = member.id === session.hostId || joined;
@@ -681,7 +681,7 @@ async function handleButton(interaction) {
     const scoutingHubChannelId = resolveScoutingHubChannelId(interaction.guildId);
     const scoutingHub = scoutingHubChannelId
       ? interaction.guild.channels.cache.get(scoutingHubChannelId)
-        || await interaction.guild.channels.fetch(scoutingHubChannelId).catch(() => null)
+      || await interaction.guild.channels.fetch(scoutingHubChannelId).catch(() => null)
       : null;
     if (!scoutingHub?.threads?.create) {
       await interaction.editReply('Scouting hub is not available for private mock draft rooms right now.');

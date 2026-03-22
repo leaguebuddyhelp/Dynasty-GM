@@ -69,7 +69,7 @@ export async function execute(interaction) {
   if (side === 'yourTeamId' && !draft.yourTeamId && interaction.member) {
     try {
       const { userToTeams } = getCoachAssignmentMap({ guildId: interaction.guildId });
-      const userTeams = userToTeams?.[interaction.user.id];
+      const userTeams = userToTeams.get(String(interaction.user.id));
       if (userTeams && userTeams.length > 0) {
         draft.yourTeamId = String(userTeams[0].teamId ?? userTeams[0].teamIndex ?? userTeams[0].displayName ?? userTeams[0].nickName);
         draft.yourTeamName = userTeams[0].teamName || userTeams[0].displayName || userTeams[0].nickName;

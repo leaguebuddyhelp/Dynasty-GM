@@ -1177,7 +1177,7 @@ function normalizeTeamKey(name = '') {
 function userOwnsSportsbookGame({ guildId, userId, line }) {
   if (!guildId || !userId || !line) return false;
   const assignments = getCoachAssignmentMap({ guildId });
-  const teams = assignments?.userToTeams?.get?.(String(userId)) || [];
+  const teams = assignments?.userToTeams?.get(String(userId)) || [];
   const owned = new Set(teams.map((team) => normalizeTeamKey(team)));
   return owned.has(normalizeTeamKey(line.awayTeam)) || owned.has(normalizeTeamKey(line.homeTeam));
 }

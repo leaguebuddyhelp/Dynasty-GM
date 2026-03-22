@@ -339,7 +339,7 @@ function buildWarRoomIntel({
     const teamScoutCounts = new Map();
     const teamNeedScoutCounts = new Map();
     for (const entry of allClassLogs) {
-        const scoutTeams = assignmentMap?.userToTeams?.get?.(String(entry?.userId || '')) || [];
+        const scoutTeams = assignmentMap?.userToTeams?.get(String(entry?.userId || '')) || [];
         for (const scoutTeam of scoutTeams) {
             const normTeam = normalizeName(scoutTeam);
             if (!normTeam) continue;
