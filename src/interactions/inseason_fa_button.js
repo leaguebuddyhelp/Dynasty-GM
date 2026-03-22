@@ -10,7 +10,7 @@ import {
 } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { readRoster, saveRoster, upsertPlayer, removePlayerFromOtherRostersFuzzy, normalizeName, computePlayerValue2k } from '../utils/rosterUtils.js';
+import { readRoster, saveRoster, upsertPlayer, removePlayerFromOtherRostersFuzzy, normalizeName } from '../utils/rosterUtils.js';
 import { getSeasonState } from '../utils/seasonUtils.js';
 
 const FA_CHANNEL_ID = '1455148525179502602';
@@ -521,7 +521,7 @@ async function handleApproval(interaction, approve) {
   }
   // Preserve any existing contractYears if present; store offer details for reference
   const contractYears = Array.isArray(entry.player.contractYears) ? entry.player.contractYears : undefined;
-  const playerValue = computePlayerValue2k(entry.player) || Number(entry.player.val ?? entry.player.value ?? entry.player.valuation ?? 0);
+  const playerValue = Number(entry.player.val ?? entry.player.value ?? entry.player.valuation ?? 0);
 
   // Sign exactly this player (as displayed in the modal), and remove that exact player from FA
   const signedPlayer = { ...entry.player };
