@@ -30,15 +30,14 @@ export async function execute(interaction) {
         let errorMsg = '';
         console.log('[startseason_confirm] Button handler triggered for seasonno:', seasonno, 'guild:', interaction.guild?.id);
         try {
-            // const { resetSeasonData } = await import('../2k/staff/startseason.js');
-            // 2K startseason removed. Madden-only logic not implemented.
+            // Madden-only: startseason logic not implemented.
             await interaction.followUp({ content: 'Start season is currently unavailable. Please contact an admin to enable this feature for Madden.', ephemeral: true });
             return;
             // Only update standings pin after successful reset
             try {
                 const standingsChannelId = '1428159168904167535';
                 const blankStandingsEmbed = new (await import('discord.js')).EmbedBuilder()
-                    .setTitle('NBA League Standings')
+                    .setTitle('NFL League Standings')
                     .addFields(
                         { name: 'Eastern Conference', value: 'No games played', inline: false },
                         { name: 'Western Conference', value: 'No games played', inline: false }
