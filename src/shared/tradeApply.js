@@ -209,7 +209,7 @@ function movePicks(pickNames, fromRoster, toRoster, fromTeamName, pickValueMap) 
     movedPick = `${movedPick} (VIA ${fromTeamName})`;
     const storedVal = (originalParsed.value != null && originalParsed.value !== undefined)
       ? originalParsed.value
-  : pickValueMap[tradePick.normKey];
+      : pickValueMap[tradePick.normKey];
     movedPick = { pick: movedPick, value: storedVal };
     toRoster.picks.push(movedPick);
     fromRoster.picks.splice(idx, 1);

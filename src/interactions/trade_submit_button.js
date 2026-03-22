@@ -3,12 +3,12 @@ import fs from "fs";
 import path from "path";
 import { ButtonInteraction, EmbedBuilder } from "discord.js";
 import { canTrade, getSeasonState } from "../utils/seasonUtils.js";
-import { get2kRostersDir } from "../shared/rosterUtils.js";
+
 
 export const customId = "trade_submit_button";
 
 function loadAllRosters() {
-    const rostersDir = get2kRostersDir();
+    const rostersDir = path.join(process.cwd(), 'data', 'teams_rosters');
     const files = fs.readdirSync(rostersDir).filter(f => f.endsWith('.json'));
     let all = {};
     for (const file of files) {
@@ -18,7 +18,7 @@ function loadAllRosters() {
     return all;
 }
 function saveRoster(teamFile, rosterArr) {
-    const rostersDir = get2kRostersDir();
+    const rostersDir = path.join(process.cwd(), 'data', 'teams_rosters');
     fs.writeFileSync(path.join(rostersDir, teamFile), JSON.stringify(rosterArr, null, 2));
 }
 function parseTradeMessage(msg) {
