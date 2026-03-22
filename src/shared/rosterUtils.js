@@ -25,7 +25,7 @@ export function deriveAge(player) {
     }
   } catch { /* ignore */ }
   const ageField = player.age ?? player.Age;
-  return Number(ageField) || (Number(player.yearsInNBA ?? player.YearsInNBA) + 19) || 24;
+  return Number(ageField) || 24;
 }
 
 export function deriveContract(player) {
@@ -147,15 +147,11 @@ export function readRoster(team, opts = {}) {
     jazz: 'Utah Jazz',
     bucks: 'Milwaukee Bucks',
   };
-  const force2k = !!opts.force2k;
   const alias = aliasMap[String(team || '').toLowerCase()] || team;
-  const rostersDirs = force2k
-    ? [path.join(process.cwd(), 'data', '2k', 'teams_rosters')]
-    : [
-      path.join(process.cwd(), 'data', '2k', 'teams_rosters'),
-      path.join(process.cwd(), 'teams_rosters'),
-      path.join(process.cwd(), 'data', 'teams_rosters'),
-    ];
+  const rostersDirs = [
+    path.join(process.cwd(), 'teams_rosters'),
+    path.join(process.cwd(), 'data', 'teams_rosters'),
+  ];
 
   const candidates = rosterFileCandidates(alias).map(name => `${name}.json`);
 
@@ -262,25 +258,10 @@ export function saveRoster(teamOrPath, roster) {
   const candidates = rosterFileCandidates(team).map(name => `${name}.json`);
   const targets = [];
 
-  // Prefer existing files in 2k rosters to avoid creating new variants
-  const dir2k = path.join(process.cwd(), 'data', '2k', 'teams_rosters');
-  if (fs.existsSync(dir2k)) {
-    const files = fs.readdirSync(dir2k).filter(f => f.endsWith('.json'));
-    const lowerFiles = files.map(f => f.toLowerCase());
-    for (const c of candidates) {
-      const idx = lowerFiles.indexOf(c.toLowerCase());
-      if (idx !== -1) {
-        targets.push(path.join(dir2k, files[idx]));
-        break; // first existing match is enough
-      }
-    }
-    // If no existing match, still add first candidate in 2k dir
-    targets.push(path.join(dir2k, candidates[0]));
-  }
-
-  // Fallback legacy dir
+  // Only use Madden/NFL teams_rosters directories
+  targets.push(path.join(process.cwd(), 'teams_rosters', `${candidates[0]}`));
   targets.push(path.join(process.cwd(), 'data', 'teams_rosters', `${candidates[0]}`));
-  // Save to first available directory (preferring 2k path) and ensure dir exists
+  // Save to first available directory and ensure dir exists
   for (const file of targets) {
     try {
       fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -323,7 +304,7 @@ export function upsertPlayer(roster, player) {
 // Remove a player from all other rosters (fuzzy by name); returns true if removed
 export function removePlayerFromOtherRostersFuzzy(playerName) {
   const rosterDirs = [
-    path.join(process.cwd(), 'data', '2k', 'teams_rosters'),
+    path.join(process.cwd(), 'teams_rosters'),
     path.join(process.cwd(), 'data', 'teams_rosters'),
   ];
 
