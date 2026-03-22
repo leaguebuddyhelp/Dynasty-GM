@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { ensurePickValues, computePickValue2k } from './rosterUtils.js';
+import { ensurePickValues } from './rosterUtils.js';
 
 // Helpers duplicated from committee vote
 function ensurePickArray(val) {
@@ -209,7 +209,7 @@ function movePicks(pickNames, fromRoster, toRoster, fromTeamName, pickValueMap) 
     movedPick = `${movedPick} (VIA ${fromTeamName})`;
     const storedVal = (originalParsed.value != null && originalParsed.value !== undefined)
       ? originalParsed.value
-      : (pickValueMap[tradePick.normKey] ?? computePickValue2k(tradePick.year, tradePick.round, null, getSeasonYear(), tradePick.protection));
+  : pickValueMap[tradePick.normKey];
     movedPick = { pick: movedPick, value: storedVal };
     toRoster.picks.push(movedPick);
     fromRoster.picks.splice(idx, 1);
