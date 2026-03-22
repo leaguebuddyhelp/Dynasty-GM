@@ -197,18 +197,39 @@ export function claimPlanForGuild({
   const normalizedCode = normalizeClaimCode(claimCode);
   const ref = String(paymentReference || '').trim() || null;
 
-  // Retry logic: try up to 5 times with 400ms delay if claim not found
+
+  // Debug: log claim lookup attempts
+  console.log('[claimPlanForGuild] guildId:', guildId, 'claimCode:', claimCode, 'normalizedCode:', normalizedCode, 'paymentReference:', paymentReference, 'ref:', ref);
+
   let claim = null;
   const maxAttempts = 5;
   const delayMs = 400;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    claim = normalizedCode
-      ? claimRepository.getClaimByCode(normalizedCode)
-      : claimRepository.getClaimByPaymentReference(ref);
-    if (claim) break;
+    if (normalizedCode) {
+      claim = claimRepository.getClaimByCode(normalizedCode);
+      console.log(`[claimPlanForGuild] Attempt ${attempt}: getClaimByCode(${normalizedCode}) =>`, claim ? 'FOUND' : 'NOT FOUND');
+    } else {
+      claim = claimRepository.getClaimByPaymentReference(ref);
+      console.log(`[claimPlanForGuild] Attempt ${attempt}: getClaimByPaymentReference(${ref}) =>`, claim ? 'FOUND' : 'NOT FOUND');
+    }
+    if (claim) {
+      // Debug: log found claim
+      console.log('[claimPlanForGuild] Claim found:', JSON.stringify(claim, null, 2));
+      break;
+    }
     if (attempt < maxAttempts) {
-      // Wait before retrying
+      console.log(`[claimPlanForGuild] Claim not found, retrying in ${delayMs}ms...`);
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);
+    }
+  }
+
+  if (!claim) {
+    // Debug: log all available claims for diagnosis
+    try {
+      const allClaims = claimRepository.listClaims();
+      console.log('[claimPlanForGuild] All available claims:', allClaims.map(c => ({ claimCode: c.claimCode, paymentReference: c.paymentReference, status: c.status })));
+    } catch (e) {
+      console.log('[claimPlanForGuild] Error listing all claims:', e);
     }
   }
 

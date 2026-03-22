@@ -34,6 +34,17 @@ function atomicWriteJSON(filePath, data) {
 
 export function loadStore() {
   const store = safeReadJSON(STORE_FILE, null);
+  // Debug: log when claims store is loaded
+  try {
+    if (store && store.claims) {
+      const claimCodes = Object.values(store.claims).map(c => c.claimCode);
+      console.log('[pending_activation_repository] loadStore: loaded claims:', claimCodes);
+    } else {
+      console.log('[pending_activation_repository] loadStore: no claims found');
+    }
+  } catch (e) {
+    console.log('[pending_activation_repository] loadStore: error logging claims', e);
+  }
   if (!store || typeof store !== 'object') return defaultStore();
   if (!store.claims || typeof store.claims !== 'object') store.claims = {};
   if (!store.version) store.version = 1;
@@ -60,21 +71,27 @@ export function getClaimById(claimId) {
 export function getClaimByCode(claimCode) {
   if (!claimCode) return null;
   const normalized = String(claimCode).trim().toUpperCase();
-  return listClaims().find((claim) => String(claim?.claimCode || '').toUpperCase() === normalized) || null;
+  const claims = listClaims();
+  const found = claims.find((claim) => String(claim?.claimCode || '').toUpperCase() === normalized) || null;
+  // Debug: log claim code lookup
+  console.log('[pending_activation_repository] getClaimByCode:', claimCode, 'normalized:', normalized, 'found:', !!found);
+  return found;
 }
 
 export function getClaimByPaymentReference(paymentReference) {
   if (!paymentReference) return null;
   const normalized = String(paymentReference).trim();
-  return (
-    listClaims().find((claim) => {
-      if (String(claim?.paymentReference || '').trim() === normalized) return true;
-      if (Array.isArray(claim?.paymentReferences)) {
-        return claim.paymentReferences.some((ref) => String(ref || '').trim() === normalized);
-      }
-      return false;
-    }) || null
-  );
+  const claims = listClaims();
+  const found = claims.find((claim) => {
+    if (String(claim?.paymentReference || '').trim() === normalized) return true;
+    if (Array.isArray(claim?.paymentReferences)) {
+      return claim.paymentReferences.some((ref) => String(ref || '').trim() === normalized);
+    }
+    return false;
+  }) || null;
+  // Debug: log payment reference lookup
+  console.log('[pending_activation_repository] getClaimByPaymentReference:', paymentReference, 'normalized:', normalized, 'found:', !!found);
+  return found;
 }
 
 export function upsertClaim(claimId, partial) {
