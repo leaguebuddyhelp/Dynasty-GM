@@ -193,11 +193,24 @@ export function claimPlanForGuild({
   source = 'command:/claim-plan',
 } = {}) {
   if (!guildId) throw new Error('Missing guildId');
+
   const normalizedCode = normalizeClaimCode(claimCode);
   const ref = String(paymentReference || '').trim() || null;
-  const claim = normalizedCode
-    ? claimRepository.getClaimByCode(normalizedCode)
-    : claimRepository.getClaimByPaymentReference(ref);
+
+  // Retry logic: try up to 5 times with 400ms delay if claim not found
+  let claim = null;
+  const maxAttempts = 5;
+  const delayMs = 400;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    claim = normalizedCode
+      ? claimRepository.getClaimByCode(normalizedCode)
+      : claimRepository.getClaimByPaymentReference(ref);
+    if (claim) break;
+    if (attempt < maxAttempts) {
+      // Wait before retrying
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);
+    }
+  }
 
   ensureClaimUsable(claim);
 
