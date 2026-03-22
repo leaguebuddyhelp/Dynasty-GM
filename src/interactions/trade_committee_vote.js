@@ -41,7 +41,7 @@ export async function execute(interaction) {
         }
     }
 
-    // Madden-only: teamToFile not needed, remove NBA/2K mapping
+    // Madden-only: teamToFile not needed
 
     // Load pendingTrades.json and get trade/votes for this interaction/message
     const messageId = interaction.message?.id || interaction.id;
@@ -63,7 +63,7 @@ export async function execute(interaction) {
         // Trade already finalized, ignore further votes
         return;
     }
-    // Log the vote for this user and finalize immediately for 2K
+    // Log the vote for this user
     entry.votes = entry.votes || {};
     // Record vote
     if (interaction.customId.startsWith('committee_approve_')) {
@@ -121,7 +121,7 @@ export async function execute(interaction) {
         );
     if (gapLine) embed.addFields({ name: "Value Gap", value: gapLine });
     if (trade.notes) embed.addFields({ name: "Notes", value: trade.notes });
-    embed.setColor(trade.status === 'approved' || trade.status === 'approved_pending_2k' ? 0x57F287 : trade.status === 'denied' ? 0xED4245 : 0x5865F2);
+    embed.setColor(trade.status === 'approved' ? 0x57F287 : trade.status === 'denied' ? 0xED4245 : 0x5865F2);
 
     // Only update rosters/picks and post to correct channel based on trade status
     if (finalized && trade.status === 'approved') {
@@ -150,19 +150,12 @@ export async function execute(interaction) {
     // Clean up pending trade entry when finalized
     if (finalized) {
         try {
-            if (trade.status === 'approved_pending_2k') {
-                pendingTrades[messageId] = entry; // keep until proof submitted
-            } else {
-                delete pendingTrades[messageId];
-            }
+            delete pendingTrades[messageId];
             fs.writeFileSync(pendingPath, JSON.stringify(pendingTrades, null, 2));
         } catch (err) {
             console.error('Failed to prune pendingTrades after finalization:', err);
         }
-        const note = trade.status === 'approved_pending_2k'
-            ? 'Trade approved by committee. Waiting for 2K proof.'
-            : `Trade ${trade.status}.`;
-        await interaction.reply({ content: note, flags: 64 });
+        await interaction.reply({ content: `Trade ${trade.status}.`, flags: 64 });
     } else {
         await interaction.reply({ content: `Vote recorded: ${approveCount} approve, ${denyCount} deny. First to 3 decides.`, flags: 64 });
     }
