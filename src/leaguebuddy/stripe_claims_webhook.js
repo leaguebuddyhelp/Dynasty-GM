@@ -87,6 +87,7 @@ async function handleStripeWebhook(req, res) {
 
     const claim = createPendingClaim({
       paymentReference: session?.payment_intent || session?.id,
+      alternatePaymentReferences: [session?.payment_intent, session?.id],
       plan,
       paymentSource: 'stripe_payment_link',
       stripeEventId: event?.id,

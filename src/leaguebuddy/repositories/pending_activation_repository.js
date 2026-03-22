@@ -66,7 +66,15 @@ export function getClaimByCode(claimCode) {
 export function getClaimByPaymentReference(paymentReference) {
   if (!paymentReference) return null;
   const normalized = String(paymentReference).trim();
-  return listClaims().find((claim) => String(claim?.paymentReference || '').trim() === normalized) || null;
+  return (
+    listClaims().find((claim) => {
+      if (String(claim?.paymentReference || '').trim() === normalized) return true;
+      if (Array.isArray(claim?.paymentReferences)) {
+        return claim.paymentReferences.some((ref) => String(ref || '').trim() === normalized);
+      }
+      return false;
+    }) || null
+  );
 }
 
 export function upsertClaim(claimId, partial) {

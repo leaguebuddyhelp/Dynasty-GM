@@ -73,6 +73,7 @@ if (process.env.dotenv_config_path) {
     console.warn(`[startup] dotenv unavailable; skipping ${process.env.dotenv_config_path}: ${err?.message || err}`);
   }
 }
+console.log('LB_STRIPE_CLAIMS_WEBHOOK_ENABLED:', process.env.LB_STRIPE_CLAIMS_WEBHOOK_ENABLED);
 validateStartupConfig();
 startHealthcheckServer();
 
@@ -134,6 +135,12 @@ await startOptionalService({
   loader: async () => {
     const { startStripeClaimsWebhook } = await import('./leaguebuddy/stripe_claims_webhook.js');
     startStripeClaimsWebhook();
+
+    const { startClaimSuccessPage } = await import('./leaguebuddy/claim_success_page.js');
+    startClaimSuccessPage();
+
+    const { startStripeCheckoutBuyRoutes } = await import('./leaguebuddy/stripe_checkout_buy_routes.js');
+    startStripeCheckoutBuyRoutes();
   },
 });
 
@@ -573,18 +580,18 @@ async function loadCommands() {
       if (!fs.existsSync(commandsPath)) continue;
       const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.js'));
       for (const file of commandFiles) {
-      const filePath = join(commandsPath, file);
-      const fileURL = pathToFileURL(filePath).href;
-      try {
-        const commandModule = await import(fileURL);
-        const cmd = commandModule.default
-          ? { ...commandModule, ...commandModule.default }
-          : commandModule;
-        if (cmd && cmd.data && cmd.execute) {
-          client.commands.set(cmd.data.name, cmd);
-        }
-      } catch (err) {
-        console.error(`❌ Error importing ${file}:`, err);
+        const filePath = join(commandsPath, file);
+        const fileURL = pathToFileURL(filePath).href;
+        try {
+          const commandModule = await import(fileURL);
+          const cmd = commandModule.default
+            ? { ...commandModule, ...commandModule.default }
+            : commandModule;
+          if (cmd && cmd.data && cmd.execute) {
+            client.commands.set(cmd.data.name, cmd);
+          }
+        } catch (err) {
+          console.error(`❌ Error importing ${file}:`, err);
         }
       }
     }

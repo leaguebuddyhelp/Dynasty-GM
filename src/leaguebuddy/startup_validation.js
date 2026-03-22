@@ -36,6 +36,9 @@ export function validateStartupConfig() {
   const botInviteConfigured = configured(process.env.LB_BOT_INVITE_URL) || configured(process.env.CLIENT_ID);
   const stripeClaimsEnabled = String(process.env.LB_STRIPE_CLAIMS_WEBHOOK_ENABLED || '').toLowerCase() === 'true';
   const stripeWebhookSecretConfigured = configured(process.env.LB_STRIPE_WEBHOOK_SECRET);
+  const stripeSecretKeyConfigured = configured(process.env.LB_STRIPE_SECRET_KEY);
+  const stripeStandardPriceConfigured = configured(process.env.LB_STRIPE_STANDARD_PRICE_ID);
+  const stripePremiumPriceConfigured = configured(process.env.LB_STRIPE_PREMIUM_PRICE_ID);
   const dataRoot = getDataRoot();
   const healthEnabled = String(process.env.LB_HEALTHCHECK_ENABLED || '').toLowerCase() === 'true' || configured(process.env.PORT);
 
@@ -46,6 +49,9 @@ export function validateStartupConfig() {
     stripePremiumUrl: premiumUrlConfigured ? 'configured' : 'missing',
     botInviteUrl: botInviteConfigured ? 'configured' : 'missing',
     stripeClaimsWebhook: stripeClaimsEnabled ? (stripeWebhookSecretConfigured ? 'enabled' : 'missing_secret') : 'disabled',
+    stripeCheckoutBuy: stripeClaimsEnabled
+      ? (stripeSecretKeyConfigured && stripeStandardPriceConfigured && stripePremiumPriceConfigured ? 'configured' : 'missing_keys')
+      : 'disabled',
     healthcheck: healthEnabled ? 'enabled' : 'disabled',
   });
 

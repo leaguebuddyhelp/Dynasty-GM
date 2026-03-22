@@ -48,8 +48,23 @@ function generateClaimId() {
 function inferPlanFromPaymentLink(paymentLinkId) {
   const normalized = String(paymentLinkId || '').trim();
   if (!normalized) return null;
-  if (normalized === String(process.env.LB_STRIPE_PAYMENT_LINK_ID_STANDARD || '').trim()) return PLANS.standard;
-  if (normalized === String(process.env.LB_STRIPE_PAYMENT_LINK_ID_PREMIUM || '').trim()) return PLANS.premium;
+
+  // Stripe can surface payment links as just the id (plink_*) or as a full URL.
+  // Normalize to the id when possible.
+  let id = normalized;
+  if (/^https?:\/\//i.test(normalized)) {
+    try {
+      const parsed = new URL(normalized);
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      const maybe = parts.find((part) => part.startsWith('plink_'));
+      if (maybe) id = maybe;
+    } catch {
+      // ignore
+    }
+  }
+
+  if (id === String(process.env.LB_STRIPE_PAYMENT_LINK_ID_STANDARD || '').trim()) return PLANS.standard;
+  if (id === String(process.env.LB_STRIPE_PAYMENT_LINK_ID_PREMIUM || '').trim()) return PLANS.premium;
   return null;
 }
 
@@ -77,11 +92,15 @@ export function inferPlanFromStripeCheckoutSession(session = {}) {
   const paymentLinkPlan = inferPlanFromPaymentLink(session?.payment_link);
   if (paymentLinkPlan) return paymentLinkPlan;
 
-  return inferPlanFromAmount(session?.amount_total);
+  // Fall back to amount checks. Some session payloads expose subtotal instead.
+  const totalPlan = inferPlanFromAmount(session?.amount_total);
+  if (totalPlan) return totalPlan;
+  return inferPlanFromAmount(session?.amount_subtotal);
 }
 
 export function createPendingClaim({
   paymentReference,
+  alternatePaymentReferences = null,
   plan,
   paymentSource = 'stripe_webhook',
   stripeEventId = null,
@@ -99,10 +118,17 @@ export function createPendingClaim({
     throw new Error('Claim creation requires a paid plan.');
   }
 
-  const existing = paymentReference
-    ? claimRepository.getClaimByPaymentReference(paymentReference)
-    : null;
-  if (existing) return existing;
+  const allRefs = [
+    paymentReference ? String(paymentReference).trim() : null,
+    ...(Array.isArray(alternatePaymentReferences)
+      ? alternatePaymentReferences.map((ref) => (ref == null ? null : String(ref).trim()))
+      : []),
+  ].filter(Boolean);
+
+  for (const ref of allRefs) {
+    const existing = claimRepository.getClaimByPaymentReference(ref);
+    if (existing) return existing;
+  }
 
   let claimCode = null;
   do {
@@ -112,7 +138,10 @@ export function createPendingClaim({
   const createdAt = nowIso();
   const claim = claimRepository.upsertClaim(generateClaimId(), {
     claimCode,
-    paymentReference: paymentReference ? String(paymentReference) : null,
+    // Keep `paymentReference` for backward compatibility, but allow multiple references.
+    // This makes it easy for users to paste either `pi_...` or `cs_...` into /claim-plan.
+    paymentReference: allRefs[0] || null,
+    paymentReferences: allRefs,
     paymentSource,
     stripeEventId: stripeEventId ? String(stripeEventId) : null,
     stripeSessionId: stripeSessionId ? String(stripeSessionId) : null,
@@ -214,9 +243,26 @@ export function claimPlanForGuild({
   };
 }
 
+export function getPendingClaimByPaymentReference(paymentReference) {
+  const ref = String(paymentReference || '').trim();
+  if (!ref) return null;
+  return claimRepository.getClaimByPaymentReference(ref);
+}
+
+export function isClaimUsable(claim) {
+  try {
+    ensureClaimUsable(claim);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default {
   normalizeClaimCode,
   inferPlanFromStripeCheckoutSession,
   createPendingClaim,
+  getPendingClaimByPaymentReference,
+  isClaimUsable,
   claimPlanForGuild,
 };

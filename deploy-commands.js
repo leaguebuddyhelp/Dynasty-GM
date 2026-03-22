@@ -21,6 +21,8 @@ const BETA_MADDEN_COMMANDS = new Set([
   'league-status',
   'sync',
   'pricing',
+  'plan',
+  'claim-plan',
   'setup',
   'help',
   'franchisehub',
@@ -159,7 +161,7 @@ async function deployCommands() {
       console.log('🏀 LEAGUEbuddy commands are ready to use!');
       return;
     }
-    
+
     const guildIds = parseGuildIds();
     if (!guildIds.length) {
       throw new Error('DEPLOY_SCOPE=guild requires GUILD_ID, SERVER_ID, GUILD_IDS, or LB_DEPLOY_GUILD_IDS.');
