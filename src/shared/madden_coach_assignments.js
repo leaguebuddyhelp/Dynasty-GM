@@ -50,10 +50,15 @@ export function setCoachAssignment({
   assignedByTag = null,
 }) {
   if (!guildId || !userId || !teamName) return { ok: false, message: 'Missing coach assignment context.' };
+  // Normalize: strip ' Coach' suffix if present
+  let cleanTeamName = teamName;
+  if (typeof cleanTeamName === 'string' && cleanTeamName.trim().toLowerCase().endsWith(' coach')) {
+    cleanTeamName = cleanTeamName.trim().slice(0, -6).trim();
+  }
   const store = loadStore();
   const guildRoot = ensureGuild(store, guildId);
   const normalizedUserId = String(userId);
-  const normalizedTeam = normalizeName(teamName);
+  const normalizedTeam = normalizeName(cleanTeamName);
   guildRoot.users[normalizedUserId] = guildRoot.users[normalizedUserId] || {
     teams: {},
     history: [],
@@ -61,7 +66,7 @@ export function setCoachAssignment({
   guildRoot.users[normalizedUserId].teams = guildRoot.users[normalizedUserId].teams || {};
   guildRoot.users[normalizedUserId].history = guildRoot.users[normalizedUserId].history || [];
   guildRoot.users[normalizedUserId].teams[normalizedTeam] = {
-    teamName,
+    teamName: cleanTeamName,
     roleId: roleId ? String(roleId) : null,
     active: true,
     assignedAt: Date.now(),
@@ -70,7 +75,7 @@ export function setCoachAssignment({
   };
   guildRoot.users[normalizedUserId].history.push({
     action: 'assigned',
-    teamName,
+    teamName: cleanTeamName,
     roleId: roleId ? String(roleId) : null,
     at: Date.now(),
     assignedByUserId: assignedByUserId ? String(assignedByUserId) : null,
