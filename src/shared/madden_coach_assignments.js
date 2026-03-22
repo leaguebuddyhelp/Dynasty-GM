@@ -50,7 +50,7 @@ export function setCoachAssignment({
   assignedByTag = null,
 }) {
   if (!guildId || !userId || !teamName) return { ok: false, message: 'Missing coach assignment context.' };
-  // Normalize: strip ' Coach' suffix if present
+  // Normalize: strip ' Coach' suffix if present (standardized)
   let cleanTeamName = teamName;
   if (typeof cleanTeamName === 'string' && cleanTeamName.trim().toLowerCase().endsWith(' coach')) {
     cleanTeamName = cleanTeamName.trim().slice(0, -6).trim();
@@ -126,7 +126,7 @@ export function getCoachAssignmentMap({ guildId }) {
   for (const [userId, state] of Object.entries(guildRoot.users || {})) {
     const teams = Object.values(state?.teams || {}).filter((entry) => entry?.teamName);
     if (!teams.length) continue;
-    userToTeams.set(String(userId), teams.map((entry) => entry.teamName));
+    userToTeams.set(String(userId), teams); // Store full assignment objects
     for (const entry of teams) {
       const key = normalizeName(entry.teamName);
       const current = teamToUserIds.get(key) || new Set();
