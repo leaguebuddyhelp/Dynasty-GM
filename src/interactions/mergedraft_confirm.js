@@ -1,5 +1,5 @@
 import { ButtonInteraction } from 'discord.js';
-import { confirmMerge } from '../2k/staff/mergedraft.js';
+
 
 export const customId = /^mergedraft_confirm_(\d+)/;
 
@@ -11,7 +11,8 @@ export async function execute(interaction) {
   try {
     await interaction.deferUpdate();
   } catch {}
-  await confirmMerge(interaction, classNo);
+  await interaction.followUp({ content: 'Draft merging is currently unavailable. Please contact an admin to enable this feature for Madden.', ephemeral: true });
+  // Madden-only: No mergedraft logic implemented yet.
 }
 
 export default { customId, execute };
