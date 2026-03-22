@@ -48,10 +48,16 @@ export async function execute(interaction) {
     const plan = setupStatus.plan || PLANS.free;
     const status = prettyStatus(setupStatus.subscriptionStatus || SUBSCRIPTION_STATUSES.inactive);
 
-    // Only show features available in the current plan (unlockedFeatures)
-    const availableFeatures = setupStatus.unlockedFeatures.length
-        ? setupStatus.unlockedFeatures.map((item) => `• ${item.label}${item.source === 'pack_enabled' ? ' (enabled by pack)' : ''}`).join('\n')
-        : '(none)';
+    // Always show all features in the user's plan tier, with (setup required) if not unlocked
+    const { FEATURES, planRank } = await import('../../leaguebuddy/plans.js');
+    const userPlanRank = planRank(plan);
+    const unlockedKeys = new Set(setupStatus.unlockedFeatures.map(f => f.featureKey));
+    const featuresInPlan = Object.entries(FEATURES)
+        .filter(([key, feat]) => userPlanRank >= planRank(feat.minPlan))
+        .map(([key, feat]) => {
+            const unlocked = unlockedKeys.has(key);
+            return `• ${feat.label}${unlocked ? '' : ' (setup required)'}`;
+        });
 
     let lines = [];
     lines.push('**Your LEAGUEbuddy Plan**');
@@ -59,7 +65,7 @@ export async function execute(interaction) {
     lines.push(`Subscription: **${status}**`);
     lines.push('');
     lines.push('**Features included in your plan:**');
-    lines.push(availableFeatures);
+    lines.push(featuresInPlan.length ? featuresInPlan.join('\n') : '(none)');
 
     // Show upgrade button if not on premium
     if (plan !== PLANS.premium) {
