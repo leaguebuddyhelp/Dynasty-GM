@@ -372,7 +372,7 @@ async function hydrateSeededPins(interaction, guildId, channelMap, snapshot, opt
 
     if (channelMap['Trade Counts']) {
         try {
-            await updateTradeCountsEmbed(interaction.client, channelMap, loadTradeCounts(), { guildId });
+            await updateTradeCountsEmbed(interaction.client, channelMap, loadTradeCounts(guildId), { guildId });
             results.trade_counts = { hydrated: true };
         } catch (error) {
             results.trade_counts = { warning: formatPinError(error) };

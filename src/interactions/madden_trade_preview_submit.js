@@ -152,7 +152,7 @@ export async function execute(interaction) {
     const snapshot = loadLeagueSnapshot(leagueId);
     const pickContext = getMaddenPickContext(snapshot);
     const valueMap = buildValueMap(snapshot);
-    const counts = loadTradeCounts();
+    const counts = loadTradeCounts(interaction.guildId);
     const roleMap = loadRoleMap();
 
     const yourTeam = draft.yourTeam || draft.yourTeamName || draft.yourTeamId || draft.yourTeamRaw;
@@ -311,7 +311,7 @@ export async function execute(interaction) {
     }
 
     // Store trade
-    const trades = loadActiveTrades();
+    const trades = loadActiveTrades(interaction.guildId);
     const structuredSendFingerprint = normalizeAssetFingerprint(yourStructAssets, seasonYear);
     const structuredReceiveFingerprint = normalizeAssetFingerprint(theirStructAssets, seasonYear);
     const duplicate = findDuplicateTrade(trades, {
@@ -355,7 +355,7 @@ export async function execute(interaction) {
       structuredSendFingerprint,
       structuredReceiveFingerprint,
     };
-    saveActiveTrades(trades);
+    saveActiveTrades(interaction.guildId, trades);
     deleteTradeDraft(draftId);
 
     // DM other coach (role members or user) with approve/deny buttons

@@ -560,7 +560,7 @@ export async function execute(interaction) {
     const otherTeam = teamDisplay(snapshot, otherTeamRaw);
 
     // Enforce per-team trade cap before sending proposal
-    const counts = loadTradeCounts();
+    const counts = loadTradeCounts(interaction.guildId);
     const overCap = [yourTeam, otherTeam].find(t => t && (counts[t] || 0) >= 5);
     if (overCap) {
       await interaction.editReply({ content: `Trade blocked: ${overCap} has already made 5 trades this season.` });

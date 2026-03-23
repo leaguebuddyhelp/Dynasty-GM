@@ -1292,8 +1292,8 @@ async function execute(interaction) {
       try {
         const channelMap = loadMaddenChannelMap(interaction.guildId);
         const emptyCounts = {};
-        saveTradeCounts(emptyCounts);
-        await updateTradeCountsEmbed(interaction.client, channelMap, emptyCounts);
+        saveTradeCounts(interaction.guildId, emptyCounts);
+        await updateTradeCountsEmbed(interaction.client, channelMap, emptyCounts, { guildId: interaction.guildId });
       } catch (e) {
         console.warn('[madden-weeklyupdate] trade counts reset skipped:', e?.message || e);
       }

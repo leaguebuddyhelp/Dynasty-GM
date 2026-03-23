@@ -24,6 +24,25 @@ function saveJson(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
+function loadTradeBlockStore() {
+  const raw = loadJson(BLOCK_FILE);
+  if (raw && typeof raw === 'object' && raw.byGuild && typeof raw.byGuild === 'object') {
+    return raw;
+  }
+  return { byGuild: { __legacy_global__: raw && typeof raw === 'object' ? raw : {} } };
+}
+
+function getGuildTradeBlock(store, guildId) {
+  if (!store.byGuild[String(guildId)]) {
+    store.byGuild[String(guildId)] = {};
+  }
+  return store.byGuild[String(guildId)];
+}
+
+function saveTradeBlockStore(store) {
+  saveJson(BLOCK_FILE, store);
+}
+
 function normalizeName(name) {
   if (!name) return '';
   return name.trim().toLowerCase();
@@ -301,7 +320,8 @@ async function execute(interaction) {
     }
     const teamId = teamObj.teamId;
     const roster = getRoster(snapshot, teamId);
-    const block = loadJson(BLOCK_FILE);
+    const blockStore = loadTradeBlockStore();
+    const block = getGuildTradeBlock(blockStore, interaction.guildId);
     block[teamId] = block[teamId] || [];
 
     if (action === 'add') {
@@ -327,7 +347,7 @@ async function execute(interaction) {
         dev: formatDev(player.devTrait),
         messageId: null,
       });
-      saveJson(BLOCK_FILE, block);
+      saveTradeBlockStore(blockStore);
       await interaction.editReply({ content: `${playerLabel(player)} (${player.position}) added to your trade block.` });
       const teamName = (snapshot.teams?.leagueTeamInfoList || []).find(t => t.teamId === teamId)?.displayName || 'Team';
       // Build a rich description for the post while keeping the modal label clean
@@ -351,7 +371,7 @@ async function execute(interaction) {
       if (msgInfo?.messageId) {
         block[teamId][block[teamId].length - 1].messageId = msgInfo.messageId;
         block[teamId][block[teamId].length - 1].threadId = msgInfo.threadId || null;
-        saveJson(BLOCK_FILE, block);
+        saveTradeBlockStore(blockStore);
       }
       return;
     }
@@ -364,7 +384,7 @@ async function execute(interaction) {
       }
       const removed = block[teamId][idx];
       block[teamId].splice(idx, 1);
-      saveJson(BLOCK_FILE, block);
+      saveTradeBlockStore(blockStore);
       // try to delete the trade block message if we created one
       try {
         if (removed.messageId) {

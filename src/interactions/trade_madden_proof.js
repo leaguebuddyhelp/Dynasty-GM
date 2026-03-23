@@ -1,7 +1,7 @@
 import { ButtonInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { loadActiveTrades, saveActiveTrades, loadTradeCounts, saveTradeCounts, updateTradeCountsEmbed, computeApprovedTradeCounts } from '../shared/madden_trade_utils.js';
+import { loadActiveTrades, saveActiveTrades, saveTradeCounts, updateTradeCountsEmbed, computeApprovedTradeCounts } from '../shared/madden_trade_utils.js';
 import { addPickOverridesFromTrade } from '../madden/pick_overrides_store.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
@@ -10,12 +10,24 @@ import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 const PENDING_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
+const GLOBAL_SCOPE_KEY = '__legacy_global__';
 
-function readPending() {
-  try { return JSON.parse(fs.readFileSync(PENDING_PATH, 'utf8')); } catch { return {}; }
+function readPendingStore() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(PENDING_PATH, 'utf8'));
+    if (raw && typeof raw === 'object' && raw.byGuild && typeof raw.byGuild === 'object') return raw;
+    return { byGuild: { [GLOBAL_SCOPE_KEY]: raw && typeof raw === 'object' ? raw : {} } };
+  } catch {
+    return { byGuild: {} };
+  }
 }
-function writePending(data) {
-  try { fs.writeFileSync(PENDING_PATH, JSON.stringify(data ?? {}, null, 2)); } catch { }
+function writePendingStore(data) {
+  try { fs.writeFileSync(PENDING_PATH, JSON.stringify(data ?? { byGuild: {} }, null, 2)); } catch { }
+}
+function getGuildPending(store, guildId) {
+  const key = guildId ? String(guildId) : GLOBAL_SCOPE_KEY;
+  if (!store.byGuild[key]) store.byGuild[key] = {};
+  return store.byGuild[key];
 }
 function loadRoleMap(guildId = null) {
   const overlay = getGuildRoleMap(guildId);
@@ -60,7 +72,8 @@ export async function execute(interaction) {
   // Committee approval/denial flow
   if (action === 'trade_madden_committee') {
     const vote = sub; const tradeId = maybeId;
-    const pending = readPending();
+    const pendingStore = readPendingStore();
+    const pending = getGuildPending(pendingStore, interaction.guildId);
     const entry = pending[tradeId];
     if (!entry?.trade) {
       await interaction.reply({ content: 'Trade not found or already processed.', flags: 64 });
@@ -76,7 +89,7 @@ export async function execute(interaction) {
     const deniedChan = await interaction.client.channels.fetch(channelMap['Denied trades']).catch(() => null);
 
     // Load active trades to update status/counts
-    const trades = loadActiveTrades();
+    const trades = loadActiveTrades(interaction.guildId);
     const activeTrade = trades[tradeId] || trade;
 
     if (vote === 'approve') {
@@ -95,11 +108,11 @@ export async function execute(interaction) {
         console.warn('[trade_madden_proof] could not persist pick overrides:', err?.message || err);
       }
       trades[tradeId] = activeTrade;
-      saveActiveTrades(trades);
+      saveActiveTrades(interaction.guildId, trades);
 
       const counts = computeApprovedTradeCounts(trades);
-      saveTradeCounts(counts);
-      await updateTradeCountsEmbed(interaction.client, channelMap, counts);
+      saveTradeCounts(interaction.guildId, counts);
+      await updateTradeCountsEmbed(interaction.client, channelMap, counts, { guildId: interaction.guildId });
 
       const embed = new EmbedBuilder()
         .setTitle('Trade Approved (Proof Verified)')
@@ -126,7 +139,7 @@ export async function execute(interaction) {
         });
       }
       delete pending[tradeId];
-      writePending(pending);
+      writePendingStore(pendingStore);
       appendMaddenStaffLog({
         type: 'trade_proof_approved',
         guildId: interaction.guildId,
@@ -150,9 +163,9 @@ export async function execute(interaction) {
     activeTrade.status = 'denied';
     activeTrade.closedAt = Date.now();
     trades[tradeId] = activeTrade;
-    saveActiveTrades(trades);
+    saveActiveTrades(interaction.guildId, trades);
     delete pending[tradeId];
-    writePending(pending);
+    writePendingStore(pendingStore);
 
     const embed = new EmbedBuilder()
       .setTitle('Trade Denied (Proof)')
@@ -198,7 +211,8 @@ export async function execute(interaction) {
 
   // Proof upload & cancel buttons
   const [act, tradeId] = [action, sub];
-  const pending = readPending();
+  const pendingStore = readPendingStore();
+  const pending = getGuildPending(pendingStore, interaction.guildId);
   const entry = pending[tradeId];
   if (!entry?.trade) {
     await interaction.reply({ content: 'Trade not found or already processed.', flags: 64 });
@@ -217,16 +231,16 @@ export async function execute(interaction) {
   }
 
   if (act === 'trade_madden_cancel') {
-    const trades = loadActiveTrades();
+    const trades = loadActiveTrades(interaction.guildId);
     const activeTrade = trades[tradeId];
     if (activeTrade) {
       activeTrade.status = 'cancelled';
       activeTrade.closedAt = Date.now();
       trades[tradeId] = activeTrade;
-      saveActiveTrades(trades);
+      saveActiveTrades(interaction.guildId, trades);
     }
     delete pending[tradeId];
-    writePending(pending);
+    writePendingStore(pendingStore);
     await interaction.update({ content: 'Trade cancelled during proof step.', components: [] });
     return;
   }
@@ -249,7 +263,7 @@ export async function execute(interaction) {
     trade.proofBy = interaction.user.id;
     trade.proofAt = Date.now();
     pending[tradeId] = { trade };
-    writePending(pending);
+    writePendingStore(pendingStore);
 
     const committeeButtons = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId(`trade_madden_committee|approve|${tradeId}`).setLabel('Approve').setStyle(ButtonStyle.Success),

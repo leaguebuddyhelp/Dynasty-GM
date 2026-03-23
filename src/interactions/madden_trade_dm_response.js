@@ -148,7 +148,7 @@ export async function execute(interaction) {
   }
 
   const tradeId = interaction.customId.replace('mtrade_b_approve_', '').replace('mtrade_b_deny_', '');
-  const trades = loadActiveTrades();
+  const trades = loadActiveTrades(interaction.guildId);
   const trade = trades[tradeId];
   if (!trade) {
     await interaction.editReply({ content: 'Trade not found or already processed.' });
@@ -161,7 +161,7 @@ export async function execute(interaction) {
   if (trade.expiresAt && Date.now() > trade.expiresAt) {
     trade.status = 'expired';
     trades[tradeId] = trade;
-    saveActiveTrades(trades);
+    saveActiveTrades(interaction.guildId, trades);
     await interaction.editReply({ content: 'Trade expired (no response within 24h).' });
     return;
   }
@@ -185,7 +185,7 @@ export async function execute(interaction) {
     trade.status = 'denied';
     trade.closedAt = Date.now();
     trades[tradeId] = trade;
-    saveActiveTrades(trades);
+    saveActiveTrades(interaction.guildId, trades);
     const embed = buildEmbed(trade, tradeId, 'denied', actor);
     // DM proposer only
     if (trade.proposerId) {
@@ -200,7 +200,7 @@ export async function execute(interaction) {
   }
 
   // Enforce trade limit (5 per team per season)
-  const counts = loadTradeCounts();
+  const counts = loadTradeCounts(interaction.guildId);
   const teamsInTrade = [trade.yourTeam, trade.otherTeam].filter(Boolean);
   if (!hasTradeCapacity(counts, teamsInTrade, 5)) {
     await interaction.editReply({ content: 'Trade blocked: one of the teams has reached the 5-trade limit for this season.' });
@@ -218,7 +218,7 @@ export async function execute(interaction) {
   trade.closedAt = Date.now();
   trade.approvedBy = interaction.user?.id;
   trades[tradeId] = trade;
-  saveActiveTrades(trades);
+  saveActiveTrades(interaction.guildId, trades);
 
   const embed = buildEmbed(trade, tradeId, 'approved', actor);
   const committeeId = channelMap['Trade Committee'] || channelMap['Pending Trades'] || channelMap['tradeSubmit'] || null;
@@ -264,7 +264,7 @@ export async function execute(interaction) {
   }
   trade.committeeMsgId = committeeMsgId;
   trades[tradeId] = trade;
-  saveActiveTrades(trades);
+  saveActiveTrades(interaction.guildId, trades);
   appendMaddenStaffLog({
     type: 'trade_committee_submission',
     guildId: interaction.guildId,

@@ -4,11 +4,37 @@ import { EmbedBuilder } from 'discord.js';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getPinId, setPinId } from '../madden/pins_store.js';
 import { upsertGuildPin } from './madden_guild_config.js';
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
-const ACTIVE_TRADES_FILE = path.join(process.cwd(), 'data', 'madden', 'active_trades.json');
-const TRADE_COUNTS_FILE = path.join(process.cwd(), 'data', 'madden', 'trade_counts.json');
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+const ACTIVE_TRADES_FILE = getMaddenDataFilePath('active_trades.json');
+const TRADE_COUNTS_FILE = getMaddenDataFilePath('trade_counts.json');
+const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 const TRADE_COUNT_MESSAGE_ID = '1460405214032035891';
+const GLOBAL_SCOPE_KEY = '__legacy_global__';
+
+function readScopedStore(file) {
+  try {
+    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (raw && typeof raw === 'object' && raw.byGuild && typeof raw.byGuild === 'object') {
+      return raw;
+    }
+    return { byGuild: { [GLOBAL_SCOPE_KEY]: raw && typeof raw === 'object' ? raw : {} } };
+  } catch {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const empty = { byGuild: {} };
+    fs.writeFileSync(file, JSON.stringify(empty, null, 2));
+    return empty;
+  }
+}
+
+function writeScopedStore(file, scoped) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(scoped ?? { byGuild: {} }, null, 2));
+}
+
+function resolveScopeKey(guildId = null) {
+  return guildId ? String(guildId) : GLOBAL_SCOPE_KEY;
+}
 
 export function canTrade(leagueId) {
   try {
@@ -20,37 +46,30 @@ export function canTrade(leagueId) {
   }
 }
 
-export function loadActiveTrades() {
-  try {
-    const raw = fs.readFileSync(ACTIVE_TRADES_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    // Ensure the file exists so we persist across restarts
-    fs.mkdirSync(path.dirname(ACTIVE_TRADES_FILE), { recursive: true });
-    fs.writeFileSync(ACTIVE_TRADES_FILE, JSON.stringify({}, null, 2));
-    return {};
-  }
+export function loadActiveTrades(guildId = null) {
+  const scoped = readScopedStore(ACTIVE_TRADES_FILE);
+  return scoped.byGuild?.[resolveScopeKey(guildId)] || {};
 }
 
-export function saveActiveTrades(data) {
-  fs.mkdirSync(path.dirname(ACTIVE_TRADES_FILE), { recursive: true });
-  fs.writeFileSync(ACTIVE_TRADES_FILE, JSON.stringify(data ?? {}, null, 2));
+export function saveActiveTrades(guildIdOrData, maybeData = undefined) {
+  const guildId = maybeData === undefined ? null : guildIdOrData;
+  const data = maybeData === undefined ? guildIdOrData : maybeData;
+  const scoped = readScopedStore(ACTIVE_TRADES_FILE);
+  scoped.byGuild[resolveScopeKey(guildId)] = data ?? {};
+  writeScopedStore(ACTIVE_TRADES_FILE, scoped);
 }
 
-export function loadTradeCounts() {
-  try {
-    const raw = fs.readFileSync(TRADE_COUNTS_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    fs.mkdirSync(path.dirname(TRADE_COUNTS_FILE), { recursive: true });
-    fs.writeFileSync(TRADE_COUNTS_FILE, JSON.stringify({}, null, 2));
-    return {};
-  }
+export function loadTradeCounts(guildId = null) {
+  const scoped = readScopedStore(TRADE_COUNTS_FILE);
+  return scoped.byGuild?.[resolveScopeKey(guildId)] || {};
 }
 
-export function saveTradeCounts(data) {
-  fs.mkdirSync(path.dirname(TRADE_COUNTS_FILE), { recursive: true });
-  fs.writeFileSync(TRADE_COUNTS_FILE, JSON.stringify(data ?? {}, null, 2));
+export function saveTradeCounts(guildIdOrData, maybeData = undefined) {
+  const guildId = maybeData === undefined ? null : guildIdOrData;
+  const data = maybeData === undefined ? guildIdOrData : maybeData;
+  const scoped = readScopedStore(TRADE_COUNTS_FILE);
+  scoped.byGuild[resolveScopeKey(guildId)] = data ?? {};
+  writeScopedStore(TRADE_COUNTS_FILE, scoped);
 }
 
 export function computeApprovedTradeCounts(trades) {

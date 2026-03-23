@@ -12,6 +12,7 @@ import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const PENDING_PROOFS_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.json');
+const GLOBAL_SCOPE_KEY = '__legacy_global__';
 
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
@@ -23,11 +24,22 @@ function loadRoleMap(guildId = null) {
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
 }
 
-function readPendingProofs() {
-  try { return JSON.parse(fs.readFileSync(PENDING_PROOFS_PATH, 'utf8')); } catch { return {}; }
+function readPendingProofsStore() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(PENDING_PROOFS_PATH, 'utf8'));
+    if (raw && typeof raw === 'object' && raw.byGuild && typeof raw.byGuild === 'object') return raw;
+    return { byGuild: { [GLOBAL_SCOPE_KEY]: raw && typeof raw === 'object' ? raw : {} } };
+  } catch {
+    return { byGuild: {} };
+  }
 }
-function writePendingProofs(data) {
-  try { fs.writeFileSync(PENDING_PROOFS_PATH, JSON.stringify(data ?? {}, null, 2)); } catch { }
+function writePendingProofsStore(data) {
+  try { fs.writeFileSync(PENDING_PROOFS_PATH, JSON.stringify(data ?? { byGuild: {} }, null, 2)); } catch { }
+}
+function getGuildPendingProofs(store, guildId) {
+  const key = guildId ? String(guildId) : GLOBAL_SCOPE_KEY;
+  if (!store.byGuild[key]) store.byGuild[key] = {};
+  return store.byGuild[key];
 }
 
 function getCoachRole(roleMap, teamName) {
@@ -154,7 +166,7 @@ export async function execute(interaction) {
   try { await interaction.deferReply({ ephemeral: true }); } catch { return; }
 
   const tradeId = interaction.customId.replace('mtrade_c_approve_', '').replace('mtrade_c_deny_', '');
-  const trades = loadActiveTrades();
+  const trades = loadActiveTrades(interaction.guildId);
   const trade = trades[tradeId];
   if (!trade) {
     await interaction.editReply({ content: 'Trade not found or already processed.' });
@@ -228,7 +240,7 @@ export async function execute(interaction) {
 
   if (!finalized) {
     trades[tradeId] = trade;
-    saveActiveTrades(trades);
+    saveActiveTrades(interaction.guildId, trades);
     await interaction.editReply({
       content: `Vote recorded. Approve: ${approveCount}/${THRESHOLD}, Deny: ${denyCount}/${THRESHOLD}. Needs ${THRESHOLD} matching votes to finalize.`,
     });
@@ -238,7 +250,7 @@ export async function execute(interaction) {
   trade.status = finalized;
   trade.closedAt = Date.now();
   trades[tradeId] = trade;
-  saveActiveTrades(trades);
+  saveActiveTrades(interaction.guildId, trades);
 
   const embed = EmbedBuilder.from(buildEmbed(trade, tradeId, finalized))
     .setDescription(`${channelMentions ? `${channelMentions}\n` : ''}Trade ID: ${tradeId}`);
@@ -247,12 +259,13 @@ export async function execute(interaction) {
     // Defer final approval until proof is submitted
     trade.status = 'approved_pending_proof';
     trades[tradeId] = trade;
-    saveActiveTrades(trades);
+    saveActiveTrades(interaction.guildId, trades);
 
     // Queue proof request
-    const pending = readPendingProofs();
+    const pendingStore = readPendingProofsStore();
+    const pending = getGuildPendingProofs(pendingStore, interaction.guildId);
     pending[tradeId] = { trade };
-    writePendingProofs(pending);
+    writePendingProofsStore(pendingStore);
 
     const roleMap = loadRoleMap(interaction.guildId);
     const coachA = getCoachRole(roleMap, trade.yourTeam);
