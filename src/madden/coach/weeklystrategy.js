@@ -43,12 +43,16 @@ function truncateSentence(text = '', max = 1000) {
 function buildPremiumFieldValue(baseText = '', bridgeText = '', max = 1000, mode = 'sentence') {
   const base = String(baseText || '').trim();
   const bridge = String(bridgeText || '').trim();
-  const separator = mode === 'sentence' ? ' ' : '\n';
-  if (!bridge) {
-    return base;
+  if (mode === 'bullet') {
+    const compactBase = capBulletLines(base, 4);
+    const compactBridge = bridge ? truncateSentence(bridge, 180) : '';
+    const combined = compactBridge ? `${compactBase}\n${compactBridge}` : compactBase;
+    return truncateToBudget(combined, max);
   }
-  const combined = mode === 'sentence' ? `${base} ${bridge}` : `${base}\n${bridge}`;
-  return combined;
+  const compactBase = capPlanToSentences(base, 3);
+  const compactBridge = bridge ? capPlanToSentences(bridge, 1) : '';
+  const combined = compactBridge ? `${compactBase} ${compactBridge}` : compactBase;
+  return truncateToBudget(combined, max);
 }
 
 function splitEmbedFieldValue(text = '', maxLen = 1024) {
@@ -107,8 +111,13 @@ function capBulletLines(text = '', maxLines = 5) {
 function maxedEmbedFieldValue(text = '') {
   const value = String(text || '').trim();
   if (!value) return '—';
-  // 1024 is Discord hard limit per field value.
-  return value.length > 1024 ? `${value.slice(0, 1023)}…` : value;
+  return truncateToBudget(value, 1024);
+}
+
+function compactResourceLine(resource, max = 150) {
+  if (!resource) return '';
+  const formatted = truncateSentence(formatLearningResource(resource), max);
+  return formatted ? `Film: ${formatted}` : '';
 }
 
 function buildStrategyEmbeds({
@@ -2768,42 +2777,39 @@ async function execute(interaction) {
     });
     fields.push({
       name: 'Quick Read',
-      value: truncate(quickRead || 'Play your cleaner game, protect the ball, and make them earn long drives.', 600),
+      value: truncateSentence(quickRead || 'Play your cleaner game, protect the ball, and make them earn long drives.', 320),
       inline: false,
     });
 
     if (tendencyBreakdown) {
-      const combined = buildPremiumFieldValue(tendencyBreakdown, tendencyBridge, 900, 'bullet');
+      const resourceNote = compactResourceLine(tendencyResource, 130);
+      const combined = buildPremiumFieldValue(
+        tendencyBreakdown,
+        [tendencyBridge, resourceNote].filter(Boolean).join(' '),
+        760,
+        'bullet',
+      );
       fields.push({ name: 'Opponent Tendency Report', value: maxedEmbedFieldValue(combined), inline: false });
     }
-    if (tendencyResource) {
-      fields.push({
-        name: 'Tendency Resource',
-        value: truncate(formatLearningResource(tendencyResource), 220),
-        inline: false,
-      });
-    }
     if (offensiveGamePlan) {
-      const combined = buildPremiumFieldValue(offensiveGamePlan, offenseBridge, 900, 'sentence');
+      const resourceNote = compactResourceLine(offenseResource, 130);
+      const combined = buildPremiumFieldValue(
+        offensiveGamePlan,
+        [offenseBridge, resourceNote].filter(Boolean).join(' '),
+        760,
+        'sentence',
+      );
       fields.push({ name: 'Offensive Game Plan', value: maxedEmbedFieldValue(combined), inline: false });
     }
-    if (offenseResource) {
-      fields.push({
-        name: 'Offense Resource',
-        value: truncate(formatLearningResource(offenseResource), 220),
-        inline: false,
-      });
-    }
     if (defensiveGamePlan) {
-      const combined = buildPremiumFieldValue(defensiveGamePlan, defenseBridge, 900, 'sentence');
+      const resourceNote = compactResourceLine(defenseResource, 130);
+      const combined = buildPremiumFieldValue(
+        defensiveGamePlan,
+        [defenseBridge, resourceNote].filter(Boolean).join(' '),
+        760,
+        'sentence',
+      );
       fields.push({ name: 'Defensive Game Plan', value: maxedEmbedFieldValue(combined), inline: false });
-    }
-    if (defenseResource) {
-      fields.push({
-        name: 'Defense Resource',
-        value: truncate(formatLearningResource(defenseResource), 220),
-        inline: false,
-      });
     }
     if (offenseGamePlanActive || defenseGamePlanActive) {
       fields.push({
@@ -2819,7 +2825,7 @@ async function execute(interaction) {
           oppStats,
           ownRoster,
           oppRoster,
-        }) || 'No extra player notes in the current export.', 650),
+        }) || 'No extra player notes in the current export.', 420),
         inline: false,
       });
     }
