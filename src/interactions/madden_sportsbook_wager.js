@@ -12,7 +12,16 @@ function selectionLabel(market, selection) {
 
 export async function execute_wager(interaction) {
   const [, weekNumber, gameId, market, selection] = interaction.customId.split('|');
-  const wager = interaction.fields.getTextInputValue('wager');
+  const wagerRaw = String(interaction.fields.getTextInputValue('wager') || '').trim();
+  if (!/^\d+$/.test(wagerRaw)) {
+    await interaction.reply({ content: 'Bet amount must be a whole number only.', flags: 64 });
+    return;
+  }
+  const wager = Number(wagerRaw);
+  if (!Number.isInteger(wager) || wager < 1) {
+    await interaction.reply({ content: 'Bet amount must be at least 1 Impact.', flags: 64 });
+    return;
+  }
   const context = inferRecognitionContext('madden', interaction.guildId);
   const seasonKey = context?.seasonKey;
   if (!seasonKey) {
@@ -34,7 +43,7 @@ export async function execute_wager(interaction) {
     .setDescription([
       `${line.awayTeam} at ${line.homeTeam}`,
       `Pick: ${selectionLabel(market, selection)}`,
-      `Bet: ${formatImpactValue(Number(wager))}`,
+      `Bet: ${formatImpactValue(wager)}`,
       `Odds: ${odds > 0 ? '+' : ''}${odds}`,
       `If it wins: +${formatImpactValue(payout?.profit || 0)}`,
       `You get back: ${formatImpactValue(payout?.totalReturn || 0)} total`,
@@ -44,7 +53,7 @@ export async function execute_wager(interaction) {
     .setTimestamp();
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`madden_sportsbook_confirm|${weekNumber}|${gameId}|${market}|${selection}|${Number(wager)}`)
+      .setCustomId(`madden_sportsbook_confirm|${weekNumber}|${gameId}|${market}|${selection}|${wager}`)
       .setLabel('Confirm Bet')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()

@@ -29,7 +29,7 @@ function perkUsageHint(perkKey) {
     return 'Next: run /draftprimer this week to use the draft intel you just unlocked.';
   }
   if (perkKey === 'scoutRecommendation') {
-    return 'Next: open /myscouts this week to see the suggested premium scout target for your current class.';
+    return 'Next: run /draftprimer this week to open the Scout Recommendation board for your current class.';
   }
   if (perkKey === 'scoutingFocusPack') {
     return 'Next: run /scout this week. Every reveal is discounted, and your top need lanes get the cheapest scout price.';
@@ -128,7 +128,7 @@ function buildSpendPanel({ tier, perkState, weekKey }) {
       .setCustomId(`madden_franchisehub_buy|${tier}|${perkKey}`)
       .setLabel(perk.label)
       .setStyle(style)
-      .setDisabled(Boolean(perk.activeNow || perk.usedThisWeek || perk.phaseOpen === false || balance < perk.cost));
+      .setDisabled(Boolean(!perk.availableThisWeek));
 
     if (currentGroup !== null && (group !== currentGroup || currentButtons.length === 5)) {
       rows.push(new ActionRowBuilder().addComponents(...currentButtons));
