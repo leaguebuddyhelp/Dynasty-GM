@@ -5,38 +5,38 @@ const emojiState = {
 };
 
 const TEAM_EMOJI_ALIASES = {
-  'arizona cardinals': ['ari', 'az', 'cardinals'],
-  'atlanta falcons': ['atl', 'falcons'],
-  'baltimore ravens': ['bal', 'ravens'],
-  'buffalo bills': ['buf', 'bills'],
-  'carolina panthers': ['car', 'panthers'],
-  'chicago bears': ['chi', 'bears'],
-  'cincinnati bengals': ['cin', 'bengals'],
-  'cleveland browns': ['cle', 'browns'],
-  'dallas cowboys': ['dal', 'cowboys'],
-  'denver broncos': ['den', 'broncos'],
-  'detroit lions': ['det', 'lions'],
-  'green bay packers': ['gb', 'packers'],
-  'houston texans': ['hou', 'texans'],
-  'indianapolis colts': ['ind', 'colts'],
-  'jacksonville jaguars': ['jax', 'jaguars', 'jags'],
-  'kansas city chiefs': ['kc', 'chiefs'],
-  'las vegas raiders': ['lv', 'raiders'],
-  'los angeles chargers': ['lac', 'chargers', 'bolts'],
-  'los angeles rams': ['lar', 'rams'],
-  'miami dolphins': ['mia', 'dolphins', 'fins', 'phins'],
-  'minnesota vikings': ['min', 'vikings', 'vikes'],
-  'new england patriots': ['ne', 'patriots', 'pats'],
-  'new orleans saints': ['no', 'saints'],
-  'new york giants': ['nyg', 'giants', 'gmen'],
-  'new york jets': ['nyj', 'jets'],
-  'philadelphia eagles': ['phi', 'eagles'],
-  'pittsburgh steelers': ['pit', 'steelers'],
-  'san francisco 49ers': ['sf', '49ers', 'niners'],
-  'seattle seahawks': ['sea', 'seahawks', 'hawks'],
-  'tampa bay buccaneers': ['tb', 'bucs', 'buccaneers'],
-  'tennessee titans': ['ten', 'titans'],
-  'washington commanders': ['was', 'wsh', 'commanders'],
+  'arizona cardinals': ['ari', 'az', 'cardinals', 'arizona'],
+  'atlanta falcons': ['atl', 'falcons', 'atlanta'],
+  'baltimore ravens': ['bal', 'ravens', 'baltimore'],
+  'buffalo bills': ['buf', 'bills', 'buffalo'],
+  'carolina panthers': ['car', 'panthers', 'carolina'],
+  'chicago bears': ['chi', 'bears', 'chicago'],
+  'cincinnati bengals': ['cin', 'bengals', 'cincinnati'],
+  'cleveland browns': ['cle', 'browns', 'cleveland'],
+  'dallas cowboys': ['dal', 'cowboys', 'dallas'],
+  'denver broncos': ['den', 'broncos', 'denver'],
+  'detroit lions': ['det', 'lions', 'detroit'],
+  'green bay packers': ['gb', 'packers', 'greenbay', 'green', 'bay'],
+  'houston texans': ['hou', 'texans', 'houston'],
+  'indianapolis colts': ['ind', 'colts', 'indy', 'indianapolis'],
+  'jacksonville jaguars': ['jax', 'jac', 'jaguars', 'jags', 'jacksonville'],
+  'kansas city chiefs': ['kc', 'chiefs', 'kansascity'],
+  'las vegas raiders': ['lv', 'raiders', 'lasvegas', 'vegas', 'oak', 'oakland'],
+  'los angeles chargers': ['lac', 'chargers', 'bolts', 'la', 'losangeles', 'sd', 'sandiego'],
+  'los angeles rams': ['lar', 'rams', 'la', 'losangeles', 'stl', 'stlouis'],
+  'miami dolphins': ['mia', 'dolphins', 'fins', 'phins', 'miami'],
+  'minnesota vikings': ['min', 'vikings', 'vikes', 'minnesota'],
+  'new england patriots': ['ne', 'patriots', 'pats', 'newengland'],
+  'new orleans saints': ['no', 'saints', 'nola', 'neworleans'],
+  'new york giants': ['nyg', 'giants', 'gmen', 'newyorkgiants'],
+  'new york jets': ['nyj', 'jets', 'newyorkjets'],
+  'philadelphia eagles': ['phi', 'eagles', 'philadelphia', 'philly'],
+  'pittsburgh steelers': ['pit', 'steelers', 'pittsburgh'],
+  'san francisco 49ers': ['sf', '49ers', 'niners', 'sanfrancisco'],
+  'seattle seahawks': ['sea', 'seahawks', 'hawks', 'seattle'],
+  'tampa bay buccaneers': ['tb', 'bucs', 'buccaneers', 'tampa', 'tampabay'],
+  'tennessee titans': ['ten', 'titans', 'tennessee'],
+  'washington commanders': ['was', 'wsh', 'wsn', 'commanders', 'washington', 'washingtonfootballteam', 'footballteam'],
 };
 
 const DEV_TRAIT_NAMES = {
@@ -117,7 +117,16 @@ export function getTeamEmojiCandidates(teamName = '') {
       aliases.forEach((alias) => matches.add(alias));
     }
   }
-  if (!matches.size) matches.add(teamName);
+  if (!matches.size) {
+    matches.add(teamName);
+    const raw = String(teamName || '').trim().toLowerCase();
+    const parts = raw.split(/\s+/).filter(Boolean);
+    if (parts.length) {
+      matches.add(parts[parts.length - 1]);
+      matches.add(parts.join(''));
+      if (parts.length >= 2) matches.add(parts.slice(-2).join(''));
+    }
+  }
   return [...matches];
 }
 
