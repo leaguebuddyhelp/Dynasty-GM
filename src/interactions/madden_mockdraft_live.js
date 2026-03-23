@@ -122,8 +122,8 @@ async function sendMockDraftInviteDM(client, session, member) {
       },
     );
 
-  await user.send({ embeds: [embed], components: [inviteRow] }).catch(() => null);
-  return true;
+  const sent = await user.send({ embeds: [embed], components: [inviteRow] }).catch(() => null);
+  return Boolean(sent);
 }
 
 function pendingInviteFor(session, userId) {
