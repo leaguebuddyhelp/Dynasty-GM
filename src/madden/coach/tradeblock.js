@@ -9,13 +9,12 @@ import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
+import { getDevTraitEmoji } from '../../shared/application_emojis.js';
 
 export const featureKey = 'trades_basic';
 
 const BLOCK_FILE = getMaddenDataFilePath('trade_block.json');
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
-const DEV_EMOJI_FILE = getMaddenDataFilePath('dev_emojis.json');
-
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
 }
@@ -138,8 +137,7 @@ function findPlayer(roster, name) {
 }
 
 function formatDev(dev) {
-  const map = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
-  return map[dev] || 'Normal';
+  return getDevTraitEmoji(dev, { fallbackText: true });
 }
 
 const data = new SlashCommandBuilder()

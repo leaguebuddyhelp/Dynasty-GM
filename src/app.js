@@ -15,6 +15,7 @@ import overlayRepository from './leaguebuddy/repositories/guild_overlay_reposito
 import { resolveInteractionAccess } from './leaguebuddy/interaction_access_resolver.js';
 import { validateStartupConfig } from './leaguebuddy/startup_validation.js';
 import { markHealthReady, startHealthcheckServer } from './leaguebuddy/healthcheck.js';
+import { refreshApplicationEmojiMap } from './shared/application_emojis.js';
 
 // --- ENVIRONMENT SAFEGUARD: Warn if test guilds are present in production ---
 import path from 'path';
@@ -546,6 +547,9 @@ client.once('clientReady', (readyClient) => {
   console.log(`📊 Logged in as ${readyClient.user.tag}`);
   console.log(`🏟️  Serving ${readyClient.guilds.cache.size} server(s)`);
   console.log(`⚡ Loaded ${client.commands.size} commands`);
+  refreshApplicationEmojiMap(readyClient).catch((e) => {
+    console.warn('[app-emojis] startup init failed', e?.message || e);
+  });
   try { initNotifier(client); } catch (e) { console.warn('[notifier] init failed', e?.message || e); }
   try { backfillAndRunPendingThreadReminders(client).catch(() => null); } catch (e) { console.warn('[notifier] startup backfill failed', e?.message || e); }
   try { initMaddenStoryScheduler(client); } catch (e) { console.warn('[story scheduler] init failed', e?.message || e); }

@@ -8,10 +8,10 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getNflBrandAsset } from '../shared/madden_assets.js';
+import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 
 const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
 const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
-const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 const SEASON_STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'season_state.json');
 
 // Cache of yearsPro by rosterId to correctly determine rookie status even when stats omit the field.
@@ -93,17 +93,8 @@ function coachMention(teamName, roleMap) {
   return null;
 }
 
-function teamEmoji(teamName, emojiMap) {
-  if (!teamName) return '';
-  const target = teamName.toLowerCase();
-  const mascot = target.split(/\s+/).pop();
-  for (const [key, val] of Object.entries(emojiMap || {})) {
-    const base = key.toLowerCase();
-    if (base === target || base === mascot || target.includes(base) || base.includes(target)) {
-      return `<:${key.replace(/\s+/g, '')}:${val}>`;
-    }
-  }
-  return '';
+function teamEmoji(teamName) {
+  return getTeamEmojiByName(teamName);
 }
 
 function loadGradedWeek(leagueId, weekNumber, minMtimeMs = null) {
@@ -494,7 +485,6 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   buildRosterYearsPro(snapshot);
   const channelMap = loadChannelMap(guildId);
   const roleMap = loadRoleMap(guildId);
-  const emojiMap = loadJson(TEAM_EMOJIS_FILE);
   const awardsChannelId = channelMap['Yearly Awards'] || channelMap['Awards'];
   const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId).catch(() => null) : null);
   if (!interaction && !targetChannel?.isTextBased()) {
@@ -825,7 +815,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   const makeField = (label, p) => {
     if (!p) return { name: label, value: 'N/A', inline: false };
     const mention = coachMention(p.teamName, roleMap);
-    const emoji = teamEmoji(p.teamName, emojiMap);
+    const emoji = teamEmoji(p.teamName);
     const id = gradeMap.idFor(p);
     const gradeFromList = weeklyGradeMap.get(p.rosterId ?? `${p.fullName || ''}-${p.teamId || ''}`) ?? p.grade;
     const grade = gradeFromList != null ? Number(gradeFromList) : gradeMap.map.get(id);

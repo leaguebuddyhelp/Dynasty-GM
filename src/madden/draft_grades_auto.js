@@ -6,24 +6,16 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { deriveTeamNeeds } from './coach/mockdraft.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
+import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 
-const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 const STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'draft_exports', 'posted_draft_grades.json');
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
 }
 
-function teamEmoji(name, emojiMap) {
-  if (!name) return '';
-  const lower = name.toLowerCase();
-  for (const [k, v] of Object.entries(emojiMap || {})) {
-    const kl = k.toLowerCase();
-    if (kl === lower || lower.includes(kl) || kl.includes(lower)) {
-      return `<:${k.replace(/\s+/g, '')}:${v}>`;
-    }
-  }
-  return '';
+function teamEmoji(name) {
+  return getTeamEmojiByName(name);
 }
 
 function normalizeName(name = '') {
@@ -53,7 +45,7 @@ function resolveTeamNeedsForDraftGrades(teamName, needsByTeam = {}) {
   return hit?.[1] || ['BPA'];
 }
 
-function computeGrades(snapshot, emojiMap) {
+function computeGrades(snapshot) {
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
   const rosters = snapshot?.rosters?.teams || {};
   const needsByTeam = deriveTeamNeeds(snapshot);
@@ -116,7 +108,7 @@ function computeGrades(snapshot, emojiMap) {
     score = Math.max(1, Math.min(100, Math.round(score * 10) / 10));
     grades.push({
       teamName,
-      emoji: teamEmoji(teamName, emojiMap),
+      emoji: teamEmoji(teamName),
       grade: score,
     });
   });
@@ -134,7 +126,6 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     // Gate: only in offseason (draft/draft recap), never in preseason or regular season
     if (!isOffseason || isPreseason) return;
 
-    const emojiMap = loadJson(TEAM_EMOJIS_FILE);
     const channelMap = loadMaddenChannelMap(guildId);
     const roleMap = (getGuildRoleMap(guildId) && Object.keys(getGuildRoleMap(guildId)).length)
       ? getGuildRoleMap(guildId)
@@ -151,7 +142,7 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
       return; // already posted for this snapshot
     }
 
-    const grades = computeGrades(snapshot, emojiMap);
+    const grades = computeGrades(snapshot);
     if (!grades.length) return;
 
     const lines = grades.map((g, idx) => `${idx + 1}) ${g.emoji || ''} ${g.teamName} — **${g.grade}**`);

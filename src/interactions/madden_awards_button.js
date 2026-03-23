@@ -13,8 +13,7 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
-
-const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
+import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 
 const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 
@@ -73,17 +72,9 @@ function findTeam(snapshot, input) {
   }) || null;
 }
 
-function teamEmoji(team, emojiMap) {
+function teamEmoji(team) {
   if (!team) return '';
-  const name = getFullTeamName(team, '');
-  const target = normalize(name);
-  for (const [k, v] of Object.entries(emojiMap || {})) {
-    const norm = normalize(k);
-    if (norm === target || target.includes(norm) || norm.includes(target)) {
-      return `<:${k.replace(/\s+/g, '')}:${v}>`;
-    }
-  }
-  return '';
+  return getTeamEmojiByName(getFullTeamName(team, ''));
 }
 
 function coachTag(teamName, roleMap) {
@@ -156,7 +147,6 @@ export async function execute_modal(interaction) {
   const snapshot = loadLeagueSnapshot(leagueId);
   const roleMap = loadRoleMap(interaction.guildId);
   const channelMap = loadMaddenChannelMap(interaction.guildId);
-  const emojiMap = loadJson(TEAM_EMOJIS_FILE);
   const awardsChannelId = channelMap['Yearly awards'] || channelMap['Yearly Awards'] || channelMap['Awards'];
   // Fallback season year: use config.json if snapshot lacks seasonYear
   let seasonYear =
@@ -197,7 +187,7 @@ export async function execute_modal(interaction) {
     const player = findPlayer(snapshot, inputs[key]);
     const teamId = player?.teamId;
     const team = (snapshot?.teams?.leagueTeamInfoList || []).find(t => t.teamId === teamId);
-    const emoji = teamEmoji(team, emojiMap);
+    const emoji = teamEmoji(team);
     const teamName = team ? getFullTeamName(team, 'Unknown Team') : 'Unknown Team';
     const coachRole = coachTag(teamName, roleMap);
     const playerName = player ? `${player.firstName || ''} ${player.lastName || ''}`.trim() : titleCase(inputs[key]);
@@ -209,7 +199,7 @@ export async function execute_modal(interaction) {
   const addTeamAward = (key, label) => {
     const team = findTeam(snapshot, inputs[key]);
     const teamName = team ? getFullTeamName(team, titleCase(inputs[key])) : titleCase(inputs[key]);
-    const emoji = teamEmoji(team, emojiMap);
+    const emoji = teamEmoji(team);
     const coachRole = coachTag(teamName, roleMap);
     const title = `🏆 ${label} — Season ${seasonYear}`;
     const desc = `${emoji ? emoji + ' ' : ''}${teamName}${coachRole ? ` (${coachRole})` : ''}`;

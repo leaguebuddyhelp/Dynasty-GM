@@ -10,11 +10,11 @@ import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { getDevTraitEmoji } from '../../shared/application_emojis.js';
 
 export const featureKey = 'scouting_draft';
 
 const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
-const DEV_EMOJI_PATH = getMaddenDataFilePath('dev_emojis.json');
 const DRAFT_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
 const POINTS_PER_WEEK = 60;
@@ -297,9 +297,8 @@ function loadDraftClass(classId, context = {}) {
   }
 }
 
-function formatDev(dev, emojis) {
-  const map = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
-  return map[dev] || 'Normal';
+function formatDev(dev) {
+  return getDevTraitEmoji(dev, { fallbackText: true });
 }
 
 function hydrateFromLog(userId, classKey) {
@@ -423,7 +422,6 @@ function buildPagesForUser(userId, guildId, member = null) {
   const recognitionContext = inferRecognitionContext('madden', guildId);
 
   const scoutData = loadScoutData();
-  const devEmojis = {};
   const userData = getSeasonScoutUser(scoutData, userId, seasonKey);
   const perkState = recognitionContext?.seasonKey
     ? getRecognitionPerkState({
@@ -505,7 +503,7 @@ function buildPagesForUser(userId, guildId, member = null) {
     const hasArch = unlocked.includes('arch') || unlocked.includes('arch1') || unlocked.includes('arch2');
     if (hasArch) parts.push(`Arch: ${p.archetype_1 || p.archetype_2 || 'N/A'}`);
     if (unlocked.includes('ovr')) parts.push(`OVR: ${p.overall ?? 'N/A'}`);
-    if (unlocked.includes('dev')) parts.push(`Dev: ${formatDev(p.dev_trait, devEmojis)}`);
+    if (unlocked.includes('dev')) parts.push(`Dev: ${formatDev(p.dev_trait)}`);
     const meta = [];
     if (p.position) meta.push(p.position);
     if (p.year) meta.push(p.year);

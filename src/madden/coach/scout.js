@@ -11,6 +11,7 @@ import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getNflBrandAsset } from '../../shared/madden_assets.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
+import { getDevTraitEmoji } from '../../shared/application_emojis.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -165,8 +166,7 @@ function uniqPositions(draftData) {
 }
 
 function formatDev(dev) {
-  const map = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
-  return map[dev] || 'Normal';
+  return getDevTraitEmoji(dev, { fallbackText: true });
 }
 
 function nextCategory(unlocked) {

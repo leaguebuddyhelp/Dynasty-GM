@@ -5,6 +5,7 @@ import { getMessageForWeek } from './madden_utils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenDataFilePath, getMaddenLeagueSnapshotPath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
+import { getDevTraitEmoji } from '../shared/application_emojis.js';
 
 const LEAGUE_DIR = getMaddenLeaguesDir();
 const PREV_DIR = path.join(LEAGUE_DIR, 'previous');
@@ -52,7 +53,6 @@ function buildPlayerMap(snapshot) {
   return { byTeam, players };
 }
 
-const devEmojis = loadJson(getMaddenDataFilePath('dev_emojis.json')) || {};
 const devMap = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
 
 // Allowlist of attributes to report
@@ -130,9 +130,8 @@ function playerLabel(p) {
   const name = `${p.firstName || ''} ${p.lastName || ''}`.trim() || (p.fullName || '').trim() || 'Unknown';
   const pos = p.position || '';
   const ovr = p.playerBestOvr || p.teamSchemeOvr || p.playerSchemeOvr || 'N/A';
-  const devEmojiId = devEmojis?.[p.devTrait] ?? devEmojis?.[String(p.devTrait)];
-  const devText = devMap[p.devTrait] || 'Normal';
-  const dev = devEmojiId ? `<:dev_${p.devTrait}:${devEmojiId}>` : `(${devText})`;
+  const devText = getDevTraitEmoji(p.devTrait, { fallbackText: true }) || devMap[p.devTrait] || 'Normal';
+  const dev = devText.startsWith('<:') || devText.startsWith('<a:') ? devText : `(${devText})`;
   return `${pos} ${name} - ${ovr} OVR ${dev}`;
 }
 
@@ -143,10 +142,8 @@ function diffPlayer(prev, curr) {
     changes.push({ label: 'Position', from: prev.position || 'N/A', to: curr.position || 'N/A' });
   }
   if (prev.devTrait !== curr.devTrait) {
-    const fromEmojiId = devEmojis?.[prev.devTrait] ?? devEmojis?.[String(prev.devTrait)];
-    const toEmojiId = devEmojis?.[curr.devTrait] ?? devEmojis?.[String(curr.devTrait)];
-    const fromLabel = fromEmojiId ? `<:dev_${prev.devTrait}:${fromEmojiId}>` : (devMap[prev.devTrait] || 'Normal');
-    const toLabel = toEmojiId ? `<:dev_${curr.devTrait}:${toEmojiId}>` : (devMap[curr.devTrait] || 'Normal');
+    const fromLabel = getDevTraitEmoji(prev.devTrait, { fallbackText: true }) || (devMap[prev.devTrait] || 'Normal');
+    const toLabel = getDevTraitEmoji(curr.devTrait, { fallbackText: true }) || (devMap[curr.devTrait] || 'Normal');
     changes.push({ label: 'Dev Trait', from: fromLabel, to: toLabel });
   }
   for (const key of Object.keys(curr)) {

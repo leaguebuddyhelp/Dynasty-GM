@@ -7,11 +7,11 @@ import { deriveTeamNeeds } from '../coach/mockdraft.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
+import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 
 const AVP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_avp.json');
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const TEAM_EMOJI_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
 const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 // Specific fallback pin/message id provided by user
 const FALLBACK_PIN_ID = '1469153107207393465';
@@ -160,13 +160,10 @@ function formatTeamName(team) {
   return getFullTeamName(team, `Team ${team?.teamId}`);
 }
 
-function teamEmoji(team, emojiMap = {}) {
-  const name = normalizeName(team?.displayName) || normalizeName(team?.nickName) || '';
-  const key = name || (team?.cityName || '').trim();
-  const emojiId = emojiMap[key] || emojiMap[name];
-  if (!emojiId) return '';
-  const safeName = `team_${(key || name).toLowerCase().replace(/\s+/g, '_')}`;
-  return `<:${safeName}:${emojiId}> `;
+function teamEmoji(team) {
+  const fullName = formatTeamName(team);
+  const emoji = getTeamEmojiByName(fullName);
+  return emoji ? `${emoji} ` : '';
 }
 
 function resolveRoleId(team, roleMap) {
@@ -300,9 +297,6 @@ async function execute(interaction) {
     }
 
     const snapshot = loadLeagueSnapshot(leagueId);
-    const emojiMap = (() => {
-      try { return JSON.parse(fs.readFileSync(TEAM_EMOJI_FILE, 'utf8')); } catch { return {}; }
-    })();
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
     const standings = snapshot?.standings?.teamStandingInfoList || [];
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
@@ -331,7 +325,7 @@ async function execute(interaction) {
       if (assigned) continue;
       if (isOffseason) {
         const nameFormatted = formatTeamName(t);
-        const prefix = teamEmoji(t, emojiMap);
+        const prefix = teamEmoji(t);
         const keys = [
           normalizeKey(nameFormatted),
           normalizeKey((nameFormatted.split(/\s+/).pop()) || ''),
@@ -362,7 +356,7 @@ async function execute(interaction) {
         ].filter(Boolean).join(' | ');
         lines.push(`${prefix}${nameFormatted} — Picks: ${pickText}${extra ? `\n↳ ${extra}` : ''}`);
       } else {
-        const prefix = teamEmoji(t, emojiMap);
+        const prefix = teamEmoji(t);
         const rec = recordMap.get(Number(t?.teamId));
         const recText = rec ? ` (${formatRecord(rec)})` : '';
         lines.push(`${prefix}${formatTeamName(t)}${recText} — Open`);

@@ -13,9 +13,9 @@ import {
 import { getMaddenSeasonKey, loadMaddenChannelMap } from './madden_metadata.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { loadGuildMaddenConfig } from './madden_guild_config.js';
+import { getTeamEmojiByName } from './madden_visuals.js';
 
 const BOARD_FILE = getMaddenDataFilePath('fairsim_board.json');
-const TEAM_EMOJI_FILE = getMaddenDataFilePath('team_emojis.json');
 
 const normalize = (s = '') => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
@@ -65,8 +65,6 @@ async function buildLines(snapshot, fairData, season, guild) {
   const teams = (snapshot?.teams?.leagueTeamInfoList || []).slice().sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
   const seasonData = ensureStrikeSeason(fairData, season);
   let roleMap = {};
-  let emojiMap = {};
-  try { emojiMap = JSON.parse(fs.readFileSync(TEAM_EMOJI_FILE, 'utf8')); } catch {}
   try { roleMap = JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch {}
 
   const active = [];
@@ -81,7 +79,8 @@ async function buildLines(snapshot, fairData, season, guild) {
       const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
       if (role) members = [...role.members.values()];
     }
-    const emoji = emojiMap[baseName] ? `<:${baseName.toLowerCase().replace(/\s+/g, '_')}:${emojiMap[baseName]}> ` : '';
+    const teamEmoji = getTeamEmojiByName(baseName);
+    const emoji = teamEmoji ? `${teamEmoji} ` : '';
     const memberIds = members.map((m) => m.id);
     const primaryKey = memberIds
       .sort((a, b) => weightedCount(seasonData, b) - weightedCount(seasonData, a))[0];
