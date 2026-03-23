@@ -644,6 +644,9 @@ async function handleButton(interaction) {
     }
 
     const joined = joinMockDraftSession(sessionId, interaction.user.id);
+    const room = await interaction.client.channels.fetch(baseSession.channelId).catch(() => null);
+    await room?.members?.add?.(interaction.user.id).catch(() => null);
+    setMockDraftParticipantTeams(sessionId, interaction.user.id, coachTeamsForMember(interaction.member));
     updateMockDraftSession(sessionId, (live) => {
       clearPendingInvite(live, interaction.user.id);
       return live;
