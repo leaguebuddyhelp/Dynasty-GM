@@ -78,17 +78,53 @@ export async function execute(interaction) {
         draft,
       }));
       if (userTeams && userTeams.length > 0 && snapshot?.teams?.leagueTeamInfoList) {
-        // Try to match the user's assigned teamName to a real team in the league snapshot
-        const assigned = userTeams[0];
-        const match = snapshot.teams.leagueTeamInfoList.find(
-          t => t.teamName === assigned.teamName || t.displayName === assigned.teamName || t.nickName === assigned.teamName
-        );
+        // Try to match any of the user's assigned teamNames to a real team in the league snapshot
+        let match = null;
+        let matchType = null;
+        let matchedAssignment = null;
+        for (const assigned of userTeams) {
+          // 1. Exact match
+          match = snapshot.teams.leagueTeamInfoList.find(
+            t => t.teamName === assigned.teamName || t.displayName === assigned.teamName || t.nickName === assigned.teamName
+          );
+          if (match) { matchType = 'exact'; matchedAssignment = assigned; break; }
+        }
+        // 2. Case-insensitive match
+        if (!match) {
+          for (const assigned of userTeams) {
+            match = snapshot.teams.leagueTeamInfoList.find(
+              t => t.teamName?.toLowerCase() === assigned.teamName?.toLowerCase() ||
+                   t.displayName?.toLowerCase() === assigned.teamName?.toLowerCase() ||
+                   t.nickName?.toLowerCase() === assigned.teamName?.toLowerCase()
+            );
+            if (match) { matchType = 'case-insensitive'; matchedAssignment = assigned; break; }
+          }
+        }
+        // 3. Partial/alias match
+        if (!match) {
+          for (const assigned of userTeams) {
+            match = snapshot.teams.leagueTeamInfoList.find(
+              t => t.teamName?.toLowerCase().includes(assigned.teamName?.toLowerCase()) ||
+                   t.displayName?.toLowerCase().includes(assigned.teamName?.toLowerCase()) ||
+                   t.nickName?.toLowerCase().includes(assigned.teamName?.toLowerCase())
+            );
+            if (match) { matchType = 'partial'; matchedAssignment = assigned; break; }
+          }
+        }
+        // Log the matching process for debugging
+        console.log('[TRADE_BUILDER_AUTO_DETECT_MATCH]', JSON.stringify({
+          userId: interaction.user.id,
+          userTeams,
+          matchType,
+          matchedAssignment,
+          matchedTeam: match ? { teamId: match.teamId, displayName: match.displayName, teamName: match.teamName, nickName: match.nickName } : null
+        }));
         if (match) {
           draft.yourTeamId = String(match.teamId ?? match.teamIndex ?? match.displayName ?? match.nickName);
           draft.yourTeamName = match.displayName || match.teamName || match.nickName;
         } else {
-          // fallback: use the assigned teamName as name, but leave id null
-          draft.yourTeamName = assigned.teamName;
+          // fallback: use the first assigned teamName as name, but leave id null
+          draft.yourTeamName = userTeams[0].teamName;
         }
       }
     } catch (e) {
