@@ -142,6 +142,22 @@ export async function execute(interaction) {
             );
             if (match) { matchType = 'partial'; matchedAssignment = mostRecent; }
           }
+          // 4. Robust city+nickname match (for 'Denver Broncos' style)
+          if (!match && mostRecent.teamName) {
+            const parts = mostRecent.teamName.split(' ');
+            if (parts.length >= 2) {
+              const city = parts[0].toLowerCase();
+              const nickname = parts.slice(1).join(' ').toLowerCase();
+              match = teams.find(t => {
+                const tCity = (t.cityName || '').toLowerCase();
+                const tDisplay = (t.displayName || '').toLowerCase();
+                const tNick = (t.nickName || '').toLowerCase();
+                return (tCity === city && (tDisplay === nickname || tNick === nickname)) ||
+                  (mostRecent.teamName.toLowerCase().includes(tCity) && mostRecent.teamName.toLowerCase().includes(tDisplay));
+              });
+              if (match) { matchType = 'city+nickname'; matchedAssignment = mostRecent; }
+            }
+          }
         }
         // Log the matching process for debugging
         console.log('[TRADE_BUILDER_AUTO_DETECT_MATCH]', JSON.stringify({
