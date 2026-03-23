@@ -10,11 +10,12 @@ import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser }
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getNflBrandAsset } from '../../shared/madden_assets.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 
 export const featureKey = 'scouting_draft';
 
-const SCOUT_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'scout_log.json');
-const DRAFT_DIR = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
+const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
+const DRAFT_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
 const POINTS_PER_WEEK = 60; // regular & postseason
 const COST_PER_REVEAL = 10;

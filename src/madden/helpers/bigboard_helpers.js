@@ -3,8 +3,9 @@ import path from 'path';
 import { EmbedBuilder } from 'discord.js';
 import { resolveLeagueIdWithConfig } from '../madden_data.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { getDataFilePath } from '../../leaguebuddy/paths.js';
 
-const DRAFT_DIR = path.join(process.cwd(), 'data', 'draft_classes', 'madden');
+const DRAFT_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 
 function safeReadJSON(file, fallback = null) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }

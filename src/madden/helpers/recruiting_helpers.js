@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { getDataFilePath } from '../../leaguebuddy/paths.js';
 
-const RECRUITING_DIR = path.resolve('data/draft_classes/madden');
+const RECRUITING_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const PAGE_SIZE = 10;
 
 const safeLoadRecruiting = (snapshotOrLeague = null) => {

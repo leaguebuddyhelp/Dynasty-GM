@@ -3,6 +3,7 @@ import path from 'path';
 
 import {
   getDataRoot,
+  getDataFilePath,
   getGuildsRoot,
   getLeaguebuddyAuditLogPath,
   getLeaguebuddyClaimsStorePath,
@@ -27,6 +28,32 @@ function ensureDir(dirPath) {
 
 function ensureParent(filePath) {
   ensureDir(path.dirname(filePath));
+}
+
+function seedBundledDraftClasses() {
+  const sourceDir = path.join(process.cwd(), 'bundled_data', 'draft_classes', 'madden');
+  const targetDir = getDataFilePath(path.join('draft_classes', 'madden'));
+  if (!fs.existsSync(sourceDir)) return;
+
+  ensureDir(targetDir);
+  const sourceFiles = fs.readdirSync(sourceDir).filter((file) => file.toLowerCase().endsWith('.json'));
+  const copied = [];
+
+  for (const file of sourceFiles) {
+    const sourcePath = path.join(sourceDir, file);
+    const targetPath = path.join(targetDir, file);
+    if (fs.existsSync(targetPath)) continue;
+    fs.copyFileSync(sourcePath, targetPath);
+    copied.push(file);
+  }
+
+  if (copied.length) {
+    console.log('[startup] seeded bundled draft classes', {
+      targetDir,
+      count: copied.length,
+      files: copied,
+    });
+  }
 }
 
 export function validateStartupConfig() {
@@ -75,6 +102,7 @@ export function validateStartupConfig() {
     getMaddenConfigPath(),
   ];
   for (const filePath of files) ensureParent(filePath);
+  seedBundledDraftClasses();
 
   console.log('[startup] storage', {
     guildStorePath: getLeaguebuddyGuildStorePath(),
