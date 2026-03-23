@@ -17,6 +17,7 @@ import { getMaddenSnapshotContext } from './madden_metadata.js';
 import { loadMaddenChannelMap } from './madden_metadata.js';
 import { getGuildRoleMap } from './madden_guild_config.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
+import { getMessageForWeek } from '../madden/madden_utils.js';
 
 const STORE_PATH = getMaddenDataFilePath('sportsbook.json');
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
@@ -30,6 +31,10 @@ const IMPACT_EMOJI = 'impact';
 const GAME_OF_WEEK_BET_BONUS = 2;
 const FIRST_BET_BOOST_MULTIPLIER = 2;
 const FIRST_BET_BOOST_MAX_EXTRA = 10;
+const STAGE_REGULAR = 1;
+const STAGE_POSTSEASON = 2;
+const STAGE_OFFSEASON = 3;
+const STAGE_OFFSEASON_ALT = 8;
 
 // Founder/test protection: prevent role-removal testing from wiping founder sportsbook state.
 const PROTECTED_SPORTSBOOK_USER_IDS = new Set([
@@ -597,6 +602,12 @@ function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1
   const recentForm = buildRecentFormMap(snapshot);
   const weeklyProfiles = buildTeamWeeklyProfiles(snapshot);
   return games.map((game) => {
+    const modeledWeekNumber = Math.max(
+      1,
+      Number.isFinite(resolveGameWeekIndex(game)) && resolveGameWeekIndex(game) >= 0
+        ? resolveGameWeekIndex(game) + 1
+        : Number(weekNumber || 1),
+    );
     const awayTeamId = Number(game.awayTeamId);
     const homeTeamId = Number(game.homeTeamId);
     const away = strength[awayTeamId] || { score: 0, ptsFor: 21, ptsAgainst: 21, wins: 0, losses: 0, diff: 0 };
@@ -607,7 +618,7 @@ function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1
     const homeProfile = weeklyProfiles[homeTeamId] || {};
     const awayTendency = tendencyLabelFromProfile(awayProfile);
     const homeTendency = tendencyLabelFromProfile(homeProfile);
-    const h2h = buildHeadToHeadContext(snapshot, awayTeamId, homeTeamId, weekNumber);
+    const h2h = buildHeadToHeadContext(snapshot, awayTeamId, homeTeamId, modeledWeekNumber);
     const divisionGame = divisionGameFlag(snapshot, awayTeamId, homeTeamId);
     const lastMeeting = h2h.lastMeeting;
     const lastAwayScore = Number(lastMeeting?.awayScore || 0);
@@ -668,7 +679,7 @@ function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1
       ((away.ptsAgainst - 21) * 0.18) +
       ((away.ptsFor - 21) * 0.22) +
       ((home.ptsFor - 21) * 0.22);
-    const lateSeasonBump = weekNumber >= 10 ? 1 : 0;
+    const lateSeasonBump = modeledWeekNumber >= 10 ? 1 : 0;
     const total = clamp(
       roundToHalf(totalBase + (recentTotalLean * 0.2) + rankTotalBoost + matchupTotalBoost + (explosiveOffenseBoost * 1.4) + (leakyDefenseBoost * 1.1) + tendencyTotalBoost + rematchTotalLean + trenchSuppression + lateSeasonBump),
       34.5,
@@ -696,6 +707,8 @@ function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1
       awayMoneyline: favorite === 'away' ? money.favorite : money.underdog,
       homeMoneyline: favorite === 'home' ? money.favorite : money.underdog,
       divisionGame,
+      stage: resolveGameStage(game),
+      scheduleWeekIndex: resolveGameWeekIndex(game),
       rematchCount: h2h.count,
       isRematch: h2h.isRematch,
       regularSeasonMeetings: h2h.regularSeasonMeetings,
@@ -721,6 +734,75 @@ function buildTeamsById(snapshot) {
   return out;
 }
 
+function resolveGameStage(game = {}) {
+  return Number(game.stageIndex ?? game.stage ?? STAGE_REGULAR);
+}
+
+function resolveGameWeekIndex(game = {}) {
+  const weekIndex = Number(game.weekIndex ?? game.seasonWeekIndex ?? -1);
+  if (Number.isFinite(weekIndex) && weekIndex >= 0) return weekIndex;
+  const seasonWeek = Number(game.seasonWeek ?? 0);
+  return seasonWeek > 0 ? seasonWeek - 1 : -1;
+}
+
+function resolveGameWeekCandidates(game = {}) {
+  const candidates = new Set();
+  const weekIndex = resolveGameWeekIndex(game);
+  if (weekIndex >= 0) candidates.add(weekIndex + 1);
+  const seasonWeek = Number(game.seasonWeek ?? 0);
+  if (seasonWeek > 0) candidates.add(seasonWeek);
+  if (resolveGameStage(game) === STAGE_POSTSEASON && weekIndex >= 18) {
+    candidates.add(Math.max(1, weekIndex - 18));
+  }
+  return [...candidates];
+}
+
+function sportsbookWeekLabel({ stage = STAGE_REGULAR, weekNumber = null, offSeasonStage = 0, games = [] } = {}) {
+  const stageValue = Number(stage ?? STAGE_REGULAR);
+  const resolvedWeekIndex = (games || []).reduce((best, game) => {
+    const idx = resolveGameWeekIndex(game);
+    return idx > best ? idx : best;
+  }, -1);
+  if (stageValue === STAGE_POSTSEASON && resolvedWeekIndex >= 18) {
+    return getMessageForWeek(resolvedWeekIndex + 1, STAGE_POSTSEASON, 0);
+  }
+  if (Number(offSeasonStage || 0) > 0 || stageValue === STAGE_OFFSEASON || stageValue === STAGE_OFFSEASON_ALT) {
+    return `Offseason Stage ${Number(offSeasonStage || 1)}`;
+  }
+  if (!weekNumber) return stageValue === STAGE_POSTSEASON ? 'Postseason' : 'Current Week';
+  return getMessageForWeek(Number(weekNumber), stageValue, Number(offSeasonStage || 0));
+}
+
+function chooseActiveSportsbookGames(allGames = [], { stage = STAGE_REGULAR, weekNumber = null } = {}) {
+  const stageGames = (allGames || []).filter((game) => resolveGameStage(game) === Number(stage ?? STAGE_REGULAR));
+  if (!stageGames.length) return [];
+
+  const targetWeek = Number(weekNumber || 0);
+  if (targetWeek > 0) {
+    const exactMatches = stageGames.filter((game) => resolveGameWeekCandidates(game).includes(targetWeek));
+    if (exactMatches.length) return exactMatches;
+  }
+
+  const unplayedGames = stageGames.filter((game) => !hasRealPlayedSignal(game));
+  if (unplayedGames.length) {
+    const weekIndexes = [...new Set(unplayedGames.map((game) => resolveGameWeekIndex(game)).filter((value) => value >= 0))];
+    if (weekIndexes.length) {
+      const chosenWeekIndex = Number(stage) === STAGE_POSTSEASON
+        ? Math.max(...weekIndexes)
+        : Math.min(...weekIndexes);
+      return unplayedGames.filter((game) => resolveGameWeekIndex(game) === chosenWeekIndex);
+    }
+    return unplayedGames;
+  }
+
+  const availableWeekIndexes = [...new Set(stageGames.map((game) => resolveGameWeekIndex(game)).filter((value) => value >= 0))];
+  if (availableWeekIndexes.length) {
+    const chosenWeekIndex = Math.max(...availableWeekIndexes);
+    return stageGames.filter((game) => resolveGameWeekIndex(game) === chosenWeekIndex);
+  }
+  return stageGames;
+}
+
 function getSportsbookContextForGuild(guildId) {
   let leagueId = null;
   try {
@@ -736,22 +818,32 @@ function getSportsbookContextForGuild(guildId) {
   }
   const context = getMaddenSnapshotContext(guildId, { leagueId, snapshot });
   if (!context) return null;
-  const stage = Number(context.seasonInfo?.seasonWeekType ?? 1);
-  const weekNumber = context.weekNumber;
-  if (!weekNumber || stage !== 1) {
-    return { leagueId: context.leagueId, snapshot, seasonKey: context.seasonKey, weekNumber: null, games: [], teamsById: buildTeamsById(snapshot) };
+  const stage = Number(context.seasonInfo?.seasonWeekType ?? STAGE_REGULAR);
+  const weekNumber = Number(context.weekNumber || 0) || null;
+  const offSeasonStage = Number(context.seasonInfo?.offSeasonStage ?? 0) || 0;
+  const teamsById = buildTeamsById(snapshot);
+  if (![STAGE_REGULAR, STAGE_POSTSEASON].includes(stage) || !weekNumber) {
+    return {
+      leagueId: context.leagueId,
+      snapshot,
+      seasonKey: context.seasonKey,
+      weekNumber: null,
+      stage,
+      displayLabel: sportsbookWeekLabel({ stage, weekNumber, offSeasonStage }),
+      games: [],
+      teamsById,
+    };
   }
-  const games = (snapshot?.schedule?.schedules || []).filter((game) =>
-    Number(game.stageIndex ?? game.stage ?? 1) === 1 &&
-    Number(game.weekIndex ?? -1) === Number(weekNumber) - 1,
-  );
+  const games = chooseActiveSportsbookGames(snapshot?.schedule?.schedules || [], { stage, weekNumber });
   return {
     leagueId: context.leagueId,
     snapshot,
     seasonKey: context.seasonKey,
     weekNumber,
+    stage,
+    displayLabel: sportsbookWeekLabel({ stage, weekNumber, offSeasonStage, games }),
     games,
-    teamsById: buildTeamsById(snapshot),
+    teamsById,
   };
 }
 
@@ -762,10 +854,10 @@ export function getSportsbookLineForMatchup({ guildId, awayTeamId, homeTeamId, s
       seasonKey,
       weekNumber,
       teamsById: buildTeamsById(snapshot),
-      games: (snapshot?.schedule?.schedules || []).filter((game) =>
-        Number(game.stageIndex ?? game.stage ?? 1) === 1 &&
-        (weekNumber == null || Number(game.weekIndex ?? -1) === Number(weekNumber) - 1),
-      ),
+      games: chooseActiveSportsbookGames(snapshot?.schedule?.schedules || [], {
+        stage: Number(snapshot?.info?.careerHubInfo?.seasonInfo?.seasonWeekType ?? STAGE_REGULAR),
+        weekNumber,
+      }),
     }
     : getSportsbookContextForGuild(guildId);
   if (!context?.snapshot || !context?.teamsById) return null;
@@ -814,8 +906,11 @@ function gameAlreadyPlayed(leagueId, weekNumber, line, liveGames = []) {
   const liveGame = (liveGames || []).find((game) =>
     Number(game.awayTeamId) === Number(line.awayTeamId) &&
     Number(game.homeTeamId) === Number(line.homeTeamId) &&
-    Number(game.weekIndex ?? -1) === Number(weekNumber) - 1 &&
-    Number(game.stageIndex ?? game.stage ?? 1) === 1,
+    resolveGameStage(game) === Number(line.stage ?? STAGE_REGULAR) &&
+    (
+      (Number(line.scheduleWeekIndex ?? -1) >= 0 && resolveGameWeekIndex(game) === Number(line.scheduleWeekIndex))
+      || resolveGameWeekCandidates(game).includes(Number(weekNumber))
+    ),
   );
   if (liveGame && !hasRealPlayedSignal(liveGame)) return false;
   if (liveGame && hasRealPlayedSignal(liveGame)) return true;
@@ -824,8 +919,11 @@ function gameAlreadyPlayed(leagueId, weekNumber, line, liveGames = []) {
   const leagueLog = log?.[String(leagueId)];
   if (!leagueLog?.games?.length) return false;
   return leagueLog.games.some((game) =>
-    Number(game.stageIndex ?? game.stage ?? 1) === 1 &&
-    Number(game.weekIndex ?? -1) === Number(weekNumber) - 1 &&
+    resolveGameStage(game) === Number(line.stage ?? STAGE_REGULAR) &&
+    (
+      (Number(line.scheduleWeekIndex ?? -1) >= 0 && resolveGameWeekIndex(game) === Number(line.scheduleWeekIndex))
+      || resolveGameWeekCandidates(game).includes(Number(weekNumber))
+    ) &&
     Number(game.awayTeamId) === Number(line.awayTeamId) &&
     Number(game.homeTeamId) === Number(line.homeTeamId) &&
     hasRealPlayedSignal(game),
@@ -1261,8 +1359,31 @@ async function resolveSportsbookUserLabel(guild, userId) {
 }
 
 export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId, guildId = null, guild = null, mode = 'board', index = 0 }) {
-  const card = getSportsbookUserCard({ seasonKey, weekNumber, userId, guildId });
-  const lines = card.lines || [];
+  let card = getSportsbookUserCard({ seasonKey, weekNumber, userId, guildId });
+  let lines = card.lines || [];
+  const liveContext = guildId ? getSportsbookContextForGuild(guildId) : null;
+  if (
+    !lines.length &&
+    liveContext?.seasonKey === seasonKey &&
+    Number(liveContext?.weekNumber || 0) === Number(weekNumber || 0) &&
+    liveContext.games?.length
+  ) {
+    await postSportsbookWeek({
+      guild,
+      seasonKey,
+      weekNumber,
+      snapshot: liveContext.snapshot,
+      games: liveContext.games,
+      teamsById: liveContext.teamsById,
+    });
+    card = getSportsbookUserCard({ seasonKey, weekNumber, userId, guildId });
+    lines = card.lines || [];
+  }
+  const boardLabel = liveContext?.displayLabel || sportsbookWeekLabel({
+    weekNumber,
+    stage: Number(lines[0]?.stage ?? STAGE_REGULAR),
+    games: lines,
+  });
   const safeIndex = lines.length ? Math.max(0, Math.min(lines.length - 1, Number(index || 0))) : 0;
   const components = [viewNavRow(weekNumber, mode, safeIndex, lines.length > 0)];
   const canBet = await canUserBetSportsbook({ guild, guildId, userId });
@@ -1295,7 +1416,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
 
     const embed = new EmbedBuilder()
       .setColor(0x2ecc71)
-      .setTitle(`LB Sportsbook • Week Breakdown • Week ${weekNumber}`)
+      .setTitle(`LB Sportsbook • Week Breakdown • ${boardLabel}`)
       .setDescription([
         `Impact available to bet: **${formatImpactValue(openOpp?.bankroll?.balance || 0)}**`,
         openOpp?.count ? `Open bets: **${openOpp.count}** • live max profit: **${formatImpactValue(openOpp.total || 0)}**` : 'Open bets: **0**',
@@ -1373,7 +1494,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
   if (!lines.length) {
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle(`LB Sportsbook • Week ${weekNumber}`)
+      .setTitle(`LB Sportsbook • ${boardLabel}`)
       .setDescription('This week does not have an active board yet.')
       .setTimestamp();
     return { embeds: [embed], components };
@@ -1389,7 +1510,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
   const gotwMatch = gotw && normalizeName(gotw.awayTeam) === normalizeName(line.awayTeam) && normalizeName(gotw.homeTeam) === normalizeName(line.homeTeam);
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
-    .setTitle(`LB Sportsbook • Week ${weekNumber}`)
+    .setTitle(`LB Sportsbook • ${boardLabel}`)
     .setDescription([
       `**${line.awayTeam} at ${line.homeTeam}**`,
       `${line.awayTeam} (${line.awayRecord}) vs ${line.homeTeam} (${line.homeRecord})`,

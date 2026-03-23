@@ -393,6 +393,20 @@ function safeResolveWeekNumber(snapshot, weekOverride) {
   return overrideWeek > 0 ? overrideWeek : (snapWeek > 0 ? snapWeek : null);
 }
 
+function matchesStageWeek(game, stage, weekNumber) {
+  const gameStage = Number(game?.stageIndex ?? game?.stage ?? Stage.SEASON);
+  if (gameStage !== Number(stage ?? Stage.SEASON)) return false;
+  const candidates = new Set();
+  const weekIndex = Number(game?.weekIndex ?? game?.seasonWeekIndex ?? -1);
+  if (Number.isFinite(weekIndex) && weekIndex >= 0) candidates.add(weekIndex + 1);
+  const seasonWeek = Number(game?.seasonWeek ?? 0);
+  if (seasonWeek > 0) candidates.add(seasonWeek);
+  if (gameStage === 2 && Number.isFinite(weekIndex) && weekIndex >= 18) {
+    candidates.add(Math.max(1, weekIndex - 18));
+  }
+  return candidates.has(Number(weekNumber || 0));
+}
+
 async function ensureAutoGameOfWeek({ guild, guildId, seasonKey, weekNumber, snap, roleMap }) {
   if (!guildId || !seasonKey || !weekNumber) return null;
   const weekKey = `week_${Number(weekNumber)}`;
@@ -454,10 +468,8 @@ async function ensureAutoGameOfWeek({ guild, guildId, seasonKey, weekNumber, sna
     return { score, awayWins, awayLosses, homeWins, homeLosses };
   };
 
-  const targetWeekIdx = Number(weekNumber) - 1;
   const candidates = (snap?.schedule?.schedules || [])
-    .filter((g) => Number(g.stageIndex ?? g.stage ?? 1) === 1)
-    .filter((g) => Number(g.weekIndex ?? g.seasonWeekIndex ?? g.seasonWeek ?? -1) === targetWeekIdx)
+    .filter((g) => matchesStageWeek(g, Number(snap?.info?.careerHubInfo?.seasonInfo?.seasonWeekType ?? Stage.SEASON), Number(weekNumber)))
     .filter((g) => g.awayTeamId && g.homeTeamId)
     .map((game) => ({ game, ...scoreGame(game) }))
     .sort((a, b) => b.score - a.score);
@@ -1517,7 +1529,8 @@ async function execute(interaction) {
           league: 'madden',
           seasonKey: getMaddenSeasonKey(snap),
           weekKey,
-          games: (weeklyGameLog.games || []).filter((game) => Number(game.stageIndex) === 1 && Number(game.weekIndex) === Number(effectiveCurrentWeekUsed) - 1),
+          games: (weeklyGameLog.games || []).filter((game) =>
+            matchesStageWeek(game, Number(seasonInfo.seasonWeekType ?? Stage.SEASON), Number(effectiveCurrentWeekUsed))),
         });
         resolveRecognitionDoubleOrNothing({
           guildId: interaction.guildId,
@@ -1530,7 +1543,8 @@ async function execute(interaction) {
           guildId: interaction.guildId,
           seasonKey: getMaddenSeasonKey(snap),
           weekNumber: Number(effectiveCurrentWeekUsed),
-          games: (weeklyGameLog.games || []).filter((game) => Number(game.stageIndex) === 1 && Number(game.weekIndex) === Number(effectiveCurrentWeekUsed) - 1),
+          games: (weeklyGameLog.games || []).filter((game) =>
+            matchesStageWeek(game, Number(seasonInfo.seasonWeekType ?? Stage.SEASON), Number(effectiveCurrentWeekUsed))),
         });
       } catch (e) {
         console.warn('[madden-weeklyupdate] recognition finalize skipped:', e?.message || e);
