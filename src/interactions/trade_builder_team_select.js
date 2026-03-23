@@ -221,6 +221,13 @@ export async function execute(interaction) {
 
   const components = [];
 
+  // Debug: log draft state before rendering select menu
+  console.log('[TRADE_BUILDER_RENDER_SELECT]', JSON.stringify({
+    yourTeamId: draft.yourTeamId,
+    yourTeamName: draft.yourTeamName,
+    draft
+  }));
+  // Always render with your team pre-selected and menu locked if auto-detect succeeded
   const yourOptions = draft.yourTeamId
     ? [{ label: draft.yourTeamName || 'Your team', value: String(draft.yourTeamId) }]
     : limitOptions(buildTeamOptions(snapshot), draft.yourTeamId);
@@ -230,7 +237,7 @@ export async function execute(interaction) {
         .setCustomId(`trade_builder_team_yours|${draftId}`)
         .setPlaceholder(draft.yourTeamName ? `Your team: ${draft.yourTeamName}` : 'Select your team')
         .setDisabled(!!draft.yourTeamId)
-        .addOptions(yourOptions)
+        .setOptions(yourOptions)
     )
   );
 
