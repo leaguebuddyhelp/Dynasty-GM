@@ -46,15 +46,14 @@ function buildClaimPrompt({ billing, billingOk }) {
   const plan = String(billing?.plan || 'free').toLowerCase();
   if (plan !== 'free' && !billingOk) {
     return [
-      'This server has a paid LEAGUEbuddy plan that is not active yet.',
+      `Run \`/claim-plan\` now to activate this server's paid LEAGUEbuddy plan.`,
       `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
-      'Before anything else, run `/claim-plan` in this server.',
       'After the claim succeeds, rerun `/setup` and continue the normal setup flow.',
     ].join('\n');
   }
 
   return [
-    'If you just bought Standard or Premium, run `/claim-plan` in this server before continuing setup so you do not lose track of your claim code.',
+    'If you just bought Standard or Premium, run `/claim-plan` in this server before continuing setup.',
     'If you have not bought a paid plan, ignore this and follow the next setup step below.',
   ].join('\n');
 }
