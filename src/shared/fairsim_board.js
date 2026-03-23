@@ -17,6 +17,20 @@ import { getTeamEmojiByName } from './madden_visuals.js';
 import { getLeagueBuddyLogoEmoji } from './application_emojis.js';
 
 const BOARD_FILE = getMaddenDataFilePath('fairsim_board.json');
+const DEMO_STRIKE_GUILD_PROFILES = {
+  '1415452215044473036': {
+    'Baltimore Ravens': { total: 4.5, breakdown: 'FS 1 • FW 2 • DS 1', rateText: '61%', riskText: '2 straight silent' },
+    'Jacksonville Jaguars': { total: 3.5, breakdown: 'FS 1 • FW 1 • DS 1', rateText: '67%', riskText: '1 silent' },
+    'Denver Broncos': { total: 3, breakdown: 'FS 2 • FW 2', rateText: '72%', riskText: 'clear' },
+    'Chicago Bears': { total: 2.5, breakdown: 'FS 1 • FW 2', rateText: '70%', riskText: '1 silent' },
+    'Miami Dolphins': { total: 2, breakdown: 'FS 2 • FW 1', rateText: '78%', riskText: 'clear' },
+    'Dallas Cowboys': { total: 1.5, breakdown: 'FS 1 • FW 1', rateText: '82%', riskText: 'clear' },
+    'Philadelphia Eagles': { total: 1, breakdown: 'FW 1', rateText: '86%', riskText: 'clear' },
+    'San Francisco 49ers': { total: 1, breakdown: 'FS 2', rateText: '84%', riskText: 'clear' },
+    'New York Jets': { total: 0, breakdown: 'Clean', rateText: 'NR', riskText: '2 silent' },
+    'Tennessee Titans': { total: 0, breakdown: 'Clean', rateText: 'NR', riskText: '1 silent' },
+  },
+};
 
 const normalize = (s = '') => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
@@ -62,7 +76,13 @@ function resolveBoardChannelId(guildId) {
   return channelMap?.['Strike Board'] || channelMap?.['League Staff'] || channelMap?.['LG Logs'] || null;
 }
 
-async function buildLines(snapshot, fairData, season, guild) {
+function getDemoStrikeLine(guildId, teamName) {
+  const profile = DEMO_STRIKE_GUILD_PROFILES[String(guildId)] || null;
+  if (!profile) return null;
+  return profile[String(teamName)] || null;
+}
+
+async function buildLines(snapshot, fairData, season, guild, guildId) {
   const teams = (snapshot?.teams?.leagueTeamInfoList || []).slice().sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
   const seasonData = ensureStrikeSeason(fairData, season);
   let roleMap = {};
@@ -82,10 +102,18 @@ async function buildLines(snapshot, fairData, season, guild) {
     }
     const teamEmoji = getTeamEmojiByName(baseName);
     const emoji = teamEmoji ? `${teamEmoji} ` : '';
+    const demoLine = getDemoStrikeLine(guildId, baseName);
     const memberIds = members.map((m) => m.id);
     const primaryKey = memberIds
       .sort((a, b) => weightedCount(seasonData, b) - weightedCount(seasonData, a))[0];
     if (!primaryKey) {
+      if (demoLine) {
+        const line = { total: Number(demoLine.total) || 0, text: `${emoji}${baseName} — ${demoLine.total}/${STRIKE_LIMIT} • ${demoLine.breakdown} • played ${demoLine.rateText} • ${demoLine.riskText}` };
+        if (line.total >= 3) watch.push(line);
+        else if (line.total > 0) active.push(line);
+        else flaggedComms.push(`${emoji}${baseName} — communication flag only • ${demoLine.riskText}`);
+        continue;
+      }
       cleanCount += 1;
       continue;
     }
@@ -167,7 +195,7 @@ export async function updateFairSimBoard(client, guildId) {
   const fairData = loadStrikeStore();
   const season = getMaddenSeasonKey(snapshot);
   const guild = client.guilds.cache.get(guildId) || await client.guilds.fetch(guildId).catch(() => null);
-  const usage = await buildLines(snapshot, fairData, season, guild);
+  const usage = await buildLines(snapshot, fairData, season, guild, guildId);
   const seasonLabel = season.replace('year_', '');
 
   const embed = {

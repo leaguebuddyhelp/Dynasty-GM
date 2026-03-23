@@ -28,7 +28,6 @@ const BETA_MADDEN_COMMANDS = new Set([
   'viewbilling',
   'setup',
   'help',
-  'seedstrikes',
   'franchisehub',
   'myscouts',
   'draftprimer',
