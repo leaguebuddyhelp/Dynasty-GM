@@ -7,6 +7,7 @@ import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { getMessageForWeek } from './madden_utils.js';
+import { formatTeamLabelWithEmoji } from '../shared/madden_visuals.js';
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -31,6 +32,11 @@ function teamMap(snapshot) {
     map[t.teamId] = name || `Team ${t.teamId}`;
   });
   return map;
+}
+
+function formatLeaderName(fullName, team) {
+  const teamLabel = formatTeamLabelWithEmoji(team || '—');
+  return teamLabel ? `${shortName(fullName)} — ${teamLabel}` : shortName(fullName);
 }
 
 function shortName(fullName) {
@@ -76,7 +82,7 @@ function topPassing(weeklyStats, teams) {
     || (a.totals.passInts ?? 0) - (b.totals.passInts ?? 0));
   const lines = arr.slice(0, 10).map((p, i) => {
     const team = teams[p.teamId] || '—';
-    const name = `${shortName(p.fullName)} (${team})`;
+    const name = formatLeaderName(p.fullName, team);
     return `${i + 1}. ${name} — YDS ${Math.round(p.totals.passYds)}, TD ${p.totals.passTDs ?? 0}, INT ${p.totals.passInts ?? 0}`;
   });
   while (lines.length < 10) lines.push(`${lines.length + 1}. N/A`);
@@ -90,7 +96,7 @@ function topRushing(weeklyStats, teams) {
     || (b.totals.rushTDs ?? 0) - (a.totals.rushTDs ?? 0));
   const lines = arr.slice(0, 10).map((p, i) => {
     const team = teams[p.teamId] || '—';
-    const name = `${shortName(p.fullName)} (${team})`;
+    const name = formatLeaderName(p.fullName, team);
     const avg = p.totals.rushAtt ? (p.totals.rushYds / p.totals.rushAtt).toFixed(1) : '0.0';
     return `${i + 1}. ${name} — YDS ${Math.round(p.totals.rushYds)}, TD ${p.totals.rushTDs ?? 0}, Y/A ${avg}`;
   });
@@ -106,7 +112,7 @@ function topReceiving(weeklyStats, teams) {
     || (b.totals.recCatches ?? 0) - (a.totals.recCatches ?? 0));
   const lines = arr.slice(0, 10).map((p, i) => {
     const team = teams[p.teamId] || '—';
-    const name = `${shortName(p.fullName)} (${team})`;
+    const name = formatLeaderName(p.fullName, team);
     return `${i + 1}. ${name} — YDS ${Math.round(p.totals.recYds)}, TD ${p.totals.recTDs ?? 0}, REC ${p.totals.recCatches ?? 0}`;
   });
   while (lines.length < 10) lines.push(`${lines.length + 1}. N/A`);
@@ -121,7 +127,7 @@ function topDefenseSacks(weeklyStats, teams) {
     || (b.totals.defTotalTackles ?? 0) - (a.totals.defTotalTackles ?? 0));
   const lines = arr.slice(0, 10).map((p, i) => {
     const team = teams[p.teamId] || '—';
-    const name = `${shortName(p.fullName)} (${team})`;
+    const name = formatLeaderName(p.fullName, team);
     return `${i + 1}. ${name} — SACK ${p.totals.defSacks ?? 0}, TFL ${p.totals.defTacklesForLoss ?? 0}, TAK ${p.totals.defTotalTackles ?? 0}`;
   });
   while (lines.length < 10) lines.push(`${lines.length + 1}. N/A`);
@@ -136,7 +142,7 @@ function topDefenseCoverage(weeklyStats, teams) {
     || (b.totals.defTotalTackles ?? 0) - (a.totals.defTotalTackles ?? 0));
   const lines = arr.slice(0, 10).map((p, i) => {
     const team = teams[p.teamId] || '—';
-    const name = `${shortName(p.fullName)} (${team})`;
+    const name = formatLeaderName(p.fullName, team);
     return `${i + 1}. ${name} — INT ${p.totals.defInts ?? 0}, PD ${p.totals.defPassDeflections ?? 0}, TAK ${p.totals.defTotalTackles ?? 0}`;
   });
   while (lines.length < 10) lines.push(`${lines.length + 1}. N/A`);
@@ -151,7 +157,7 @@ function topDefenseTackles(weeklyStats, teams) {
     || (b.totals.defInts ?? 0) - (a.totals.defInts ?? 0));
   const lines = arr.slice(0, 10).map((p, i) => {
     const team = teams[p.teamId] || '—';
-    const name = `${shortName(p.fullName)} (${team})`;
+    const name = formatLeaderName(p.fullName, team);
     return `${i + 1}. ${name} — TAK ${p.totals.defTotalTackles ?? 0}, SOLO ${p.totals.defSoloTackles ?? 0}, INT ${p.totals.defInts ?? 0}`;
   });
   while (lines.length < 10) lines.push(`${lines.length + 1}. N/A`);
@@ -173,7 +179,7 @@ function topKicking(weeklyStats, teams) {
     const made = p.totals.fGMade ?? 0;
     const att = p.totals.fGAtt ?? 0;
     const pct = att ? `${(p.pct).toFixed(1)}%` : '0%';
-    const name = `${shortName(p.fullName)} (${team})`;
+    const name = formatLeaderName(p.fullName, team);
     return `${i + 1}. ${name} — FG ${made}/${att}, ${pct}`;
   });
   while (lines.length < 10) lines.push(`${lines.length + 1}. N/A`);
@@ -192,7 +198,7 @@ function topPunting(weeklyStats, teams) {
     const team = teams[p.teamId] || '—';
     const avg = (p.avg || 0).toFixed(1);
     const net = (p.net || 0).toFixed(1);
-    const name = `${shortName(p.fullName)} (${team})`;
+    const name = formatLeaderName(p.fullName, team);
     return `${i + 1}. ${name} — AVG ${avg}, NET ${net}`;
   });
   while (lines.length < 10) lines.push(`${lines.length + 1}. N/A`);

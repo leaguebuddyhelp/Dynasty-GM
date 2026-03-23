@@ -8,6 +8,7 @@ import { loadLeagueSnapshot } from './madden_data.js';
 import { getPinId, setPinId } from './pins_store.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
+import { formatTeamLabelWithEmoji } from '../shared/madden_visuals.js';
 
 const TOP_FILE = path.join(process.cwd(), 'data', 'madden', 'top_players.json');
 const TOP_HISTORY_DIR = path.join(process.cwd(), 'data', 'madden', 'top_players_history');
@@ -1776,7 +1777,7 @@ function buildPageEmbed(list, page, leagueId, meta = {}) {
     const grade = Number(gradeRaw).toFixed(2);
     const position = String(p.position || '').trim();
     const team = String(p.team || '').trim();
-    const detail = [position, team].filter(Boolean).join(' • ');
+    const detail = [position, team ? formatTeamLabelWithEmoji(team) : ''].filter(Boolean).join(' • ');
     return `#${rank} ${p.name} — ${grade}${detail ? `\n${detail}` : ''}`;
   });
   const embed = new EmbedBuilder()
