@@ -21,6 +21,7 @@ import { updatePowerRankings } from '../../../madden/power_rankings.js';
 import { updateTopPlayers } from '../../../madden/top_players.js';
 import { setPinId } from '../pins_store.js';
 import { loadTradeCounts, updateTradeCountsEmbed } from '../../../shared/madden_trade_utils.js';
+import { getLeagueBuddyLogoEmoji } from '../../shared/application_emojis.js';
 
 function fmtBool(v) {
     return v ? '✅' : '❌';
@@ -211,6 +212,8 @@ async function repairPinnedBoardMessage(client, guildId, channelId, expectedTitl
 }
 
 function buildEmbeds() {
+    const logo = getLeagueBuddyLogoEmoji();
+    const branded = (title) => `${logo ? `${logo} ` : ''}${title}`;
     const common = {
         color: 0x5865F2,
         footer: { text: 'LEAGUEbuddy • seeded by /setup-channels' },
@@ -218,37 +221,37 @@ function buildEmbeds() {
 
     return {
         available_teams: new EmbedBuilder()
-            .setTitle('Available Teams')
+            .setTitle(branded('Available Teams'))
             .setDescription('Available teams will appear here once coach roles and league data are synced.')
             .setColor(common.color)
             .setFooter(common.footer),
 
         standings: new EmbedBuilder()
-            .setTitle('Standings')
+            .setTitle(branded('Madden Standings'))
             .setDescription('Standings will appear here once the synced league snapshot is loaded.')
             .setColor(common.color)
             .setFooter(common.footer),
 
         stat_leaders: new EmbedBuilder()
-            .setTitle('Stat Leaders')
+            .setTitle(branded('Madden Stat Leaders'))
             .setDescription('Stat leaders will appear here once the synced league snapshot is loaded.')
             .setColor(common.color)
             .setFooter(common.footer),
 
         playoff_picture: new EmbedBuilder()
-            .setTitle('Playoff Picture')
+            .setTitle(branded('Madden Playoff Picture'))
             .setDescription('Playoff seeding will appear here once standings are available.')
             .setColor(common.color)
             .setFooter(common.footer),
 
         power_rankings: new EmbedBuilder()
-            .setTitle('Power Rankings')
+            .setTitle(branded('Madden Power Rankings'))
             .setDescription('Power rankings will appear here once standings are available.')
             .setColor(common.color)
             .setFooter(common.footer),
 
         top100: new EmbedBuilder()
-            .setTitle('Top 100')
+            .setTitle(branded('Madden Player Grades'))
             .setDescription('Top player grades will appear here once player data is available.')
             .setColor(common.color)
             .setFooter(common.footer),
@@ -256,8 +259,9 @@ function buildEmbeds() {
 }
 
 function buildTradeSubmitEmbed() {
+    const logo = getLeagueBuddyLogoEmoji();
     return new EmbedBuilder()
-        .setTitle('Submit Trade')
+        .setTitle(`${logo ? `${logo} ` : ''}Submit Trade`)
         .setDescription('Start a trade proposal here. Pick the two teams, add assets, then submit it for review.')
         .setColor(0x57F287)
         .setFooter({ text: 'LEAGUEbuddy • trade flow' });
@@ -275,8 +279,9 @@ function buildTradeSubmitComponents() {
 }
 
 function buildAwardsButtonEmbed() {
+    const logo = getLeagueBuddyLogoEmoji();
     return new EmbedBuilder()
-        .setTitle('Madden Yearly Awards (Staff)')
+        .setTitle(`${logo ? `${logo} ` : ''}Madden Yearly Awards (Staff)`)
         .setDescription(
             [
                 'Staff: after the season ends and before the next season begins, click below to enter the yearly awards.',
@@ -387,9 +392,10 @@ export const data = new SlashCommandBuilder()
 export const deferOnDispatch = { flags: 64 };
 
 function buildPinsProgressEmbed({ step, details = [] }) {
+    const logo = getLeagueBuddyLogoEmoji();
     return new EmbedBuilder()
         .setColor(0xffd700)
-        .setTitle('Setup Pins')
+        .setTitle(`${logo ? `${logo} ` : ''}Setup Pins`)
         .setDescription(`Current step: **${step}**`)
         .addFields({
             name: 'Live Progress',
@@ -589,7 +595,7 @@ export async function execute(interaction) {
         embeds: [
             new EmbedBuilder()
                 .setColor(hasFailures ? 0xf39c12 : 0x57f287)
-                .setTitle('Setup Pins Complete')
+                .setTitle(`${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Setup Pins Complete`)
                 .setDescription('This command refreshes the pinned league boards and trade submit button for the channels created by `/setup-channels`.')
                 .addFields(
                     {
