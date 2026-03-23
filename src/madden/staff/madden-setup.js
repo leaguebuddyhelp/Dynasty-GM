@@ -499,7 +499,7 @@ function tierSetupNotes(tier, tradeEnabled) {
     }
     if (tier === 'standard') {
         return [
-            'Standard setup includes the core league boards, trade center, and scouting hub.',
+            'Standard setup includes the core league boards, trade center, scouting hub, Top 100, Yearly Awards, Streaming links, Strike Board, Draft Grades, and Activity Checks.',
             'After channels are ready, run `/setup-pins`, then keep using `/setup` until setup is complete.',
         ];
     }

@@ -56,7 +56,7 @@ async function execute(interaction) {
       {
         name: 'Tier Adds',
         value: [
-          'Standard: `/member onboard`, `/bigboard`, `/scout`, `/myscouts`, `/draftprimer`, `/mockdraft`, `/tradeblock`, `/streamlink`',
+          'Standard: `/member onboard`, `/bigboard`, `/scout`, `/myscouts`, `/draftprimer`, `/mockdraft`, `/recruiting`, `/tradeblock`, `/streamlink`',
           'Premium: `/gamestrategy`, `/franchisehub`',
         ].join('\n'),
       },
@@ -98,7 +98,7 @@ async function execute(interaction) {
           '`/member onboard`',
           '`/tradeblock`',
           '`/streamlink`',
-          '`/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`',
+          '`/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`, `/recruiting`',
         ].join('\n'),
       },
       {

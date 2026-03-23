@@ -30,6 +30,12 @@ export const INTERACTION_ACCESS_RULES = [
     match: /^madden_mockdraft/,
   },
   {
+    id: 'scouting.recruiting',
+    featureKey: 'scouting_draft',
+    description: 'Recruiting pagination buttons',
+    match: /^madden_recruiting_page_/,
+  },
+  {
     id: 'scouting.merge',
     featureKey: 'scouting_draft',
     description: 'Merge draft confirmation flows',

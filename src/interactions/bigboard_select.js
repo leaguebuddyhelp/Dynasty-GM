@@ -1,49 +1,55 @@
 // Handle all big board select menus (paged by 15)
 export const customId = /^bigboard_select_/;
-import fs from "fs";
-import path from "path";
 import { EmbedBuilder } from "discord.js";
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { loadDraftClass } from '../madden/helpers/bigboard_helpers.js';
+import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from '../madden/coach/scout_store.js';
+import { getMaddenDraftClassId } from '../shared/madden_draft_class.js';
 
-const bigBoardsFile = path.join(process.cwd(), "data/prospectBoards.json");
+function normalize(str = '') {
+    return String(str)
+        .replace(/^[\d]+\.\s*/, '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+function currentClassIdForSnapshot(snapshot = {}) {
+    const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
+    const calendarYear = seasonInfo?.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear;
+    return getMaddenDraftClassId({ calendarYear });
+}
+
+function normalizeDraftPlayers(draftData) {
+    return Object.values(draftData || {}).filter((player) => player && player.name && (player.position_1 || player.position));
+}
+
+function getUnlockedScoutInfo({ guildId, userId, playerName, snapshot }) {
+    try {
+        const classId = currentClassIdForSnapshot(snapshot);
+        const seasonKey = getScoutSeasonKey(snapshot);
+        const scoutData = loadScoutStore();
+        const userData = getSeasonScoutUser(scoutData, userId, seasonKey, { create: false });
+        const normClass = String(classId || '').toLowerCase();
+        const playersByClass =
+            userData?.players?.[classId]
+            || userData?.players?.[normClass]
+            || null;
+        return Array.isArray(playersByClass?.[playerName]) ? playersByClass[playerName] : [];
+    } catch {
+        return [];
+    }
+}
 
 export async function execute(interaction) {
     await interaction.deferReply({ flags: 64 });
-    // Aggregate all players from every Big Board JSON file
-    const candidates = [
-        path.join(process.cwd(), 'data', 'draft_classes', '2k'),
-        path.join(process.cwd(), 'bot', 'draft classes', 'big boards'),
-    ];
-    let boardFiles = [];
-    for (const dir of candidates) {
-        if (!fs.existsSync(dir)) continue;
-        boardFiles = fs.readdirSync(dir)
-            .filter(f => f.toLowerCase().includes('big board') && f.toLowerCase().endsWith('.json'))
-            .map(f => path.join(dir, f));
-        if (boardFiles.length) break;
-    }
-    let allPlayers = [];
-    for (const filePath of boardFiles) {
-        try {
-            const boardData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            const players = Object.values(boardData).filter(player => player && player.name && (player.position_1 || player.position));
-            allPlayers = allPlayers.concat(players);
-        } catch (err) {
-            console.error(`Error reading big board file ${filePath}:`, err);
-        }
-    }
-    console.log('[bigboard_select] values:', interaction.values, 'players:', allPlayers.length, 'files:', boardFiles.length);
-
-    // Extract player name (remove leading number and dot if present)
-    function normalize(str) {
-        return str
-            .replace(/^[\d]+\.\s*/, '')
-            .trim()
-            .toLowerCase()
-            .normalize('NFKD')
-            .replace(/[\u0300-\u036f]/g, '');
-    }
+    const leagueId = requireLeagueIdForGuild(interaction.guildId);
+    const snapshot = loadLeagueSnapshot(leagueId);
+    const classId = currentClassIdForSnapshot(snapshot);
+    const draftData = loadDraftClass(classId);
+    const allPlayers = normalizeDraftPlayers(draftData);
     const normalizedSelected = normalize(interaction.values[0]);
-    // Search the full allPlayers list for the selected player (exact, then startsWith)
     let selected = allPlayers.find(p => p.name && normalize(p.name) === normalizedSelected);
     if (!selected) {
         selected = allPlayers.find(p => p.name && normalize(p.name).startsWith(normalizedSelected));
@@ -55,7 +61,12 @@ export async function execute(interaction) {
         );
     }
     if (!selected) {
-        console.warn('[bigboard_select] Player not found. normalizedSelected:', normalizedSelected, 'sample:', allPlayers.slice(0, 5).map(p => p.name));
+        console.warn('[bigboard_select] Player not found.', {
+            guildId: interaction.guildId,
+            classId,
+            normalizedSelected,
+            sample: allPlayers.slice(0, 5).map((p) => p.name),
+        });
     }
     if (!selected) {
         try {
@@ -68,13 +79,12 @@ export async function execute(interaction) {
 
     const strengths = [selected.strength_1, selected.strength_2, selected.strength_3].filter(Boolean).join(", ") || "N/A";
     const weaknesses = [selected.weakness_1, selected.weakness_2, selected.weakness_3].filter(Boolean).join(", ") || "N/A";
-
-    // Load scouting data for the requesting coach
-    const userId = interaction.user.id;
-    const scoutPath = path.join(process.cwd(), 'data/scout_points.json');
-    let scoutData = fs.existsSync(scoutPath) ? JSON.parse(fs.readFileSync(scoutPath, 'utf8')) : {};
-    const userData = scoutData[userId] || { playersScouted: {} };
-    const unlocked = userData.playersScouted[selected.name] || [];
+    const unlocked = getUnlockedScoutInfo({
+        guildId: interaction.guildId,
+        userId: interaction.user.id,
+        playerName: selected.name,
+        snapshot,
+    });
 
     const embed = new EmbedBuilder()
         .setTitle(`${selected.position_1 || selected.position || ''} - ${selected.name}`)
@@ -92,17 +102,14 @@ export async function execute(interaction) {
         )
         .setColor("Green");
 
-    // Add scouted info if unlocked
-    const displayOrder = ['build', 'draft_score', 'overall', 'potential'];
+    // Add scouted info if unlocked from the current Madden scout store.
     let info = [];
-    displayOrder.forEach(cat => {
-        if (unlocked.includes(cat) && selected[cat]) {
-            if (cat === 'build') info.push(`**Build:** ${selected.build}`);
-            if (cat === 'draft_score') info.push(`**Draft Score:** ${selected.draft_score}`);
-            if (cat === 'overall') info.push(`**Overall:** ${selected.overall}`);
-            if (cat === 'potential') info.push(`**Potential:** ${selected.potential}`);
-        }
-    });
+    if (unlocked.includes('arch')) info.push(`**Archetype:** ${selected.archetype_1 || selected.archetype_2 || 'N/A'}`);
+    if (unlocked.includes('ovr')) info.push(`**Overall:** ${selected.overall ?? 'N/A'}`);
+    if (unlocked.includes('dev')) {
+        const devMap = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
+        info.push(`**Dev Trait:** ${devMap[Number(selected.dev_trait)] || 'Normal'}`);
+    }
     if (info.length > 0) {
         embed.addFields({ name: 'Scouted Info', value: info.join(' | '), inline: false });
     }
