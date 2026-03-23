@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
 const PICK_FILE = getMaddenDataFilePath('pick_overrides.json');
@@ -66,7 +67,7 @@ const viaCodeFor = (teamName = '') => {
   }
   return teamName.slice(0, 3).toUpperCase();
 };
-const LEGACY_FIRST_ROUND_OVERRIDES = [
+const DEFAULT_START_FIRST_ROUND_OVERRIDES = [
   { from: 'Cardinals', to: 'Detroit Lions', via: 'ARI', year: 2027 },
   { from: 'Cardinals', to: 'Detroit Lions', via: 'ARI', year: 2028 },
   { from: 'Packers', to: 'Dallas Cowboys', via: 'GB', year: 2027 },
@@ -161,12 +162,48 @@ export function getEffectiveFirstRoundOverrides(year) {
   const fileOverrides = loadOverrides().filter(o =>
     Number(o.year) === seasonYear && Number(o.round || 1) === 1
   );
-  const legacyOverrides = LEGACY_FIRST_ROUND_OVERRIDES.map(o => ({
+  const legacyOverrides = DEFAULT_START_FIRST_ROUND_OVERRIDES.map(o => ({
     ...o,
     year: Number(o.year),
     round: 1,
   })).filter(o => Number(o.year) === seasonYear);
   return [...fileOverrides, ...legacyOverrides];
+}
+
+export function getDefaultStartFirstRoundOverrides() {
+  return DEFAULT_START_FIRST_ROUND_OVERRIDES.map((entry) => ({
+    ...entry,
+    year: Number(entry.year),
+    round: 1,
+  }));
+}
+
+export function seedDefaultStartFirstRoundOverrides({ replaceExisting = false } = {}) {
+  const current = replaceExisting
+    ? loadOverrides().filter((entry) => Number(entry.round || 1) !== 1)
+    : [...loadOverrides()];
+
+  for (const override of getDefaultStartFirstRoundOverrides()) {
+    const next = current.filter((entry) => !(
+      sameTeam(entry.from || entry.owner, override.from)
+      && Number(entry.year) === Number(override.year)
+      && Number(entry.round || 1) === 1
+    ));
+    next.push({
+      from: override.from,
+      to: override.to,
+      via: override.via,
+      year: Number(override.year),
+      round: 1,
+      source: 'default_start',
+      updatedAt: new Date().toISOString(),
+    });
+    current.length = 0;
+    current.push(...next);
+  }
+
+  saveOverrides(current);
+  return current;
 }
 
 export function getFirstRoundPickLabelsForTeam(teamName, year, allTeams = []) {
