@@ -11,7 +11,10 @@ export function getUserTeam(guildId, userId) {
     if (!guildId || !userId) return null;
     const { userToTeams } = getCoachAssignmentMap({ guildId }); // standardized
     const teams = userToTeams.get(String(userId));
-    if (Array.isArray(teams) && teams.length > 0) return teams[0];
+    if (Array.isArray(teams) && teams.length > 0) {
+        const first = teams[0];
+        return typeof first === 'string' ? first : (first?.teamName || null);
+    }
     return null;
 }
 
@@ -25,5 +28,6 @@ export function getAllUserTeams(guildId, userId) {
     if (!guildId || !userId) return [];
     const { userToTeams } = getCoachAssignmentMap({ guildId });
     const teams = userToTeams.get(String(userId));
-    return Array.isArray(teams) ? teams : [];
+    if (!Array.isArray(teams)) return [];
+    return teams.map((team) => (typeof team === 'string' ? team : (team?.teamName || null))).filter(Boolean);
 }

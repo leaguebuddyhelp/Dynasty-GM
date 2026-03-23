@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
+import { syncGuild } from './guild_auto_sync.js';
 
 const STORE_PATH = getMaddenDataFilePath('coach_assignments.json');
 
