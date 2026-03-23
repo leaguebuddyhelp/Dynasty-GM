@@ -156,7 +156,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
     .setColor(0x5865f2)
     .setDescription([
       'Pick a monthly plan below, then use the buy buttons.',
-      'After checkout, invite LEAGUEbuddy to your server and run `/setup` there.',
+      'After checkout, save your claim code, invite LEAGUEbuddy to your server, run `/claim-plan`, then run `/setup` there.',
     ].join('\n'))
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
@@ -187,8 +187,10 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
     .setDescription([
       '1. Choose Standard or Premium below.',
       '2. Finish monthly checkout.',
-      '3. Invite LEAGUEbuddy to your own server.',
-      '4. Run `/setup` there.',
+      '3. Save the claim code from the success page.',
+      '4. Invite LEAGUEbuddy to your own server.',
+      '5. Run `/claim-plan` there.',
+      '6. Run `/setup` there.',
     ].join('\n'));
 
   return [pricing, nextStep];
@@ -199,10 +201,11 @@ export function buildPostPaymentEmbed() {
     .setTitle('After You Buy')
     .setColor(0x57f287)
     .setDescription([
-      '1. Invite LEAGUEbuddy to the server you want to activate.',
-      '2. Run `/setup` in that server.',
-      '3. Follow the next step `/setup` gives you until setup is complete.',
-      '4. Use `/pricing` in that server if you want to confirm the current package or upgrade.',
+      '1. Save the claim code from the checkout success page.',
+      '2. Invite LEAGUEbuddy to the server you want to activate.',
+      '3. Run `/claim-plan` in that server.',
+      '4. Run `/setup` and follow the next step it gives you until setup is complete.',
+      '5. Use `/pricing` in that server if you want to confirm the current package or upgrade.',
     ].join('\n'));
 }
 

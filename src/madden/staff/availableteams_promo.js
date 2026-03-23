@@ -267,7 +267,7 @@ export async function execute(interaction) {
       '📡 Live league updates: standings, stat leaders, Top 100s, awards, and weekly content',
       '🧵 Automated game threads (GOTW), reminders, staff logs, and clean trade flow',
       '🕵️ Franchise Hub tools: scouting, draft primer, mock draft, matchup strategy tools',
-      '🎟️ LEAGUEbuddy systems: Sportsbook intel, recognition progression, and perks',
+      '🎟️ LEAGUEbuddy systems: Standard leagues get the draft, scouting, trade, and ops stack. Premium adds recognition, sportsbook, and perk systems.',
       '',
       `🚨 **OPEN TEAMS (${openLines.length})** 🚨`,
       (openLines.length

@@ -80,13 +80,14 @@ async function execute(interaction) {
         name: 'Start Here',
         value: [
           '`/help`',
+          '`/pricing`, `/claim-plan`',
           '`/schedule`, `/roster`, `/playersearch`',
         ].join('\n'),
       },
       {
         name: 'Free Commands',
         value: [
-          '`/pricing`, `/setup`, `/connectleague`, `/disconnectleague`, `/league-status`, `/sync`',
+          '`/pricing`, `/claim-plan`, `/setup`, `/connectleague`, `/disconnectleague`, `/league-status`, `/sync`',
           '`/setup-channels`, `/setup-pins`, `/setup-roles`, `/setup-reset`',
           '`/member assign`, `/member remove`, `/create-threads`, `/delete-threads`, `/weeklyupdate`',
           '`/schedule`, `/roster`, `/playersearch`',
