@@ -175,14 +175,29 @@ export async function execute(interaction) {
   const setupComplete = decision.title === 'Setup complete';
   const tier = status.overlayStatus.tier || billing?.plan || 'free';
 
+  // --- EARLY INFO: Paid Plan Activation Reminder ---
+  let earlyInfo = null;
+  if ((billing?.plan || 'free') !== 'free' && !billingOk) {
+    earlyInfo = [
+      '💡 **Paid Plan Setup:**',
+      'This server is set for a paid plan, but it is not yet active.',
+      'Run `/claim-plan` to activate your paid plan for this server as soon as possible.',
+      'You can do this at any time, even before fixing permissions.',
+      '',
+    ].join('\n');
+  }
+
   const embed = new EmbedBuilder()
     .setTitle('LEAGUEbuddy Setup')
     .setColor(!readiness.hasRequiredPermissions || readiness.hierarchyWarning || status.missingRequiredRoles.length || status.syncNeeded
       ? 0xf1c40f
       : 0x57f287)
-    .setDescription(setupComplete
-      ? 'Setup is complete. Use the steps below to start your league.'
-      : 'Use `/setup` as your guide. Do the next step below, then come back to `/setup`.');
+    .setDescription([
+      earlyInfo,
+      setupComplete
+        ? 'Setup is complete. Use the steps below to start your league.'
+        : 'Use `/setup` as your guide. Do the next step below, then come back to `/setup`.',
+    ].filter(Boolean).join('\n\n'));
 
   if (setupComplete) {
     embed.addFields(
