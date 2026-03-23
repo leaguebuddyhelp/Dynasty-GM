@@ -433,6 +433,27 @@ function participantLabel(participant) {
   return `<@${participant.userId}>${teamText}`;
 }
 
+function canonicalizeSessionTeamNames(session, teamNames = []) {
+  const sessionLookup = new Map();
+  const addVariant = (value, resolved) => {
+    const key = normalizeTeamKey(value || '');
+    if (key) sessionLookup.set(key, resolved);
+  };
+  for (const slot of session?.order || []) {
+    const resolved = slot?.name || slot?.nick;
+    if (!resolved) continue;
+    addVariant(slot.name, slot.name);
+    addVariant(slot.nick, slot.name);
+    const mascot = String(slot.name || '').split(/\s+/).filter(Boolean).pop();
+    addVariant(mascot, slot.name);
+  }
+  return [...new Set(
+    (teamNames || [])
+      .map((teamName) => sessionLookup.get(normalizeTeamKey(teamName)) || teamName)
+      .filter(Boolean),
+  )];
+}
+
 export function coachTeamsForMember(member) {
   const roleMap = loadRoleMapForGuild(member?.guild?.id);
   const teamRoleMap = new Map(
@@ -1533,7 +1554,7 @@ export function setMockDraftParticipantTeams(sessionId, userId, teamNames = []) 
   return updateMockDraftSession(sessionId, (session) => {
     const participant = session.participants.find((entry) => entry.userId === userId);
     if (!participant) return session;
-    participant.teamNames = [...new Set((teamNames || []).filter(Boolean))];
+    participant.teamNames = canonicalizeSessionTeamNames(session, teamNames);
     session.pickOwners = assignPickOwners(session);
     return session;
   });

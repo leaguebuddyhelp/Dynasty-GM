@@ -398,7 +398,11 @@ function computeSeedBracketBuckets(league) {
   const { seedsByConf, seedMap } = computeSeedsByConference(standings);
   if (seedsByConf.afc.length < 7 || seedsByConf.nfc.length < 7) return null;
 
-  const buckets = { non: [], wc: [], div: [], conf: [], sbl: [], sbw: [] };
+  const withProjectedSeed = (teamId) => {
+    const standing = teamById[teamId];
+    return standing ? { ...standing, projectedSeed: seedMap[teamId] || null } : null;
+  };
+  const buckets = { non: [], wc: [], div: [], conf: [], sbl: [], sbw: [], projected: true };
   const playoffIds = new Set([
     ...seedsByConf.afc.map(s => s.teamId),
     ...seedsByConf.nfc.map(s => s.teamId),
@@ -440,11 +444,11 @@ function computeSeedBracketBuckets(league) {
   const sbWinner = sbPair.length ? winnerFromPair(sbPair[0], {}, seedMap) : null;
   const sbLoser = sbPair.length ? (sbPair[0].homeTeamId === sbWinner ? sbPair[0].awayTeamId : sbPair[0].homeTeamId) : null;
 
-  wcLosers.forEach(id => teamById[id] && buckets.wc.push(teamById[id]));
-  divLosers.forEach(id => teamById[id] && buckets.div.push(teamById[id]));
-  confLosers.forEach(id => teamById[id] && buckets.conf.push(teamById[id]));
-  if (sbLoser && teamById[sbLoser]) buckets.sbl.push(teamById[sbLoser]);
-  if (sbWinner && teamById[sbWinner]) buckets.sbw.push(teamById[sbWinner]);
+  wcLosers.forEach(id => withProjectedSeed(id) && buckets.wc.push(withProjectedSeed(id)));
+  divLosers.forEach(id => withProjectedSeed(id) && buckets.div.push(withProjectedSeed(id)));
+  confLosers.forEach(id => withProjectedSeed(id) && buckets.conf.push(withProjectedSeed(id)));
+  if (sbLoser && withProjectedSeed(sbLoser)) buckets.sbl.push(withProjectedSeed(sbLoser));
+  if (sbWinner && withProjectedSeed(sbWinner)) buckets.sbw.push(withProjectedSeed(sbWinner));
 
   return buckets;
 }
@@ -569,9 +573,10 @@ export function draftOrder(league) {
   const normalize = (arr) => arr
     .map(item => {
       if (!item) return null;
-      if (item.id && teamMapById[item.id]) return teamMapById[item.id];
-      if (item.teamId && teamMapById[item.teamId]) return teamMapById[item.teamId];
-      return null;
+      const id = Number(item.id ?? item.teamId);
+      const base = teamMapById[id];
+      if (!base) return null;
+      return { ...base, ...item, id: base.id };
     })
     .filter(Boolean);
   buckets = {
@@ -581,6 +586,7 @@ export function draftOrder(league) {
     conf: normalize(buckets.conf || []),
     sbl: normalize(buckets.sbl || []),
     sbw: normalize(buckets.sbw || []),
+    projected: Boolean(buckets.projected),
   };
 
   // Strength of schedule for tie-breaks
@@ -594,15 +600,27 @@ export function draftOrder(league) {
     if (a.pf !== b.pf) return a.pf - b.pf;
     return (a.name || '').localeCompare(b.name || '');
   });
+  const sortProjectedPlayoffBucket = (arr) => arr.sort((a, b) => {
+    const aSeed = Number(a.projectedSeed || 0);
+    const bSeed = Number(b.projectedSeed || 0);
+    if (aSeed !== bSeed) return bSeed - aSeed;
+    if (a.w !== b.w) return a.w - b.w;
+    if (a.l !== b.l) return b.l - a.l;
+    const sa = sos[a.id] ?? 0, sb = sos[b.id] ?? 0;
+    if (sa !== sb) return sa - sb;
+    if (a.net !== b.net) return a.net - b.net;
+    if (a.pf !== b.pf) return a.pf - b.pf;
+    return (a.name || '').localeCompare(b.name || '');
+  });
 
   // Order: non -> WC -> DIV -> CONF -> SB loser -> SB winner
   const order = [
     ...sortWithTies(buckets.non),
-    ...sortWithTies(buckets.wc),
-    ...sortWithTies(buckets.div),
-    ...sortWithTies(buckets.conf),
-    ...buckets.sbl,
-    ...buckets.sbw,
+    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.wc) : sortWithTies(buckets.wc)),
+    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.div) : sortWithTies(buckets.div)),
+    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.conf) : sortWithTies(buckets.conf)),
+    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.sbl) : buckets.sbl),
+    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.sbw) : buckets.sbw),
   ];
 
   return order.slice(0, 32);
@@ -689,17 +707,34 @@ function loadPickOverridesList(seasonYear) {
 function applyPickTrades(order, seasonYear = currentCalendarYear) {
   const scopeKey = order?.[0]?.guildId || null;
   const overrides = getEffectiveFirstRoundOverrides(seasonYear, scopeKey);
+  const teamLookup = new Map();
+  const addTeamVariant = (value, team) => {
+    const key = normalizeTeamKey(value || '');
+    if (key) teamLookup.set(key, team);
+  };
+  (order || []).forEach((team) => {
+    addTeamVariant(team.name, team);
+    addTeamVariant(team.nick, team);
+    const mascot = String(team.name || '').split(/\s+/).filter(Boolean).pop();
+    addTeamVariant(mascot, team);
+  });
   const map = new Map();
   overrides.forEach(o => {
     const key = normalizeTeamKey(o.from || o.owner || '');
     if (!key) return;
-    map.set(key, { owner: o.to || o.owner, via: o.via || (o.from && o.from.slice(0, 3).toUpperCase()) });
+    const targetTeam = teamLookup.get(normalizeTeamKey(o.to || o.owner || '')) || null;
+    const sourceTeam = teamLookup.get(normalizeTeamKey(o.from || '')) || null;
+    map.set(key, {
+      owner: targetTeam?.name || o.to || o.owner,
+      nick: targetTeam?.nick || null,
+      via: o.via || sourceTeam?.nick || (o.from && o.from.slice(0, 3).toUpperCase()),
+    });
   });
 
   return order.map(pick => {
     const key = normalizeTeamKey(pick.name || pick.nick || '');
     const o = map.get(key);
-    return o ? { ...pick, name: o.owner, via: o.via } : pick;
+    return o ? { ...pick, name: o.owner, nick: o.nick || pick.nick, via: o.via } : pick;
   });
 }
 
