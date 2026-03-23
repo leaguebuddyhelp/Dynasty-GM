@@ -101,7 +101,7 @@ async function execute(interaction) {
           '`/member onboard`',
           '`/tradeblock`',
           '`/streamlink`',
-          '`/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`, `/recruiting`',
+          '`/draftclass`, `/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`, `/recruiting`',
           'Weekly Awards channel + Yearly Awards channel',
         ].join('\n'),
       },
