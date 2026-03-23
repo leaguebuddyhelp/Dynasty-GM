@@ -89,6 +89,7 @@ export async function execute(interaction) {
           fromAssets: activeTrade.yourStructAssets || [],
           toAssets: activeTrade.theirStructAssets || [],
           seasonYear: activeTrade.seasonYear,
+          scopeKey: interaction.guildId,
         });
       } catch (err) {
         console.warn('[trade_madden_proof] could not persist pick overrides:', err?.message || err);

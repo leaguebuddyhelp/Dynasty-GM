@@ -687,7 +687,8 @@ function loadPickOverridesList(seasonYear) {
 
 // Pick trades/forfeitures (manual overrides)
 function applyPickTrades(order, seasonYear = currentCalendarYear) {
-  const overrides = getEffectiveFirstRoundOverrides(seasonYear);
+  const scopeKey = order?.[0]?.guildId || null;
+  const overrides = getEffectiveFirstRoundOverrides(seasonYear, scopeKey);
   const map = new Map();
   overrides.forEach(o => {
     const key = normalizeTeamKey(o.from || o.owner || '');
@@ -1315,7 +1316,7 @@ export async function execute(interaction) {
   const isRegularSeason = weekType === 1;
   const officialOrder = isRegularSeason ? null : loadOfficialDraftOrderOverride(league, draftYear);
   const rawOrder = officialOrder || draftOrder(league);
-  const order = officialOrder || applyPickTrades(rawOrder, draftYear);
+  const order = officialOrder || applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId: interaction.guildId })), draftYear);
   const needProfiles = deriveTeamNeedsDetailed(league);
   const needs = Object.fromEntries(Object.entries(needProfiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
   // Use robust draft class file lookup

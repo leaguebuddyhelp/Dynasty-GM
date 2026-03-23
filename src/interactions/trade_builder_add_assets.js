@@ -168,7 +168,7 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId) {
   const combinedPickOptions = [];
 
   pickYearOptions.forEach((pickYear) => {
-    const firstRoundLabels = getFirstRoundPickLabelsForTeam(teamName, pickYear, allTeams);
+    const firstRoundLabels = getFirstRoundPickLabelsForTeam(teamName, pickYear, allTeams, interaction.guildId);
     firstRoundLabels.forEach(label => {
       const parsed = parsePickValue(label, draftBaseYear, {
         currentYearExactAllowed: pickContext.currentYearExactAllowed,

@@ -4,18 +4,37 @@ import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 
 const PICK_FILE = getMaddenDataFilePath('pick_overrides.json');
 
-function loadOverrides() {
+function loadStore() {
   try {
     const raw = JSON.parse(fs.readFileSync(PICK_FILE, 'utf8'));
-    return Array.isArray(raw?.overrides) ? raw.overrides : [];
+    return raw && typeof raw === 'object' ? raw : {};
   } catch {
-    return [];
+    return {};
   }
 }
 
-function saveOverrides(list) {
+function loadOverrides(scopeKey = null) {
+  const raw = loadStore();
+  if (scopeKey) {
+    const scoped = raw?.overridesByGuild?.[String(scopeKey)];
+    return Array.isArray(scoped) ? scoped : [];
+  }
+  return Array.isArray(raw?.overrides) ? raw.overrides : [];
+}
+
+function saveOverrides(list, scopeKey = null) {
+  const raw = loadStore();
+  const next = raw && typeof raw === 'object' ? { ...raw } : {};
+  if (scopeKey) {
+    next.overridesByGuild = {
+      ...(next.overridesByGuild || {}),
+      [String(scopeKey)]: Array.isArray(list) ? list : [],
+    };
+  } else {
+    next.overrides = Array.isArray(list) ? list : [];
+  }
   fs.mkdirSync(path.dirname(PICK_FILE), { recursive: true });
-  fs.writeFileSync(PICK_FILE, JSON.stringify({ overrides: list }, null, 2));
+  fs.writeFileSync(PICK_FILE, JSON.stringify(next, null, 2));
 }
 
 const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -68,8 +87,6 @@ const viaCodeFor = (teamName = '') => {
   return teamName.slice(0, 3).toUpperCase();
 };
 const DEFAULT_START_FIRST_ROUND_OVERRIDES = [
-  { from: 'Cardinals', to: 'Detroit Lions', via: 'ARI', year: 2027 },
-  { from: 'Cardinals', to: 'Detroit Lions', via: 'ARI', year: 2028 },
   { from: 'Falcons', to: 'Los Angeles Rams', via: 'ATL', year: 2027 },
   { from: 'Packers', to: 'Dallas Cowboys', via: 'GB', year: 2027 },
   { from: 'Colts', to: 'New York Jets', via: 'IND', year: 2027 },
@@ -86,9 +103,9 @@ function findOverrideByOriginalOwner(list, fromTeam, year, round = 1) {
   ) || null;
 }
 
-export function resolveOriginalPickOwner(ownerTeam, year, round = 1) {
+export function resolveOriginalPickOwner(ownerTeam, year, round = 1, scopeKey = null) {
   if (!ownerTeam || !year) return ownerTeam;
-  const list = loadOverrides();
+  const list = loadOverrides(scopeKey);
   const matches = list.filter(o =>
     sameTeam(o.to || o.owner, ownerTeam)
     && Number(o.year) === Number(year)
@@ -106,9 +123,9 @@ export function resolveOriginalPickOwner(ownerTeam, year, round = 1) {
  * @param {number} opts.year - Draft year
  * @param {string} [opts.via] - Via tag
  */
-export function upsertPickOverride({ fromTeam, toTeam, year, via }) {
+export function upsertPickOverride({ fromTeam, toTeam, year, via, scopeKey = null }) {
   if (!fromTeam || !toTeam || !year) return;
-  const list = loadOverrides();
+  const list = loadOverrides(scopeKey);
   const filtered = list.filter(o => !(sameTeam(o.from || o.owner, fromTeam) && Number(o.year) === Number(year) && Number(o.round || 1) === 1));
   filtered.push({
     from: fromTeam,
@@ -118,7 +135,7 @@ export function upsertPickOverride({ fromTeam, toTeam, year, via }) {
     round: 1,
     updatedAt: new Date().toISOString(),
   });
-  saveOverrides(filtered);
+  saveOverrides(filtered, scopeKey);
   return filtered;
 }
 
@@ -131,15 +148,15 @@ export function upsertPickOverride({ fromTeam, toTeam, year, via }) {
  * @param {Array} trade.toAssets - opposite side assets
  * @param {number} trade.seasonYear
  */
-export function addPickOverridesFromTrade({ fromTeam, toTeam, fromAssets = [], toAssets = [], seasonYear }) {
+export function addPickOverridesFromTrade({ fromTeam, toTeam, fromAssets = [], toAssets = [], seasonYear, scopeKey = null }) {
   const applySide = (assets, sender, receiver) => {
     assets
       .filter(a => a?.type === 'pick' && Number(a.round) === 1)
       .forEach(p => {
         const year = Number(p.year || seasonYear);
         if (!Number.isFinite(year)) return;
-        const originalOwner = p.originalOwner || p.viaTeam || resolveOriginalPickOwner(sender, year, 1) || sender;
-        const existing = findOverrideByOriginalOwner(loadOverrides(), originalOwner, year, 1);
+        const originalOwner = p.originalOwner || p.viaTeam || resolveOriginalPickOwner(sender, year, 1, scopeKey) || sender;
+        const existing = findOverrideByOriginalOwner(loadOverrides(scopeKey), originalOwner, year, 1);
         const previousOwner = existing?.to || originalOwner;
         if (!sameTeam(previousOwner, sender) && !sameTeam(originalOwner, sender)) {
           return;
@@ -149,6 +166,7 @@ export function addPickOverridesFromTrade({ fromTeam, toTeam, fromAssets = [], t
           toTeam: receiver,
           year,
           via: p.via || viaCodeFor(originalOwner),
+          scopeKey,
         });
       });
   };
@@ -156,13 +174,13 @@ export function addPickOverridesFromTrade({ fromTeam, toTeam, fromAssets = [], t
   applySide(toAssets, toTeam, fromTeam);
 }
 
-export function loadPickOverrides() {
-  return loadOverrides();
+export function loadPickOverrides(scopeKey = null) {
+  return loadOverrides(scopeKey);
 }
 
-export function getEffectiveFirstRoundOverrides(year) {
+export function getEffectiveFirstRoundOverrides(year, scopeKey = null) {
   const seasonYear = Number(year);
-  const fileOverrides = loadOverrides().filter(o =>
+  const fileOverrides = loadOverrides(scopeKey).filter(o =>
     Number(o.year) === seasonYear && Number(o.round || 1) === 1
   );
   const legacyOverrides = DEFAULT_START_FIRST_ROUND_OVERRIDES.map(o => ({
@@ -209,9 +227,9 @@ export function seedDefaultStartFirstRoundOverrides({ replaceExisting = false } 
   return current;
 }
 
-export function getFirstRoundPickLabelsForTeam(teamName, year, allTeams = []) {
+export function getFirstRoundPickLabelsForTeam(teamName, year, allTeams = [], scopeKey = null) {
   if (!teamName || !year) return [];
-  const overrides = getEffectiveFirstRoundOverrides(year);
+  const overrides = getEffectiveFirstRoundOverrides(year, scopeKey);
   const ownerByOriginal = new Map();
   allTeams.forEach(team => {
     const name = String(team || '').trim();
