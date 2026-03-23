@@ -12,13 +12,14 @@ export const deferOnDispatch = { flags: 64 };
 export async function execute(interaction) {
   const guildId = interaction.guildId || null;
   const currentPlan = guildId ? (getBillingSummary(guildId)?.plan || 'free') : 'free';
+  const clientId = interaction.applicationId || interaction.client?.application?.id || null;
 
   await interaction.editReply({
     embeds: [
       ...buildPricingEmbeds({ currentPlan }),
       buildPostPaymentEmbed(),
     ],
-    components: buildPricingLinkRows({ currentPlan }),
+    components: buildPricingLinkRows({ currentPlan, clientId }),
   });
 }
 

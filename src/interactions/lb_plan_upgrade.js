@@ -25,10 +25,11 @@ export async function execute(interaction) {
     const match = customId.exec(interaction.customId);
     const target = match?.[1];
     if (!target) return;
+    const clientId = interaction.applicationId || interaction.client?.application?.id || null;
 
     // Keep the original /plan message intact; respond ephemerally.
     await interaction.reply({
-        ...buildUpgradeReply({ targetPlan: target, guildId: interaction.guildId }),
+        ...buildUpgradeReply({ targetPlan: target, guildId: interaction.guildId, clientId }),
         ephemeral: true,
     });
 }

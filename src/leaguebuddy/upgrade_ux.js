@@ -87,8 +87,10 @@ function clientIdFromInviteUrl(value) {
   }
 }
 
-export function inviteLinkFor() {
-  const clientId = maybeClientId(process.env.CLIENT_ID) || clientIdFromInviteUrl(process.env.LB_BOT_INVITE_URL);
+export function inviteLinkFor(clientIdOverride = null) {
+  const clientId = maybeClientId(clientIdOverride)
+    || maybeClientId(process.env.CLIENT_ID)
+    || clientIdFromInviteUrl(process.env.LB_BOT_INVITE_URL);
   if (!clientId) return null;
   const permissions = new PermissionsBitField([
     PermissionsBitField.Flags.ViewChannel,
@@ -204,7 +206,7 @@ export function buildPostPaymentEmbed() {
     ].join('\n'));
 }
 
-export function buildPricingLinkRows({ currentPlan = null } = {}) {
+export function buildPricingLinkRows({ currentPlan = null, clientId = null } = {}) {
   const targets = currentPlan ? upgradePlansFor(currentPlan) : [PLANS.standard, PLANS.premium];
   const buttons = targets
     .map((plan) => {
@@ -217,7 +219,7 @@ export function buildPricingLinkRows({ currentPlan = null } = {}) {
     })
     .filter(Boolean);
 
-  const inviteUrl = inviteLinkFor();
+  const inviteUrl = inviteLinkFor(clientId);
   if (inviteUrl) {
     buttons.push(
       new ButtonBuilder()
@@ -244,9 +246,10 @@ export function buildPlanUpgradeButtons({ currentPlan = null, canManage = false 
   return [new ActionRowBuilder().addComponents(buttons.slice(0, 5))];
 }
 
-export function buildUpgradeReply({ targetPlan, guildId = null } = {}) {
+export function buildUpgradeReply({ targetPlan, guildId = null, clientId = null } = {}) {
   const plan = asPlan(targetPlan);
   const targetUrl = pricingLinkFor(plan);
+  const inviteUrl = inviteLinkFor(clientId);
   const linkRows = targetUrl
     ? [
         new ActionRowBuilder().addComponents(
@@ -255,11 +258,11 @@ export function buildUpgradeReply({ targetPlan, guildId = null } = {}) {
               .setStyle(ButtonStyle.Link)
               .setLabel(plan === PLANS.standard ? 'Open Standard Checkout' : 'Open Premium Checkout')
               .setURL(targetUrl),
-            inviteLinkFor()
+            inviteUrl
               ? new ButtonBuilder()
                   .setStyle(ButtonStyle.Link)
                   .setLabel('Invite LEAGUEbuddy')
-                  .setURL(inviteLinkFor())
+                  .setURL(inviteUrl)
               : null,
           ].filter(Boolean),
         ),
