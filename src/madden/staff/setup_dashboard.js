@@ -80,6 +80,14 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
       details: readiness.hierarchyWarning,
     };
   }
+  // If plan is not free and billing is not active, require /claim-plan as the first step
+  if (!billingOk && (billing?.plan || 'free') !== 'free') {
+    return {
+      title: 'Activate your paid plan',
+      action: 'Run `/claim-plan` to activate your paid plan for this server, then rerun `/setup`.',
+      details: `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
+    };
+  }
   if (!leagueId) {
     return {
       title: 'Connect the league',
@@ -122,14 +130,6 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
       title: 'Finish setup',
       action: 'Rerun `/setup` once more to finalize access sync automatically.',
       details: 'LEAGUEbuddy will mark setup complete during this final pass.',
-    };
-  }
-  // If plan is not free and billing is not active, require /claim-plan as the next step
-  if (!billingOk && (billing?.plan || 'free') !== 'free') {
-    return {
-      title: 'Activate your paid plan',
-      action: 'Run `/claim-plan` to activate your paid plan for this server, then rerun `/setup`.',
-      details: `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
     };
   }
   return {
