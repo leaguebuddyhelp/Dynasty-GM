@@ -387,10 +387,18 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
     return {
         category: publicInteractive,
         channels: {
+            // Staff/admin only
             'League Staff': staffOnly,
-            'Madden League Buddy Announcements': publicReadOnly,
             'LG Logs': staffOnly,
+            'Strike Board': staffOnly,
+
+            // Announcements and league-wide info (staff post, public read)
+            'Madden League Buddy Announcements': publicReadOnlyWithStaffPosting,
             rulesOps: publicReadOnlyWithStaffPosting,
+            breakdown: publicReadOnlyWithStaffPosting,
+            scoutingHub: publicReadOnlyWithStaffPosting,
+
+            // Public read-only boards
             'Available Teams': publicReadOnly,
             Standings: publicReadOnly,
             'Stat Leaders': publicReadOnly,
@@ -399,15 +407,23 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             'Top 100': publicReadOnly,
             'Yearly Awards': publicReadOnly,
             'Streaming links': publicReadOnly,
-            'Strike Board': staffOnly,
             'Draft Grades': publicReadOnly,
-            'Activity Checks': publicReactionCheck,
             'Transaction Log': publicReadOnly,
             'Injuries Log': publicReadOnly,
             'Player Change Log': publicReadOnly,
+            'Trade Counts': publicReadOnly,
+            Trades: publicReadOnly,
+            'Approved trades': publicReadOnly,
+            'Denied trades': publicReadOnly,
+
+            // Activity checks (public read, react, staff post)
+            'Activity Checks': publicReactionCheck,
+
+            // Game threads and trade block (coaches can post, public can read)
             'Game threads': publicInteractiveWithCoachAccess,
-            scoutingHub: publicReadOnlyWithStaffPosting,
-            breakdown: publicReadOnlyWithStaffPosting,
+            'Trade Block': publicInteractiveWithCoachAccess,
+
+            // Trade submit: everyone can view/use commands, only bot can post
             tradeSubmit: withBotAccess([
                 {
                     id: everyoneId,
@@ -419,11 +435,8 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                     deny: deny(PermissionFlagsBits.SendMessages),
                 },
             ]),
-            'Trade Counts': publicReadOnly,
-            'Trade Block': publicInteractiveWithCoachAccess,
-            Trades: publicReadOnly,
-            'Approved trades': publicReadOnly,
-            'Denied trades': publicReadOnly,
+
+            // Trade Committee: only committee and staff
             'Trade Committee': tradeCommitteeOnly,
         },
     };
