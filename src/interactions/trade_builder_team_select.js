@@ -65,6 +65,19 @@ export async function execute(interaction) {
   const side = prefix.includes('yours') ? 'yourTeamId' : 'otherTeamId';
   const draft = getTradeDraft(draftId);
 
+  // Always initialize leagueId and snapshot before auto-detect
+  let leagueId = draft.leagueId || null;
+  let snapshot = null;
+  if (!leagueId) {
+    try {
+      leagueId = requireLeagueIdForGuild(interaction.guildId);
+    } catch (error) {
+      await safeMessage(interaction, error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.');
+      return;
+    }
+  }
+  try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
+
   // Auto-detect user's team if not already set
   if (side === 'yourTeamId' && !draft.yourTeamId && interaction.member) {
     try {
@@ -94,8 +107,8 @@ export async function execute(interaction) {
           for (const assigned of userTeams) {
             match = snapshot.teams.leagueTeamInfoList.find(
               t => t.teamName?.toLowerCase() === assigned.teamName?.toLowerCase() ||
-                   t.displayName?.toLowerCase() === assigned.teamName?.toLowerCase() ||
-                   t.nickName?.toLowerCase() === assigned.teamName?.toLowerCase()
+                t.displayName?.toLowerCase() === assigned.teamName?.toLowerCase() ||
+                t.nickName?.toLowerCase() === assigned.teamName?.toLowerCase()
             );
             if (match) { matchType = 'case-insensitive'; matchedAssignment = assigned; break; }
           }
@@ -105,8 +118,8 @@ export async function execute(interaction) {
           for (const assigned of userTeams) {
             match = snapshot.teams.leagueTeamInfoList.find(
               t => t.teamName?.toLowerCase().includes(assigned.teamName?.toLowerCase()) ||
-                   t.displayName?.toLowerCase().includes(assigned.teamName?.toLowerCase()) ||
-                   t.nickName?.toLowerCase().includes(assigned.teamName?.toLowerCase())
+                t.displayName?.toLowerCase().includes(assigned.teamName?.toLowerCase()) ||
+                t.nickName?.toLowerCase().includes(assigned.teamName?.toLowerCase())
             );
             if (match) { matchType = 'partial'; matchedAssignment = assigned; break; }
           }
@@ -131,21 +144,6 @@ export async function execute(interaction) {
       console.error('[TRADE_BUILDER_AUTO_DETECT_ERROR] ' + (e && e.stack ? e.stack : e));
     }
   }
-  if (!draft) {
-    await safeMessage(interaction, 'Trade builder expired. Press Start Trade Builder again.');
-    return;
-  }
-  let leagueId = draft.leagueId || null;
-  let snapshot = null;
-  if (!leagueId) {
-    try {
-      leagueId = requireLeagueIdForGuild(interaction.guildId);
-    } catch (error) {
-      await safeMessage(interaction, error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.');
-      return;
-    }
-  }
-  try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
 
   const selected = interaction.values[0];
   const prevYour = draft.yourTeamId;
