@@ -158,6 +158,15 @@ export async function execute(interaction) {
     return;
   }
 
+  // DEBUG: Print billing summary and guildId for Stripe sandbox troubleshooting
+  try {
+    const billingDebug = require('util').inspect(getBillingSummary(guildId), { depth: 4 });
+    console.log(`[SETUP_DASHBOARD DEBUG] guildId: ${guildId}`);
+    console.log(`[SETUP_DASHBOARD DEBUG] billing summary:`, billingDebug);
+  } catch (e) {
+    console.error('[SETUP_DASHBOARD DEBUG] Failed to print billing summary:', e);
+  }
+
   const readiness = await inspectSetupReadiness(interaction.guild);
   const status = await maybeSyncSetupState(interaction);
   // Auto-sync after dashboard setup changes
