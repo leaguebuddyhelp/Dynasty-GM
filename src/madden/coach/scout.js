@@ -8,7 +8,7 @@ import { loadRoleMapForGuild } from '../staff/staffUtils.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
-import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getNflBrandAsset } from '../../shared/madden_assets.js';
+import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getLeagueBuddyBrandAsset } from '../../shared/madden_assets.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
@@ -443,7 +443,7 @@ export async function execute(interaction) {
   const files = [];
   const thumbnailAsset = newUnlocked.includes('dev')
     ? getDevTraitAsset(player.dev_trait, `dev_${player.dev_trait ?? 'hidden'}`)
-    : getNflBrandAsset({ attachmentName: 'nfl.png' });
+    : getLeagueBuddyBrandAsset({ attachmentName: 'leaguebuddy_logo.png' });
   applyEmbedThumbnailFromAsset(embed, files, thumbnailAsset);
   if (logo) {
     files.push({ attachment: logo.attachment, name: logo.name });

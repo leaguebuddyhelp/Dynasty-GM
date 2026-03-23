@@ -5,6 +5,7 @@ import { getFullTeamName } from './madden_team_names.js';
 const ASSET_ROOT = path.join(process.cwd(), 'nfl_logos');
 const TEAM_LOGO_DIR = path.join(ASSET_ROOT, 'team logos');
 const DEV_LOGO_DIR = path.join(ASSET_ROOT, 'dev logos');
+const LB_LOGO_DIR = path.join(ASSET_ROOT, 'lb logo');
 
 const TEAM_CODE_ALIASES = {
   ari: ['ari', 'az', 'arizona', 'cardinals', 'arizonacardinals'],
@@ -100,6 +101,13 @@ export function getNflTeamLogoAsset(teamLike, attachmentName = null) {
 export function getNflBrandAsset({ animated = false, attachmentName = null } = {}) {
   const file = path.join(DEV_LOGO_DIR, animated ? 'nfl.gif' : 'nfl.png');
   return fileAsset(file, attachmentName || (animated ? 'nfl.gif' : 'nfl.png'));
+}
+
+export function getLeagueBuddyBrandAsset({ attachmentName = null } = {}) {
+  const primary = path.join(LB_LOGO_DIR, 'LB_Offical_Logo.PNG');
+  const fallback = path.join(LB_LOGO_DIR, 'LB_Official_Logo.PNG');
+  const file = fs.existsSync(primary) ? primary : fallback;
+  return fileAsset(file, attachmentName || 'leaguebuddy_logo.png');
 }
 
 export function getDevTraitAsset(devTrait, attachmentName = null) {

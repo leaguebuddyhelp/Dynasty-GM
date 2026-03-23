@@ -8,7 +8,7 @@ import { formatImpactValue, getSportsbookOpenBetOpportunity, getSportsbookUserCa
 import { collectParticipation, listThreadStates } from '../../shared/madden_thread_notifier.js';
 import { coachCommandDescription, coachPanelIntro, coachVoiceFooter, coachVoiceTitle, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { formatTeamLabelWithEmoji, RECOGNITION_EMOJIS } from '../../shared/madden_visuals.js';
-import { applyEmbedThumbnailFromAsset, getNflBrandAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
+import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
 export const featureKey = 'recognition';
 
@@ -546,7 +546,7 @@ export async function execute(interaction) {
   if (!teamName) {
     const embed = buildSpectatorHubEmbed({ recognition, leagueId, snapshot });
     let files = [];
-    files = applyEmbedThumbnailFromAsset(embed, files, getNflBrandAsset({ attachmentName: 'nfl.png' }));
+    files = applyEmbedThumbnailFromAsset(embed, files, getLeagueBuddyBrandAsset({ attachmentName: 'leaguebuddy_logo.png' }));
     embed.addFields({ name: 'Legacy Leaders', value: legacyLeaderboard });
     const controls = new ActionRowBuilder();
     if (recognition.weekNumber) {

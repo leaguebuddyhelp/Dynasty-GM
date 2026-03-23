@@ -127,7 +127,10 @@ export function getTeamApplicationEmoji(teamName = '', fallback = '') {
 }
 
 export function getLeagueBuddyLogoEmoji(fallback = '') {
-  return findApplicationEmoji(['leaguebuddy_official_logo', 'lb_official_logo', 'leaguebuddy_logo', 'nfl_logo'], fallback);
+  return findApplicationEmoji(
+    ['leaguebuddy_official_logo', 'lb_official_logo', 'leaguebuddy_logo', 'leaguebuddy', 'lb_logo', 'lb'],
+    fallback,
+  );
 }
 
 export function isApplicationEmojiReady() {

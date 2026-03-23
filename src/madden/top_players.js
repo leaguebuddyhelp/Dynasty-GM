@@ -7,14 +7,12 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadLeagueSnapshot } from './madden_data.js';
 import { getPinId, setPinId } from './pins_store.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
-import { applyEmbedThumbnailFromAsset, getNflBrandAsset } from '../shared/madden_assets.js';
+import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
 
 const TOP_FILE = path.join(process.cwd(), 'data', 'madden', 'top_players.json');
 const TOP_HISTORY_DIR = path.join(process.cwd(), 'data', 'madden', 'top_players_history');
 const DEFAULT_POST_CHANNEL = null;
 const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
-const TEAM_EMOJIS_FILE = path.join(process.cwd(), 'data', 'madden', 'team_emojis.json');
-const TEAM_EMOJIS = loadJson(TEAM_EMOJIS_FILE, {});
 
 function median(values = []) {
   const nums = values
@@ -1786,7 +1784,7 @@ function buildPageEmbed(list, page, leagueId, meta = {}) {
     .setDescription(lines.join('\n') || 'No players available.')
     .setFooter({ text: `Page ${safePage}/${totalPages} • League ${leagueId}` });
   let files = [];
-  files = applyEmbedThumbnailFromAsset(embed, files, getNflBrandAsset({ animated: true, attachmentName: 'nfl.gif' }));
+  files = applyEmbedThumbnailFromAsset(embed, files, getLeagueBuddyBrandAsset({ attachmentName: 'leaguebuddy_logo.png' }));
   return { embed, files, totalPages, page: safePage };
 }
 

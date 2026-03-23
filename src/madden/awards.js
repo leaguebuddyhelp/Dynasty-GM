@@ -7,7 +7,7 @@ import { computeWeeklyList } from './top_players.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
-import { applyEmbedThumbnailFromAsset, getNflBrandAsset } from '../shared/madden_assets.js';
+import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 
@@ -849,7 +849,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     )
     .setTimestamp(new Date());
   let files = [];
-  files = applyEmbedThumbnailFromAsset(embed, files, getNflBrandAsset({ animated: true, attachmentName: 'nfl.gif' }));
+  files = applyEmbedThumbnailFromAsset(embed, files, getLeagueBuddyBrandAsset({ attachmentName: 'leaguebuddy_logo.png' }));
 
   if (interaction) {
     const content = isPublic ? coachTag : null;

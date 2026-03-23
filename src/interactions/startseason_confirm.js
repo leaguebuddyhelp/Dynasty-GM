@@ -37,7 +37,7 @@ export async function execute(interaction) {
             try {
                 const standingsChannelId = '1428159168904167535';
                 const blankStandingsEmbed = new (await import('discord.js')).EmbedBuilder()
-                    .setTitle('NFL League Standings')
+                    .setTitle('LEAGUEbuddy Standings')
                     .addFields(
                         { name: 'Eastern Conference', value: 'No games played', inline: false },
                         { name: 'Western Conference', value: 'No games played', inline: false }
