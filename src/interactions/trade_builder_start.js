@@ -152,13 +152,35 @@ export async function execute(interaction) {
       label: getFullTeamName(t, 'Unknown'),
       value: String(t.teamId ?? t.teamIndex ?? t.displayName ?? t.nickName),
     }));
-  const rows = [
-    new ActionRowBuilder().addComponents(
+
+  // If yourTeamId is detected, lock the select menu to only your team
+  let yourTeamRow;
+  if (yourTeamId && yourTeamName) {
+    yourTeamRow = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(`trade_builder_team_yours|${draftId}`)
+        .setPlaceholder('Your team')
+        .addOptions([
+          {
+            label: yourTeamName,
+            value: String(yourTeamId),
+            default: true,
+            description: 'Auto-detected from your assignment',
+          },
+        ])
+        .setDisabled(true)
+    );
+  } else {
+    yourTeamRow = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`trade_builder_team_yours|${draftId}`)
         .setPlaceholder('Your team')
         .addOptions(limitOptions(optionsAll))
-    ),
+    );
+  }
+
+  const rows = [
+    yourTeamRow,
     new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`trade_builder_team_other_afc|${draftId}`)

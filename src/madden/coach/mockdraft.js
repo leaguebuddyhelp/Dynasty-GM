@@ -1,3 +1,25 @@
+// Robust draft class file lookup (matches scout.js/bigboard.js)
+function findClassFile(classId) {
+  if (!fs.existsSync(DRAFT_CLASS_DIR)) return null;
+  const patterns = [
+    classId.toLowerCase(),
+    classId.replace('_', '').toLowerCase(),
+    classId.replace('_', '').toUpperCase(),
+  ];
+  const files = fs.readdirSync(DRAFT_CLASS_DIR).filter(f => {
+    const low = f.toLowerCase();
+    return patterns.some(p => low.includes(p)) && low.endsWith('.json');
+  });
+  if (files.length) return path.join(DRAFT_CLASS_DIR, files[0]);
+  const allJson = fs.readdirSync(DRAFT_CLASS_DIR).filter(f => f.toLowerCase().endsWith('.json'));
+  return allJson.length ? path.join(DRAFT_CLASS_DIR, allJson[0]) : null;
+}
+
+function loadDraftClass(classId) {
+  const file = findClassFile(classId);
+  if (!file) return null;
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
 import fs from 'fs';
 import path from 'path';
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
@@ -1298,9 +1320,11 @@ export async function execute(interaction) {
   const order = officialOrder || applyPickTrades(rawOrder, draftYear);
   const needProfiles = deriveTeamNeedsDetailed(league);
   const needs = Object.fromEntries(Object.entries(needProfiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
-  const prospects = loadDraftClass();
+  // Use robust draft class file lookup
+  const classId = getMaddenDraftClassId(league);
+  const prospects = loadDraftClass(classId) || [];
   if (!prospects.length) {
-    const payload = { content: 'The draft board is not loaded yet.' };
+    const payload = { content: `The draft board is not loaded yet. (classId: ${classId})` };
     await interaction.editReply(payload);
     return;
   }

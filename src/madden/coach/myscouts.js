@@ -255,7 +255,6 @@ function getSuggestedScoutCandidates(member, userId, userData, classKey, weekKey
 
 function findClassFile(classId) {
   if (!fs.existsSync(DRAFT_DIR)) return null;
-  // Use the same robust patterns as bigboard_helpers.js
   const patterns = [
     classId.toLowerCase(),
     classId.replace('_', '').toLowerCase(),
@@ -272,15 +271,8 @@ function findClassFile(classId) {
 
 function loadDraftClass(classId) {
   const file = findClassFile(classId);
-  if (!file) return { data: null, resolvedId: classId };
-  const data = safeReadJSON(file, null);
-  const resolvedId = (() => {
-    const base = path.basename(file).toLowerCase();
-    const match = base.match(/cus[_ -]?(\d+)/);
-    if (match) return `cus_${String(match[1]).padStart(2, '0')}`;
-    return classId;
-  })();
-  return { data, resolvedId };
+  if (!file) return null;
+  return safeReadJSON(file, null);
 }
 
 function formatDev(dev, emojis) {
@@ -423,6 +415,13 @@ function buildPagesForUser(userId, guildId, member = null) {
 
   const pages = [];
 
+
+  // Load draft data using new loadDraftClass
+  const draftData = loadDraftClass(currentClassId);
+  if (!draftData) {
+    return { error: `Draft class ${currentClassId} not found. Add a JSON under data/draft_classes/madden.` };
+  }
+
   let playersByClass = userData.players[currentClassId] || userData.players[currentNorm];
   if ((!playersByClass || !Object.keys(playersByClass).length)) {
     const seedFromLog = hydrateFromLog(userId, currentNorm);
@@ -433,9 +432,7 @@ function buildPagesForUser(userId, guildId, member = null) {
     }
   }
 
-  const { data: draftData, resolvedId } = loadDraftClass(currentClassId);
-  if (!draftData) return { error: `Draft class ${currentClassId} not found.` };
-  const resolvedClassKey = (resolvedId || currentClassId).toLowerCase();
+  const resolvedClassKey = currentClassId.toLowerCase();
   playersByClass = collectCurrentClassPlayers(userId, userData, resolvedClassKey, draftData, calendarYear);
   userData.players[currentNorm] = userData.players[currentNorm] || userData.players[resolvedClassKey] || {};
   saveScoutData(scoutData);
