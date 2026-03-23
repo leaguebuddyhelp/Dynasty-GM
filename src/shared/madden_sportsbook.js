@@ -1450,7 +1450,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     const buyoutBets = buyoutActive ? openBuyoutBetsForUser(card.bets) : [];
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle(`LB Sportsbook • My Card • Week ${weekNumber}`)
+      .setTitle(`LB Sportsbook • My Card • ${boardLabel}`)
       .setDescription(cardLinesForUser(card.bets, card.lines, guildId).join('\n'))
       .addFields(
         { name: 'Impact To Bet', value: formatImpactValue(card.bankroll.balance || 0), inline: true },
@@ -1480,7 +1480,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     );
     const embed = new EmbedBuilder()
       .setColor(0x2ecc71)
-      .setTitle(`LB Sportsbook • Leaderboard • Week ${weekNumber}`)
+      .setTitle(`LB Sportsbook • Leaderboard • ${boardLabel}`)
       .setDescription(
         board.length
           ? lines.join('\n')

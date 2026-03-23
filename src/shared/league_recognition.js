@@ -4,10 +4,11 @@ import { resolveLeagueIdWithConfig } from '../../madden/madden_data.js';
 import { getSeasonState } from './seasonUtils.js';
 import { getCoachAssignmentMap } from './madden_coach_assignments.js';
 import { getMaddenSnapshotContext } from './madden_metadata.js';
-import { getLeaguebuddyRecognitionStorePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
+import { getLeaguebuddyRecognitionStorePath, getMaddenDataFilePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 
 const STORE_PATH = getLeaguebuddyRecognitionStorePath();
 const MADDEN_SNAPSHOT_DIR = getMaddenLeaguesDir();
+const SPORTSBOOK_STORE_PATH = getMaddenDataFilePath('sportsbook.json');
 
 export const RECOGNITION_ECONOMY = {
   points: {
@@ -120,6 +121,16 @@ function safeReadJSON(file, fallback = {}) {
   } catch {
     return fallback;
   }
+}
+
+function getOpenSportsbookBetCount({ seasonKey, userId, weekNumber }) {
+  if (!seasonKey || !userId || !weekNumber) return 0;
+  const sportsbookStore = safeReadJSON(SPORTSBOOK_STORE_PATH, {});
+  const bets = sportsbookStore?.[seasonKey]?.weeks?.[`week_${weekNumber}`]?.bets || [];
+  return bets.filter((bet) =>
+    String(bet?.userId) === String(userId) &&
+    String(bet?.status || '') === 'open'
+  ).length;
 }
 
 function writeJSON(file, value) {
@@ -800,6 +811,13 @@ export function getRecognitionPerkState({ guildId, league, seasonKey, userId, we
   const weekHistory = weekKey
     ? (Array.isArray(userState.history) ? userState.history.filter((entry) => entry?.weekKey === weekKey) : [])
     : [];
+  const sportsbookOpenBetCount = league === 'madden' && context?.weekNumber
+    ? getOpenSportsbookBetCount({
+      seasonKey,
+      userId,
+      weekNumber: context.weekNumber,
+    })
+    : 0;
 
   const perks = Object.fromEntries(
     Object.keys(PERK_COSTS).map((key) => [key, perkIsActive(activeWeekPerks[key])]),
@@ -820,6 +838,7 @@ export function getRecognitionPerkState({ guildId, league, seasonKey, userId, we
       perkIsActive(activeWeekPerks.defensiveGamePlan) ||
       perkIsActive(activeWeekPerks.tendencyBreakdown)
     );
+    const sportsbookOpportunityBlocked = key === 'betBuyout' && Number(sportsbookOpenBetCount || 0) <= 0;
     perkStatus[key] = {
       key,
       ...perk,
@@ -828,8 +847,10 @@ export function getRecognitionPerkState({ guildId, league, seasonKey, userId, we
       consumedThisWeek,
       usedThisWeek: activatedThisWeek && !activeNow,
       phaseOpen: phaseGate.open,
-      phaseLockedReason: phaseGate.reason,
-      availableThisWeek: phaseGate.open && !activeNow && !activatedThisWeek && !blockedByBundle && !blockedBySingleGamePlan && balances[perk.tier] >= perk.cost,
+      phaseLockedReason: sportsbookOpportunityBlocked
+        ? 'opens only when you have at least one open sportsbook bet this week'
+        : phaseGate.reason,
+      availableThisWeek: phaseGate.open && !activeNow && !activatedThisWeek && !blockedByBundle && !blockedBySingleGamePlan && !sportsbookOpportunityBlocked && balances[perk.tier] >= perk.cost,
       selectedTier: rawActiveValue && typeof rawActiveValue === 'object' ? rawActiveValue.selectedTier || null : null,
       resolved: rawActiveValue && typeof rawActiveValue === 'object' ? rawActiveValue.resolved === true : false,
     };
