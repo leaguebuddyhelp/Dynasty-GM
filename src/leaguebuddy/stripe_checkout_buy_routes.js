@@ -105,6 +105,15 @@ async function handleBuy(req, res, plan) {
         }
         redirect(res, session.url);
     } catch (err) {
+        console.error('[stripe-buy] checkout session failed', {
+            plan,
+            error: err?.message || String(err),
+            code: err?.code || null,
+            type: err?.type || null,
+            rawType: err?.rawType || null,
+            statusCode: err?.statusCode || null,
+            requestId: err?.requestId || null,
+        });
         const message = err?.message || String(err);
         const code = err?.code || 'internal_error';
         const status = code === 'stripe_secret_missing' || code === 'stripe_price_missing' ? 503 : 500;

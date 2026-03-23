@@ -43,7 +43,13 @@ export function startHealthcheckServer() {
     if (matched) {
       try {
         await matched.handler(req, res);
-      } catch {
+      } catch (error) {
+        console.error('[http-route] handler failed', {
+          method: req.method,
+          url: req.url,
+          error: error?.message || error,
+          stack: error?.stack || null,
+        });
         if (!res.headersSent) {
           res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
         }
