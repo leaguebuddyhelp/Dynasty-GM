@@ -8,7 +8,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import { loadRoleMap } from '../madden/staff/staffUtils.js';
+import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { getMaddenDraftClassId } from './madden_draft_class.js';
@@ -434,7 +434,7 @@ function participantLabel(participant) {
 }
 
 export function coachTeamsForMember(member) {
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMapForGuild(member?.guild?.id);
   const teamRoleMap = new Map(
     Object.entries(roleMap)
       .filter(([name, id]) => name.endsWith(' Coach') && id)
