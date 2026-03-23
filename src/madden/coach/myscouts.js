@@ -255,7 +255,16 @@ function getSuggestedScoutCandidates(member, userId, userData, classKey, weekKey
 
 function findClassFile(classId) {
   if (!fs.existsSync(DRAFT_DIR)) return null;
-  const files = fs.readdirSync(DRAFT_DIR).filter(f => f.toLowerCase().includes(classId.toLowerCase()) && f.toLowerCase().endsWith('.json'));
+  // Use the same robust patterns as bigboard_helpers.js
+  const patterns = [
+    classId.toLowerCase(),
+    classId.replace('_', '').toLowerCase(),
+    classId.replace('_', '').toUpperCase(),
+  ];
+  const files = fs.readdirSync(DRAFT_DIR).filter(f => {
+    const low = f.toLowerCase();
+    return patterns.some(p => low.includes(p)) && low.endsWith('.json');
+  });
   if (files.length) return path.join(DRAFT_DIR, files[0]);
   const allJson = fs.readdirSync(DRAFT_DIR).filter(f => f.toLowerCase().endsWith('.json'));
   return allJson.length ? path.join(DRAFT_DIR, allJson[0]) : null;

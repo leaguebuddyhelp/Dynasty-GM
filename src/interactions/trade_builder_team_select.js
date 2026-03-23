@@ -188,10 +188,10 @@ export async function execute(interaction) {
           // fallback: use the most recent assigned teamName as name, but leave id null
           draft.yourTeamName = mostRecent.teamName;
         }
-  // Always save the draft after auto-detect
-  saveTradeDraft(draftId, draft);
-  // Reload draft from storage to ensure latest values for UI
-  Object.assign(draft, getTradeDraft(draftId));
+        // Always save the draft after auto-detect
+        saveTradeDraft(draftId, draft);
+        // Reload draft from storage to ensure latest values for UI
+        Object.assign(draft, getTradeDraft(draftId));
       }
     } catch (e) {
       console.error('[TRADE_BUILDER_AUTO_DETECT_ERROR] ' + (e && e.stack ? e.stack : e));

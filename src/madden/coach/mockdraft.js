@@ -659,15 +659,24 @@ function applyPickTrades(order, seasonYear = currentCalendarYear) {
 
 function loadDraftClass() {
   if (!fs.existsSync(DRAFT_CLASS_DIR)) return [];
-  const files = fs.readdirSync(DRAFT_CLASS_DIR).filter(f => f.toLowerCase().endsWith('.json'));
-  if (!files.length) return [];
+  // Use the same robust patterns as bigboard_helpers.js
   const currentClassId = getMaddenDraftClassId({ calendarYear: currentCalendarYear });
-
-  const target = files
-    .filter(f => f.toLowerCase().includes(currentClassId.toLowerCase()) && f.toLowerCase().includes('big board'))
-    .sort()[0];
-  if (!target) return [];
-
+  const patterns = [
+    currentClassId.toLowerCase(),
+    currentClassId.replace('_', '').toLowerCase(),
+    currentClassId.replace('_', '').toUpperCase(),
+  ];
+  const files = fs.readdirSync(DRAFT_CLASS_DIR).filter(f => {
+    const low = f.toLowerCase();
+    return patterns.some(p => low.includes(p)) && low.endsWith('.json') && low.includes('big board');
+  });
+  let target = files.sort()[0];
+  if (!target) {
+    // fallback: any .json file
+    const allJson = fs.readdirSync(DRAFT_CLASS_DIR).filter(f => f.toLowerCase().endsWith('.json'));
+    target = allJson.sort()[0];
+    if (!target) return [];
+  }
   const data = JSON.parse(fs.readFileSync(path.join(DRAFT_CLASS_DIR, target), 'utf8'));
   const players = Object.values(data).filter(p => p && p.name);
   players.sort((a, b) => (a.RNK || a.rank || a.order || 9999) - (b.RNK || b.rank || b.order || 9999));
