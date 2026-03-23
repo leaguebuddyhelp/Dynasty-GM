@@ -57,6 +57,12 @@ export const RECOGNITION_ECONOMY = {
 const POINTS = RECOGNITION_ECONOMY.points;
 const PERK_COSTS = RECOGNITION_ECONOMY.perks;
 const DRAFT_SCOUT_PHASED_PERKS = new Set([]);
+const RECOGNITION_STARTER_GRANT_VERSION = 1;
+const RECOGNITION_STARTER_GRANT = {
+  activity: 6,
+  impact: 8,
+  legacy: 2,
+};
 
 // Founder/test protection. These users' recognition state should not be wiped by role-removal tooling.
 // (Primary guard is in staff commands, but this is a safety net.)
@@ -167,10 +173,27 @@ function ensureUser(seasonRoot, userId) {
       weeks: {},
       activePerks: {},
       history: [],
+      starterGrantVersion: 0,
     };
   }
   seasonRoot.users[userId].spent = seasonRoot.users[userId].spent || { activity: 0, impact: 0, legacy: 0 };
   seasonRoot.users[userId].activePerks = seasonRoot.users[userId].activePerks || {};
+  seasonRoot.users[userId].starterGrantVersion = Number(seasonRoot.users[userId].starterGrantVersion || 0);
+  if (seasonRoot.users[userId].starterGrantVersion < RECOGNITION_STARTER_GRANT_VERSION) {
+    seasonRoot.users[userId].activity = Number(seasonRoot.users[userId].activity || 0) + RECOGNITION_STARTER_GRANT.activity;
+    seasonRoot.users[userId].impact = Number(seasonRoot.users[userId].impact || 0) + RECOGNITION_STARTER_GRANT.impact;
+    seasonRoot.users[userId].legacy = Number(seasonRoot.users[userId].legacy || 0) + RECOGNITION_STARTER_GRANT.legacy;
+    seasonRoot.users[userId].history = Array.isArray(seasonRoot.users[userId].history) ? seasonRoot.users[userId].history : [];
+    seasonRoot.users[userId].history.push({
+      tier: 'system',
+      amount: 0,
+      reason: `Starter recognition grant (+${RECOGNITION_STARTER_GRANT.activity} Activity, +${RECOGNITION_STARTER_GRANT.impact} Impact, +${RECOGNITION_STARTER_GRANT.legacy} Legacy)`,
+      weekKey: null,
+      ts: Date.now(),
+    });
+    seasonRoot.users[userId].history = seasonRoot.users[userId].history.slice(-120);
+    seasonRoot.users[userId].starterGrantVersion = RECOGNITION_STARTER_GRANT_VERSION;
+  }
   return seasonRoot.users[userId];
 }
 
