@@ -6,8 +6,48 @@ import { saveTradeDraft, deleteDraftsForUser } from '../utils/trade_draft_store.
 import { normalizeName } from '../shared/rosterUtils.js';
 import { resolveTeamNameForRoster } from '../shared/rosterUtils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 
 export const customId = /^trade_builder_start$/;
+
+function normalizeKey(value = '') {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function resolveCoachTeamFromRoles({ member, guildId, teams = [] }) {
+  const roles = member?.roles?.cache;
+  if (!roles || !guildId || !teams.length) return null;
+
+  const roleMap = loadRoleMapForGuild(guildId);
+  for (const [name, roleId] of Object.entries(roleMap || {})) {
+    if (!/ coach$/i.test(name) || !roleId || !roles.has(roleId)) continue;
+    const baseTeamName = name.replace(/ coach$/i, '').trim();
+    const exact = teams.find((team) => getFullTeamName(team, '').toLowerCase() === baseTeamName.toLowerCase());
+    if (exact) return exact;
+  }
+
+  for (const role of roles.values()) {
+    const roleName = String(role?.name || '');
+    if (!/ coach$/i.test(roleName)) continue;
+    const baseTeamName = roleName.replace(/ coach$/i, '').trim();
+    const normalizedBase = normalizeKey(baseTeamName);
+    const match = teams.find((team) => {
+      const candidates = [
+        getFullTeamName(team, ''),
+        team.teamName,
+        team.displayName,
+        team.nickName,
+        team.cityName,
+        team.name,
+        team.abbrName,
+      ].map(normalizeKey);
+      return candidates.includes(normalizedBase);
+    });
+    if (match) return match;
+  }
+
+  return null;
+}
 
 async function safeReply(interaction, payload) {
   try {
@@ -94,6 +134,18 @@ export async function execute(interaction) {
       }
     }
   } catch (e) { /* ignore auto-detect errors */ }
+
+  if (!yourTeamId && teams.length > 0) {
+    const roleMatch = resolveCoachTeamFromRoles({
+      member: interaction.member,
+      guildId: interaction.guildId,
+      teams,
+    });
+    if (roleMatch) {
+      yourTeamId = String(roleMatch.teamId ?? roleMatch.teamIndex ?? roleMatch.displayName ?? roleMatch.nickName);
+      yourTeamName = getFullTeamName(roleMatch, 'Your team');
+    }
+  }
 
   const limitOptions = (opts, keepValue) => {
     if (opts.length <= 25) return opts;

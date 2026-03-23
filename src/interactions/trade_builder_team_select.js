@@ -5,8 +5,48 @@ import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 import { buildButtons } from './trade_builder_add_assets.js';
 import { resolveTeamNameForRoster } from '../shared/rosterUtils.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 
 export const customId = /^trade_builder_team_(yours|other_afc|other_nfc)\|/;
+
+function normalizeKey(value = '') {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function resolveCoachTeamFromRoles({ member, guildId, teams = [] }) {
+  const roles = member?.roles?.cache;
+  if (!roles || !guildId || !teams.length) return null;
+
+  const roleMap = loadRoleMapForGuild(guildId);
+  for (const [name, roleId] of Object.entries(roleMap || {})) {
+    if (!/ coach$/i.test(name) || !roleId || !roles.has(roleId)) continue;
+    const baseTeamName = name.replace(/ coach$/i, '').trim();
+    const exact = teams.find((team) => getFullTeamName(team, '').toLowerCase() === baseTeamName.toLowerCase());
+    if (exact) return exact;
+  }
+
+  for (const role of roles.values()) {
+    const roleName = String(role?.name || '');
+    if (!/ coach$/i.test(roleName)) continue;
+    const baseTeamName = roleName.replace(/ coach$/i, '').trim();
+    const normalizedBase = normalizeKey(baseTeamName);
+    const match = teams.find((team) => {
+      const candidates = [
+        getFullTeamName(team, ''),
+        team.teamName,
+        team.displayName,
+        team.nickName,
+        team.cityName,
+        team.name,
+        team.abbrName,
+      ].map(normalizeKey);
+      return candidates.includes(normalizedBase);
+    });
+    if (match) return match;
+  }
+
+  return null;
+}
 
 async function safeUpdate(interaction, payload) {
   if (interaction.deferred || interaction.replied) {
@@ -201,6 +241,19 @@ export async function execute(interaction) {
       }
     } catch (e) {
       console.error('[TRADE_BUILDER_AUTO_DETECT_ERROR] ' + (e && e.stack ? e.stack : e));
+    }
+
+    if (!draft.yourTeamId && teams.length > 0) {
+      const roleMatch = resolveCoachTeamFromRoles({
+        member: interaction.member,
+        guildId: interaction.guildId,
+        teams,
+      });
+      if (roleMatch) {
+        draft.yourTeamId = String(roleMatch.teamId ?? roleMatch.teamIndex ?? roleMatch.displayName ?? roleMatch.nickName);
+        draft.yourTeamName = getFullTeamName(roleMatch, 'Your team');
+        saveTradeDraft(draftId, draft);
+      }
     }
   }
 
