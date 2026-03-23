@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { buildLiveDraftContext } from './draft_live_data.js';
+import { hasFeatureAccess } from '../../leaguebuddy/access.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getMaddenSnapshotContext, loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { loadRoleMapForGuild } from '../staff/staffUtils.js';
@@ -932,14 +933,17 @@ export async function execute(interaction) {
   const matchupTitle = matchup
     ? `${formatTeamLabelWithEmoji(isHome ? opponentTeam.fullName : ownTeam.fullName)} at ${formatTeamLabelWithEmoji(isHome ? ownTeam.fullName : opponentTeam.fullName)}`
     : `${formatTeamLabelWithEmoji(ownTeam.fullName)} vs ${formatTeamLabelWithEmoji(opponentTeam.fullName)}`;
-  const bettingLine = getSportsbookLineForMatchup({
-    guildId: interaction.guildId,
-    awayTeamId,
-    homeTeamId,
-    seasonKey: meta?.seasonKey,
-    weekNumber: meta?.weekNumber,
-    snapshot,
-  });
+  const sportsbookAccess = hasFeatureAccess(interaction.guildId, 'sportsbook');
+  const bettingLine = sportsbookAccess.ok
+    ? getSportsbookLineForMatchup({
+      guildId: interaction.guildId,
+      awayTeamId,
+      homeTeamId,
+      seasonKey: meta?.seasonKey,
+      weekNumber: meta?.weekNumber,
+      snapshot,
+    })
+    : null;
 
   const whyWatch = buildWhyWatch({
     snapshot,

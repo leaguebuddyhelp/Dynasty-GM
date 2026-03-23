@@ -399,13 +399,13 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             // Staff/admin only
             'League Staff': staffOnly,
             'LG Logs': staffOnly,
-            'Strike Board': staffOnly,
 
             // Announcements and league-wide info (staff post, public read)
             'Madden League Buddy Announcements': publicReadOnlyWithStaffPosting,
             rulesOps: publicReadOnlyWithStaffPosting,
             breakdown: publicReadOnlyWithStaffPosting,
             scoutingHub: publicReadOnlyWithStaffPosting,
+            'Strike Board': publicReadOnly,
 
             // Public read-only boards
             'Available Teams': publicReadOnly,
