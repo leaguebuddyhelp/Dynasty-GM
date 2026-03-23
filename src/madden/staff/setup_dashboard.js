@@ -66,6 +66,14 @@ function buildCoachLines() {
 }
 
 function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk }) {
+  // If plan is not free and billing is not active, require /claim-plan as the very first step
+  if (!billingOk && (billing?.plan || 'free') !== 'free') {
+    return {
+      title: 'Activate your paid plan',
+      action: 'Run `/claim-plan` to activate your paid plan for this server, then rerun `/setup`.',
+      details: `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
+    };
+  }
   if (!readiness.hasRequiredPermissions) {
     return {
       title: 'Fix Discord bot permissions',
@@ -78,14 +86,6 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
       title: 'Move the LEAGUEbuddy role higher',
       action: 'Move the LEAGUEbuddy role above `Admin` or any protected roles, then rerun `/setup`.',
       details: readiness.hierarchyWarning,
-    };
-  }
-  // If plan is not free and billing is not active, require /claim-plan as the first step
-  if (!billingOk && (billing?.plan || 'free') !== 'free') {
-    return {
-      title: 'Activate your paid plan',
-      action: 'Run `/claim-plan` to activate your paid plan for this server, then rerun `/setup`.',
-      details: `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
     };
   }
   if (!leagueId) {
