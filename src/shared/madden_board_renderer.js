@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import { getNflTeamLogoAsset } from './madden_assets.js';
+import { getLeagueBuddyBrandAsset, getNflTeamLogoAsset } from './madden_assets.js';
 
 function escapeXml(value = '') {
   return String(value || '')
@@ -134,7 +134,26 @@ export async function renderLeagueBoardImage({
   svg.push('</svg>');
 
   const image = await sharp(Buffer.from(svg.join('')))
-    .composite(composites)
+    .composite(await (async () => {
+      const withTeams = [...composites];
+      const brandAsset = getLeagueBuddyBrandAsset({ attachmentName: 'league_board_brand.png' });
+      if (brandAsset?.attachment) {
+        try {
+          const logoBuffer = await sharp(brandAsset.attachment)
+            .resize({ width: 92, height: 92, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .png()
+            .toBuffer();
+          withTeams.push({
+            input: logoBuffer,
+            left: boardWidth - outerPad - 118,
+            top: outerPad + 8,
+          });
+        } catch {
+          // Ignore brand image failures so board rendering still succeeds.
+        }
+      }
+      return withTeams;
+    })())
     .png()
     .toBuffer();
 
