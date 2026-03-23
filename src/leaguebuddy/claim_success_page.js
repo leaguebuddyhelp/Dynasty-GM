@@ -116,14 +116,16 @@ async function handleClaimSuccess(req, res) {
         title: 'Your LEAGUEbuddy claim code',
         bodyHtml: [
             '<h1>Payment received ✅</h1>',
-            '<p>Copy your claim code below. Then paste it in the Discord server you want to upgrade.</p>',
+            '<p><strong>Save this code now.</strong> You will use it in Discord to activate the server you want to upgrade.</p>',
             `<div class="claim">${escapeHtml(claim.claimCode || '')}</div>`,
+            `<p class="muted">Backup recovery reference: <code>${escapeHtml(ref)}</code></p>`,
             '<p><strong>In Discord:</strong></p>',
             '<ol class="steps">',
             '<li>Go to the server (guild) you want upgraded.</li>',
             '<li>Run <code>/claim-plan</code> and enter the code above.</li>',
             '<li>Run <code>/plan</code> to confirm your server is active.</li>',
             '</ol>',
+            '<p><strong>If you lose the code:</strong> run <code>/claim-plan</code> and use the Stripe payment reference from your receipt email or the backup reference shown above.</p>',
         ].join(''),
     }));
 }

@@ -70,6 +70,10 @@ export async function execute(interaction) {
             '• If this is a brand new server, a manager should still run `/connectleague`, finish the dashboard flow, then keep rerunning `/setup` until it says complete.',
           ].join('\n'),
         },
+        {
+          name: 'Recovery Tip',
+          value: 'If someone loses the one-time code, `/claim-plan payment_reference:...` can still use the Stripe receipt reference instead.',
+        },
       );
 
     await interaction.editReply({

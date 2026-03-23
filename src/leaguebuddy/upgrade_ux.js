@@ -310,11 +310,12 @@ export function buildActivationFollowup({ guildId, plan }) {
 
 export function buildClaimInstructions() {
   return [
-    'How to start paid access:',
+    'How to activate paid access:',
     '1. Buy from `/pricing` if you need a paid plan.',
-    '2. Invite LEAGUEbuddy to your server.',
-    '3. Run `/setup`.',
-    '4. Follow the next step `/setup` gives you until setup is complete.',
+    '2. Save the claim code from the success page.',
+    '3. Go to the server you want to upgrade and run `/claim-plan`.',
+    '4. If you lose the code, use the Stripe payment reference from your receipt email instead.',
+    '5. Run `/setup` and follow the next step it gives you until setup is complete.',
   ].join('\n');
 }
 
