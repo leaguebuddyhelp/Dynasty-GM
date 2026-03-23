@@ -11,6 +11,7 @@ import {
 import { loadRoleMap } from '../madden/staff/staffUtils.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
+import { getMaddenDraftClassId } from './madden_draft_class.js';
 import {
   applyPickTrades,
   draftOrder,
@@ -1442,7 +1443,8 @@ export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roo
   const officialOrder = inRegularSeason ? null : loadOfficialDraftOrderOverride(league, draftYear);
   const rawOrder = officialOrder || draftOrder(league);
   const order = (officialOrder || applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId })), draftYear)).slice(0, 32);
-  const prospects = loadDraftClass().map(trimProspect);
+  const classId = getMaddenDraftClassId(league);
+  const prospects = (loadDraftClass(classId, { command: 'mockdraft_live', guildId, userId: hostId }) || []).map(trimProspect);
   if (!prospects.length) throw new Error('Draft class is not loaded.');
 
   const session = {
