@@ -70,19 +70,19 @@ export async function execute(interaction) {
     try {
       const { userToTeams } = getCoachAssignmentMap({ guildId: interaction.guildId });
       const userTeams = userToTeams.get(String(interaction.user.id));
-      console.log('[trade_builder_team_select] Auto-detect debug:', {
+      console.log('[TRADE_BUILDER_AUTO_DETECT] ' + JSON.stringify({
         userId: interaction.user.id,
         userTeams,
         userToTeamsKeys: Array.from(userToTeams.keys()),
         draftId,
         draft,
-      });
+      }));
       if (userTeams && userTeams.length > 0) {
         draft.yourTeamId = String(userTeams[0].teamId ?? userTeams[0].teamIndex ?? userTeams[0].displayName ?? userTeams[0].nickName);
         draft.yourTeamName = userTeams[0].teamName || userTeams[0].displayName || userTeams[0].nickName;
       }
     } catch (e) {
-      console.error('[trade_builder_team_select] Auto-detect error:', e);
+      console.error('[TRADE_BUILDER_AUTO_DETECT_ERROR] ' + (e && e.stack ? e.stack : e));
     }
   }
   if (!draft) {
