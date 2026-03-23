@@ -21,6 +21,7 @@ const CORE_REQUIRED_CHANNEL_KEYS = [
 const STANDARD_REQUIRED_CHANNEL_KEYS = [
   'scoutingHub',
   'Top 100',
+  'Weekly Awards',
   'Yearly Awards',
   'Streaming links',
   'Strike Board',

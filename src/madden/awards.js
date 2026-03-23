@@ -486,7 +486,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   buildRosterYearsPro(snapshot);
   const channelMap = loadChannelMap(guildId);
   const roleMap = loadRoleMap(guildId);
-  const awardsChannelId = channelMap['Yearly Awards'] || channelMap['Awards'];
+  const awardsChannelId = channelMap['Weekly Awards'] || channelMap['Yearly Awards'] || channelMap['Awards'];
   const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId).catch(() => null) : null);
   if (!interaction && !targetChannel?.isTextBased()) {
     console.warn('[awards] Awards channel not text-based or missing.');
