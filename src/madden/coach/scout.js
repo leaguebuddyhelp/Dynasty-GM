@@ -117,17 +117,39 @@ function findClassFile(classId) {
   return allJson.length ? path.join(DRAFT_DIR, allJson[0]) : null;
 }
 
-function loadDraftClass(classId) {
+function loadDraftClass(classId, context = {}) {
   const file = findClassFile(classId);
-  if (!file) return { data: null, resolvedId: classId };
-  const data = safeReadJSON(file, null);
-  const resolvedId = (() => {
-    const base = path.basename(file).toLowerCase();
-    const match = base.match(/cus[_ -]?(\d+)/);
-    if (match) return `cus_${String(match[1]).padStart(2, '0')}`;
-    return classId;
-  })();
-  return { data, resolvedId };
+  const logInfo = {
+    event: 'draft_class_lookup',
+    command: context.command || 'scout',
+    guildId: context.guildId || null,
+    userId: context.userId || null,
+    classId,
+    resolvedFile: file,
+    timestamp: new Date().toISOString(),
+  };
+  if (!file) {
+    logInfo.error = 'Draft class file not found';
+    console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
+    return { data: null, resolvedId: classId };
+  }
+  try {
+    const data = safeReadJSON(file, null);
+    const resolvedId = (() => {
+      const base = path.basename(file).toLowerCase();
+      const match = base.match(/cus[_ -]?(\d+)/);
+      if (match) return `cus_${String(match[1]).padStart(2, '0')}`;
+      return classId;
+    })();
+    logInfo.success = true;
+    logInfo.resolvedId = resolvedId;
+    console.log('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][SUCCESS]', JSON.stringify(logInfo));
+    return { data, resolvedId };
+  } catch (e) {
+    logInfo.error = e && e.message;
+    console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
+    return { data: null, resolvedId: classId };
+  }
 }
 
 function uniqPositions(draftData) {

@@ -88,6 +88,8 @@ export function setCoachAssignment({
   });
   guildRoot.users[normalizedUserId].history = guildRoot.users[normalizedUserId].history.slice(-50);
   guildRoot.updatedAt = Date.now();
+  // Trigger per-guild auto-sync
+  try { syncGuild(guildId); } catch (e) { console.error('[AUTO_SYNC] Failed to sync after setCoachAssignment:', e); }
   saveStore(store);
   return { ok: true };
 }
@@ -118,6 +120,8 @@ export function removeCoachAssignment({ guildId, userId, teamName = null, roleId
     }
     userRoot.history = userRoot.history.slice(-50);
     guildRoot.updatedAt = Date.now();
+    // Trigger per-guild auto-sync
+    try { syncGuild(guildId); } catch (e) { console.error('[AUTO_SYNC] Failed to sync after removeCoachAssignment:', e); }
     saveStore(store);
   }
   return { ok: removed.length > 0, removed };

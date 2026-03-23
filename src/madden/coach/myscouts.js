@@ -269,10 +269,32 @@ function findClassFile(classId) {
   return allJson.length ? path.join(DRAFT_DIR, allJson[0]) : null;
 }
 
-function loadDraftClass(classId) {
+function loadDraftClass(classId, context = {}) {
   const file = findClassFile(classId);
-  if (!file) return null;
-  return safeReadJSON(file, null);
+  const logInfo = {
+    event: 'draft_class_lookup',
+    command: context.command || 'myscouts',
+    guildId: context.guildId || null,
+    userId: context.userId || null,
+    classId,
+    resolvedFile: file,
+    timestamp: new Date().toISOString(),
+  };
+  if (!file) {
+    logInfo.error = 'Draft class file not found';
+    console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
+    return null;
+  }
+  try {
+    const data = safeReadJSON(file, null);
+    logInfo.success = true;
+    console.log('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][SUCCESS]', JSON.stringify(logInfo));
+    return data;
+  } catch (e) {
+    logInfo.error = e && e.message;
+    console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
+    return null;
+  }
 }
 
 function formatDev(dev, emojis) {

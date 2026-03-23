@@ -245,6 +245,9 @@ export function claimPlanForGuild({
     source,
   });
 
+
+  // Trigger per-guild auto-sync
+  try { syncGuild(guildId); } catch (e) { console.error('[AUTO_SYNC] Failed to sync after claimPlanForGuild:', e); }
   const updatedClaim = claimRepository.upsertClaim(claim.claimId, {
     status: CLAIM_STATUSES.claimed,
     claimedGuildId: String(guildId),

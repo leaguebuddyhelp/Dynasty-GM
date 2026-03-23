@@ -15,10 +15,32 @@ function findClassFile(classId) {
   return allJson.length ? path.join(DRAFT_CLASS_DIR, allJson[0]) : null;
 }
 
-function loadDraftClass(classId) {
+function loadDraftClass(classId, context = {}) {
   const file = findClassFile(classId);
-  if (!file) return null;
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
+  const logInfo = {
+    event: 'draft_class_lookup',
+    command: context.command || 'mockdraft',
+    guildId: context.guildId || null,
+    userId: context.userId || null,
+    classId,
+    resolvedFile: file,
+    timestamp: new Date().toISOString(),
+  };
+  if (!file) {
+    logInfo.error = 'Draft class file not found';
+    console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
+    return null;
+  }
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    logInfo.success = true;
+    console.log('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][SUCCESS]', JSON.stringify(logInfo));
+    return data;
+  } catch (e) {
+    logInfo.error = e && e.message;
+    console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
+    return null;
+  }
 }
 import fs from 'fs';
 import path from 'path';
