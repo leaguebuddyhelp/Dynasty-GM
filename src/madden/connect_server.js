@@ -1160,6 +1160,12 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
     ? `${resolvedPersona?.displayName || guildTokens?.personaName || 'Persona selected'} on ${String(resolvedPersona?.systemConsole || guildTokens?.console || '').toUpperCase() || 'your console'}.`
     : 'Choose the Madden account/persona tied to your league.';
 
+  const leagueStepCopy = hasLeague
+    ? syncInProgress
+      ? `${selectedLeague?.leagueName || connection?.leagueName || 'League connected'} is linked to this Discord server. LEAGUEbuddy is still importing the first snapshot. Stay on this page until Final Check says Ready.`
+      : `${selectedLeague?.leagueName || connection?.leagueName || 'League connected'} is linked to this Discord server.`
+    : 'Choose the Madden league LEAGUEbuddy should manage.';
+
   const setupChecks = [
     {
       key: 'league_name',
@@ -1191,9 +1197,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
       done: hasLeague,
       active: nextStep === 4,
       title: 'League linked',
-      copy: hasLeague
-        ? `${selectedLeague?.leagueName || connection?.leagueName || 'League connected'} is linked to this Discord server.`
-        : 'Choose the Madden league LEAGUEbuddy should manage.',
+      copy: leagueStepCopy,
     },
     {
       key: 'sync',
@@ -1213,11 +1217,13 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   const currentTask = !hasLeagueName
     ? 'Save your league name.'
     : !hasEaConnection
-      ? 'Connect EA and save the returned browser URL.'
+        ? 'Connect EA and save the returned browser URL.'
       : !hasPersona
         ? 'Choose the correct Madden account/persona.'
         : !hasLeague
           ? 'Choose the league to connect to this Discord server.'
+          : syncInProgress
+            ? 'Wait on this page while LEAGUEbuddy imports the first league snapshot.'
           : status === 'sync_error'
             ? syncErrorSummary.next
             : 'Go back to Discord and run /league-status.';
@@ -1504,7 +1510,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
             ${stepChip(4, { active: 'Choose Now' })}
           </div>
-          <div class="step-mobile-summary">${hasLeague ? `${escapeHtml(activeLeagueName)} is linked.` : 'Choose the league for this server.'}</div>
+          <div class="step-mobile-summary">${hasLeague ? escapeHtml(leagueStepCopy) : 'Choose the league for this server.'}</div>
           <div class="step-body">
           <p style="color:#4b5563;">Choose the Madden league LEAGUEbuddy should connect to this Discord server.</p>
           ${leagueFetchError ? `<div class="warning"><strong>League list unavailable.</strong><br />${escapeHtml(leagueFetchError)}</div>` : ''}
@@ -1529,6 +1535,12 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
                 <div>League ID: <code>${escapeHtml(selectedLeague.leagueId || 'unknown')}</code></div>
                 <div>This is the league LEAGUEbuddy will connect to <strong>${escapeHtml(guildName)}</strong>.</div>
               </div>
+              ${syncInProgress ? `
+                <div class="warning" style="margin-top:12px;">
+                  <strong>Wait for the import to finish.</strong><br />
+                  LEAGUEbuddy is still importing the first league snapshot. Stay on this page until the Final Check card says <strong>Ready</strong>.
+                </div>
+              ` : ''}
               <div class="inline-actions">
                 <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
                   <button type="submit" class="secondary">Choose a Different League</button>
@@ -1562,6 +1574,10 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
           </div>
           ${syncInProgress ? `
+            <div class="warning">
+              <strong>Wait here.</strong><br />
+              Your league is linked, but the first import is still running. Do not leave this page yet. Wait until this card says <strong>Ready</strong>.
+            </div>
             <div class="sync-progress-card">
               <div class="sync-progress-top">
                 <div>
