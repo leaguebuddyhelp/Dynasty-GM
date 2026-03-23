@@ -160,6 +160,13 @@ export async function execute(interaction) {
 
   const readiness = await inspectSetupReadiness(interaction.guild);
   const status = await maybeSyncSetupState(interaction);
+  // Auto-sync after dashboard setup changes
+  try {
+    const { syncGuild } = await import('../../shared/guild_auto_sync.js');
+    await syncGuild(guildId);
+  } catch (e) {
+    console.error('[AUTO_SYNC] Failed to sync after setup_dashboard:', e);
+  }
   const leagueId = getLeagueForGuild(guildId) || null;
   const snapshotOk = snapshotExists(leagueId);
   const billing = getBillingSummary(guildId);

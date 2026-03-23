@@ -236,6 +236,14 @@ export async function execute(interaction) {
             // ignore
         }
     }
+
+    // Auto-sync after setup reset changes
+    try {
+        const { syncGuild } = await import('../../shared/guild_auto_sync.js');
+        await syncGuild(guild.id);
+    } catch (e) {
+        console.error('[AUTO_SYNC] Failed to sync after setup-reset:', e);
+    }
 }
 
 export default { data, execute };

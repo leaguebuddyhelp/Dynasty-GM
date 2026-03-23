@@ -120,6 +120,13 @@ export async function execute(interaction) {
     cfg.status = 'complete';
   }
   saveGuildMaddenConfig(guild.id, cfg);
+  // Auto-sync after role/channel config changes
+  try {
+    const { syncGuild } = await import('../../shared/guild_auto_sync.js');
+    await syncGuild(guild.id);
+  } catch (e) {
+    console.error('[AUTO_SYNC] Failed to sync after setup_roles:', e);
+  }
 
   await updateProgress('refreshing channel permissions', [
     'Updating channel permissions with the new role map',

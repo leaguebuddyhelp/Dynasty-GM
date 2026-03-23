@@ -51,6 +51,7 @@ export async function execute(interaction) {
 
     const subscriptionStatus = statusOpt ? String(statusOpt) : defaultStatus;
 
+
     const before = getGuildRecord(guildId, { createIfMissing: false });
     const rec = activatePlanManually(guildId, {
         plan,
@@ -58,6 +59,13 @@ export async function execute(interaction) {
         actor,
         source: 'command:/setplan',
     });
+    // Auto-sync after plan/billing changes
+    try {
+        const { syncGuild } = await import('../../shared/guild_auto_sync.js');
+        await syncGuild(guildId);
+    } catch (e) {
+        console.error('[AUTO_SYNC] Failed to sync after setplan:', e);
+    }
 
     await interaction.editReply({
         content: [

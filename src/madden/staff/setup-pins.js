@@ -576,6 +576,14 @@ export async function execute(interaction) {
     const out = await seedAndHydratePins(interaction.client, guildId);
     const hasFailures = out.results.some((line) => /⚠️|❌/.test(String(line)));
 
+    // Auto-sync after pin setup changes
+    try {
+        const { syncGuild } = await import('../../shared/guild_auto_sync.js');
+        await syncGuild(guildId);
+    } catch (e) {
+        console.error('[AUTO_SYNC] Failed to sync after setup-pins:', e);
+    }
+
     await interaction.editReply({
         content: '',
         embeds: [
