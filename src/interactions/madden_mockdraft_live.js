@@ -75,6 +75,14 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function normalizeAssignedTeamNames(entries = []) {
+  return [...new Set(
+    (entries || [])
+      .map((entry) => (typeof entry === 'string' ? entry : entry?.teamName || entry?.displayName || null))
+      .filter(Boolean),
+  )];
+}
+
 async function sendMockDraftInviteDM(client, session, member) {
   const user = member?.user || await client.users.fetch(member?.id || '').catch(() => null);
   if (!user) return false;
@@ -434,7 +442,9 @@ async function buildCoachInviteOptions(guild, session) {
     .map((member) => {
       const display = member.displayName || member.user?.globalName || member.user?.username || member.id;
       const username = member.user?.username || member.id;
-      const assignedTeams = (assignments?.userToTeams?.get(member.id) || coachTeamsForMember({ guildId: guild.id, userId: member.id }) || []).filter(Boolean);
+      const assignedTeams = normalizeAssignedTeamNames(
+        assignments?.userToTeams?.get(member.id) || coachTeamsForMember(member) || [],
+      );
       const teamLabel = assignedTeams.length ? assignedTeams.join(' / ') : 'Unassigned Team';
       const joined = session.participants?.some((participant) => participant.userId === member.id);
       const inRoom = member.id === session.hostId || joined;
