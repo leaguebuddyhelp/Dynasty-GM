@@ -99,26 +99,31 @@ export async function execute(interaction) {
         let matchType = null;
         let matchedAssignment = null;
         if (mostRecent) {
-          // 1. Exact match
+          // 1. Exact match (now also checks 'name' field)
           match = snapshot.teams.leagueTeamInfoList.find(
-            t => t.teamName === mostRecent.teamName || t.displayName === mostRecent.teamName || t.nickName === mostRecent.teamName
+            t => t.teamName === mostRecent.teamName ||
+              t.displayName === mostRecent.teamName ||
+              t.nickName === mostRecent.teamName ||
+              t.name === mostRecent.teamName
           );
           if (match) { matchType = 'exact'; matchedAssignment = mostRecent; }
-          // 2. Case-insensitive match
+          // 2. Case-insensitive match (now also checks 'name' field)
           if (!match) {
             match = snapshot.teams.leagueTeamInfoList.find(
               t => t.teamName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
                 t.displayName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
-                t.nickName?.toLowerCase() === mostRecent.teamName?.toLowerCase()
+                t.nickName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
+                t.name?.toLowerCase() === mostRecent.teamName?.toLowerCase()
             );
             if (match) { matchType = 'case-insensitive'; matchedAssignment = mostRecent; }
           }
-          // 3. Partial/alias match
+          // 3. Partial/alias match (now also checks 'name' field)
           if (!match) {
             match = snapshot.teams.leagueTeamInfoList.find(
               t => t.teamName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
                 t.displayName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
-                t.nickName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase())
+                t.nickName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
+                t.name?.toLowerCase().includes(mostRecent.teamName?.toLowerCase())
             );
             if (match) { matchType = 'partial'; matchedAssignment = mostRecent; }
           }
