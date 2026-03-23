@@ -77,9 +77,19 @@ export async function execute(interaction) {
         draftId,
         draft,
       }));
-      if (userTeams && userTeams.length > 0) {
-        draft.yourTeamId = String(userTeams[0].teamId ?? userTeams[0].teamIndex ?? userTeams[0].displayName ?? userTeams[0].nickName);
-        draft.yourTeamName = userTeams[0].teamName || userTeams[0].displayName || userTeams[0].nickName;
+      if (userTeams && userTeams.length > 0 && snapshot?.teams?.leagueTeamInfoList) {
+        // Try to match the user's assigned teamName to a real team in the league snapshot
+        const assigned = userTeams[0];
+        const match = snapshot.teams.leagueTeamInfoList.find(
+          t => t.teamName === assigned.teamName || t.displayName === assigned.teamName || t.nickName === assigned.teamName
+        );
+        if (match) {
+          draft.yourTeamId = String(match.teamId ?? match.teamIndex ?? match.displayName ?? match.nickName);
+          draft.yourTeamName = match.displayName || match.teamName || match.nickName;
+        } else {
+          // fallback: use the assigned teamName as name, but leave id null
+          draft.yourTeamName = assigned.teamName;
+        }
       }
     } catch (e) {
       console.error('[TRADE_BUILDER_AUTO_DETECT_ERROR] ' + (e && e.stack ? e.stack : e));
