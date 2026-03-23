@@ -184,14 +184,20 @@ export async function execute(interaction) {
             draft.yourTeamId = String(match.displayName || match.nickName || 'unknown');
           }
           draft.yourTeamName = match.displayName || match.teamName || match.nickName;
+          // Debug: confirm after setting
+          console.log('[TRADE_BUILDER_SET_TEAM]', JSON.stringify({
+            yourTeamId: draft.yourTeamId,
+            yourTeamName: draft.yourTeamName,
+            draftId,
+            draft
+          }));
         } else if (mostRecent) {
           // fallback: use the most recent assigned teamName as name, but leave id null
           draft.yourTeamName = mostRecent.teamName;
         }
         // Always save the draft after auto-detect
         saveTradeDraft(draftId, draft);
-        // Reload draft from storage to ensure latest values for UI
-        Object.assign(draft, getTradeDraft(draftId));
+        // Do NOT reload or overwrite draft.yourTeamId after this point!
       }
     } catch (e) {
       console.error('[TRADE_BUILDER_AUTO_DETECT_ERROR] ' + (e && e.stack ? e.stack : e));
