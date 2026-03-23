@@ -16,6 +16,24 @@ import { resolveInteractionAccess } from './leaguebuddy/interaction_access_resol
 import { validateStartupConfig } from './leaguebuddy/startup_validation.js';
 import { markHealthReady, startHealthcheckServer } from './leaguebuddy/healthcheck.js';
 
+// --- ENVIRONMENT SAFEGUARD: Warn if test guilds are present in production ---
+import path from 'path';
+const TEST_GUILD_IDS = [
+  '1484334233236279418', // Add more test guild IDs here as needed
+];
+const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'undefined';
+try {
+  const guildsPath = path.join(process.env.LB_DATA_ROOT || path.join(process.cwd(), 'data'), 'leaguebuddy', 'guilds.json');
+  const guildsData = JSON.parse(fs.readFileSync(guildsPath, 'utf8'));
+  const foundTestGuilds = Object.keys(guildsData.guilds || {}).filter(id => TEST_GUILD_IDS.includes(id));
+  if (foundTestGuilds.length && (appEnv === 'prod' || appEnv === 'production')) {
+    console.warn('[SECURITY WARNING] Test guild(s) present in production data:', foundTestGuilds.join(', '));
+    console.warn('[SECURITY WARNING] Remove test guilds from production data to avoid accidental test/paid customer overlap.');
+  }
+} catch (e) {
+  console.warn('[SECURITY WARNING] Could not check for test guilds in production data:', e?.message || e);
+}
+
 // For self-hosted / multi-server distribution, keep logs quiet by default.
 // Opt-in when you actually want the extra noise.
 const LB_VERBOSE_LOGS = String(process.env.LB_VERBOSE_LOGS ?? 'false').toLowerCase() === 'true';
