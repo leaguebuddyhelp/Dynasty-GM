@@ -298,7 +298,12 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         {
             id: everyoneId,
             allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
-            deny: deny(PermissionFlagsBits.SendMessages),
+            deny: deny(
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.CreatePrivateThreads,
+            ),
         },
     ]);
 
@@ -322,7 +327,12 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         {
             id: everyoneId,
             allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
-            deny: deny(PermissionFlagsBits.SendMessages),
+            deny: deny(
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.CreatePrivateThreads,
+            ),
         },
         ...staffRoleAccess,
     ]);
@@ -336,7 +346,12 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                 PermissionFlagsBits.AddReactions,
                 PermissionFlagsBits.UseApplicationCommands,
             ),
-            deny: deny(PermissionFlagsBits.SendMessages),
+            deny: deny(
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.CreatePrivateThreads,
+            ),
         },
         ...staffRoleAccess,
     ]);
@@ -441,7 +456,12 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                         PermissionFlagsBits.ReadMessageHistory,
                         PermissionFlagsBits.UseApplicationCommands,
                     ),
-                    deny: deny(PermissionFlagsBits.SendMessages),
+                    deny: deny(
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.SendMessagesInThreads,
+                        PermissionFlagsBits.CreatePublicThreads,
+                        PermissionFlagsBits.CreatePrivateThreads,
+                    ),
                 },
             ]),
 
