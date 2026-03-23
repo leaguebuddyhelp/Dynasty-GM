@@ -3,7 +3,9 @@ import crypto from 'crypto';
 import auditRepository from './repositories/audit_log_repository.js';
 import claimRepository from './repositories/pending_activation_repository.js';
 import { PLANS } from './guild_store.js';
+import { setSetupCompleted } from './guild_access_service.js';
 import { activatePlanManually } from './manual_billing_service.js';
+import { loadGuildMaddenConfig, saveGuildMaddenConfig } from '../shared/madden_guild_config.js';
 
 const CLAIM_STATUSES = {
   unclaimed: 'unclaimed',
@@ -12,6 +14,12 @@ const CLAIM_STATUSES = {
 };
 
 const CLAIM_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+
+const DEFAULT_PACKS = {
+  free: ['core', 'threads', 'stats_light'],
+  standard: ['core', 'threads', 'trades_basic', 'stats_light', 'scouting_draft', 'ops_light'],
+  premium: ['core', 'threads', 'trades_basic', 'stats_light', 'scouting_draft', 'ops_light', 'ops_full', 'recognition', 'sportsbook'],
+};
 
 function nowIso() {
   return new Date().toISOString();
@@ -96,6 +104,37 @@ export function inferPlanFromStripeCheckoutSession(session = {}) {
   const totalPlan = inferPlanFromAmount(session?.amount_total);
   if (totalPlan) return totalPlan;
   return inferPlanFromAmount(session?.amount_subtotal);
+}
+
+function syncOverlayToActivatedPlan(guildId, plan) {
+  const normalizedPlan = normalizePlan(plan) || PLANS.free;
+  const current = loadGuildMaddenConfig(guildId) || {};
+  const packsEnabled = [...(DEFAULT_PACKS[normalizedPlan] || DEFAULT_PACKS.free)];
+
+  const nextConfig = {
+    version: 2,
+    status: 'incomplete',
+    updatedAt: nowIso(),
+    license: { tier: normalizedPlan },
+    packsEnabled,
+    compat: {
+      maddenChannelMap:
+        current?.compat?.maddenChannelMap && typeof current.compat.maddenChannelMap === 'object'
+          ? current.compat.maddenChannelMap
+          : {},
+      maddenRoleMap:
+        current?.compat?.maddenRoleMap && typeof current.compat.maddenRoleMap === 'object'
+          ? current.compat.maddenRoleMap
+          : {},
+    },
+    pins:
+      current?.pins && typeof current.pins === 'object'
+        ? current.pins
+        : {},
+  };
+
+  saveGuildMaddenConfig(guildId, nextConfig);
+  return nextConfig;
 }
 
 export function createPendingClaim({
@@ -245,6 +284,9 @@ export function claimPlanForGuild({
     source,
   });
 
+  const overlayConfig = syncOverlayToActivatedPlan(guildId, claim.plan);
+  setSetupCompleted(guildId, false, { actor, source });
+
 
   // Trigger per-guild auto-sync
   try { syncGuild(guildId); } catch (e) { console.error('[AUTO_SYNC] Failed to sync after claimPlanForGuild:', e); }
@@ -271,6 +313,9 @@ export function claimPlanForGuild({
       claimedGuildId: updatedClaim.claimedGuildId,
       plan: record.plan,
       subscriptionStatus: record.subscriptionStatus,
+      overlayTier: overlayConfig?.license?.tier || null,
+      packsEnabled: Array.isArray(overlayConfig?.packsEnabled) ? overlayConfig.packsEnabled : [],
+      setupCompleted: false,
     },
   });
 
