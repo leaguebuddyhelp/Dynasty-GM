@@ -54,7 +54,24 @@ export function loadDraftClass(classId, context = {}) {
     }
 }
 
+
+export function getAllDraftClasses(guildId = null) {
+    // Optionally use guildId for per-guild directories, but default is global
+    const dir = DRAFT_DIR;
+    if (!fs.existsSync(dir)) return [];
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+    return files.map(file => {
+        try {
+            const data = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+            return { file, data };
+        } catch {
+            return { file, data: null };
+        }
+    });
+}
+
 export default {
     findClassFile,
     loadDraftClass,
+    getAllDraftClasses,
 };
