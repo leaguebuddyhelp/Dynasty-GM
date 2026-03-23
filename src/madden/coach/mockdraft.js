@@ -32,7 +32,8 @@ function loadDraftClass(classId, context = {}) {
     return null;
   }
   try {
-    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const data = Array.isArray(raw) ? raw : Object.values(raw || {});
     logInfo.success = true;
     console.log('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][SUCCESS]', JSON.stringify(logInfo));
     return data;
