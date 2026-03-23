@@ -9,10 +9,13 @@ const PAGE_SIZE = 10;
 const safeLoadRecruiting = (snapshotOrLeague = null) => {
   try {
     const currentClassId = getMaddenDraftClassId(snapshotOrLeague);
-    const target = fs.readdirSync(RECRUITING_DIR)
-      .filter(f => f.toLowerCase().includes(`${currentClassId.toLowerCase()} - recruiting`.toLowerCase()))
-      .sort();
-    const file = target[0];
+    // Accept any file with the class number (with or without underscore, any case) and 'recruiting' in the name
+    const classNum = currentClassId.replace('cus_', '').replace('CUS_', '').replace('_', '').replace(/^0+/, '');
+    const files = fs.readdirSync(RECRUITING_DIR).filter(f => {
+      const low = f.toLowerCase();
+      return low.includes(classNum) && low.includes('recruiting');
+    }).sort();
+    const file = files[0];
     if (!file) return null;
     const raw = fs.readFileSync(path.join(RECRUITING_DIR, file), 'utf-8');
     const data = JSON.parse(raw);
