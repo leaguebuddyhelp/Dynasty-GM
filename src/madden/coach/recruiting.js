@@ -3,6 +3,8 @@ import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/mad
 import { safeLoadRecruiting, buildRecruitingEmbed } from '../../../madden/helpers/recruiting_helpers.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 
+export const featureKey = 'scouting_draft';
+
 export const data = new SlashCommandBuilder()
   .setName('recruiting')
   .setDescription(coachCommandDescription('recruiting'))
@@ -25,4 +27,4 @@ export async function execute(interaction) {
   });
 }
 
-export default { data, execute };
+export default { data, featureKey, execute };
