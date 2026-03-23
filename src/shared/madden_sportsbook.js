@@ -336,6 +336,15 @@ function isCoachOrLeaguebuddy(member, roleMap) {
   });
 }
 
+async function canUserBetSportsbook({ guild = null, guildId = null, userId = null }) {
+  if (!guild || !userId) return false;
+  const roleMap = loadRoleMap(guildId);
+  const member = guild.members?.cache?.get?.(String(userId))
+    || await guild.members?.fetch?.(String(userId)).catch(() => null);
+  if (!member) return false;
+  return isCoachOrLeaguebuddy(member, roleMap);
+}
+
 function coachTeamsFromMember(member, roleMap) {
   const teams = [];
   for (const role of member?.roles?.cache?.values?.() || []) {
@@ -1256,6 +1265,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
   const lines = card.lines || [];
   const safeIndex = lines.length ? Math.max(0, Math.min(lines.length - 1, Number(index || 0))) : 0;
   const components = [viewNavRow(weekNumber, mode, safeIndex, lines.length > 0)];
+  const canBet = await canUserBetSportsbook({ guild, guildId, userId });
 
   if (mode === 'breakdown') {
     const store = loadStore();
@@ -1398,7 +1408,9 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
         ? `Your bets on this game: ${gameBets.map((bet) => `${bet.betLabel || `${bet.market} ${bet.selection}`} ${formatImpactValue(bet.wager)}`).join(' • ')}`
         : 'Your bets on this game: none yet.',
       '',
-      ownGameBlocked
+      !canBet
+        ? 'You can browse the sportsbook board here. Betting unlocks once you have a coach role or LEAGUEbuddy Coaches access in this server.'
+        : ownGameBlocked
         ? 'You cannot bet this game because it is your matchup.'
         : 'Pick a button below to bet spread, moneyline, or total.',
     ].filter(Boolean).join('\n'))
@@ -1406,7 +1418,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     .setTimestamp();
 
   components.push(pageRow(weekNumber, safeIndex, lines.length));
-  if (!ownGameBlocked) components.push(...betRows(line));
+  if (canBet && !ownGameBlocked) components.push(...betRows(line));
   return { embeds: [embed], components };
 }
 

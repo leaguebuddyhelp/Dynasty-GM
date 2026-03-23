@@ -389,7 +389,7 @@ function buildSpectatorHubEmbed({ recognition, leagueId, snapshot }) {
         value: [
           recognition.streak,
           'Coach checklist rewards unlock when you have a team.',
-          'You can still use the sportsbook right now.',
+          'You can still browse the sportsbook board right now.',
         ].join('\n'),
       },
       {
@@ -397,7 +397,7 @@ function buildSpectatorHubEmbed({ recognition, leagueId, snapshot }) {
         value: [
           `League: ${leagueId}`,
           `Current leader: ${topTeamLabel}`,
-          'Use this hub to track recognition and open the sportsbook while you wait for a team.',
+          'Use this hub to track recognition and browse the sportsbook board while you wait for a team.',
         ].join('\n'),
       },
     )
@@ -553,7 +553,7 @@ export async function execute(interaction) {
       controls.addComponents(
         new ButtonBuilder()
           .setCustomId(`madden_sportsbook_open|${recognition.weekNumber}|board|0`)
-          .setLabel('Open Sportsbook')
+          .setLabel('Open Sportsbook Board')
           .setStyle(ButtonStyle.Primary),
       );
     }
