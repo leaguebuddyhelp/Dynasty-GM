@@ -802,12 +802,16 @@ function buildPickSynopsis({
   boardDelta,
   overall,
   group,
+  score = null,
   session = null,
   avpDelta = null,
   avp = null,
   passedEliteDelta = null,
   bestRemaining = null,
 }) {
+  const numericScore = Number(score || 0);
+  const isEliteGrade = numericScore >= 94;
+  const isGoodGrade = numericScore >= 87;
   const fitText =
     needRank === 0 ? 'a direct hit on their top need' :
       needRank === 1 ? 'a strong answer near the top of their board' :
@@ -901,9 +905,11 @@ function buildPickSynopsis({
   const earlySkillPenaltyText =
     earlyRBSmellTest
       ? (
-        needRank === 0
-          ? 'RB this early is always a bet on outcome — the margin for error is thinner, but the fit is real.'
-          : 'RB this early is a bet on outcome — you’re paying a premium for a position the league usually prices later.'
+        isEliteGrade
+          ? 'RB this early is still a premium bet, but this one earns it on talent and fit.'
+          : needRank === 0
+            ? 'RB this early is always a bet on outcome — the margin for error is thinner, but the fit is real.'
+            : 'RB this early is a bet on outcome — you’re paying a premium for a position the league usually prices later.'
       )
       : null;
 
@@ -946,32 +952,38 @@ function buildPickSynopsis({
                 'neutral';
 
   const headline =
-    severity === 'ugly' ? 'This is a rough one.' :
-      severity === 'bad' ? 'This one’s hard to love.' :
-        severity === 'shaky' ? 'There’s some risk baked in.' :
-          severity === 'great' ? 'That’s a steal.' :
-            severity === 'good' ? 'Good value.' :
-              severity === 'fine' ? 'Solid value.' :
-                'Solid process.';
+    isEliteGrade ? 'Home-run process.' :
+      isGoodGrade ? 'Strong process.' :
+        severity === 'ugly' ? 'This is a rough one.' :
+          severity === 'bad' ? 'This one’s hard to love.' :
+            severity === 'shaky' ? 'There’s some risk baked in.' :
+              severity === 'great' ? 'That’s a steal.' :
+                severity === 'good' ? 'Good value.' :
+                  severity === 'fine' ? 'Solid value.' :
+                    'Solid process.';
 
   const boardLine = `#${boardRank} overall (No. ${posRank} ${group})`;
   const consensusLine = avp != null ? `AVP ${Number(avp).toFixed(1)}` : null;
   const valueLine = `${valueText}${spotsText ? ` ${spotsText}` : ''}`;
 
   const processClose =
-    tier === 'major_reach'
-      ? 'That’s a big premium to pay — the hit has to come fast.'
-      : tier === 'reach'
-        ? 'They’re paying for it — the hit has to come fast.'
-        : tier === 'mild_reach'
-          ? 'A little aggressive, which means the early return matters.'
-          : tier === 'steal'
-            ? 'When that kind of value falls, you take it and sort the fit after.'
-            : tier === 'value'
-              ? 'That’s how you build: take the value and move.'
-              : tier === 'mild_value'
-                ? 'Clean value — no notes.'
-                : 'It’s a clean, on-board decision if the eval is right.';
+    isEliteGrade
+      ? 'This is the kind of pick you turn in fast and feel great about.'
+      : isGoodGrade
+        ? 'This is the kind of pick most rooms will sign off on quickly.'
+        : tier === 'major_reach'
+          ? 'That’s a big premium to pay — the hit has to come fast.'
+          : tier === 'reach'
+            ? 'They’re paying for it — the hit has to come fast.'
+            : tier === 'mild_reach'
+              ? 'A little aggressive, which means the early return matters.'
+              : tier === 'steal'
+                ? 'When that kind of value falls, you take it and sort the fit after.'
+                : tier === 'value'
+                  ? 'That’s how you build: take the value and move.'
+                  : tier === 'mild_value'
+                    ? 'Clean value — no notes.'
+                    : 'It’s a clean, on-board decision if the eval is right.';
 
   const needReachCallout =
     (needRank >= 0 && (tier === 'reach' || tier === 'major_reach'))
@@ -1030,19 +1042,27 @@ function buildPickSynopsis({
   })();
 
   const mainNote =
-    themeKey === 'opportunity_cost' ? opportunityCostText :
-      themeKey === 'luxury' ? (qbStrengthWarning || strengthWarning) :
-        themeKey === 'passed_premium' ? passOnPremiumValueText :
-          themeKey === 'value_fall' ? valueRegardlessOfNeedText :
-            themeKey === 'early_skill' ? earlySkillPenaltyText :
-              themeKey === 'top_board' ? topBoardProcessText :
-                null;
+    isEliteGrade
+      ? (
+        valueRegardlessOfNeedText
+        || topBoardProcessText
+        || (earlyRBSmellTest ? earlySkillPenaltyText : null)
+      )
+      : themeKey === 'opportunity_cost' ? opportunityCostText :
+        themeKey === 'luxury' ? (qbStrengthWarning || strengthWarning) :
+          themeKey === 'passed_premium' ? passOnPremiumValueText :
+            themeKey === 'value_fall' ? valueRegardlessOfNeedText :
+              themeKey === 'early_skill' ? earlySkillPenaltyText :
+                themeKey === 'top_board' ? topBoardProcessText :
+                  null;
 
   // Support note: only add a light "process" line when the main theme isn't already process/opportunity.
   const supportNote =
-    mainNote && themeKey !== 'opportunity_cost' && themeKey !== 'passed_premium'
-      ? (topBoardProcessText && mainNote !== topBoardProcessText ? topBoardProcessText : null)
-      : null;
+    isEliteGrade
+      ? null
+      : mainNote && themeKey !== 'opportunity_cost' && themeKey !== 'passed_premium'
+        ? (topBoardProcessText && mainNote !== topBoardProcessText ? topBoardProcessText : null)
+        : null;
 
   const notes = [mainNote, supportNote].filter(Boolean).slice(0, 2);
 
@@ -1306,6 +1326,7 @@ function evaluatePickGrade(session, slot, prospect) {
       boardDelta: narrativeDelta,
       overall,
       group,
+      score,
       session,
       avpDelta,
       avp,
@@ -1513,6 +1534,7 @@ export function setMockDraftParticipantTeams(sessionId, userId, teamNames = []) 
     const participant = session.participants.find((entry) => entry.userId === userId);
     if (!participant) return session;
     participant.teamNames = [...new Set((teamNames || []).filter(Boolean))];
+    session.pickOwners = assignPickOwners(session);
     return session;
   });
 }

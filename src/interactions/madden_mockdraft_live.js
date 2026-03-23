@@ -84,6 +84,14 @@ function normalizeAssignedTeamNames(entries = []) {
   )];
 }
 
+function resolveCoachTeamNamesForGuild(guildId, member = null, userId = null) {
+  const assignments = normalizeAssignedTeamNames(
+    getCoachAssignmentMap({ guildId })?.userToTeams?.get(String(userId || member?.id || '')) || [],
+  );
+  if (assignments.length) return assignments;
+  return member ? normalizeAssignedTeamNames(coachTeamsForMember(member) || []) : [];
+}
+
 async function sendMockDraftInviteDM(client, session, member) {
   const user = member?.user || await client.users.fetch(member?.id || '').catch(() => null);
   if (!user) return false;
@@ -644,9 +652,19 @@ async function handleButton(interaction) {
     }
 
     const joined = joinMockDraftSession(sessionId, interaction.user.id);
+    const guild = baseSession.guildId
+      ? interaction.client.guilds.cache.get(baseSession.guildId)
+        || await interaction.client.guilds.fetch(baseSession.guildId).catch(() => null)
+      : null;
+    const member = guild?.members?.cache?.get(interaction.user.id)
+      || await guild?.members?.fetch?.(interaction.user.id).catch(() => null);
     const room = await interaction.client.channels.fetch(baseSession.channelId).catch(() => null);
     await room?.members?.add?.(interaction.user.id).catch(() => null);
-    setMockDraftParticipantTeams(sessionId, interaction.user.id, coachTeamsForMember(interaction.member));
+    setMockDraftParticipantTeams(
+      sessionId,
+      interaction.user.id,
+      resolveCoachTeamNamesForGuild(baseSession.guildId, member, interaction.user.id),
+    );
     updateMockDraftSession(sessionId, (live) => {
       clearPendingInvite(live, interaction.user.id);
       return live;
