@@ -45,9 +45,18 @@ function detectSetupTier(guildId, explicitTier = null) {
 
     const billing = guildId ? getBillingSummary(guildId) : null;
     const storedPlan = normalizeSetupTier(billing?.plan || '');
-    if (storedPlan !== 'free' || String(billing?.plan || '').toLowerCase() === 'free') {
+    const billingStatus = String(billing?.subscriptionStatus || '').toLowerCase();
+    const paidPlanActive =
+        storedPlan !== 'free' &&
+        (
+            billing?.testingBypass === true ||
+            billingStatus === 'active' ||
+            billingStatus === 'trialing'
+        );
+
+    if (paidPlanActive || String(billing?.plan || '').toLowerCase() === 'free') {
         return {
-            tier: storedPlan,
+            tier: paidPlanActive ? storedPlan : 'free',
             source: billing?.testingBypass ? 'testing_bypass' : 'package',
         };
     }

@@ -368,6 +368,13 @@ client.on('interactionCreate', async interaction => {
       const packEnabled = hasPackEnabled(interaction.guildId, featureKey);
       const check = hasFeatureAccess(interaction.guildId, featureKey);
       if (!check.ok || !packEnabled) {
+        const denialMessage = !check.ok
+          ? check.reason === 'subscription_inactive' && check.plan !== 'free'
+            ? '🔒 This paid feature is not active on this server yet. Run `/claim-plan` to activate the server plan, then try again.'
+            : check.reason === 'setup_incomplete'
+              ? '🔒 This feature is part of your package, but setup is not finished yet. Run `/setup` and complete the required steps first.'
+              : DEFAULT_DENY_MESSAGE
+          : 'This feature is not configured for this server yet. Run `/setup` to finish enabling it.';
         if (LB_VERBOSE_LOGS) {
           console.log('[plans] interaction denied', {
             guildId: interaction.guildId,
@@ -379,9 +386,7 @@ client.on('interactionCreate', async interaction => {
         }
         await denyInteraction(
           interaction,
-          !check.ok
-            ? DEFAULT_DENY_MESSAGE
-            : 'This feature is not configured for this server yet. Run `/setup` to finish enabling it.',
+          denialMessage,
         );
         return;
       }
