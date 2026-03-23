@@ -42,6 +42,22 @@ function buildFlowLines() {
   ].join('\n');
 }
 
+function buildClaimPrompt({ billing, billingOk }) {
+  const plan = String(billing?.plan || 'free').toLowerCase();
+  if (plan !== 'free' && !billingOk) {
+    return [
+      'If you already bought a paid LEAGUEbuddy plan for this server, stop here and run `/claim-plan` first.',
+      `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
+      'After the claim succeeds, rerun `/setup` and continue the normal setup flow.',
+    ].join('\n');
+  }
+
+  return [
+    'If you already bought Standard or Premium for this server, run `/claim-plan` before doing the setup steps below.',
+    'If you have not bought a paid plan yet, you can ignore this and continue with the next setup step.',
+  ].join('\n');
+}
+
 function buildCommissionerLines(tier = 'free') {
   const lines = [
     '1. Assign coaches with `/member assign`.',
@@ -221,6 +237,10 @@ export async function execute(interaction) {
     );
   } else {
     embed.addFields(
+      {
+        name: 'Before Anything Else',
+        value: buildClaimPrompt({ billing, billingOk }),
+      },
       {
         name: 'Next Step',
         value: decision.action,
