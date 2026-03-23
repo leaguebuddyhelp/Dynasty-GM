@@ -100,7 +100,7 @@ export function rosterForTeam(snapshot, teamIdOrName) {
   return Object.values(rosters).flatMap(r => r?.rosterInfoList || []);
 }
 
-function buildAssetSelectRows(side, draftId, snapshot, teamId) {
+function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
   // Madden path (default)
   const roster = rosterForTeam(snapshot, teamId)
     .slice()
@@ -168,7 +168,7 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId) {
   const combinedPickOptions = [];
 
   pickYearOptions.forEach((pickYear) => {
-    const firstRoundLabels = getFirstRoundPickLabelsForTeam(teamName, pickYear, allTeams, interaction.guildId);
+    const firstRoundLabels = getFirstRoundPickLabelsForTeam(teamName, pickYear, allTeams, guildId);
     firstRoundLabels.forEach(label => {
       const parsed = parsePickValue(label, draftBaseYear, {
         currentYearExactAllowed: pickContext.currentYearExactAllowed,
@@ -331,7 +331,13 @@ export async function execute(interaction) {
     }
     if (!leagueId) return;
     const snapshot = loadLeagueSnapshot(leagueId);
-    const rows = buildAssetSelectRows(side === 'yours' ? 'yours' : 'other', draftId, snapshot, side === 'yours' ? draft.yourTeamId : draft.otherTeamId);
+    const rows = buildAssetSelectRows(
+      side === 'yours' ? 'yours' : 'other',
+      draftId,
+      snapshot,
+      side === 'yours' ? draft.yourTeamId : draft.otherTeamId,
+      interaction.guildId,
+    );
     if (!rows?.length) {
       await interaction.reply(buildPrivatePayload(interaction, { content: 'No assets found for that team. Try again after a sync.' }));
       return;
