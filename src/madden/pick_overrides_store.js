@@ -70,9 +70,11 @@ const viaCodeFor = (teamName = '') => {
 const DEFAULT_START_FIRST_ROUND_OVERRIDES = [
   { from: 'Cardinals', to: 'Detroit Lions', via: 'ARI', year: 2027 },
   { from: 'Cardinals', to: 'Detroit Lions', via: 'ARI', year: 2028 },
+  { from: 'Falcons', to: 'Los Angeles Rams', via: 'ATL', year: 2027 },
   { from: 'Packers', to: 'Dallas Cowboys', via: 'GB', year: 2027 },
   { from: 'Colts', to: 'New York Jets', via: 'IND', year: 2027 },
-  { from: 'Cowboys', to: 'New York Jets', via: 'DAL', year: 2027 },
+  { from: 'Jaguars', to: 'Cleveland Browns', via: 'JAX', year: 2027 },
+  { from: 'Colts', to: 'New York Jets', via: 'IND', year: 2028 },
 ];
 
 function findOverrideByOriginalOwner(list, fromTeam, year, round = 1) {
