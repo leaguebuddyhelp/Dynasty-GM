@@ -43,8 +43,9 @@ import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 
 // Handles live mock draft room controls plus the pick select menu used by search results.
-// Note: some components use `madden_mockdraft_live|...`, others use `madden_mockdraft|...`.
-export const customId = /^madden_mockdraft(_live)?\|/;
+// Note: some components use `madden_mockdraft_live|...`, others use `madden_mockdraft|...`,
+// and the invite picker uses `madden_mockdraft_invite|...`.
+export const customId = /^(madden_mockdraft(_live)?|madden_mockdraft_invite)\|/;
 export const customId_pick = /^madden_mockdraft_pick\|/;
 const INVITE_REPLY_TTL_MS = 1000 * 60 * 20;
 
