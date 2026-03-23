@@ -27,7 +27,12 @@ async function safeMessage(interaction, content) {
 
 
 function buildTeamOptions(snapshot, conference) {
-  const teams = snapshot?.teams?.leagueTeamInfoList || [];
+  // Support both Madden and custom league snapshot formats
+  const teams = Array.isArray(snapshot?.teams?.leagueTeamInfoList)
+    ? snapshot.teams.leagueTeamInfoList
+    : Array.isArray(snapshot?.teams)
+      ? snapshot.teams
+      : [];
   return teams
     .filter(t => {
       if (!conference) return true;
@@ -90,7 +95,12 @@ export async function execute(interaction) {
         draftId,
         draft,
       }));
-      if (userTeams && userTeams.length > 0 && snapshot?.teams?.leagueTeamInfoList) {
+      const teams = Array.isArray(snapshot?.teams?.leagueTeamInfoList)
+        ? snapshot.teams.leagueTeamInfoList
+        : Array.isArray(snapshot?.teams)
+          ? snapshot.teams
+          : [];
+      if (userTeams && userTeams.length > 0 && teams.length > 0) {
         // Only use the most recently assigned active team
         const activeTeams = userTeams.filter(t => t.active);
         const sortedTeams = activeTeams.sort((a, b) => (b.assignedAt || 0) - (a.assignedAt || 0));
@@ -100,7 +110,7 @@ export async function execute(interaction) {
         let matchedAssignment = null;
         if (mostRecent) {
           // 1. Exact match (now also checks 'name' field)
-          match = snapshot.teams.leagueTeamInfoList.find(
+          match = teams.find(
             t => t.teamName === mostRecent.teamName ||
               t.displayName === mostRecent.teamName ||
               t.nickName === mostRecent.teamName ||
@@ -109,7 +119,7 @@ export async function execute(interaction) {
           if (match) { matchType = 'exact'; matchedAssignment = mostRecent; }
           // 2. Case-insensitive match (now also checks 'name' field)
           if (!match) {
-            match = snapshot.teams.leagueTeamInfoList.find(
+            match = teams.find(
               t => t.teamName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
                 t.displayName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
                 t.nickName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
@@ -119,7 +129,7 @@ export async function execute(interaction) {
           }
           // 3. Partial/alias match (now also checks 'name' field)
           if (!match) {
-            match = snapshot.teams.leagueTeamInfoList.find(
+            match = teams.find(
               t => t.teamName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
                 t.displayName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
                 t.nickName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
