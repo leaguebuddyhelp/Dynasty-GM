@@ -101,6 +101,11 @@ export async function execute(interaction) {
           ? snapshot.teams
           : [];
       if (userTeams && userTeams.length > 0 && teams.length > 0) {
+        // Debug: print all team names being checked
+        console.log('[TRADE_BUILDER_AUTO_DETECT_TEAMS]', JSON.stringify({
+          teamNames: teams.map(t => t.name || t.teamName || t.displayName || t.nickName),
+          teamsRaw: teams
+        }));
         // Only use the most recently assigned active team
         const activeTeams = userTeams.filter(t => t.active);
         const sortedTeams = activeTeams.sort((a, b) => (b.assignedAt || 0) - (a.assignedAt || 0));
