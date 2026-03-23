@@ -3,6 +3,7 @@ import { PLANS, SUBSCRIPTION_STATUSES, getGuildRecord } from '../../leaguebuddy/
 import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
 import { activatePlanManually } from '../../leaguebuddy/manual_billing_service.js';
 import { normalizePlan } from '../../leaguebuddy/plans.js';
+import { resyncGuildAfterPlanChange } from '../../leaguebuddy/plan_state_reconciler.js';
 
 export const data = new SlashCommandBuilder()
     .setName('setplan')
@@ -59,10 +60,14 @@ export async function execute(interaction) {
         actor,
         source: 'command:/setplan',
     });
-    // Auto-sync after plan/billing changes
+
     try {
-        const { syncGuild } = await import('../../shared/guild_auto_sync.js');
-        await syncGuild(guildId);
+        await resyncGuildAfterPlanChange(guildId, {
+            plan: rec.plan,
+            subscriptionStatus: rec.subscriptionStatus,
+            actor,
+            source: 'command:/setplan',
+        });
     } catch (e) {
         console.error('[AUTO_SYNC] Failed to sync after setplan:', e);
     }

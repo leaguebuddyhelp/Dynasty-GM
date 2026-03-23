@@ -1,6 +1,8 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
+import { setSetupCompleted } from '../../leaguebuddy/guild_access_service.js';
 import { FEATURES } from '../../leaguebuddy/plans.js';
+import { syncGuild } from '../../shared/guild_auto_sync.js';
 import { loadGuildMaddenConfig, saveGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 import { appendAuditEvent } from '../../leaguebuddy/audit.js';
 
@@ -73,6 +75,7 @@ export async function execute(interaction) {
     };
 
     saveGuildMaddenConfig(guildId, cfg);
+    setSetupCompleted(guildId, false, { actor, source: 'command:/enablepack' });
 
     appendAuditEvent({
         kind: 'pack.enabled',
@@ -83,6 +86,12 @@ export async function execute(interaction) {
         before: { packsEnabled: before },
         after: { packsEnabled: next },
     });
+
+    try {
+        await syncGuild(guildId);
+    } catch (e) {
+        console.error('[AUTO_SYNC] Failed to sync after enablepack:', e);
+    }
 
     await interaction.editReply({
         content: [`✅ Enabled pack **${pack}**.`, '', `packsEnabled now: ${next.join(', ') || '(none)'}`].join('\n'),

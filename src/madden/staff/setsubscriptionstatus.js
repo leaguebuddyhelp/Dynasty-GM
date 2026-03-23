@@ -3,6 +3,7 @@ import { SUBSCRIPTION_STATUSES } from '../../leaguebuddy/guild_store.js';
 import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
 import { deactivatePlanManually } from '../../leaguebuddy/manual_billing_service.js';
 import { ensureGuildActivated, setSubscriptionStatus } from '../../leaguebuddy/guild_access_service.js';
+import { resyncGuildAfterPlanChange } from '../../leaguebuddy/plan_state_reconciler.js';
 
 export const data = new SlashCommandBuilder()
     .setName('setsubscriptionstatus')
@@ -43,6 +44,17 @@ export async function execute(interaction) {
             })
             : setSubscriptionStatus(guildId, status, { actor, source: 'command:/setsubscriptionstatus' })
     );
+
+    try {
+        await resyncGuildAfterPlanChange(guildId, {
+            plan: rec.plan,
+            subscriptionStatus: rec.subscriptionStatus,
+            actor,
+            source: 'command:/setsubscriptionstatus',
+        });
+    } catch (e) {
+        console.error('[AUTO_SYNC] Failed to sync after setsubscriptionstatus:', e);
+    }
 
     await interaction.editReply({
         content: [

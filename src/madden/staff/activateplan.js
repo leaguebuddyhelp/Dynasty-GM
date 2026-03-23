@@ -2,6 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { PLANS, SUBSCRIPTION_STATUSES } from '../../leaguebuddy/guild_store.js';
 import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
 import { activatePlanManually } from '../../leaguebuddy/manual_billing_service.js';
+import { resyncGuildAfterPlanChange } from '../../leaguebuddy/plan_state_reconciler.js';
 
 export const data = new SlashCommandBuilder()
   .setName('activateplan')
@@ -74,6 +75,17 @@ export async function execute(interaction) {
     actor,
     source: 'command:/activateplan',
   });
+
+  try {
+    await resyncGuildAfterPlanChange(guildId, {
+      plan: rec.plan,
+      subscriptionStatus: rec.subscriptionStatus,
+      actor,
+      source: 'command:/activateplan',
+    });
+  } catch (e) {
+    console.error('[AUTO_SYNC] Failed to sync after activateplan:', e);
+  }
 
   await interaction.editReply({
     content: [
