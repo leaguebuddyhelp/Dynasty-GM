@@ -7,6 +7,7 @@ import {
 import { loadLeagueSnapshot, currentWeek, requireLeagueIdForGuild } from '../../../madden/madden_data.js';
 import { getMessageForWeek } from '../madden_utils.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
+import { formatTeamLabelWithEmoji } from '../../shared/madden_visuals.js';
 import { loadWeeklyGameLog } from '../weekly_game_log.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 export const data = new SlashCommandBuilder()
@@ -46,7 +47,7 @@ function teamShortName(teamName = '') {
 }
 
 function labelForTeam(teamName) {
-  return teamShortName(teamName);
+  return formatTeamLabelWithEmoji(teamName);
 }
 
 function snapshotSeasonInfo(snapshot) {
