@@ -133,12 +133,27 @@ export async function execute(interaction) {
           matchedTeam: match ? { teamId: match.teamId, displayName: match.displayName, teamName: match.teamName, nickName: match.nickName } : null
         }));
         if (match) {
-          draft.yourTeamId = String(match.teamId ?? match.teamIndex ?? match.displayName ?? match.nickName);
+          if (typeof match.teamId !== 'undefined' && match.teamId !== null) {
+            draft.yourTeamId = String(match.teamId);
+          } else if (typeof match.teamIndex !== 'undefined' && match.teamIndex !== null) {
+            draft.yourTeamId = String(match.teamIndex);
+          } else {
+            // Fallback: log and use displayName or nickName, but warn
+            console.warn('[TRADE_BUILDER_AUTO_DETECT_NO_TEAMID]', {
+              match,
+              userTeams,
+              draftId,
+              draft
+            });
+            draft.yourTeamId = String(match.displayName || match.nickName || 'unknown');
+          }
           draft.yourTeamName = match.displayName || match.teamName || match.nickName;
         } else {
           // fallback: use the first assigned teamName as name, but leave id null
           draft.yourTeamName = userTeams[0].teamName;
         }
+        // Always save the draft after auto-detect
+        saveTradeDraft(draftId, draft);
       }
     } catch (e) {
       console.error('[TRADE_BUILDER_AUTO_DETECT_ERROR] ' + (e && e.stack ? e.stack : e));
