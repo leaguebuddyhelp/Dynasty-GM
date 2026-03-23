@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 
 import { PLANS } from './guild_store.js';
+import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 
 const PLAN_COPY = {
   [PLANS.free]: {
@@ -151,8 +152,9 @@ function planHeading(plan, activePlan) {
 
 export function buildPricingEmbeds({ currentPlan = null } = {}) {
   const activePlan = currentPlan ? asPlan(currentPlan) : null;
+  const logo = getLeagueBuddyLogoEmoji();
   const pricing = new EmbedBuilder()
-    .setTitle('LEAGUEbuddy Madden Pricing')
+    .setTitle(`${logo ? `${logo} ` : ''}LEAGUEbuddy Madden Pricing`)
     .setColor(0x5865f2)
     .setDescription([
       'Pick a monthly plan below, then use the buy buttons.',
@@ -183,7 +185,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
 
   const nextStep = new EmbedBuilder()
     .setColor(0x57f287)
-    .setTitle('How Buying Works')
+    .setTitle(`${logo ? `${logo} ` : ''}How Buying Works`)
     .setDescription([
       '1. Choose Standard or Premium below.',
       '2. Finish monthly checkout.',
@@ -197,8 +199,9 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
 }
 
 export function buildPostPaymentEmbed() {
+  const logo = getLeagueBuddyLogoEmoji();
   return new EmbedBuilder()
-    .setTitle('After You Buy')
+    .setTitle(`${logo ? `${logo} ` : ''}After You Buy`)
     .setColor(0x57f287)
     .setDescription([
       '1. Save the claim code from the checkout success page.',

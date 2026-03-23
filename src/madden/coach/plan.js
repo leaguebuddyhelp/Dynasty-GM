@@ -6,6 +6,7 @@ import {
 import { PLANS, SUBSCRIPTION_STATUSES } from '../../leaguebuddy/guild_store.js';
 import { getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
 import { buildPlanUpgradeButtons } from '../../leaguebuddy/upgrade_ux.js';
+import { getLeagueBuddyLogoEmoji } from '../../shared/application_emojis.js';
 
 function isGuildManager(member) {
     if (!member) return false;
@@ -60,7 +61,7 @@ export async function execute(interaction) {
         });
 
     let lines = [];
-    lines.push('**Your LEAGUEbuddy Plan**');
+    lines.push(`**${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Your LEAGUEbuddy Plan**`);
     lines.push(`Plan: **${plan}**`);
     lines.push(`Subscription: **${status}**`);
     lines.push('');

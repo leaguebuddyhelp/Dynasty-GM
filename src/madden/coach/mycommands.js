@@ -2,6 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { coachCommandDescription, coachPanelIntro, coachVoiceFooter, coachVoiceTitle } from '../../shared/madden_coach_voice.js';
+import { getLeagueBuddyLogoEmoji } from '../../shared/application_emojis.js';
 
 const ROLE_MAP_PATH = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 
@@ -28,10 +29,11 @@ function isStaff(member) {
 async function execute(interaction) {
   await interaction.deferReply({ ephemeral: true });
   const staffView = isStaff(interaction.member);
+  const logo = getLeagueBuddyLogoEmoji();
 
   const staffEmbed = new EmbedBuilder()
     .setColor(0xffd700)
-    .setTitle(coachVoiceTitle('staffCommands', 'Admin Commands'))
+    .setTitle(`${logo ? `${logo} ` : ''}${coachVoiceTitle('staffCommands', 'Admin Commands')}`)
     .setDescription('Use this as the quick-start board for a LEAGUEbuddy server.')
     .addFields(
       {
@@ -73,7 +75,7 @@ async function execute(interaction) {
 
   const coachEmbed = new EmbedBuilder()
     .setColor(0x1e90ff)
-    .setTitle(coachVoiceTitle('coachCommands', 'Coach Commands'))
+    .setTitle(`${logo ? `${logo} ` : ''}${coachVoiceTitle('coachCommands', 'Coach Commands')}`)
     .setDescription('This menu shows the commands coaches and commissioners should actually use.')
     .addFields(
       {

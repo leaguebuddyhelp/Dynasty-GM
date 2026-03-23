@@ -7,6 +7,7 @@ import { deriveTeamNeeds } from './coach/mockdraft.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
+import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 
 const STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'draft_exports', 'posted_draft_grades.json');
 
@@ -146,8 +147,9 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     if (!grades.length) return;
 
     const lines = grades.map((g, idx) => `${idx + 1}) ${g.emoji || ''} ${g.teamName} — **${g.grade}**`);
+    const logo = getLeagueBuddyLogoEmoji();
     const embed = new EmbedBuilder()
-      .setTitle('Madden Draft Grades')
+      .setTitle(`${logo ? `${logo} ` : ''}Madden Draft Grades`)
       .setDescription(lines.join('\n'))
       .setColor(0x8e44ad)
       .addFields({ name: 'League', value: String(leagueId), inline: true });

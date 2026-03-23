@@ -5,6 +5,7 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
+import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 import { ensureBoardPinMessage } from './board_pin_utils.js';
 import { getMessageForWeek } from './madden_utils.js';
 
@@ -229,7 +230,7 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
     ],
   });
   const embed = new EmbedBuilder()
-    .setTitle('Madden Power Rankings')
+    .setTitle(`${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Madden Power Rankings`)
     .setColor(0xffcc00)
     .setTimestamp(new Date());
   if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
@@ -252,7 +253,7 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
       .filter(Boolean)
       .map(m => m[1]);
     const announce = {
-      title: 'New Teams in the Power Rankings',
+      title: `${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}New Teams in the Power Rankings`,
       description: lines.join('\n'),
       color: 0xffcc00,
       timestamp: new Date().toISOString(),

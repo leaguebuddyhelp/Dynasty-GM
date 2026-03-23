@@ -4,6 +4,7 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
+import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 import { ensureBoardPinMessage } from './board_pin_utils.js';
 import { getMessageForWeek } from './madden_utils.js';
 
@@ -162,7 +163,7 @@ export async function updateStandings(client, leagueId, guildId = null) {
     ],
   });
   const embed = new EmbedBuilder()
-    .setTitle('Madden Standings')
+    .setTitle(`${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Madden Standings`)
     .setColor(0x00b0f4)
     .setTimestamp(new Date());
   if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
@@ -184,7 +185,7 @@ export async function resetStandings(client, guildId = null) {
   if (!channel || !channel.isTextBased()) throw new Error('Standings channel not accessible');
 
   const placeholder = {
-    title: 'Madden Standings',
+    title: `${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Madden Standings`,
     description: 'Preseason — standings will appear here once the regular season starts.',
     color: 0x00b0f4,
     timestamp: new Date().toISOString(),

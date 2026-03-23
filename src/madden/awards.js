@@ -9,6 +9,7 @@ import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getNflBrandAsset } from '../shared/madden_assets.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
+import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 
 const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
 const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
@@ -831,8 +832,9 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
 
   const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
   const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
+  const logo = getLeagueBuddyLogoEmoji();
   const embed = new EmbedBuilder()
-    .setTitle(`Weekly Awards — Week ${awardsWeek}${isPlayoffs ? ' (Playoffs)' : ''}`)
+    .setTitle(`${logo ? `${logo} ` : ''}Weekly Awards — Week ${awardsWeek}${isPlayoffs ? ' (Playoffs)' : ''}`)
     .setDescription(null)
     .setColor(0xf1c40f)
     .addFields(

@@ -14,6 +14,7 @@ import { getMaddenSeasonKey, loadMaddenChannelMap } from './madden_metadata.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { loadGuildMaddenConfig } from './madden_guild_config.js';
 import { getTeamEmojiByName } from './madden_visuals.js';
+import { getLeagueBuddyLogoEmoji } from './application_emojis.js';
 
 const BOARD_FILE = getMaddenDataFilePath('fairsim_board.json');
 
@@ -170,7 +171,7 @@ export async function updateFairSimBoard(client, guildId) {
   const seasonLabel = season.replace('year_', '');
 
   const embed = {
-    title: 'Strike Board',
+    title: `${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Strike Board`,
     description: [
       `Season ${seasonLabel}`,
       'FS 0.5 • FW 1.0 • DS 1.5',
