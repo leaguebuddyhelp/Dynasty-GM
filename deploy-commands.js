@@ -37,7 +37,6 @@ const BETA_MADDEN_COMMANDS = new Set([
   'bigboard',
   'scout',
   'tradeblock',
-  'syncpicks',
   'setup-channels',
   'setup-pins',
   'setup-roles',
