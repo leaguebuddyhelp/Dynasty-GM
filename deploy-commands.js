@@ -23,6 +23,7 @@ const BETA_MADDEN_COMMANDS = new Set([
   'pricing',
   'plan',
   'claim-plan',
+  'complete-setup',
   'activateplan',
   'deactivateplan',
   'viewbilling',

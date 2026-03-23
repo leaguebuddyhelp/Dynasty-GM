@@ -5,7 +5,7 @@ import { execute as activateExecute } from './setup.js';
 // NOTE: This is separate from the new /setup (Madden v2 resources) command.
 export const data = new SlashCommandBuilder()
     .setName('lb-activate-alias')
-    .setDescription('Alias for /lb-activate (deprecated)')
+    .setDescription('Alias for /complete-setup (deprecated)')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {

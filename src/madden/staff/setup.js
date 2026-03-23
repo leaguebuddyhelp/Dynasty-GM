@@ -4,14 +4,9 @@ import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
 import { ensureGuildActivated, setSetupCompleted } from '../../leaguebuddy/guild_access_service.js';
 
 export const data = new SlashCommandBuilder()
-    .setName('lb-activate')
-    .setDescription('Admin-only: activate LEAGUEbuddy access/billing record for this server (internal).')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addBooleanOption((o) =>
-        o.setName('complete')
-            .setDescription('Mark setup as completed (true/false). Defaults to true.')
-            .setRequired(false)
-    );
+    .setName('complete-setup')
+    .setDescription('Admin-only: mark LEAGUEbuddy setup as complete for this server.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 // Use ephemeral replies by default.
 export const deferOnDispatch = { flags: 64 };
@@ -27,14 +22,13 @@ export async function execute(interaction) {
 
     // Create record if missing, default free plan.
     const before = getGuildRecord(guildId, { createIfMissing: false });
-    const rec = ensureGuildActivated(guildId, { actor, source: 'command:/lb-activate' });
+    ensureGuildActivated(guildId, { actor, source: 'command:/complete-setup' });
 
-    // Always mark setup as complete when this command is run
-    const updated = setSetupCompleted(guildId, true, { actor, source: 'command:/lb-activate' });
+    const updated = setSetupCompleted(guildId, true, { actor, source: 'command:/complete-setup' });
 
     const created = !before;
     const content = [
-        '**LEAGUEbuddy server activation complete**',
+        '**LEAGUEbuddy setup marked complete**',
         created ? 'Record: created ✅' : 'Record: updated ✅',
         `Plan: **${updated.plan}**`,
         `Subscription: **${updated.subscriptionStatus}**`,
