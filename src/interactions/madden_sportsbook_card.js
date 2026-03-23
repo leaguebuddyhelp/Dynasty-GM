@@ -8,6 +8,7 @@ export async function execute(interaction) {
   if (!(interaction instanceof ButtonInteraction)) return;
   const parts = interaction.customId.split('|');
   const action = parts[0].replace('madden_sportsbook_', '');
+  const launchesPrivateBoard = action === 'open' || action === 'board' || action === 'card';
   const weekNumber = Number(parts[1] || 0);
   const rawMode = parts[2] || 'board';
   const mode = action === 'board'
@@ -29,14 +30,22 @@ export async function execute(interaction) {
   const context = inferRecognitionContext('madden', interaction.guildId);
   const seasonKey = context?.seasonKey;
   if (!seasonKey) {
-    await interaction.reply({ content: 'Sportsbook season context is not ready yet.', flags: 64 });
+    if (launchesPrivateBoard) {
+      await interaction.reply({ content: 'Sportsbook season context is not ready yet.', flags: 64 });
+    } else {
+      await interaction.update({ content: 'Sportsbook season context is not ready yet.', embeds: [], components: [] });
+    }
     return;
   }
 
-  // Always acknowledge quickly so Discord doesn't expire the interaction
-  // ("Unknown interaction" happens when we respond after the 3s window).
+  // Opening the board from Franchise Hub should create one private board message.
+  // After that, tab/page buttons should update the existing private board in place.
   if (!interaction.deferred && !interaction.replied) {
-    await interaction.deferReply({ flags: 64 });
+    if (launchesPrivateBoard) {
+      await interaction.deferReply({ flags: 64 });
+    } else {
+      await interaction.deferUpdate();
+    }
   }
 
   const payload = await buildSportsbookPrivateView({

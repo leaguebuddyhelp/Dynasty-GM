@@ -62,7 +62,7 @@ export async function execute(interaction) {
     const context = inferRecognitionContext('madden', interaction.guildId);
     const seasonKey = context?.seasonKey;
     if (!seasonKey) {
-      await interaction.reply({ content: 'Sportsbook season context is not ready yet.', flags: 64 });
+      await interaction.update({ content: 'Sportsbook season context is not ready yet.', embeds: [], components: [] });
       return;
     }
     const result = buyoutSportsbookBet({
@@ -74,7 +74,7 @@ export async function execute(interaction) {
       placedAt: Number(placedAt),
     });
     if (!result.ok) {
-      await interaction.reply({ content: result.message, flags: 64 });
+      await interaction.update({ content: result.message, embeds: [], components: [] });
       return;
     }
     appendMaddenStaffLog({
@@ -104,7 +104,8 @@ export async function execute(interaction) {
         { name: 'Balance After', value: formatImpactValue(Number(result.balance || 0)), inline: true },
       ],
     ).catch(() => null);
-    await interaction.reply({
+    await interaction.update({
+      content: null,
       embeds: [
         new EmbedBuilder()
           .setColor(0xe67e22)
@@ -117,7 +118,7 @@ export async function execute(interaction) {
           ].join('\n'))
           .setTimestamp(),
       ],
-      flags: 64,
+      components: [],
     });
     return;
   }
@@ -300,7 +301,7 @@ export async function execute(interaction) {
       `Tap a quick amount below to see exactly how much Impact that bet can win, or choose Other.`,
     ].join('\n'));
 
-  await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
+  await interaction.update({ content: null, embeds: [embed], components: [row] });
 }
 
 export default { customId, execute };
