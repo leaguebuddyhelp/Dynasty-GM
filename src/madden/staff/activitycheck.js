@@ -1,10 +1,12 @@
 import { SlashCommandBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+import { withFeatureGuard } from '../../leaguebuddy/access.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 
 const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+export const featureKey = 'ops_light';
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
@@ -70,4 +72,4 @@ export async function execute(interaction) {
   }
 }
 
-export default { data, execute };
+export default { data, featureKey, execute: withFeatureGuard(featureKey, execute) };

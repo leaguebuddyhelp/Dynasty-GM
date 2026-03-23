@@ -9,7 +9,7 @@ import { setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
 import { postSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
-import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
+import { hasFeatureAccess } from '../../leaguebuddy/access.js';
 import { hasStaffRole as hasGuildStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
 export const featureKey = 'threads';
@@ -925,8 +925,10 @@ async function execute(interaction) {
     const teams = teamMap(snapshot);
     const rankMaps = buildRankMaps(snapshot);
     const featuredGame = !playoffRound && !usePreseason ? selectGameOfWeek(gamesFinal, teams, rankMaps, wkNumeric) : null;
-    const billing = getBillingSummary(interaction.guildId);
-    const isFreePlan = String(billing?.plan || 'free').toLowerCase() === 'free';
+    const recognitionAccess = hasFeatureAccess(interaction.guildId, 'recognition');
+    const sportsbookAccess = hasFeatureAccess(interaction.guildId, 'sportsbook');
+    const hasRecognition = recognitionAccess.ok;
+    const hasSportsbook = sportsbookAccess.ok;
     // Stats removed per request; keep flow lean and focused on buttons/strike instructions.
     let created = 0;
     const deadline = Math.floor((Date.now() + 48 * 3600 * 1000) / 1000);
@@ -963,14 +965,14 @@ async function execute(interaction) {
           new ButtonBuilder().setCustomId(`madden_game_status_cpu|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel('CPU 🤖').setStyle(ButtonStyle.Secondary),
         ];
         const row = new ActionRowBuilder().addComponents(...threadButtons);
-        const staffButtons = isFreePlan ? [] : [
+        const staffButtons = hasRecognition ? [
           new ButtonBuilder().setCustomId(`madden_game_status_staffstrikeaway|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel(`Apply Strike ${awayShort} 🚫`).setStyle(ButtonStyle.Danger),
           new ButtonBuilder().setCustomId(`madden_game_status_staffstrikehome|${thread.id}|${encodeURIComponent(teams[game.awayTeamId])}|${encodeURIComponent(teams[game.homeTeamId])}`).setLabel(`Apply Strike ${homeShort} 🚫`).setStyle(ButtonStyle.Danger),
-        ];
+        ] : [];
         const staffRow = staffButtons.length ? new ActionRowBuilder().addComponents(...staffButtons) : null;
         const embed = {
           title: brandTitle('LEAGUEbuddy Matchup'),
-          description: isFreePlan
+          description: !hasRecognition
             ? [
                 `Schedule and play your game in this thread. One outcome button must be used before the advance deadline.`,
                 ``,
@@ -1043,7 +1045,7 @@ async function execute(interaction) {
         console.warn('[madden-creategamethreads] Failed to create thread', name, e?.message || e);
       }
     }
-    if (featuredGame) {
+    if (featuredGame && hasRecognition) {
       try {
         const awayRoleIds = coachRoleIds(featuredGame.awayTeam, roleMap);
         const homeRoleIds = coachRoleIds(featuredGame.homeTeam, roleMap);
@@ -1063,15 +1065,17 @@ async function execute(interaction) {
       }
     }
     try {
-      await postSportsbookWeek({
-        client: interaction.client,
-        guild: interaction.guild,
-        seasonKey: `year_${snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear()}`,
-        weekNumber: wkNumeric,
-        snapshot,
-        games: gamesFinal,
-        teamsById: teams,
-      });
+      if (hasSportsbook) {
+        await postSportsbookWeek({
+          client: interaction.client,
+          guild: interaction.guild,
+          seasonKey: `year_${snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear()}`,
+          weekNumber: wkNumeric,
+          snapshot,
+          games: gamesFinal,
+          teamsById: teams,
+        });
+      }
     } catch (e) {
       console.warn('[madden-creategamethreads] sportsbook post failed', e?.message || e);
     }
@@ -1083,10 +1087,10 @@ async function execute(interaction) {
           if (announceChannelId) {
         const announce = await interaction.client.channels.fetch(announceChannelId).catch(() => null);
         if (announce && announce.isTextBased()) {
-          const featuredLine = !isFreePlan && featuredGame
+          const featuredLine = hasRecognition && featuredGame
             ? `**Game of the Week:** ${featuredGame.awayTeam} (${featuredGame.awayRecord}) vs ${featuredGame.homeTeam} (${featuredGame.homeRecord})`
             : null;
-          const textureLine = !isFreePlan && featuredGame
+          const textureLine = hasRecognition && featuredGame
             ? wkNumeric >= 11 && featuredGame.playoffImplicationBoost > 0
               ? `This one carries real late-season weight. Winner earns double impact recognition.`
               : `This is the featured matchup on the slate. Winner earns double impact recognition.`
@@ -1097,7 +1101,7 @@ async function execute(interaction) {
           ];
           const embed = {
             title: brandTitle(`${roundLabel} Threads Created`),
-            description: isFreePlan
+            description: !hasRecognition
               ? baseDescription.join('\n')
               : [
                   ...baseDescription,
