@@ -58,24 +58,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
 
     // Recursively delete all files in the guild's data directory (except config if not requested)
-    try {
-        const guildDataDir = path.join(path.dirname(guildConfigPath(guildId)));
-        if (fs.existsSync(guildDataDir)) {
-            for (const entry of fs.readdirSync(guildDataDir)) {
-                const entryPath = path.join(guildDataDir, entry);
-                // Don't delete the config file itself
-                if (entryPath === guildConfigPath(guildId)) continue;
-                // Recursively delete directories, unlink files
-                if (fs.lstatSync(entryPath).isDirectory()) {
-                    fs.rmSync(entryPath, { recursive: true, force: true });
-                } else {
-                    fs.unlinkSync(entryPath);
-                }
-            }
-        }
-    } catch (e) {
-        errors.push(`guild data dir: ${e?.message || String(e)}`);
-    }
+
     const guild = interaction.guild;
     if (!guild) {
         await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
@@ -100,6 +83,26 @@ export async function execute(interaction) {
     const errors = [];
     const notes = [];
     const activeChannelId = interaction.channelId || null;
+
+    // Recursively delete all files in the guild's data directory (except config if not requested)
+    try {
+        const guildDataDir = path.join(path.dirname(guildConfigPath(guildId)));
+        if (fs.existsSync(guildDataDir)) {
+            for (const entry of fs.readdirSync(guildDataDir)) {
+                const entryPath = path.join(guildDataDir, entry);
+                // Don't delete the config file itself
+                if (entryPath === guildConfigPath(guildId)) continue;
+                // Recursively delete directories, unlink files
+                if (fs.lstatSync(entryPath).isDirectory()) {
+                    fs.rmSync(entryPath, { recursive: true, force: true });
+                } else {
+                    fs.unlinkSync(entryPath);
+                }
+            }
+        }
+    } catch (e) {
+        errors.push(`guild data dir: ${e?.message || String(e)}`);
+    }
 
     // Delete overlay config file
     try {
