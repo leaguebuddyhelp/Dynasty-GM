@@ -54,7 +54,7 @@ function buildClaimPrompt({ billing, billingOk }) {
 
   return [
     'If you just bought Standard or Premium, run `/claim-plan` in this server before continuing setup.',
-    'If you have not bought a paid plan, ignore this and follow the next setup step below.',
+    'If this is still a free server, skip this and follow the next step below.',
   ].join('\n');
 }
 
@@ -205,11 +205,8 @@ export async function execute(interaction) {
   let earlyInfo = null;
   if ((billing?.plan || 'free') !== 'free' && !billingOk) {
     earlyInfo = [
-      '💡 **Paid Plan Setup:**',
-      'This server is set for a paid plan, but it is not yet active.',
-      'Run `/claim-plan` to activate your paid plan for this server as soon as possible.',
-      'You can do this at any time, even before fixing permissions.',
-      '',
+      'This server is set for a paid plan, but it is not active yet.',
+      'Run `/claim-plan` first, then come back to `/setup`.',
     ].join('\n');
   }
 
@@ -222,7 +219,7 @@ export async function execute(interaction) {
       earlyInfo,
       setupComplete
         ? 'Setup is complete. Use the steps below to start your league.'
-        : 'Use `/setup` as your guide. Do the next step below, then come back to `/setup`.',
+        : 'Use `/setup` as your guide. Do the next step below, then come back here.',
     ].filter(Boolean).join('\n\n'));
 
   if (setupComplete) {
@@ -237,20 +234,28 @@ export async function execute(interaction) {
       },
     );
   } else {
-    embed.addFields(
-      {
-        name: 'Before Anything Else',
+    const fields = [];
+    if ((billing?.plan || 'free') !== 'free') {
+      fields.push({
+        name: 'Paid Plan',
         value: claimPrompt,
-      },
+      });
+    }
+    fields.push(
       {
-        name: 'Next Step',
+        name: decision.title,
         value: decision.action,
       },
+      ...(decision.details ? [{
+        name: 'Why',
+        value: decision.details,
+      }] : []),
       {
         name: 'Repeat',
         value: buildFlowLines(),
       },
     );
+    embed.addFields(...fields);
   }
 
   await interaction.editReply({ embeds: [embed], content: '' });

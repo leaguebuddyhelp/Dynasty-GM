@@ -1431,6 +1431,8 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
         featuredLabel
           ? `${featuredLabel}${gotwLabelFromRecognition(gotw) ? '' : ' *(featured game)*'}\nWinning bets on this matchup add **+${GAME_OF_WEEK_BET_BONUS} ${IMPACT_EMOJI}** profit.`
           : 'Not set yet.',
+        '',
+        'Next: open **Board** for the live lines, then **My Card** to track your bets.',
       ].filter(Boolean).join('\n'))
       .setFooter({ text: 'Private view • start here each week, then browse the book' })
       .setTimestamp();
@@ -1495,7 +1497,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle(`LB Sportsbook • ${boardLabel}`)
-      .setDescription('This week does not have an active board yet.')
+      .setDescription('This week does not have an active board yet. Check back after the current slate is posted or rerun the hub once the week is live.')
       .setTimestamp();
     return { embeds: [embed], components };
   }
@@ -1519,11 +1521,10 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
       `Moneyline: ${line.awayTeam} ${formatSigned(line.awayMoneyline)} • ${line.homeTeam} ${formatSigned(line.homeMoneyline)}`,
       `Over/Under: ${line.total}`,
       '',
-      'How to bet: Spread = beat the number • ML = just win • O/U = total points',
       `Impact available to bet: ${formatImpactValue(card.bankroll.balance || 0)}`,
       `Max on one bet: ${formatImpactValue(limits.maxWager)}`,
       `Max open this week: ${formatImpactValue(limits.maxWeeklyExposure)}`,
-      `Example: bet ${formatImpactValue(priceGuide.stake)} at -110 • if it wins, you profit ${formatImpactValue(priceGuide.profit)} and get back ${formatImpactValue(priceGuide.totalReturn)} total`,
+      `Example: bet ${formatImpactValue(priceGuide.stake)} at -110 • win ${formatImpactValue(priceGuide.profit)} • return ${formatImpactValue(priceGuide.totalReturn)}`,
       gotwMatch ? `Featured bonus: this is Game of the Week • winning bets add +${GAME_OF_WEEK_BET_BONUS} ${IMPACT_EMOJI}` : null,
       gameBets.length
         ? `Your bets on this game: ${gameBets.map((bet) => `${bet.betLabel || `${bet.market} ${bet.selection}`} ${formatImpactValue(bet.wager)}`).join(' • ')}`

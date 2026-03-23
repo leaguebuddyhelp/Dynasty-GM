@@ -594,6 +594,12 @@ export async function execute(interaction) {
     `Earn this week:\n${recognition.weeklyEarn}`,
     currentBetsSummary(sportsbook),
   ].filter(Boolean).join('\n\n');
+  const nextActions = [
+    'Use the buttons below to spend Activity or Impact.',
+    recognition.weekNumber ? 'Open Sportsbook for lines, bets, and your card.' : null,
+    'Run `/gamestrategy` for weekly prep.',
+    'Run `/draftprimer` or `/scout` for front-office tools.',
+  ].filter(Boolean).join('\n');
   const hubIntro = coachPanelIntro('franchiseHub', { teamName: profile.teamName });
 
   const embed = new EmbedBuilder()
@@ -620,8 +626,12 @@ export async function execute(interaction) {
         value: recognitionOverview,
       },
       {
-        name: 'Weekly Focus',
+        name: 'This Week',
         value: compactFieldText(weeklyFocus, 700),
+      },
+      {
+        name: 'Use Now',
+        value: nextActions,
       },
       {
         name: 'Legacy Leaders',

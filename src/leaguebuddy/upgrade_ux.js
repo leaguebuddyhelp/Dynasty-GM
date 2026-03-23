@@ -13,7 +13,7 @@ const PLAN_COPY = {
   [PLANS.free]: {
     title: 'Free',
     audience: 'Best for getting a league connected and running fast.',
-    summary: 'Good for getting a league connected and running the base Madden workflow.',
+    summary: 'Start here if you want the core LEAGUEbuddy setup and weekly workflow.',
     unlocks: [
       'Core league utilities',
       'Game threads and schedule helpers',
@@ -23,7 +23,7 @@ const PLAN_COPY = {
   [PLANS.standard]: {
     title: 'Standard',
     audience: 'Best for leagues that want trade, scouting, and draft tools.',
-    summary: 'Adds the draft and scouting layer once the league setup is complete.',
+    summary: 'Adds the full draft, scouting, trade, and light staff-ops layer.',
     unlocks: [
       'Everything in Free',
       'Trade center + committee workflow',
@@ -35,7 +35,7 @@ const PLAN_COPY = {
   [PLANS.premium]: {
     title: 'Premium',
     audience: 'Best for leagues that want the full LEAGUEbuddy stack.',
-    summary: 'Unlocks the full Madden v2 product surface for leagues that want the complete stack.',
+    summary: 'Unlocks recognition, sportsbook, and the full Madden v2 staff stack.',
     unlocks: [
       'Everything in Standard',
       'Recognition system',
@@ -159,8 +159,8 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
     .setTitle(`${logo ? `${logo} ` : ''}LEAGUEbuddy Madden Pricing`)
     .setColor(0x5865f2)
     .setDescription([
-      'Pick a monthly plan below, then use the buy buttons.',
-      'After checkout, save your claim code, invite LEAGUEbuddy to your server, run `/claim-plan`, then run `/setup` there.',
+      'Pick a monthly plan, then use the buy buttons below.',
+      'After checkout: save the claim code -> invite LEAGUEbuddy -> run `/claim-plan` -> run `/setup`.',
     ].join('\n'))
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
@@ -169,8 +169,6 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
           name: planHeading(plan, activePlan),
           value: [
             entry.audience,
-            '',
-            entry.summary,
             '',
             ...entry.unlocks.map((line) => `• ${line}`),
             '',
@@ -187,14 +185,13 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
 
   const nextStep = new EmbedBuilder()
     .setColor(0x57f287)
-    .setTitle(`${logo ? `${logo} ` : ''}How Buying Works`)
+    .setTitle(`${logo ? `${logo} ` : ''}After You Buy`)
     .setDescription([
-      '1. Choose Standard or Premium below.',
-      '2. Finish monthly checkout.',
-      '3. Save the claim code from the success page.',
-      '4. Invite LEAGUEbuddy to your own server.',
-      '5. Run `/claim-plan` there.',
-      '6. Run `/setup` there.',
+      '1. Finish checkout.',
+      '2. Save the claim code.',
+      '3. Invite LEAGUEbuddy to the server you want to activate.',
+      '4. Run `/claim-plan` there.',
+      '5. Run `/setup` there and follow the next step it gives you.',
     ].join('\n'));
 
   return [pricing, nextStep];
@@ -206,11 +203,11 @@ export function buildPostPaymentEmbed() {
     .setTitle(`${logo ? `${logo} ` : ''}After You Buy`)
     .setColor(0x57f287)
     .setDescription([
-      '1. Save the claim code from the checkout success page.',
+      '1. Save the claim code from the success page.',
       '2. Invite LEAGUEbuddy to the server you want to activate.',
-      '3. Run `/claim-plan` in that server.',
-      '4. Run `/setup` and follow the next step it gives you until setup is complete.',
-      '5. Use `/pricing` in that server if you want to confirm the current package or upgrade.',
+      '3. Run `/claim-plan` there.',
+      '4. Run `/setup` there until setup is complete.',
+      '5. Use `/pricing` there if you want to confirm the package or upgrade later.',
     ].join('\n'));
 }
 
@@ -309,9 +306,9 @@ export function buildActivationFollowup({ guildId, plan }) {
   return [
     '**Customer follow-up**',
     `Plan **${plan}** is now active for guild **${guildId}**.`,
-    'Next steps for the commissioner:',
+    'Next:',
     '• Run `/setup`.',
-    '• Follow the next step `/setup` gives you until setup is complete.',
+    '• Follow the next step it gives you until setup is complete.',
     '• Use `/pricing` if you want to confirm the current package.',
   ].join('\n');
 }
@@ -323,7 +320,7 @@ export function buildClaimInstructions() {
     '2. Save the claim code from the success page.',
     '3. Go to the server you want to upgrade and run `/claim-plan`.',
     '4. If you lose the code, use the Stripe payment reference from your receipt email instead.',
-    '5. Run `/setup` and follow the next step it gives you until setup is complete.',
+    '5. Run `/setup` there until setup is complete.',
   ].join('\n');
 }
 
