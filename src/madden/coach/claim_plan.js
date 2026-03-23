@@ -46,7 +46,7 @@ export async function execute(interaction) {
 
   try {
     const actor = buildActorFromInteraction(interaction);
-    const { claim, record } = claimPlanForGuild({
+    const { claim, record } = await claimPlanForGuild({
       guildId,
       claimCode,
       paymentReference,

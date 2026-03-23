@@ -4,7 +4,7 @@ import auditRepository from './repositories/audit_log_repository.js';
 import claimRepository from './repositories/pending_activation_repository.js';
 import { PLANS } from './guild_store.js';
 import { activatePlanManually } from './manual_billing_service.js';
-import { syncOverlayToBillingState } from './plan_state_reconciler.js';
+import { resyncGuildAfterPlanChange } from './plan_state_reconciler.js';
 
 const CLAIM_STATUSES = {
   unclaimed: 'unclaimed',
@@ -25,6 +25,10 @@ function addMs(ts, delta) {
 function actorRef(actor) {
   if (!actor || typeof actor !== 'object') return null;
   return actor.userId || actor.tag || actor.username || null;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function normalizePlan(plan) {
@@ -186,7 +190,7 @@ function ensureClaimUsable(claim) {
   if (!normalizePlan(claim.plan) || claim.plan === PLANS.free) throw new Error('This claim does not map to a paid plan.');
 }
 
-export function claimPlanForGuild({
+export async function claimPlanForGuild({
   guildId,
   claimCode = null,
   paymentReference = null,
@@ -198,40 +202,17 @@ export function claimPlanForGuild({
   const normalizedCode = normalizeClaimCode(claimCode);
   const ref = String(paymentReference || '').trim() || null;
 
-
-  // Debug: log claim lookup attempts
-  console.log('[claimPlanForGuild] guildId:', guildId, 'claimCode:', claimCode, 'normalizedCode:', normalizedCode, 'paymentReference:', paymentReference, 'ref:', ref);
-
   let claim = null;
   const maxAttempts = 5;
   const delayMs = 400;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     if (normalizedCode) {
       claim = claimRepository.getClaimByCode(normalizedCode);
-      console.log(`[claimPlanForGuild] Attempt ${attempt}: getClaimByCode(${normalizedCode}) =>`, claim ? 'FOUND' : 'NOT FOUND');
     } else {
       claim = claimRepository.getClaimByPaymentReference(ref);
-      console.log(`[claimPlanForGuild] Attempt ${attempt}: getClaimByPaymentReference(${ref}) =>`, claim ? 'FOUND' : 'NOT FOUND');
     }
-    if (claim) {
-      // Debug: log found claim
-      console.log('[claimPlanForGuild] Claim found:', JSON.stringify(claim, null, 2));
-      break;
-    }
-    if (attempt < maxAttempts) {
-      console.log(`[claimPlanForGuild] Claim not found, retrying in ${delayMs}ms...`);
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);
-    }
-  }
-
-  if (!claim) {
-    // Debug: log all available claims for diagnosis
-    try {
-      const allClaims = claimRepository.listClaims();
-      console.log('[claimPlanForGuild] All available claims:', allClaims.map(c => ({ claimCode: c.claimCode, paymentReference: c.paymentReference, status: c.status })));
-    } catch (e) {
-      console.log('[claimPlanForGuild] Error listing all claims:', e);
-    }
+    if (claim) break;
+    if (attempt < maxAttempts) await delay(delayMs);
   }
 
   ensureClaimUsable(claim);
@@ -246,14 +227,12 @@ export function claimPlanForGuild({
     source,
   });
 
-  const overlayConfig = syncOverlayToBillingState(guildId, {
+  const overlayConfig = await resyncGuildAfterPlanChange(guildId, {
     plan: claim.plan,
     subscriptionStatus: 'active',
+    actor,
+    source,
   });
-
-
-  // Trigger per-guild auto-sync
-  try { syncGuild(guildId); } catch (e) { console.error('[AUTO_SYNC] Failed to sync after claimPlanForGuild:', e); }
   const updatedClaim = claimRepository.upsertClaim(claim.claimId, {
     status: CLAIM_STATUSES.claimed,
     claimedGuildId: String(guildId),

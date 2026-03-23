@@ -1,5 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
+import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
+import { DEFAULT_PACKS, resolveOverlayTier } from '../../leaguebuddy/plan_state_reconciler.js';
 import { setSetupCompleted } from '../../leaguebuddy/guild_access_service.js';
 import { FEATURES } from '../../leaguebuddy/plans.js';
 import { syncGuild } from '../../shared/guild_auto_sync.js';
@@ -67,6 +69,21 @@ export async function execute(interaction) {
     }
 
     const before = Array.isArray(beforeCfg.packsEnabled) ? beforeCfg.packsEnabled : [];
+    if (!before.includes(pack)) {
+        await interaction.editReply({ content: `Pack \`${pack}\` is not enabled on this server.` });
+        return;
+    }
+
+    const billing = getBillingSummary(guildId);
+    const effectiveTier = resolveOverlayTier(billing?.plan, billing?.subscriptionStatus);
+    const protectedPacks = new Set(DEFAULT_PACKS[effectiveTier] || DEFAULT_PACKS.free);
+    if (protectedPacks.has(pack)) {
+        await interaction.editReply({
+            content: `\`${pack}\` is part of this server's **${effectiveTier}** baseline. Change the plan/subscription state instead of disabling the pack directly.`,
+        });
+        return;
+    }
+
     const next = before.filter((p) => p !== pack);
 
     const cfg = {

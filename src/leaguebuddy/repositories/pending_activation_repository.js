@@ -34,17 +34,6 @@ function atomicWriteJSON(filePath, data) {
 
 export function loadStore() {
   const store = safeReadJSON(STORE_FILE, null);
-  // Debug: log when claims store is loaded
-  try {
-    if (store && store.claims) {
-      const claimCodes = Object.values(store.claims).map(c => c.claimCode);
-      console.log('[pending_activation_repository] loadStore: loaded claims:', claimCodes);
-    } else {
-      console.log('[pending_activation_repository] loadStore: no claims found');
-    }
-  } catch (e) {
-    console.log('[pending_activation_repository] loadStore: error logging claims', e);
-  }
   if (!store || typeof store !== 'object') return defaultStore();
   if (!store.claims || typeof store.claims !== 'object') store.claims = {};
   if (!store.version) store.version = 1;
@@ -70,26 +59,10 @@ export function getClaimById(claimId) {
 
 export function getClaimByCode(claimCode) {
   if (!claimCode) return null;
-  // Normalize: remove dashes and non-alphanumerics, uppercase
   const normalize = (code) => String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   const normalized = normalize(claimCode);
   const claims = listClaims();
-  let found = null;
-  for (const claim of claims) {
-    const claimCodeRaw = claim?.claimCode;
-    const claimCodeNorm = normalize(claimCodeRaw);
-    console.log('[getClaimByCode] Comparing:', {
-      input: { value: claimCode, normalized, type: typeof claimCode },
-      claim: { value: claimCodeRaw, normalized: claimCodeNorm, type: typeof claimCodeRaw }
-    });
-    if (claimCodeNorm === normalized) {
-      found = claim;
-      break;
-    }
-  }
-  // Debug: log claim code lookup result
-  console.log('[pending_activation_repository] getClaimByCode:', claimCode, 'normalized:', normalized, 'found:', !!found);
-  return found;
+  return claims.find((claim) => normalize(claim?.claimCode) === normalized) || null;
 }
 
 export function getClaimByPaymentReference(paymentReference) {
@@ -103,8 +76,6 @@ export function getClaimByPaymentReference(paymentReference) {
     }
     return false;
   }) || null;
-  // Debug: log payment reference lookup
-  console.log('[pending_activation_repository] getClaimByPaymentReference:', paymentReference, 'normalized:', normalized, 'found:', !!found);
   return found;
 }
 

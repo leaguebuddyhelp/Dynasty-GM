@@ -1,7 +1,9 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
+import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
+import { resolveOverlayTier } from '../../leaguebuddy/plan_state_reconciler.js';
 import { setSetupCompleted } from '../../leaguebuddy/guild_access_service.js';
-import { FEATURES } from '../../leaguebuddy/plans.js';
+import { FEATURES, planRank, normalizePlan } from '../../leaguebuddy/plans.js';
 import { syncGuild } from '../../shared/guild_auto_sync.js';
 import { loadGuildMaddenConfig, saveGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 import { appendAuditEvent } from '../../leaguebuddy/audit.js';
@@ -50,6 +52,16 @@ export async function execute(interaction) {
     const pack = normalizePackKey(interaction.options.getString('pack', true));
     if (!FEATURES[pack]) {
         await interaction.editReply({ content: `Unknown pack key: \`${pack}\`.` });
+        return;
+    }
+
+    const billing = getBillingSummary(guildId);
+    const effectiveTier = resolveOverlayTier(billing?.plan, billing?.subscriptionStatus);
+    const requiredPlan = normalizePlan(FEATURES[pack]?.minPlan);
+    if (planRank(effectiveTier) < planRank(requiredPlan)) {
+        await interaction.editReply({
+            content: `\`${pack}\` requires **${requiredPlan}** access, but this server is currently **${effectiveTier}** (${billing?.subscriptionStatus || 'inactive'}). Activate or upgrade the plan first.`,
+        });
         return;
     }
 

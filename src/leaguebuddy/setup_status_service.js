@@ -136,12 +136,8 @@ function buildFeatureSummary(guildId, packsEnabled = []) {
       minPlan: feature?.minPlan || 'free',
       requiresSetup: feature?.requiresSetup === true,
     };
-    if (packsEnabled.includes(featureKey)) {
-      unlockedFeatures.push({ ...row, source: 'pack_enabled' });
-      continue;
-    }
     if (check.ok) {
-      unlockedFeatures.push({ ...row, source: 'plan_access' });
+      unlockedFeatures.push({ ...row, source: packsEnabled.includes(featureKey) ? 'pack_enabled' : 'plan_access' });
     } else {
       // Add planEligible property: true if user's plan is high enough for this feature
       let planEligible = false;
@@ -151,7 +147,7 @@ function buildFeatureSummary(guildId, packsEnabled = []) {
         const requiredPlan = feature?.minPlan || 'free';
         planEligible = (userPlan === requiredPlan || (userPlan === 'premium' && requiredPlan !== 'premium'));
       }
-      blockedFeatures.push({ ...row, reason: check.reason, planEligible });
+      blockedFeatures.push({ ...row, reason: check.reason, planEligible, packEnabled: packsEnabled.includes(featureKey) });
     }
   }
 

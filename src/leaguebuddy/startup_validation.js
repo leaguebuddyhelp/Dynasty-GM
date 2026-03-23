@@ -86,6 +86,19 @@ export function validateStartupConfig() {
     throw new Error('DISCORD_TOKEN is not set in environment.');
   }
 
+  if (stripeClaimsEnabled) {
+    const missing = [];
+    if (!standardUrlConfigured) missing.push('LB_UPGRADE_URL_STANDARD');
+    if (!premiumUrlConfigured) missing.push('LB_UPGRADE_URL_PREMIUM');
+    if (!stripeWebhookSecretConfigured) missing.push('LB_STRIPE_WEBHOOK_SECRET');
+    if (!stripeSecretKeyConfigured) missing.push('LB_STRIPE_SECRET_KEY');
+    if (!stripeStandardPriceConfigured) missing.push('LB_STRIPE_STANDARD_PRICE_ID');
+    if (!stripePremiumPriceConfigured) missing.push('LB_STRIPE_PREMIUM_PRICE_ID');
+    if (missing.length) {
+      throw new Error(`Stripe claims/buy flow is enabled but missing required env: ${missing.join(', ')}`);
+    }
+  }
+
   const dirs = [
     dataRoot,
     getLeaguebuddyDir(),
