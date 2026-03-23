@@ -65,6 +65,11 @@ export function setCoachAssignment({
   };
   guildRoot.users[normalizedUserId].teams = guildRoot.users[normalizedUserId].teams || {};
   guildRoot.users[normalizedUserId].history = guildRoot.users[normalizedUserId].history || [];
+  // Deactivate all previous assignments for this user in this guild
+  for (const t of Object.values(guildRoot.users[normalizedUserId].teams)) {
+    t.active = false;
+  }
+  // Assign the new team as active
   guildRoot.users[normalizedUserId].teams[normalizedTeam] = {
     teamName: cleanTeamName,
     roleId: roleId ? String(roleId) : null,
@@ -98,7 +103,7 @@ export function removeCoachAssignment({ guildId, userId, teamName = null, roleId
     const teamMatches = teamName ? normalizeName(entry?.teamName || normalizedTeam) === normalizeName(teamName) : true;
     const roleMatches = roleId ? String(entry?.roleId || '') === String(roleId) : true;
     if (!teamMatches || !roleMatches) continue;
-    delete userRoot.teams[normalizedTeam];
+    entry.active = false;
     removed.push(entry?.teamName || normalizedTeam);
   }
   if (removed.length) {
@@ -124,7 +129,8 @@ export function getCoachAssignmentMap({ guildId }) {
   const teamToUserIds = new Map();
   const userToTeams = new Map();
   for (const [userId, state] of Object.entries(guildRoot.users || {})) {
-    const teams = Object.values(state?.teams || {}).filter((entry) => entry?.teamName);
+    // Only include active assignments
+    const teams = Object.values(state?.teams || {}).filter((entry) => entry?.teamName && entry.active);
     if (!teams.length) continue;
     userToTeams.set(String(userId), teams); // Store full assignment objects
     for (const entry of teams) {
