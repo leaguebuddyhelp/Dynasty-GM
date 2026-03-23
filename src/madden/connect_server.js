@@ -1111,8 +1111,14 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
     : '';
 
   const hasLeagueName = Boolean(connection?.leagueName);
-  const hasEaConnection = Boolean(guildTokens);
-  const hasPersona = Boolean(resolvedPersona || availableLeagues.length);
+  const hasEaConnection = Boolean(
+    authDraft?.personas?.length
+    || guildTokens
+    || selectedPersona
+    || availableLeagues.length
+    || leagueFetchError,
+  );
+  const hasPersona = Boolean(selectedPersona || guildTokens?.personaName || guildTokens?.blazeId);
   const hasLeague = Boolean(selectedLeague || connection?.leagueExternalId);
   const syncError = connection?.summary?.lastSyncError || '';
   const syncSucceeded = hasLeague && status === 'connected';
@@ -1121,7 +1127,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   const activeLeagueName = selectedLeague?.leagueName || connection?.leagueName || leagueName || 'No league connected yet';
   const activeLeagueId = connection?.leagueExternalId || selectedLeague?.leagueId || leagueExternalId || 'unknown';
 
-  const nextStep = !(hasLeagueName && leaguePassword)
+  const nextStep = !hasLeagueName
     ? 1
     : !hasEaConnection
       ? 2
@@ -1144,10 +1150,20 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
     return `<span class="step-chip ${stepStatus(step)}">${statusName}</span>`;
   }
 
+  const eaStepCopy = !hasEaConnection
+    ? 'Open EA Login and save the returned browser URL.'
+    : authDraft?.personas?.length && !hasPersona
+      ? 'EA login is saved. Choose the correct Madden account/persona next.'
+      : `Connected as ${guildTokens?.personaName || selectedPersona?.displayName || 'your EA account'}.`;
+
+  const personaStepCopy = hasPersona
+    ? `${resolvedPersona?.displayName || guildTokens?.personaName || 'Persona selected'} on ${String(resolvedPersona?.systemConsole || guildTokens?.console || '').toUpperCase() || 'your console'}.`
+    : 'Choose the Madden account/persona tied to your league.';
+
   const setupChecks = [
     {
       key: 'league_name',
-      done: Boolean(hasLeagueName && leaguePassword),
+      done: hasLeagueName,
       active: nextStep === 1,
       title: 'League join info saved',
       copy: hasLeagueName
@@ -1161,18 +1177,14 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
       done: hasEaConnection,
       active: nextStep === 2,
       title: 'EA connected',
-      copy: hasEaConnection
-        ? `Connected as ${guildTokens?.personaName || 'your EA account'}.`
-        : 'Open EA Login and save the returned browser URL.',
+      copy: eaStepCopy,
     },
     {
       key: 'persona',
       done: hasPersona,
       active: nextStep === 3,
       title: 'Madden account selected',
-      copy: hasPersona
-        ? `${resolvedPersona?.displayName || 'Persona selected'} on ${String(resolvedPersona?.systemConsole || '').toUpperCase() || 'your console'}.`
-        : 'Choose the Madden account/persona tied to your league.',
+      copy: personaStepCopy,
     },
     {
       key: 'league',
@@ -1340,12 +1352,17 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
             <div class="${stepClass(3)}">
               ${stepState(3)}
-              <strong>3. Choose account and league</strong>
-              <span>Select the Madden persona and league LEAGUEbuddy should manage.</span>
+              <strong>3. Choose Madden account</strong>
+              <span>Select the Madden persona LEAGUEbuddy should use for this league.</span>
             </div>
             <div class="${stepClass(4)}">
               ${stepState(4)}
-              <strong>4. Return to Discord</strong>
+              <strong>4. Choose league</strong>
+              <span>Select the Madden league LEAGUEbuddy should manage for this Discord server.</span>
+            </div>
+            <div class="${stepClass(5)}">
+              ${stepState(5)}
+              <strong>5. Return to Discord</strong>
               <span>Run <code>/league-status</code> and continue the normal server setup there.</span>
             </div>
           </div>
@@ -1410,7 +1427,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
             ${stepChip(2)}
           </div>
-          <div class="step-mobile-summary">${hasEaConnection ? `Connected as ${escapeHtml(guildTokens?.personaName || 'your EA account')}.` : 'Connect EA to continue.'}</div>
+          <div class="step-mobile-summary">${hasEaConnection ? escapeHtml(eaStepCopy) : 'Connect EA to continue.'}</div>
           <div class="step-body">
           <p style="color:#4b5563;">This matches the Snallabot-style reverse login flow. You sign in with EA in a new tab, then paste the returned browser URL here.</p>
           <div class="info">
@@ -1424,9 +1441,9 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           </div>
           <div class="method-grid">
             <div class="method-card">
-              <span class="method-badge">${guildTokens ? 'Connected' : 'Required'}</span>
+              <span class="method-badge">${hasEaConnection ? 'Connected' : 'Required'}</span>
               <h3>EA Account Connection</h3>
-              <p>${guildTokens ? `Connected as ${escapeHtml(guildTokens.personaName || guildTokens.blazeId || 'EA account')}.` : 'Start the EA login flow, then paste the returned URL below.'}</p>
+              <p>${escapeHtml(eaStepCopy)}</p>
               <div class="source-actions">
                 <a class="button-link" href="${escapeHtml(dashboard.authUrl)}" target="_blank" rel="noreferrer">Open EA Login</a>
                 ${hasEaConnection ? `
@@ -1454,7 +1471,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
             ${stepChip(3)}
           </div>
-          <div class="step-mobile-summary">${hasPersona ? `${escapeHtml(resolvedPersona?.displayName || 'Persona selected')}` : 'Choose the correct Madden account.'}</div>
+          <div class="step-mobile-summary">${hasPersona ? `${escapeHtml(resolvedPersona?.displayName || guildTokens?.personaName || 'Persona selected')}` : 'Choose the correct Madden account.'}</div>
           <div class="step-body">
           <p style="color:#4b5563;">After EA login is saved, choose the correct Madden account for this league.</p>
           ${authDraft?.personas?.length ? `
