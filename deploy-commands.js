@@ -45,6 +45,7 @@ const BETA_MADDEN_COMMANDS = new Set([
   'create-threads',
   'delete-threads',
   'weeklyupdate',
+  'recruiting',
 ]);
 
 function parseGuildIds() {

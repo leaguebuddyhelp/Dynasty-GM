@@ -29,16 +29,71 @@ export async function execute(interaction) {
     return;
   }
 
-  // Madden-only: detectedTeam logic can be implemented here if needed
-  let detectedTeam = null;
-  // Example: You could detect the user's team based on their Discord roles here in the future
-  // For now, detectedTeam remains null
 
   // Only Madden/NFL mode supported
   let snapshot = null;
   let teams = [];
   try { snapshot = loadLeagueSnapshot(leagueId); } catch { snapshot = null; }
   teams = snapshot?.teams?.leagueTeamInfoList || [];
+
+  // Auto-detect user's team assignment at draft creation
+  let yourTeamId = null;
+  let yourTeamName = null;
+  try {
+    const { getCoachAssignmentMap } = await import('./trade_builder_team_select.js');
+    const userToTeams = getCoachAssignmentMap({ guildId: interaction.guildId }).userToTeams;
+    const userTeams = userToTeams.get(String(interaction.user.id));
+    if (userTeams && userTeams.length > 0 && teams.length > 0) {
+      const activeTeams = userTeams.filter(t => t.active);
+      const sortedTeams = activeTeams.sort((a, b) => (b.assignedAt || 0) - (a.assignedAt || 0));
+      const mostRecent = sortedTeams[0];
+      let match = null;
+      if (mostRecent) {
+        match = teams.find(
+          t => t.teamName === mostRecent.teamName ||
+            t.displayName === mostRecent.teamName ||
+            t.nickName === mostRecent.teamName ||
+            t.name === mostRecent.teamName
+        );
+        if (!match) {
+          match = teams.find(
+            t => t.teamName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
+              t.displayName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
+              t.nickName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
+              t.name?.toLowerCase() === mostRecent.teamName?.toLowerCase()
+          );
+        }
+        if (!match) {
+          match = teams.find(
+            t => t.teamName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
+              t.displayName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
+              t.nickName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
+              t.name?.toLowerCase().includes(mostRecent.teamName?.toLowerCase())
+          );
+        }
+        if (!match && mostRecent.teamName) {
+          const parts = mostRecent.teamName.split(' ');
+          if (parts.length >= 2) {
+            const city = parts[0].toLowerCase();
+            const nickname = parts.slice(1).join(' ').toLowerCase();
+            match = teams.find(t => {
+              const tCity = (t.cityName || '').toLowerCase();
+              const tDisplay = (t.displayName || '').toLowerCase();
+              const tNick = (t.nickName || '').toLowerCase();
+              return (tCity === city && (tDisplay === nickname || tNick === nickname)) ||
+                (mostRecent.teamName.toLowerCase().includes(tCity) && mostRecent.teamName.toLowerCase().includes(tDisplay));
+            });
+          }
+        }
+        if (match) {
+          yourTeamId = String(match.teamId ?? match.teamIndex ?? match.displayName ?? match.nickName);
+          yourTeamName = match.displayName || match.teamName || match.nickName;
+        } else if (mostRecent) {
+          yourTeamName = mostRecent.teamName;
+        }
+      }
+    }
+  } catch (e) { /* ignore auto-detect errors */ }
 
   const limitOptions = (opts, keepValue) => {
     if (opts.length <= 25) return opts;
@@ -60,10 +115,8 @@ export async function execute(interaction) {
       if (s.seasonYear) {
         seasonYear = Number(s.seasonYear);
       } else if (s.seasonNo) {
-        // Our NBA seasons are labeled so seasonNo:1 corresponds to the 2025-26 season,
-        // meaning draft picks are in the calendar year 2026.
         const baseStartYear = 2025;
-        seasonYear = baseStartYear + Number(s.seasonNo); // season 1 -> 2026, season 2 -> 2027, etc.
+        seasonYear = baseStartYear + Number(s.seasonNo);
       }
     }
   } catch { /* ignore */ }
@@ -77,7 +130,8 @@ export async function execute(interaction) {
     guildId: interaction.guildId,
     leagueId,
     mode: 'madden',
-    yourTeamId: null,
+    yourTeamId,
+    yourTeamName,
     otherTeamId: null,
     assets: { your: [], other: [] },
   });
