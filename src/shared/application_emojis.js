@@ -51,6 +51,16 @@ function normalizeEmojiKey(value = '') {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function isExactAliasMatch(normalized, canonicalKey, aliasKeys) {
+  return normalized === canonicalKey || aliasKeys.some((alias) => alias === normalized);
+}
+
+function isStrongFuzzyAliasMatch(normalized, canonicalKey, aliasKeys) {
+  const strongCanonical = canonicalKey.length >= 5 && (canonicalKey.includes(normalized) || normalized.includes(canonicalKey));
+  if (strongCanonical) return true;
+  return aliasKeys.some((alias) => alias.length >= 4 && (alias.includes(normalized) || normalized.includes(alias)));
+}
+
 export async function refreshApplicationEmojiMap(client) {
   if (!client?.application) return emojiState;
   try {
@@ -104,20 +114,22 @@ export function getDevTraitEmoji(devTrait, { fallbackText = true } = {}) {
 export function getTeamEmojiCandidates(teamName = '') {
   const normalized = normalizeEmojiKey(teamName);
   if (!normalized) return [];
-  const matches = new Set();
+  const exactMatches = [];
+  const fuzzyMatches = [];
   for (const [canonical, aliases] of Object.entries(TEAM_EMOJI_ALIASES)) {
     const canonicalKey = normalizeEmojiKey(canonical);
     const aliasKeys = aliases.map(normalizeEmojiKey);
-    if (
-      normalized === canonicalKey ||
-      canonicalKey.includes(normalized) ||
-      normalized.includes(canonicalKey) ||
-      aliasKeys.some((alias) => alias === normalized || normalized.includes(alias) || alias.includes(normalized))
-    ) {
-      aliases.forEach((alias) => matches.add(alias));
+    if (isExactAliasMatch(normalized, canonicalKey, aliasKeys)) {
+      exactMatches.push(...aliases);
+      continue;
+    }
+    if (isStrongFuzzyAliasMatch(normalized, canonicalKey, aliasKeys)) {
+      fuzzyMatches.push(...aliases);
     }
   }
+  const matches = new Set(exactMatches.length ? exactMatches : fuzzyMatches);
   if (!matches.size) {
+    matches.add(normalized);
     matches.add(teamName);
     const raw = String(teamName || '').trim().toLowerCase();
     const parts = raw.split(/\s+/).filter(Boolean);
@@ -137,7 +149,7 @@ export function getTeamApplicationEmoji(teamName = '', fallback = '') {
 
 export function getLeagueBuddyLogoEmoji(fallback = '') {
   return findApplicationEmoji(
-    ['lb_logo', 'leaguebuddy_official_logo', 'lb_official_logo', 'leaguebuddy_logo', 'leaguebuddy', 'lb'],
+    ['leaguebuddy_official_logo', 'lb_official_logo', 'leaguebuddy_logo', 'leaguebuddy', 'lb_logo', 'lb'],
     fallback,
   );
 }
