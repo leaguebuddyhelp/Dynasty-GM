@@ -150,7 +150,6 @@ async function notifyHostInviteResult(client, session, hostId, message) {
 
 async function sendMockDraftSummaryDMs(client, sessionId) {
   const session = getMockDraftSession(sessionId);
-  console.log(`[MockDraft] handleButton: sessionId=${sessionId}, session=`, session);
   if (!session || session.summarySentAt) return;
   const allPicks = (session.picks || []).slice().sort((a, b) => Number(a.pickNumber) - Number(b.pickNumber));
   // Use pick-count truncation (not character truncation) so the "full recap" stays coherent.
@@ -198,7 +197,6 @@ async function sendMockDraftSummaryDMs(client, sessionId) {
 
 async function cleanupPrivateDraftRoom(client, sessionId, reason = 'Mock draft complete.') {
   const session = getMockDraftSession(sessionId);
-  console.log(`[MockDraft] handlePickSelect: sessionId=${sessionId}, session=`, session);
   if (!session || session.roomType !== 'private') {
     deleteMockDraftSession(sessionId);
     return;
@@ -236,11 +234,15 @@ async function runMockDraftTicker(client, sessionId, { forceCpu = false } = {}) 
           components: buildOnClockAnnouncementComponents(session.id),
         };
         await channel?.send?.(onClockPayload).catch(() => null);
-        // Private suspense: open pick panel for the coach
-        // Optimize: use cached member if available
-        const guild = client.guilds.cache.get(session.guildId) || await client.guilds.fetch(session.guildId).catch(() => null);
-        const member = guild?.members.cache.get(currentOwner) || (guild ? await guild.members.fetch(currentOwner).catch(() => null) : null);
-        // Do NOT send DM for pick panel. Only send ephemeral/private pick panel in main channel.
+        const user = await client.users.fetch(currentOwner).catch(() => null);
+        await user?.send?.({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('You Are On The Clock')
+              .setColor(0x5865f2)
+              .setDescription(`It is your pick in the live mock draft.\n\nOpen <#${session.channelId}> and press **Open Private Pick Panel** to submit your player.`),
+          ],
+        }).catch(() => null);
         break;
       }
       await delay(900);
@@ -248,11 +250,6 @@ async function runMockDraftTicker(client, sessionId, { forceCpu = false } = {}) 
       const madePick = next?.picks?.[next.picks.length - 1];
       if (!madePick) break;
       if (!next) {
-        console.error('[MockDraft] runMockDraftTicker: next (session) is undefined before embed send.', {
-          sessionId,
-          madePick,
-          channel: channel?.id
-        });
         await channel?.send?.({
           embeds: [
             new EmbedBuilder()
@@ -263,24 +260,10 @@ async function runMockDraftTicker(client, sessionId, { forceCpu = false } = {}) 
         });
         break;
       }
-      // Detailed logging before embed send
-      console.log('[MockDraft] runMockDraftTicker: About to send embed. Session:', {
-        id: next.id,
-        status: next.status,
-        currentPickIndex: next.currentPickIndex,
-        picks: next.picks,
-        channelId: next.channelId,
-        leagueId: next.leagueId
-      });
-      console.log('[MockDraft] runMockDraftTicker: About to send embed. Pick:', madePick);
       try {
         await channel?.send?.({ embeds: [buildMockDraftPickEmbed(next, madePick)] });
       } catch (err) {
-        console.error('[MockDraft] Error sending embed:', {
-          next,
-          madePick,
-          error: err
-        });
+        console.error('[MockDraft] Error sending embed:', err?.message || err);
       }
       await syncMockDraftSessionMessage(client, next);
       if (next.status === 'done') break;
