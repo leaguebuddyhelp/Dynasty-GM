@@ -40,7 +40,7 @@ const TRADE_REQUIRED_CHANNEL_KEYS = [
 const BASE_REQUIRED_ROLE_KEYS = [
   'LB Commish',
   'LB Co-Commish',
-  'LEAGUEbuddy Coaches',
+  'LEAGUEbuddy Coaches', // standardized group role
 ];
 
 const TRADE_REQUIRED_ROLE_KEYS = [
@@ -67,7 +67,7 @@ const TRADE_REQUIRED_PIN_KEYS = [
 const SETUP_ITEM_LABELS = {
   'LB Commish': 'LB Commish',
   'LB Co-Commish': 'LB Co-Commish',
-  'LEAGUEbuddy Coaches': 'LEAGUEbuddy Coaches',
+  'LEAGUEbuddy Coaches': 'LEAGUEbuddy Coaches', // standardized group role
   'Trade Committee': 'LEAGUEbuddy Trade Committee',
   tradeSubmit: 'Submit Trade',
   scoutingHub: 'Scouting Hub',

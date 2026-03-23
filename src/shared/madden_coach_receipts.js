@@ -20,6 +20,7 @@ export async function resolveRoleUsers(guild, roleIds = []) {
   return [...users.values()];
 }
 
+// Standardized: sendCoachReceipt uses 'coach' for variables and 'LEAGUEbuddy Coaches' for group roles
 export async function sendCoachReceipt(guild, roleIds, { title, description, fields = [], color = 0xFEE75C } = {}) {
   const users = await resolveRoleUsers(guild, roleIds);
   if (!users.length) return 0;

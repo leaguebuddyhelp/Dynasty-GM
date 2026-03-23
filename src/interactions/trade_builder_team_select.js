@@ -91,43 +91,43 @@ export async function execute(interaction) {
         draft,
       }));
       if (userTeams && userTeams.length > 0 && snapshot?.teams?.leagueTeamInfoList) {
-        // Try to match any of the user's assigned teamNames to a real team in the league snapshot
+        // Only use the most recently assigned active team
+        const activeTeams = userTeams.filter(t => t.active);
+        const sortedTeams = activeTeams.sort((a, b) => (b.assignedAt || 0) - (a.assignedAt || 0));
+        const mostRecent = sortedTeams[0];
         let match = null;
         let matchType = null;
         let matchedAssignment = null;
-        for (const assigned of userTeams) {
+        if (mostRecent) {
           // 1. Exact match
           match = snapshot.teams.leagueTeamInfoList.find(
-            t => t.teamName === assigned.teamName || t.displayName === assigned.teamName || t.nickName === assigned.teamName
+            t => t.teamName === mostRecent.teamName || t.displayName === mostRecent.teamName || t.nickName === mostRecent.teamName
           );
-          if (match) { matchType = 'exact'; matchedAssignment = assigned; break; }
-        }
-        // 2. Case-insensitive match
-        if (!match) {
-          for (const assigned of userTeams) {
+          if (match) { matchType = 'exact'; matchedAssignment = mostRecent; }
+          // 2. Case-insensitive match
+          if (!match) {
             match = snapshot.teams.leagueTeamInfoList.find(
-              t => t.teamName?.toLowerCase() === assigned.teamName?.toLowerCase() ||
-                t.displayName?.toLowerCase() === assigned.teamName?.toLowerCase() ||
-                t.nickName?.toLowerCase() === assigned.teamName?.toLowerCase()
+              t => t.teamName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
+                t.displayName?.toLowerCase() === mostRecent.teamName?.toLowerCase() ||
+                t.nickName?.toLowerCase() === mostRecent.teamName?.toLowerCase()
             );
-            if (match) { matchType = 'case-insensitive'; matchedAssignment = assigned; break; }
+            if (match) { matchType = 'case-insensitive'; matchedAssignment = mostRecent; }
           }
-        }
-        // 3. Partial/alias match
-        if (!match) {
-          for (const assigned of userTeams) {
+          // 3. Partial/alias match
+          if (!match) {
             match = snapshot.teams.leagueTeamInfoList.find(
-              t => t.teamName?.toLowerCase().includes(assigned.teamName?.toLowerCase()) ||
-                t.displayName?.toLowerCase().includes(assigned.teamName?.toLowerCase()) ||
-                t.nickName?.toLowerCase().includes(assigned.teamName?.toLowerCase())
+              t => t.teamName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
+                t.displayName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase()) ||
+                t.nickName?.toLowerCase().includes(mostRecent.teamName?.toLowerCase())
             );
-            if (match) { matchType = 'partial'; matchedAssignment = assigned; break; }
+            if (match) { matchType = 'partial'; matchedAssignment = mostRecent; }
           }
         }
         // Log the matching process for debugging
         console.log('[TRADE_BUILDER_AUTO_DETECT_MATCH]', JSON.stringify({
           userId: interaction.user.id,
           userTeams,
+          mostRecent,
           matchType,
           matchedAssignment,
           matchedTeam: match ? { teamId: match.teamId, displayName: match.displayName, teamName: match.teamName, nickName: match.nickName } : null
@@ -148,9 +148,9 @@ export async function execute(interaction) {
             draft.yourTeamId = String(match.displayName || match.nickName || 'unknown');
           }
           draft.yourTeamName = match.displayName || match.teamName || match.nickName;
-        } else {
-          // fallback: use the first assigned teamName as name, but leave id null
-          draft.yourTeamName = userTeams[0].teamName;
+        } else if (mostRecent) {
+          // fallback: use the most recent assigned teamName as name, but leave id null
+          draft.yourTeamName = mostRecent.teamName;
         }
         // Always save the draft after auto-detect
         saveTradeDraft(draftId, draft);

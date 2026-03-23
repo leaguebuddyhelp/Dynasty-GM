@@ -457,8 +457,8 @@ client.on('messageCreate', async (message) => {
   if (!member) return;
   const roleIds = new Set(member.roles?.cache?.keys?.() || []);
   const trackedRoleIds = [...new Set([...(info.awayRoleIds || []), ...(info.homeRoleIds || [])].filter(Boolean))];
-  const isTrackedCoach = trackedRoleIds.some((roleId) => roleIds.has(roleId));
-  if (!isTrackedCoach) return;
+  const isCoach = trackedRoleIds.some((roleId) => roleIds.has(roleId));
+  if (!isCoach) return;
   const context = inferRecognitionContext('madden', message.guild.id);
   const seasonKey = info.seasonKey || context?.seasonKey || null;
   const weekKey = Number.isFinite(Number(info?.weekIndex)) ? `week_${Number(info.weekIndex) + 1}` : (context?.weekKey || null);
