@@ -44,17 +44,12 @@ function buildFlowLines() {
 
 function buildClaimPrompt({ billing, billingOk }) {
   const plan = String(billing?.plan || 'free').toLowerCase();
-  if (plan !== 'free' && !billingOk) {
-    return [
-      'If you already bought a paid LEAGUEbuddy plan for this server, stop here and run `/claim-plan` first.',
-      `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
-      'After the claim succeeds, rerun `/setup` and continue the normal setup flow.',
-    ].join('\n');
-  }
-
+  if (plan === 'free' || billingOk) return null;
   return [
-    'If you already bought Standard or Premium for this server, run `/claim-plan` before doing the setup steps below.',
-    'If you have not bought a paid plan yet, you can ignore this and continue with the next setup step.',
+    'This server has a paid LEAGUEbuddy plan that is not active yet.',
+    `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
+    'Before anything else, run `/claim-plan` in this server.',
+    'After the claim succeeds, rerun `/setup` and continue the normal setup flow.',
   ].join('\n');
 }
 
@@ -199,6 +194,7 @@ export async function execute(interaction) {
   const decision = buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk });
   const setupComplete = decision.title === 'Setup complete';
   const tier = status.overlayStatus.tier || billing?.plan || 'free';
+  const claimPrompt = buildClaimPrompt({ billing, billingOk });
 
   // --- EARLY INFO: Paid Plan Activation Reminder ---
   let earlyInfo = null;
@@ -236,20 +232,33 @@ export async function execute(interaction) {
       },
     );
   } else {
-    embed.addFields(
-      {
-        name: 'Before Anything Else',
-        value: buildClaimPrompt({ billing, billingOk }),
-      },
-      {
-        name: 'Next Step',
-        value: decision.action,
-      },
-      {
-        name: 'Repeat',
-        value: buildFlowLines(),
-      },
-    );
+    if (claimPrompt) {
+      embed.addFields(
+        {
+          name: 'Before Anything Else',
+          value: claimPrompt,
+        },
+        {
+          name: 'Next Step',
+          value: decision.action,
+        },
+        {
+          name: 'Repeat',
+          value: buildFlowLines(),
+        },
+      );
+    } else {
+      embed.addFields(
+        {
+          name: 'Next Step',
+          value: decision.action,
+        },
+        {
+          name: 'Repeat',
+          value: buildFlowLines(),
+        },
+      );
+    }
   }
 
   await interaction.editReply({ embeds: [embed], content: '' });
