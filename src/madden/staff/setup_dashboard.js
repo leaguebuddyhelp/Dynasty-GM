@@ -1,7 +1,6 @@
 import fs from 'fs';
 import {
   EmbedBuilder,
-  MessageFlags,
   PermissionFlagsBits,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -23,7 +22,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('Admin-only: the main LEAGUEbuddy setup dashboard and next-step guide.')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
-export const deferOnDispatch = { flags: MessageFlags.Ephemeral };
+export const deferOnDispatch = { flags: 64 };
 
 function snapshotExists(leagueId) {
   if (!leagueId) return false;
