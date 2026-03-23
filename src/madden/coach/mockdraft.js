@@ -50,6 +50,7 @@ import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/mad
 import { getEffectiveFirstRoundOverrides } from '../pick_overrides_store.js';
 import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
+import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getDataFilePath, getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
@@ -879,7 +880,7 @@ function loadTeamEmojis() {
 }
 
 function formatTeamEmoji(teamName, emojiMap) {
-  return '';
+  return getTeamEmojiByName(teamName || '');
 }
 
 // --- Team needs heuristics ---
