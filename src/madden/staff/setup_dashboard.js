@@ -173,15 +173,6 @@ export async function execute(interaction) {
     return;
   }
 
-  // DEBUG: Print billing summary and guildId for Stripe sandbox troubleshooting (ESM compatible)
-  try {
-    const billingSummary = getBillingSummary(guildId);
-    console.log(`[SETUP_DASHBOARD DEBUG] guildId: ${guildId}`);
-    console.log('[SETUP_DASHBOARD DEBUG] billing summary:', JSON.stringify(billingSummary, null, 2));
-  } catch (e) {
-    console.error('[SETUP_DASHBOARD DEBUG] Failed to print billing summary:', e);
-  }
-
   const readiness = await inspectSetupReadiness(interaction.guild);
   const status = await maybeSyncSetupState(interaction);
   // Auto-sync after dashboard setup changes
