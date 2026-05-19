@@ -5,9 +5,9 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/m
 import { draftOrder, applyPickTrades } from '../coach/mockdraft.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 const DEFAULT_PROMO_INVITE_URL = process.env.LB_PROMO_INVITE_URL || 'https://discord.gg/VHB7UXttwB';
 
 function safeEditReply(interaction, payload) {
@@ -154,9 +154,9 @@ export async function execute(interaction) {
     // if already acknowledged, continue
   }
   try {
-    const roleMap = loadRoleMap();
+    const roleMap = loadRoleMapForGuild(interaction.guildId);
     const member = await interaction.guild.members.fetch(interaction.user.id);
-    if (!STAFF_ROLES.some(r => roleMap[r] && member.roles.cache.has(roleMap[r]))) {
+    if (!hasStaffRole(member, roleMap)) {
       await safeEditReply(interaction, { content: 'Only LB Commish/Co-Commish can use this command.' });
       return;
     }
