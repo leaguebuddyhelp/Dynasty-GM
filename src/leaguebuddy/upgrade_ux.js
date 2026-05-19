@@ -50,6 +50,11 @@ function asPlan(plan) {
   return plan === PLANS.premium || plan === PLANS.standard ? plan : PLANS.free;
 }
 
+export function isBuyingEnabled() {
+  const value = String(process.env.LB_BUYING_ENABLED || '').trim().toLowerCase();
+  return value === 'true' || value === '1' || value === 'yes' || value === 'on';
+}
+
 function planEnvKey(plan) {
   return plan === PLANS.premium ? 'LB_UPGRADE_URL_PREMIUM' : 'LB_UPGRADE_URL_STANDARD';
 }
@@ -126,6 +131,7 @@ function upgradePlansFor(currentPlan = PLANS.free) {
 }
 
 export function pricingLinkFor(plan) {
+  if (!isBuyingEnabled()) return null;
   const direct = maybeUrl(process.env?.[planEnvKey(plan)]);
   if (direct) return direct;
   return maybeUrl(process.env?.LB_UPGRADE_URL);
@@ -155,13 +161,18 @@ function planHeading(plan, activePlan) {
 export function buildPricingEmbeds({ currentPlan = null } = {}) {
   const activePlan = currentPlan ? asPlan(currentPlan) : null;
   const logo = getLeagueBuddyLogoEmoji();
+  const buyingEnabled = isBuyingEnabled();
   const pricing = new EmbedBuilder()
     .setTitle(`${logo ? `${logo} ` : ''}LEAGUEbuddy Madden Pricing`)
     .setColor(0x5865f2)
-    .setDescription([
-      'Pick a monthly plan, then use the buy buttons below.',
-      'After checkout: save the claim code, invite LEAGUEbuddy, then run `/setup code:<claim-code>`.',
-    ].join('\n'))
+    .setDescription(
+      buyingEnabled
+        ? [
+            'Pick a monthly plan, then use the buy buttons below.',
+            'After checkout: save the claim code, invite LEAGUEbuddy, then run `/setup code:<claim-code>`.',
+          ].join('\n')
+        : 'LEAGUEbuddy is in private league testing right now. Self-serve buying is disabled.'
+    )
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
         const entry = PLAN_COPY[plan];
@@ -212,6 +223,7 @@ export function buildPostPaymentEmbed() {
 }
 
 export function buildPricingLinkRows({ currentPlan = null, clientId = null } = {}) {
+  if (!isBuyingEnabled()) return [];
   const targets = currentPlan ? upgradePlansFor(currentPlan) : [PLANS.standard, PLANS.premium];
   const buttons = targets
     .map((plan) => {
@@ -239,6 +251,7 @@ export function buildPricingLinkRows({ currentPlan = null, clientId = null } = {
 }
 
 export function buildPlanUpgradeButtons({ currentPlan = null, canManage = false } = {}) {
+  if (!isBuyingEnabled()) return [];
   if (!canManage) return [];
   const targets = upgradePlansFor(currentPlan || PLANS.free);
   const buttons = targets.map((plan) =>
@@ -252,6 +265,13 @@ export function buildPlanUpgradeButtons({ currentPlan = null, canManage = false 
 }
 
 export function buildUpgradeReply({ targetPlan, guildId = null, clientId = null } = {}) {
+  if (!isBuyingEnabled()) {
+    return {
+      content: 'LEAGUEbuddy buying is disabled while this league is in private testing.',
+      embeds: [],
+      components: [],
+    };
+  }
   const plan = asPlan(targetPlan);
   const targetUrl = pricingLinkFor(plan);
   const inviteUrl = inviteLinkFor(clientId);
@@ -314,6 +334,9 @@ export function buildActivationFollowup({ guildId, plan }) {
 }
 
 export function buildClaimInstructions() {
+  if (!isBuyingEnabled()) {
+    return 'Self-serve buying is disabled while LEAGUEbuddy is in private league testing.';
+  }
   return [
     'How to activate paid access:',
     '1. Buy from `/pricing` if you need a paid plan.',
@@ -325,6 +348,7 @@ export function buildClaimInstructions() {
 }
 
 export default {
+  isBuyingEnabled,
   pricingLinkFor,
   buildPricingEmbeds,
   buildPostPaymentEmbed,

@@ -5,7 +5,7 @@ import {
 
 import { PLANS, SUBSCRIPTION_STATUSES } from '../../leaguebuddy/guild_store.js';
 import { getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
-import { buildPlanUpgradeButtons } from '../../leaguebuddy/upgrade_ux.js';
+import { buildPlanUpgradeButtons, isBuyingEnabled } from '../../leaguebuddy/upgrade_ux.js';
 import { getLeagueBuddyLogoEmoji } from '../../shared/application_emojis.js';
 
 function isGuildManager(member) {
@@ -69,7 +69,7 @@ export async function execute(interaction) {
     lines.push(featuresInPlan.length ? featuresInPlan.join('\n') : '(none)');
 
     // Show upgrade button if not on premium
-    if (plan !== PLANS.premium) {
+    if (isBuyingEnabled() && plan !== PLANS.premium) {
         lines.push('');
         lines.push('Want more features? Upgrade to Premium for full access.');
     }

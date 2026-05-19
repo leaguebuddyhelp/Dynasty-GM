@@ -14,13 +14,13 @@ const DEPLOY_SCOPE = String(process.env.DEPLOY_SCOPE || 'guild').toLowerCase();
 const MADDEN_ONLY = String(process.env.MADDEN_ONLY ?? 'true').toLowerCase() !== 'false';
 const APP_ENV = String(process.env.APP_ENV || process.env.NODE_ENV || '').toLowerCase();
 const DEPLOY_PROFILE = String(process.env.LB_DEPLOY_PROFILE || 'beta').toLowerCase();
+const BUYING_ENABLED = ['true', '1', 'yes', 'on'].includes(String(process.env.LB_BUYING_ENABLED || '').trim().toLowerCase());
 
 const BETA_MADDEN_COMMANDS = new Set([
   'disconnectleague',
   'resetleague',
   'setup-reset',
   'sync',
-  'pricing',
   'plan',
   'setup',
   'help',
@@ -115,6 +115,10 @@ async function loadCommandsForDeployment() {
           }
           if (command?.skipDeploy) {
             console.log(`⏭️  Skipping ${label}/${file} (skipDeploy=true)`);
+            continue;
+          }
+          if (commandName === 'pricing' && !BUYING_ENABLED) {
+            console.log(`⏭️  Skipping ${label}/${file} (buying disabled)`);
             continue;
           }
           if (MADDEN_ONLY && DEPLOY_PROFILE !== 'full' && !BETA_MADDEN_COMMANDS.has(commandName)) {

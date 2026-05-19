@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 
-import { buildPostPaymentEmbed, buildPricingEmbeds, buildPricingLinkRows } from '../../leaguebuddy/upgrade_ux.js';
+import { buildPostPaymentEmbed, buildPricingEmbeds, buildPricingLinkRows, isBuyingEnabled } from '../../leaguebuddy/upgrade_ux.js';
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 
 export const data = new SlashCommandBuilder()
@@ -17,7 +17,7 @@ export async function execute(interaction) {
   await interaction.editReply({
     embeds: [
       ...buildPricingEmbeds({ currentPlan }),
-      buildPostPaymentEmbed(),
+      ...(isBuyingEnabled() ? [buildPostPaymentEmbed()] : []),
     ],
     components: buildPricingLinkRows({ currentPlan, clientId }),
   });
