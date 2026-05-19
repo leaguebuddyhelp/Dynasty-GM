@@ -1460,7 +1460,7 @@ export async function execute(interaction) {
   const isRegularSeason = weekType === 1;
   const officialOrder = isRegularSeason ? null : loadOfficialDraftOrderOverride(league, draftYear);
   const rawOrder = officialOrder || draftOrder(league);
-  const order = officialOrder || applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId: interaction.guildId })), draftYear);
+  const order = applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId: interaction.guildId })), draftYear);
   const needProfiles = deriveTeamNeedsDetailed(league);
   const needs = Object.fromEntries(Object.entries(needProfiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
   // Use robust draft class file lookup
