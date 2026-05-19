@@ -74,6 +74,33 @@ async function buildRoleCounts(interaction) {
   }
 }
 
+async function fetchGuildMembers(interaction) {
+  try {
+    return await interaction.guild.members.fetch();
+  } catch (e) {
+    console.warn('[madden-promo] member fetch skipped:', e?.message || e);
+    return null;
+  }
+}
+
+function hasActiveAssignedMember(assignedTeams, teamName, members) {
+  const assignedUserIds = assignedTeams.get(normalizeKey(teamName)) || new Set();
+  if (!assignedUserIds.size) return false;
+  if (!members) return true;
+  return [...assignedUserIds].some((userId) => members.has(String(userId)));
+}
+
+function buildRoleCountsFromMembers(members) {
+  if (!members) return null;
+  const roleCounts = {};
+  members.forEach(m => {
+    m.roles.cache.forEach(r => {
+      roleCounts[r.id] = (roleCounts[r.id] || 0) + 1;
+    });
+  });
+  return roleCounts;
+}
+
 function formatTeamName(team) {
   return getFullTeamName(team, `Team ${team?.teamId}`);
 }
@@ -165,14 +192,15 @@ export async function execute(interaction) {
     const standingsByTeam = new Map();
     standings.forEach(s => standingsByTeam.set(s.teamId, s));
 
-    const roleCounts = await buildRoleCounts(interaction);
+    const guildMembers = await fetchGuildMembers(interaction);
+    const roleCounts = buildRoleCountsFromMembers(guildMembers) || await buildRoleCounts(interaction);
 
     const openLines = [];
     for (const t of teams) {
       const roleId = resolveRoleId(t, roleMap);
       let assigned = false;
       const teamName = formatTeamName(t);
-      if ((assignedTeams.get(normalizeKey(teamName)) || new Set()).size > 0) {
+      if (hasActiveAssignedMember(assignedTeams, teamName, guildMembers)) {
         assigned = true;
       }
       if (roleId) {
