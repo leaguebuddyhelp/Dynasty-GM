@@ -8,6 +8,7 @@ import { getGuildPinsMap, getGuildRoleMap, upsertGuildPin } from '../shared/madd
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 import { getMessageForWeek } from './madden_utils.js';
+import { buildMaddenTeamAvailability } from '../shared/madden_team_availability.js';
 
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 const PIN_FILE = getMaddenDataFilePath('pins_available_teams.json');
@@ -193,7 +194,6 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
       console.warn('[available-teams] Guild not found');
       return false;
     }
-    try { await guild.members.fetch(); } catch { }
     const channel = await guild.channels.fetch(channelId).catch(() => null);
     if (!channel || !channel.isTextBased()) {
       console.warn('[available-teams] Channel not text-based or missing');
@@ -201,6 +201,7 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
     }
 
     const league = loadLeagueSnapshotForOptions(options);
+    const teams = league?.teams?.leagueTeamInfoList || [];
     const roles = buildTeamEntries(league, roleMap).sort((a, b) => a.team.localeCompare(b.team));
     const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
     const isOffseason = (seasonInfo.seasonWeekType === 8) ||
@@ -211,7 +212,16 @@ export async function updateAvailableTeamsPin(client, guildId, options = {}) {
       console.log('[available-teams] seasonInfo', seasonInfo);
       console.log('[available-teams] isOffseason', isOffseason);
     }
-    const assignments = formatAssignments(guild, roles);
+    const availability = teams.length
+      ? await buildMaddenTeamAvailability({ guild, guildId, teams, roleMap })
+      : null;
+    const assignments = availability
+      ? availability.rows.map((row) => ({
+        team: row.teamName,
+        value: row.assigned ? row.names.join(', ') : 'Open',
+        rawTeam: row.rawTeam || row.teamName || '',
+      }))
+      : formatAssignments(guild, roles);
 
     const byConf = { AFC: [], NFC: [] };
     assignments.forEach(a => {

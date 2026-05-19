@@ -1,9 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
 import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 import { getMessageForWeek } from '../madden_utils.js';
+import { buildMaddenTeamAvailability } from '../../shared/madden_team_availability.js';
 
 const DEFAULT_PROMO_INVITE_URL = process.env.LB_PROMO_INVITE_URL || 'https://discord.gg/VHB7UXttwB';
 
@@ -14,91 +14,6 @@ function safeEditReply(interaction, payload) {
     }
     throw err;
   });
-}
-
-function normalizeName(name) {
-  if (!name) return name;
-  const lower = name.toLowerCase();
-  if (lower === 'g-men' || lower === 'gmen') return 'Giants';
-  if (lower === 'jags') return 'Jaguars';
-  if (lower === 'vikes' || lower === 'vikings') return 'Vikings';
-  if (lower === 'fins' || lower === 'fins up' || lower === 'phins' || lower === 'dolphins') return 'Dolphins';
-  if (lower === 'bucs' || lower === 'buccs') return 'Buccaneers';
-  if (lower === 'pats') return 'Patriots';
-  if (lower === 'bolts') return 'Chargers';
-  if (lower === 'pack') return 'Packers';
-  return name;
-}
-
-function resolveRoleId(team, roleMap) {
-  const nick = normalizeName(team?.displayName) || normalizeName(team?.nickName) || '';
-  const city = team?.cityName || '';
-  const abbr = team?.abbrName || team?.teamAbbr || '';
-  const mascot = (nick || '').split(/\s+/).pop();
-  const normalizeKey = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const roleEntries = Object.entries(roleMap || {})
-    .filter(([k]) => /coach$/i.test(k))
-    .map(([k, v]) => ({ norm: normalizeKey(k), id: v }));
-
-  const candidates = [
-    `${nick} Coach`,
-    `${city} ${nick} Coach`,
-    `${normalizeName(city)} ${nick} Coach`,
-    `${abbr} Coach`,
-    `${mascot} Coach`,
-  ].filter(Boolean);
-
-  for (const c of candidates) {
-    const norm = normalizeKey(c);
-    const found = roleEntries.find(r => r.norm === norm || r.norm.includes(norm) || norm.includes(r.norm));
-    if (found) return found.id;
-  }
-  return null;
-}
-
-async function buildRoleCounts(interaction) {
-  // Best effort: build a roleId -> memberCount map from a single member fetch.
-  // This is more reliable than fetching roles one-by-one mid-loop.
-  try {
-    const members = await interaction.guild.members.fetch();
-    const roleCounts = {};
-    members.forEach(m => {
-      m.roles.cache.forEach(r => {
-        roleCounts[r.id] = (roleCounts[r.id] || 0) + 1;
-      });
-    });
-    return roleCounts;
-  } catch (e) {
-    console.warn('[madden-promo] member fetch skipped:', e?.message || e);
-    return null;
-  }
-}
-
-async function fetchGuildMembers(interaction) {
-  try {
-    return await interaction.guild.members.fetch();
-  } catch (e) {
-    console.warn('[madden-promo] member fetch skipped:', e?.message || e);
-    return null;
-  }
-}
-
-function hasActiveAssignedMember(assignedTeams, teamName, members) {
-  const assignedUserIds = assignedTeams.get(normalizeKey(teamName)) || new Set();
-  if (!assignedUserIds.size) return false;
-  if (!members) return true;
-  return [...assignedUserIds].some((userId) => members.has(String(userId)));
-}
-
-function buildRoleCountsFromMembers(members) {
-  if (!members) return null;
-  const roleCounts = {};
-  members.forEach(m => {
-    m.roles.cache.forEach(r => {
-      roleCounts[r.id] = (roleCounts[r.id] || 0) + 1;
-    });
-  });
-  return roleCounts;
 }
 
 function formatTeamName(team) {
@@ -178,9 +93,6 @@ export async function execute(interaction) {
 
     const includeLink = interaction.options.getBoolean('link') ?? false;
 
-    const assignmentMap = getCoachAssignmentMap({ guildId: interaction.guildId });
-    const assignedTeams = assignmentMap?.teamToUserIds || new Map();
-
     const snapshot = loadLeagueSnapshot(leagueId);
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
     const debug = process.env.MOCK_DEBUG === 'true';
@@ -192,27 +104,21 @@ export async function execute(interaction) {
     const standingsByTeam = new Map();
     standings.forEach(s => standingsByTeam.set(s.teamId, s));
 
-    const guildMembers = await fetchGuildMembers(interaction);
-    const roleCounts = buildRoleCountsFromMembers(guildMembers) || await buildRoleCounts(interaction);
+    const availability = await buildMaddenTeamAvailability({
+      guild: interaction.guild,
+      guildId: interaction.guildId,
+      teams,
+      roleMap,
+    });
+    const availabilityByTeam = new Map(
+      availability.rows.map((row) => [normalizeKey(row.teamName), row]),
+    );
 
     const openLines = [];
     for (const t of teams) {
-      const roleId = resolveRoleId(t, roleMap);
-      let assigned = false;
       const teamName = formatTeamName(t);
-      if (hasActiveAssignedMember(assignedTeams, teamName, guildMembers)) {
-        assigned = true;
-      }
-      if (roleId) {
-        let count = (roleCounts && typeof roleCounts[String(roleId)] === 'number') ? roleCounts[String(roleId)] : undefined;
-        if (count === undefined) {
-          const cachedRole = interaction.guild.roles.cache.get(String(roleId))
-            || await interaction.guild.roles.fetch(String(roleId)).catch(() => null);
-          count = cachedRole?.members ? cachedRole.members.size : 0;
-        }
-        assigned = assigned || count > 0;
-      }
-      if (assigned) continue;
+      const availabilityRow = availabilityByTeam.get(normalizeKey(teamName));
+      if (availabilityRow?.assigned) continue;
       const rec = standingsByTeam.get(t.teamId);
       const wins = rec?.totalWins ?? rec?.wins ?? 0;
       const losses = rec?.totalLosses ?? rec?.losses ?? 0;

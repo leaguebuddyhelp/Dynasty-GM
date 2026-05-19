@@ -15,6 +15,9 @@ import { resolveInteractionAccess } from './leaguebuddy/interaction_access_resol
 import { validateStartupConfig } from './leaguebuddy/startup_validation.js';
 import { markHealthReady, startHealthcheckServer } from './leaguebuddy/healthcheck.js';
 import { refreshApplicationEmojiMap } from './shared/application_emojis.js';
+import { removeCoachAssignment } from './shared/madden_coach_assignments.js';
+import { updateAvailableTeamsPin } from './madden/available_teams.js';
+import { resolveLeagueIdWithConfig } from './madden/madden_data.js';
 
 // --- ENVIRONMENT SAFEGUARD: Warn if test guilds are present in production ---
 import path from 'path';
@@ -105,6 +108,36 @@ const client = new Client({
 });
 client.commands = new Collection();
 client.interactionHandlers = [];
+
+function memberHasCoachRole(member) {
+  return [...(member?.roles?.cache?.values?.() || [])].some((role) => / coach$/i.test(role?.name || ''));
+}
+
+async function refreshAvailabilityAfterCoachChange(client, guildId, reason = 'coach_change') {
+  if (!guildId) return;
+  try {
+    const leagueId = resolveLeagueIdWithConfig(guildId);
+    await updateAvailableTeamsPin(client, guildId, {
+      leagueId,
+      allowCreate: true,
+      delayMs: 0,
+      retries: 2,
+      retryDelayMs: 800,
+      reason,
+    });
+  } catch (error) {
+    console.warn('[available-teams] coach-change refresh skipped', {
+      guildId,
+      reason,
+      error: error?.message || error,
+    });
+  }
+  try {
+    await updateFairSimBoard(client, guildId);
+  } catch (error) {
+    console.warn('[fairsim_board] coach-change refresh skipped', guildId, error?.message || error);
+  }
+}
 
 await startOptionalService({
   enabled: envEnabled('MADDEN_AUTH_ENABLED', false),
@@ -454,6 +487,42 @@ client.on('interactionCreate', async interaction => {
     }
     return;
   }
+});
+
+client.on('guildMemberRemove', async (member) => {
+  try {
+    removeCoachAssignment({
+      guildId: member.guild?.id,
+      userId: member.id,
+    });
+  } catch (error) {
+    console.warn('[coach-assignments] member leave cleanup failed', member.guild?.id, member.id, error?.message || error);
+  }
+  await refreshAvailabilityAfterCoachChange(client, member.guild?.id, 'member_left');
+});
+
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+  const oldHadCoachRole = memberHasCoachRole(oldMember);
+  const newHasCoachRole = memberHasCoachRole(newMember);
+  const oldRoleIds = new Set(oldMember?.roles?.cache?.keys?.() || []);
+  const newRoleIds = new Set(newMember?.roles?.cache?.keys?.() || []);
+  const roleSetChanged = oldRoleIds.size !== newRoleIds.size
+    || [...oldRoleIds].some((roleId) => !newRoleIds.has(roleId));
+
+  if (!roleSetChanged || (!oldHadCoachRole && !newHasCoachRole)) return;
+
+  if (oldHadCoachRole && !newHasCoachRole) {
+    try {
+      removeCoachAssignment({
+        guildId: newMember.guild?.id,
+        userId: newMember.id,
+      });
+    } catch (error) {
+      console.warn('[coach-assignments] role removal cleanup failed', newMember.guild?.id, newMember.id, error?.message || error);
+    }
+  }
+
+  await refreshAvailabilityAfterCoachChange(client, newMember.guild?.id, 'member_roles_changed');
 });
 
 client.on('messageCreate', async (message) => {

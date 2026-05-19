@@ -8,6 +8,7 @@ import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
+import { buildMaddenTeamAvailability } from '../../shared/madden_team_availability.js';
 
 const AVP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_avp.json');
 
@@ -135,20 +136,6 @@ function buildAvpPreview({ avp, earliestPickNum, limit = 5, needs = [] }) {
   }).join(' • ');
 }
 
-function normalizeName(name) {
-  if (!name) return name;
-  const lower = name.toLowerCase();
-  if (lower === 'g-men' || lower === 'gmen') return 'Giants';
-  if (lower === 'jags') return 'Jaguars';
-  if (lower === 'vikes' || lower === 'vikings') return 'Vikings';
-  if (lower === 'fins' || lower === 'fins up' || lower === 'phins' || lower === 'dolphins') return 'Dolphins';
-  if (lower === 'bucs' || lower === 'buccs') return 'Buccaneers';
-  if (lower === 'pats') return 'Patriots';
-  if (lower === 'bolts') return 'Chargers';
-  if (lower === 'pack') return 'Packers';
-  return name;
-}
-
 function hasStaffRole(member, roleMap) {
   return STAFF_ROLES.some(r => {
     const id = roleMap[r];
@@ -164,38 +151,6 @@ function teamEmoji(team) {
   const fullName = formatTeamName(team);
   const emoji = getTeamEmojiByName(fullName);
   return emoji ? `${emoji} ` : '';
-}
-
-function resolveRoleId(team, roleMap) {
-  const nick = normalizeName(team?.displayName) || normalizeName(team?.nickName) || '';
-  const city = team?.cityName || '';
-  const abbr = team?.abbrName || team?.teamAbbr || '';
-  const mascot = (nick || '').split(/\s+/).pop();
-
-  const normalizeKey = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-  const roleEntries = Object.entries(roleMap || {})
-    .filter(([k]) => /coach$/i.test(k)) // use only coach roles from the Madden map
-    .map(([k, v]) => ({
-      raw: k,
-      norm: normalizeKey(k),
-      id: v,
-    }));
-
-  const candidates = [
-    `${nick} Coach`,
-    `${city} ${nick} Coach`,
-    `${normalizeName(city)} ${nick} Coach`,
-    `${abbr} Coach`,
-    `${mascot} Coach`,
-  ].filter(Boolean);
-
-  for (const c of candidates) {
-    const norm = normalizeKey(c);
-    const found = roleEntries.find(r => r.norm === norm || r.norm.includes(norm) || norm.includes(r.norm));
-    if (found) return found.id;
-  }
-  return null;
 }
 
 function normalizeKey(name = '') {
@@ -281,21 +236,6 @@ async function execute(interaction) {
   }
 
   try {
-    // Best effort: get a member list; if intents are off, fallback to role.members size.
-    let roleCounts = null;
-    try {
-      const members = await interaction.guild.members.fetch();
-      roleCounts = {};
-      members.forEach(m => {
-        m.roles.cache.forEach(r => {
-          roleCounts[r.id] = (roleCounts[r.id] || 0) + 1;
-        });
-      });
-    } catch (e) {
-      console.warn('[madden-availableteams] member fetch skipped:', e?.message || e);
-      roleCounts = null;
-    }
-
     const snapshot = loadLeagueSnapshot(leagueId);
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
     const standings = snapshot?.standings?.teamStandingInfoList || [];
@@ -308,21 +248,21 @@ async function execute(interaction) {
     const recordMap = buildRecordMap(snapshot);
     const avp = loadAvp();
     const needsByTeam = deriveTeamNeeds(snapshot);
+    const availability = await buildMaddenTeamAvailability({
+      guild: interaction.guild,
+      guildId: interaction.guildId,
+      teams,
+      roleMap,
+    });
+    const availabilityByTeam = new Map(
+      availability.rows.map((row) => [normalizeKey(row.teamName), row]),
+    );
 
     const lines = [];
     const phaseLabel = seasonWeekLabel(snapshot);
     for (const t of teams) {
-      const roleId = resolveRoleId(t, roleMap);
-      let assigned = false;
-      if (roleId) {
-        let count = (roleCounts && typeof roleCounts[roleId] === 'number') ? roleCounts[roleId] : undefined;
-        if (count === undefined) {
-          const role = interaction.guild.roles.cache.get(roleId) || await interaction.guild.roles.fetch(roleId).catch(() => null);
-          count = role?.members ? role.members.size : 0;
-        }
-        assigned = count > 0;
-      }
-      if (assigned) continue;
+      const availabilityRow = availabilityByTeam.get(normalizeKey(formatTeamName(t)));
+      if (availabilityRow?.assigned) continue;
       if (isOffseason) {
         const nameFormatted = formatTeamName(t);
         const prefix = teamEmoji(t);
