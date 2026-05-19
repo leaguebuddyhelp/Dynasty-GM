@@ -512,32 +512,6 @@ function buildProgressEmbed({ step, details = [], tier = null, tradeEnabled = nu
         );
 }
 
-function tierSetupNotes(tier, tradeEnabled) {
-    if (tier === 'premium') {
-        return [
-            'Premium setup includes the core league boards, trade center, scouting hub, weekly awards, yearly awards, recognition, and sportsbook boards.',
-            'After channels are ready, run `/setup-pins`, then keep using `/setup` until setup is complete.',
-        ];
-    }
-    if (tier === 'standard') {
-        return [
-            'Standard setup includes the core league boards, trade center, scouting hub, Top 100, Weekly Awards, Yearly Awards, Streaming links, Strike Board, Draft Grades, and Activity Checks.',
-            'After channels are ready, run `/setup-pins`, then keep using `/setup` until setup is complete.',
-        ];
-    }
-    return [
-        'Free setup includes the core league boards, game threads, and the basic pinned league boards.',
-        tradeEnabled ? 'Trade center is included in this package.' : 'Trade center is not included in the Free plan.',
-    ];
-}
-
-function formatChannelList(specs = []) {
-    const names = specs
-        .map((spec) => `• #${spec.name}`)
-        .join('\n');
-    return names.slice(0, 1024) || 'No LEAGUEbuddy channels selected for this package.';
-}
-
 async function withTimeout(promise, ms, label) {
     let timer = null;
     try {
@@ -611,12 +585,11 @@ export async function execute(interaction) {
         if (!readiness.hasRequiredPermissions) {
             await interaction.editReply({
                 content: [
-                    '**Madden v2 setup failed**',
-                    'The bot is missing required Discord permissions before channel setup can start.',
+                    '**Channel setup needs permissions**',
+                    'LEAGUEbuddy is missing required Discord permissions.',
                     ...readiness.missingPermissions.map((name) => `- ${name}`),
-                    'A server admin needs to fix the LEAGUEbuddy bot role permissions in Discord.',
                     readiness.hierarchyWarning ? readiness.hierarchyWarning : null,
-                    'After that, run `/setup`, then `/setup-channels` again.',
+                    'Fix this, then return to `/setup`.',
                 ].join('\n'),
             });
             return;
@@ -627,8 +600,7 @@ export async function execute(interaction) {
                     '**Before You Continue**',
                     readiness.hierarchyWarning,
                     '',
-                    'This usually will not block channel creation, but it can block `/setup-roles` later.',
-                    'Move the LEAGUEbuddy role higher in Server Settings > Roles, then rerun `/setup` or `/setup-channels`.',
+                    'Move the LEAGUEbuddy role higher in Server Settings, then return to `/setup`.',
                 ].filter(Boolean).join('\n'),
             });
             return;
@@ -636,10 +608,9 @@ export async function execute(interaction) {
         if (roleCount >= 240) {
             await interaction.editReply({
                 content: [
-                    '**Madden v2 setup failed**',
+                    '**Too many Discord roles**',
                     `This server already has **${roleCount} roles**.`,
-                    'Discord servers have a hard role limit, and repeated test setups can leave old coach roles behind.',
-                    'Delete old coach/LB roles first, then run `/setup-reset` or `/setup-channels` again.',
+                    'Delete old coach/LB roles, then return to `/setup`.',
                 ].join('\n'),
             });
             return;
@@ -718,15 +689,13 @@ export async function execute(interaction) {
                 .join('\n');
             await interaction.editReply({
                 content: [
-                    '**Madden v2 setup failed**',
-                    'LEAGUEbuddy created or found the channels, but Discord rejected the channel permission updates.',
-                    'This prevents `/setup-pins` from pinning messages correctly.',
+                    '**Channel setup needs permissions**',
+                    'LEAGUEbuddy found the channels, but Discord blocked permission updates.',
                     '',
                     'Failed channels:',
                     details,
                     '',
-                    'Fix the bot role permissions in Discord, then rerun `/setup-channels`.',
-                    'Required bot permissions: Manage Channels, Manage Messages, View Channel, Send Messages, Read Message History.',
+                    'Fix the bot role permissions, then return to `/setup`.',
                 ].join('\n'),
             });
             return;
@@ -769,30 +738,12 @@ export async function execute(interaction) {
             embeds: [
                 new EmbedBuilder()
                     .setColor(0x57f287)
-                    .setTitle('Setup Channels Complete')
-                    .setDescription(`Package: **${tier}**`)
+                    .setTitle('Channels Ready')
+                    .setDescription('Return to `/setup` and press Refresh Setup.')
                     .addFields(
                         {
-                            name: 'What this command did',
-                            value: [
-                                '• Created or verified the LEAGUEbuddy category',
-                                '• Created the plan-appropriate channels',
-                                '• Saved the overlay config for this server',
-                            ].join('\n'),
-                        },
-                        {
-                            name: 'Plan notes',
-                            value: tierSetupNotes(tier, tradeEnabled).map((line) => `• ${line}`).join('\n'),
-                        },
-                        {
-                            name: 'Channels In This Package',
-                            value: formatChannelList(activeChannelSpecs),
-                        },
-                        {
-                            name: 'Next',
-                            value: snapshotReady
-                                ? 'Run `/setup-pins`, then rerun `/setup` for the next step.'
-                                : 'Run `/setup-pins` next. If the league snapshot is still missing, connect the league first and rerun `/setup-pins` after `/league-status` looks healthy.',
+                            name: 'Package',
+                            value: `${tier}${snapshotReady ? '' : '\nLeague data is still loading.'}`,
                         },
                     ),
             ],

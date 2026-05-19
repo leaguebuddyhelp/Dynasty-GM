@@ -27,7 +27,7 @@ async function execute(interaction) {
         'Other Madden commands will use this guild-specific mapping automatically.',
         '',
         'No other league snapshots or process-wide env settings were changed.',
-        'Recommended path for normal setup is still `/connectleague`.',
+        'Recommended path for normal setup is still `/setup`.',
         '',
         'Next: run `/sync`.',
       ].join('\n'))

@@ -67,7 +67,7 @@ export async function execute(interaction) {
           value: [
             '• Run `/plan` to confirm access.',
             '• Run `/setup` to see the next server step.',
-            '• If this is a brand new server, a manager should still run `/connectleague`, finish the dashboard flow, then keep rerunning `/setup` until it says complete.',
+            '• If this is a brand new server, a manager should run `/setup` and follow the buttons until it says complete.',
           ].join('\n'),
         },
         {

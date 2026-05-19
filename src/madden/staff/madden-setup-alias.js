@@ -4,7 +4,7 @@ import { execute as setupExecute } from './madden-setup.js';
 // Temporary backward-compatible alias for older servers.
 export const data = new SlashCommandBuilder()
     .setName('madden-setup')
-    .setDescription('Alias for /setup-channels (deprecated)')
+    .setDescription('Deprecated setup alias')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {

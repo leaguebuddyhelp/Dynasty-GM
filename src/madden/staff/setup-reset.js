@@ -44,11 +44,11 @@ export const data = new SlashCommandBuilder()
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addBooleanOption(o =>
         o.setName('delete_channels')
-            .setDescription('Delete LEAGUEbuddy channels created by /setup-channels (lb-*)')
+            .setDescription('Delete LEAGUEbuddy channels created by /setup (lb-*)')
             .setRequired(false))
     .addBooleanOption(o =>
         o.setName('delete_roles')
-            .setDescription('Delete LEAGUEbuddy roles created by /setup-roles (LB roles + coach roles)')
+            .setDescription('Delete LEAGUEbuddy roles created by /setup (LB roles + coach roles)')
             .setRequired(false))
     .addBooleanOption(o =>
         o.setName('delete_category')
@@ -215,7 +215,7 @@ export async function execute(interaction) {
 
     if (cfg && !deleteChannels && !deleteRoles) {
         lines.push('');
-        lines.push('Tip: re-run `/setup`, do the one next step it shows, then rerun `/setup` until setup is complete.');
+        lines.push('Tip: run `/setup` and follow the buttons until setup is complete.');
         lines.push('Optional: run `/setup-reset delete_channels:true delete_roles:true` to cleanup Discord artifacts too.');
     }
 

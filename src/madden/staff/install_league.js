@@ -45,9 +45,9 @@ export async function execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor(0xf39c12)
       .setTitle('Connect Your League')
-      .setDescription('This is the legacy connection helper. The recommended path is `/connectleague` and the dashboard.')
+      .setDescription('This is the legacy connection helper. The recommended path is `/setup`.')
       .addFields(
-        { name: 'Recommended', value: 'Run `/connectleague`, open the dashboard, connect EA, choose your Madden account, then choose your league.' },
+        { name: 'Recommended', value: 'Run `/setup`, open the dashboard, connect EA, choose your Madden account, then choose your league.' },
         { name: 'Legacy Fallback', value: `If you are intentionally using the old flow, open the connection link: ${loginUrl}` },
         { name: 'Manual Finish', value: 'If the browser flow does not finish cleanly, run `/auth redirect_url:<paste-callback-url>`.' },
         { name: 'Then', value: 'Run `/install-league` again and pick the correct league.' },

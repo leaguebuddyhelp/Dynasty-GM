@@ -154,7 +154,7 @@ export async function runSync(leagueId, provider, options = {}) {
     await emitProgress(options, 'Checking account connection', 'Loading the saved league connection for this server.');
     const tokens = await loadTokens(options.guildId);
     if (!tokens || !tokens.accessToken || !tokens.refreshToken) {
-      throw new Error('No EA connection was found for this server. Run `/connectleague`, reconnect EA in the dashboard, then retry.');
+      throw new Error('No EA connection was found for this server. Run `/setup` and reconnect EA, then retry.');
     }
     await emitProgress(options, 'Opening league session', 'Refreshing the saved connection and opening the Madden session.');
     const client = await createEAClientFromEnv({ ...process.env, EA_ACCESS_TOKEN: tokens.accessToken, EA_REFRESH_TOKEN: tokens.refreshToken, EA_ACCESS_TOKEN_EXPIRES_AT: tokens.expiry, EA_CONSOLE: tokens.console, EA_BLAZE_ID: tokens.blazeId, EA_GAME_YEAR: tokens.gameYear }, {
@@ -537,7 +537,7 @@ export async function runSync(leagueId, provider, options = {}) {
         lower.includes('please re-auth') ||
         lower.includes('invalid_grant') ||
         lower.includes('token')) {
-      await notify('Madden EA reconnect needed', `${msg}\nRun /connectleague, reconnect EA in the dashboard, then rerun the command.`);
+      await notify('Madden EA reconnect needed', `${msg}\nRun /setup and reconnect EA, then rerun the command.`);
     }
     throw err;
   }
@@ -558,7 +558,7 @@ async function execute(interaction) {
         embeds: [
           new EmbedBuilder()
             .setTitle('Madden Sync')
-            .setDescription('No league is connected to this server yet. Run `/connectleague`, finish the dashboard flow, then rerun `/sync`.')
+            .setDescription('No league is connected to this server yet. Run `/setup` and press Connect League, then rerun `/sync`.')
             .setColor(0xffcc00)
         ]
       });
@@ -599,11 +599,11 @@ async function execute(interaction) {
     const lower = msg.toLowerCase();
     let guidance = 'Try again shortly.';
     if (lower.includes('no local ea tokens')) {
-      guidance = 'Run `/connectleague`, reconnect EA in the dashboard, then rerun the sync.';
+      guidance = 'Run `/setup` and reconnect EA, then rerun the sync.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
-      guidance = 'The saved EA session looks stale. Return to `/connectleague`, reconnect EA in the dashboard, then rerun the sync.';
+      guidance = 'The saved EA session looks stale. Return to `/setup` and reconnect EA, then rerun the sync.';
     } else if (lower.includes('deleted') || lower.includes('league')) {
-      guidance = 'Reconnect the league from `/connectleague`, then rerun the sync.';
+      guidance = 'Reconnect the league from `/setup`, then rerun the sync.';
     }
     const shortMsg = msg.length > 3000 ? `${msg.slice(0, 2997)}...` : msg;
     await interaction.editReply({

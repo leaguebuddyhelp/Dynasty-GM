@@ -30,7 +30,7 @@ export async function execute(interaction) {
       return 'EA returned a temporary service error. Wait a moment, then run `/sync` again.';
     }
     if (errorText.includes('session expired') || errorText.includes('Reconnect EA')) {
-      return 'The league is linked, but the EA session expired. Reconnect EA from `/connectleague`, then run `/sync`.';
+      return 'The league is linked, but the EA session expired. Reconnect EA from `/setup`, then run `/sync`.';
     }
     if (errorText.includes('taking too long')) {
       return 'EA took too long to respond. Run `/sync` again. If it keeps timing out, reopen the dashboard and reconnect EA.';

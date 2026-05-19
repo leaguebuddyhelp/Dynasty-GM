@@ -43,7 +43,7 @@ export async function execute(interaction) {
 
   const cfg = loadGuildMaddenConfig(guild.id);
   if (!cfg) {
-    await interaction.editReply({ content: 'No setup config found yet. Run `/setup-channels` first.' });
+    await interaction.editReply({ content: 'No setup config found yet. Return to `/setup` and create channels first.' });
     return;
   }
 
@@ -130,8 +130,7 @@ export async function execute(interaction) {
 
   await updateProgress('refreshing channel permissions', [
     'Updating channel permissions with the new role map',
-    'Applying the final LEAGUEbuddy role-based visibility rules across all setup channels',
-    'This finishes the second pass automatically so you do not have to rerun setup commands',
+    'Applying the final LEAGUEbuddy role-based visibility rules',
   ], { tier, tradeEnabled });
 
   const overwritePlan = buildSetupOverwrites(guild, cfg.compat?.maddenRoleMap || {});
@@ -152,20 +151,11 @@ export async function execute(interaction) {
     embeds: [
       new EmbedBuilder()
         .setColor(staffSummary.failed.length ? 0xf39c12 : 0x57f287)
-        .setTitle('Setup Roles Complete')
-        .setDescription(`Package: **${tier}**`)
+        .setTitle('Roles Ready')
+        .setDescription('Return to `/setup` and press Refresh Setup.')
         .addFields(
           {
-            name: 'What this command did',
-            value: [
-              '• Created or verified staff roles',
-              tradeEnabled ? '• Created or verified trade roles' : '• Skipped trade roles because they are not included in this plan',
-              '• Reapplied the final channel permissions after the role pass',
-              '• Finalized staff/trade channel access using the roles created in this command',
-            ].join('\n'),
-          },
-          {
-            name: 'Staff roles',
+            name: 'Staff Roles',
             value: [
               `Created: ${staffSummary.created.length}`,
               `Existing: ${staffSummary.existing.length}`,
@@ -176,15 +166,15 @@ export async function execute(interaction) {
             inline: false,
           },
           {
-            name: 'Coach roles',
+            name: 'Coach Roles',
             value: coachSummaryText.slice(0, 1024),
             inline: false,
           },
           {
             name: 'Next',
             value: staffSummary.failed.length
-              ? 'Some Discord roles still failed to create. Fix the server role issue, then rerun `/setup-roles`.'
-              : 'Roles and channel access are ready. Rerun `/setup` to finish the last setup pass.',
+              ? 'Fix the server role issue, then return to `/setup`.'
+              : 'Press Refresh Setup.',
           },
         ),
     ],

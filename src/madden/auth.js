@@ -66,7 +66,7 @@ async function execute(interaction) {
         embeds: [
           new EmbedBuilder()
             .setTitle('EA Auth Reset')
-            .setDescription('The saved EA connection for this server was cleared. The recommended path now is `/connectleague` and the dashboard flow.')
+            .setDescription('The saved EA connection for this server was cleared. Use `/setup` to reconnect.')
             .setColor(0xffcc00),
         ],
       });
@@ -86,14 +86,14 @@ async function execute(interaction) {
       embeds: [
         new EmbedBuilder()
           .setTitle('Connect League Account')
-          .setDescription('This is the legacy manual fallback. The recommended connection path is `/connectleague` and the dashboard.')
+          .setDescription('This is the legacy manual fallback. The recommended connection path is `/setup`.')
           .addFields(
             { name: 'Step 1', value: 'Tap **Open Connection Link** below.' },
             { name: 'Step 2', value: manualFinishLikely ? `Finish the browser sign-in. EA should redirect to \`${REDIRECT_URL}\`.` : 'Finish the browser sign-in and redirect flow.' },
             { name: 'Step 3', value: manualFinishLikely ? 'Copy the full redirected URL from the browser address bar.' : 'If the callback page says the connection was saved for this server, run `/install-league`.' },
             { name: 'Manual Finish', value: manualFinishLikely ? 'Go back to Discord and rerun the auth command with that full redirected URL so LEAGUEbuddy can finish the connection for this server.' : 'If the browser lands on the callback URL but the save does not finish automatically, copy the full callback URL from the browser address bar.' },
             { name: 'Run This In Discord', value: '`/auth redirect_url:<paste-full-callback-url>`' },
-            { name: 'Next', value: 'After the redirect flow is saved, return to `/connectleague` or run `/install-league` only if you are using the legacy flow.' },
+            { name: 'Next', value: 'After the redirect flow is saved, return to `/setup` or run `/install-league` only if you are using the legacy flow.' },
           )
           .setColor(0x5865f2),
       ],
@@ -148,12 +148,12 @@ async function execute(interaction) {
       embeds: [
         new EmbedBuilder()
           .setTitle('League Account Connected')
-          .setDescription('The EA connection was saved for this server. The recommended next step is `/connectleague` so you can finish the dashboard flow.')
+          .setDescription('The EA connection was saved for this server. Run `/setup` to finish.')
           .addFields(
             { name: 'Console', value: tokens.console || 'unknown', inline: true },
             { name: 'Game Year', value: `${tokens.gameYear || YEAR}`, inline: true },
             { name: 'Persona', value: `${chosen.displayName} (${chosen.personaId})`, inline: false },
-            { name: 'Next', value: 'Run `/connectleague`.', inline: false },
+            { name: 'Next', value: 'Run `/setup`.', inline: false },
           )
           .setColor(0x57f287),
       ],
@@ -167,7 +167,7 @@ async function execute(interaction) {
             err?.message || 'Unknown error',
             '',
             'This command is only the manual fallback path.',
-            'Recommended: go back to `/connectleague` and use the dashboard flow.',
+            'Recommended: go back to `/setup` and use the dashboard flow.',
             manualFinishLikely
               ? `When EA redirects to \`${REDIRECT_URL}\`, copy the full URL and rerun \`/auth redirect_url:<paste-full-callback-url>\` in Discord.`
               : 'If the browser reaches the callback URL but the save does not finish automatically, copy the full callback URL and run `/auth redirect_url:<paste-full-callback-url>` to finish that same redirect flow manually.',

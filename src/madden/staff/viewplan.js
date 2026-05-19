@@ -18,7 +18,7 @@ export async function execute(interaction) {
     const rec = getBillingSummary(guildId);
     if (!rec) {
         await interaction.editReply({
-            content: 'No server record found yet. Run `/setup-channels` to create one (defaults to free).',
+            content: 'No server record found yet. Run `/setup` to create one (defaults to free).',
         });
         return;
     }

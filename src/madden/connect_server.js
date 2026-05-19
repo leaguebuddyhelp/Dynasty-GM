@@ -1226,7 +1226,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             ? 'Wait on this page while LEAGUEbuddy imports the first league snapshot.'
           : status === 'sync_error'
             ? syncErrorSummary.next
-            : 'Go back to Discord and run /league-status.';
+            : 'Go back to Discord and run /setup.';
 
   function stepClass(step) {
     if (step < nextStep) return 'timeline-step done';
@@ -1369,7 +1369,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             <div class="${stepClass(5)}">
               ${stepState(5)}
               <strong>5. Return to Discord</strong>
-              <span>Run <code>/league-status</code> and continue the normal server setup there.</span>
+              <span>Run <code>/setup</code> and continue the normal server setup there.</span>
             </div>
           </div>
         </section>
@@ -1614,7 +1614,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             <div class="subtle">
               <strong>Do this next:</strong> ${escapeHtml(syncErrorSummary.next)}
             </div>
-          ` : hasLeague ? '<div class="subtle">League linked. Go back to Discord and run <code>/league-status</code>.</div>' : ''}
+          ` : hasLeague ? '<div class="subtle">League linked. Go back to Discord and run <code>/setup</code>.</div>' : ''}
         </section>
       </div>
 
@@ -1685,12 +1685,12 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             <div class="summary-item">
               <strong>Left to do</strong>
               <ul class="summary-bullets">
-                ${remaining.map((item) => `<li>${escapeHtml(item)}</li>`).join('') || '<li>Setup complete. Go back to Discord and run /league-status.</li>'}
+                ${remaining.map((item) => `<li>${escapeHtml(item)}</li>`).join('') || '<li>Setup complete. Go back to Discord and run /setup.</li>'}
               </ul>
             </div>
             <div class="summary-item">
               <strong>Discord handoff</strong>
-              <p>${syncSucceeded ? 'Setup is ready. Return to Discord and run /league-status, then continue with /sync or server setup commands.' : status === 'sync_error' ? syncErrorSummary.next : 'Discord is the final handoff after the league link and first sync are healthy.'}</p>
+              <p>${syncSucceeded ? 'Setup is ready. Return to Discord and run /setup.' : status === 'sync_error' ? syncErrorSummary.next : 'Discord is the final handoff after the league link and first sync are healthy.'}</p>
             </div>
           </div>
         </section>
@@ -1810,7 +1810,7 @@ export function startConnectServer() {
         leagueId: form.get('league_id'),
       });
       const location = result.ok
-        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('League connected. Return to Discord and run /league-status.')}`
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('League connected. Return to Discord and run /setup.')}`
         : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
       res.writeHead(302, { location });
       res.end();
@@ -1857,7 +1857,7 @@ export function startConnectServer() {
       const token = parseToken(req);
       const result = connectionService.loadDemoLeague(token);
       const location = result.ok
-        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Demo league loaded. You can now test the dashboard and run /league-status in Discord.')}`
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Demo league loaded. You can now test the dashboard and run /setup in Discord.')}`
         : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
       res.writeHead(302, { location });
       res.end();
@@ -1899,7 +1899,7 @@ export function startConnectServer() {
         exportSourceId: form.get('export_source_id'),
       });
       const location = result.ok
-        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Import complete. Go back to Discord and run /league-status.')}`
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Import complete. Go back to Discord and run /setup.')}`
         : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
       res.writeHead(302, { location });
       res.end();
@@ -1930,7 +1930,7 @@ export function startConnectServer() {
           <li>Teams: ${escapeHtml(parsed.summary.teams || 0)}</li>
           <li>Snapshot: ${escapeHtml(parsed.snapshot.id)}</li>
         </ul>
-        <p>Return to Discord and run <code>/league-status</code>.</p>
+        <p>Return to Discord and run <code>/setup</code>.</p>
       `));
     },
   });

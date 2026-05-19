@@ -415,7 +415,7 @@ export function getLeagueConnectionDashboard(token) {
     return { ok: false, code: 'invalid_token', message: 'This setup link is invalid.' };
   }
   if (session.expiresAt && new Date(session.expiresAt).getTime() < Date.now()) {
-    return { ok: false, code: 'expired_token', message: 'This setup link has expired. Run /connectleague again.' };
+    return { ok: false, code: 'expired_token', message: 'This setup link has expired. Run /setup again.' };
   }
 
   const connection = connectionRepository.getLeagueConnectionByGuildId(session.guildId);
@@ -797,7 +797,7 @@ export async function selectEaLeague({
         updateSessionSyncProgress(token, {
           status: 'succeeded',
           phase: 'First sync complete',
-          detail: 'League data is ready. Return to Discord and run /league-status.',
+          detail: 'League data is ready. Return to Discord and run /setup.',
         });
       } catch (error) {
         connectionRepository.upsertLeagueConnection({

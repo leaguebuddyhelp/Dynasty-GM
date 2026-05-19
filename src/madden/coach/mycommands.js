@@ -34,19 +34,18 @@ async function execute(interaction) {
   const staffEmbed = new EmbedBuilder()
     .setColor(0xffd700)
     .setTitle(`${logo ? `${logo} ` : ''}${coachVoiceTitle('staffCommands', 'Admin Commands')}`)
-    .setDescription('Use this as the quick-start board for a LEAGUEbuddy server.')
+    .setDescription('Start with `/setup`. It shows the only next step.')
     .addFields(
       {
-        name: 'Setup Flow',
+        name: 'Setup',
         value: [
-          '1. `/connectleague`',
-          '2. `/setup`',
-          '3. Do the one next step it shows',
-          '4. Rerun `/setup` until complete',
+          '`/setup`',
+          '`/sync` if setup says league data is not ready',
+          '`/disconnectleague` only when you need to start over',
         ].join('\n'),
       },
       {
-        name: 'Weekly Flow',
+        name: 'Weekly',
         value: [
           '`/member assign`',
           '`/member remove`',
@@ -56,65 +55,58 @@ async function execute(interaction) {
         ].join('\n'),
       },
       {
-        name: 'Tier Adds',
+        name: 'Plans',
         value: [
-          'Standard: `/member onboard`, `/bigboard`, `/scout`, `/myscouts`, `/draftprimer`, `/mockdraft`, `/recruiting`, `/tradeblock`, `/streamlink`, Weekly Awards channel, Yearly Awards channel',
-          'Premium: `/gamestrategy`, `/franchisehub`, Weekly Awards channel, Yearly Awards channel',
+          '`/pricing`',
+          '`/plan`',
+          '`/claim-plan`',
         ].join('\n'),
       },
       {
-        name: 'Core Commands',
+        name: 'Premium Tools',
         value: [
-          '`/pricing`',
-          '`/setup`, `/connectleague`, `/disconnectleague`, `/league-status`, `/sync`',
-          '`/setup-channels`, `/setup-pins`, `/setup-roles`, `/setup-reset`',
+          '`/franchisehub`',
+          '`/gamestrategy`',
+          '`/streamlink`',
         ].join('\n'),
       },
     )
-    .setFooter({ text: coachVoiceFooter('staffOnly', 'Advanced maintenance and test commands are intentionally hidden in beta.') });
+    .setFooter({ text: coachVoiceFooter('staffOnly', 'Setup subcommands are handled by the /setup buttons.') });
 
   const coachEmbed = new EmbedBuilder()
     .setColor(0x1e90ff)
     .setTitle(`${logo ? `${logo} ` : ''}${coachVoiceTitle('coachCommands', 'Coach Commands')}`)
-    .setDescription('This menu shows the commands coaches and commissioners should actually use.')
+    .setDescription('Common commands for league members.')
     .addFields(
       {
         name: 'Start Here',
         value: [
           '`/help`',
-          '`/pricing`, `/claim-plan`',
           '`/schedule`, `/roster`, `/playersearch`',
         ].join('\n'),
       },
       {
-        name: 'Free Commands',
+        name: 'League',
         value: [
-          '`/pricing`, `/claim-plan`, `/setup`, `/connectleague`, `/disconnectleague`, `/league-status`, `/sync`',
-          '`/setup-channels`, `/setup-pins`, `/setup-roles`, `/setup-reset`',
-          '`/member assign`, `/member remove`, `/create-threads`, `/delete-threads`, `/weeklyupdate`',
-          '`/schedule`, `/roster`, `/playersearch`',
-        ].join('\n'),
-      },
-      {
-        name: 'Standard Adds',
-        value: [
-          '`/member onboard`',
           '`/tradeblock`',
           '`/streamlink`',
-          '`/draftclass`, `/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`, `/recruiting`',
-          'Weekly Awards channel + Yearly Awards channel',
         ].join('\n'),
       },
       {
-        name: 'Premium Adds',
+        name: 'Draft',
+        value: [
+          '`/draftclass`, `/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`, `/recruiting`',
+        ].join('\n'),
+      },
+      {
+        name: 'Premium',
         value: [
           '`/franchisehub`',
           '`/gamestrategy`',
-          'Weekly Awards channel + Yearly Awards channel',
         ].join('\n'),
       },
     )
-    .setFooter({ text: coachVoiceFooter('coachOnly', 'Only the customer-facing beta commands are shown here.') });
+    .setFooter({ text: coachVoiceFooter('coachOnly', 'Admins use /setup for server setup.') });
 
   await interaction.editReply({ embeds: [staffView ? staffEmbed : coachEmbed] });
 }

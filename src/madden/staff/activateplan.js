@@ -96,7 +96,7 @@ export async function execute(interaction) {
       `Payment reference: ${rec.billing?.paymentReference || '(none)'}`,
       `Payment source: ${rec.billing?.paymentSource || '(none)'}`,
       '',
-      'Next: run `/connectleague`.',
+      'Next: run `/setup`.',
     ].join('\n'),
   });
 }

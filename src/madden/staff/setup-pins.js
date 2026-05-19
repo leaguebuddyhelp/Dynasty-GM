@@ -60,12 +60,12 @@ function createBoardState(title) {
 function buildPinsNextStepText(results = []) {
     const joined = results.join('\n');
     if (/missing Discord permission|Pin Messages|Manage Messages/i.test(joined)) {
-        return 'Pins refreshed, but Discord is still blocking one or more pin actions. Fix the bot role/channel permissions, rerun `/setup-pins`, then rerun `/setup`.';
+        return 'Fix the bot role/channel permissions, then return to `/setup`.';
     }
     if (/Preseason|Offseason|will appear once the regular season starts|placeholder/i.test(joined)) {
-        return 'Pins are healthy for the current phase. Season boards stay visible from last year through offseason and preseason, then reset at Regular Season Week 1. Rerun `/setup` for the next step.';
+        return 'Pins are ready for the current season phase. Return to `/setup`.';
     }
-    return 'Some league boards still need data. Run `/sync` if the league was just connected, rerun `/setup-pins`, then rerun `/setup`.';
+    return 'Some boards need league data. Run `/sync`, then return to `/setup`.';
 }
 
 function renderBoardState(state) {
@@ -216,7 +216,7 @@ function buildEmbeds() {
     const branded = (title) => `${logo ? `${logo} ` : ''}${title}`;
     const common = {
         color: 0x5865F2,
-        footer: { text: 'LEAGUEbuddy • seeded by /setup-channels' },
+        footer: { text: 'LEAGUEbuddy setup' },
     };
 
     return {
@@ -406,7 +406,7 @@ function buildPinsProgressEmbed({ step, details = [] }) {
 export async function seedAndHydratePins(client, guildId) {
     const cfg = loadGuildMaddenConfig(guildId);
     if (!cfg) {
-        throw new Error('No setup config found. Run `/setup-channels` first.');
+        throw new Error('No setup config found. Return to `/setup` and create channels first.');
     }
 
     const channelMap = cfg?.compat?.maddenChannelMap || {};
@@ -595,18 +595,18 @@ export async function execute(interaction) {
         embeds: [
             new EmbedBuilder()
                 .setColor(hasFailures ? 0xf39c12 : 0x57f287)
-                .setTitle(`${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Setup Pins Complete`)
-                .setDescription('This command refreshes the pinned league boards and trade submit button for the channels created by `/setup-channels`.')
+                .setTitle(`${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Pins Ready`)
+                .setDescription('Return to `/setup` and press Refresh Setup.')
                 .addFields(
                     {
-                        name: 'What this command did',
+                        name: hasFailures ? 'Needs Attention' : 'Updated',
                         value: out.results.map((line) => `• ${line}`).join('\n').slice(0, 1024),
                     },
                     {
                         name: 'Next',
                         value: hasFailures
                             ? buildPinsNextStepText(out.results)
-                            : 'Pins are ready. Rerun `/setup` for the next step.',
+                            : 'Press Refresh Setup.',
                     },
                 ),
         ],

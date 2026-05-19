@@ -15,7 +15,7 @@ export async function execute(interaction) {
   try {
     const leagueId = resolveLeagueIdStrict(interaction.guildId);
     if (!leagueId) {
-      await interaction.reply({ content: 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', ephemeral: true });
+      await interaction.reply({ content: 'No league is mapped to this server yet. Run `/setup` and press Connect League, then run `/sync`.', ephemeral: true });
       return;
     }
     const snapshot = loadLeagueSnapshot(leagueId);

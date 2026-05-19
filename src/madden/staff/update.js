@@ -1111,7 +1111,7 @@ async function execute(interaction) {
     }
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
     if (!leagueId) {
-      await interaction.editReply({ content: 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.' });
+      await interaction.editReply({ content: 'No league is connected yet. Run `/setup` and press Connect League, then run `/sync`.' });
       return;
     }
     const provider = new SnallabotProvider();
@@ -1883,13 +1883,13 @@ async function execute(interaction) {
     let guidance = 'Try again shortly.';
     if (lower.includes('no local ea tokens')) {
       shortType = 'Tokens missing';
-      guidance = 'Run `/connectleague`, reconnect EA in the dashboard, then rerun `/weeklyupdate`.';
+      guidance = 'Run `/setup` and reconnect EA, then rerun `/weeklyupdate`.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
       shortType = 'Auth/session';
-      guidance = 'The saved EA session looks stale. Return to `/connectleague`, reconnect EA in the dashboard, then rerun `/weeklyupdate`.';
+      guidance = 'The saved EA session looks stale. Return to `/setup` and reconnect EA, then rerun `/weeklyupdate`.';
     } else if (lower.includes('deleted') || lower.includes('league')) {
       shortType = 'League ID';
-      guidance = 'Reconnect the league from `/connectleague`, then rerun `/weeklyupdate`.';
+      guidance = 'Reconnect the league from `/setup`, then rerun `/weeklyupdate`.';
     }
     const shortMsg = shortType;
     const embed = new EmbedBuilder()

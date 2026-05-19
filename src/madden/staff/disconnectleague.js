@@ -79,7 +79,7 @@ export async function execute(interaction) {
           },
           {
             name: 'Next',
-            value: 'Run `/connectleague` and go through the dashboard again from the start.',
+            value: 'Run `/setup` and go through the dashboard again from the start.',
             inline: false,
           },
         ),

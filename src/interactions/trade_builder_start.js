@@ -65,7 +65,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch (error) {
-    await safeReply(interaction, { content: error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', flags: 64 });
+    await safeReply(interaction, { content: error?.message || 'No league is mapped to this server yet. Run `/setup` and press Connect League, then run `/sync`.', flags: 64 });
     return;
   }
 

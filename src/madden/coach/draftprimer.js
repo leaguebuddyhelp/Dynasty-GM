@@ -816,7 +816,7 @@ export async function execute(interaction) {
     try {
         leagueId = requireLeagueIdForGuild(interaction.guildId);
     } catch (error) {
-        const message = error?.message || 'No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.';
+        const message = error?.message || 'No league is mapped to this server yet. Run `/setup` and press Connect League, then run `/sync`.';
         if (interaction.deferred || interaction.replied) await interaction.editReply({ content: message, embeds: [], components: [] });
         else await interaction.reply({ content: message, flags: 64 });
         return;

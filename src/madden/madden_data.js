@@ -58,7 +58,7 @@ export function resolveLeagueIdStrict(guildId) {
 
 export function requireLeagueIdForGuild(guildId) {
   const leagueId = resolveLeagueIdStrict(guildId);
-  if (!leagueId) throw new Error('No league is mapped to this server yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.');
+  if (!leagueId) throw new Error('No league is mapped to this server yet. Run `/setup` and press Connect League, then run `/sync`.');
   return leagueId;
 }
 

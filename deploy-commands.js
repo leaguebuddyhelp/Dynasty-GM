@@ -16,14 +16,11 @@ const APP_ENV = String(process.env.APP_ENV || process.env.NODE_ENV || '').toLowe
 const DEPLOY_PROFILE = String(process.env.LB_DEPLOY_PROFILE || 'beta').toLowerCase();
 
 const BETA_MADDEN_COMMANDS = new Set([
-  'connectleague',
   'disconnectleague',
-  'league-status',
   'sync',
   'pricing',
   'plan',
   'claim-plan',
-  'complete-setup',
   'activateplan',
   'deactivateplan',
   'viewbilling',
@@ -41,10 +38,6 @@ const BETA_MADDEN_COMMANDS = new Set([
   'bigboard',
   'scout',
   'tradeblock',
-  'setup-channels',
-  'setup-pins',
-  'setup-roles',
-  'setup-reset',
   'member',
   'create-threads',
   'delete-threads',

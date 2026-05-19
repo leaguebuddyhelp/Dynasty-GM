@@ -23,7 +23,7 @@ import connectionService from '../services/export_first_connection_service.js';
 
 export const data = new SlashCommandBuilder()
   .setName('setup')
-  .setDescription('Admin-only: the main LEAGUEbuddy setup dashboard and next-step guide.')
+  .setDescription('Admin-only: set up this server.')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const deferOnDispatch = { flags: 64 };
@@ -37,49 +37,32 @@ function formatMissingItems(items = []) {
   return items.map((item) => displaySetupItemName(item)).join(', ');
 }
 
-function buildFlowLines() {
-  return [
-    'Use the button below, then press Refresh Setup.',
-    'If a button is unavailable, fix the item shown above and refresh.',
-  ].join('\n');
-}
-
 function buildClaimPrompt({ billing, billingOk }) {
   const plan = String(billing?.plan || 'free').toLowerCase();
   if (plan !== 'free' && !billingOk) {
-    return [
-      `Run \`/claim-plan\` now to activate this server's paid LEAGUEbuddy plan.`,
-      `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
-      'After the claim succeeds, rerun `/setup` and continue the normal setup flow.',
-    ].join('\n');
+    return `Run \`/claim-plan\`, then press Refresh Setup. Status: ${billing?.subscriptionStatus || 'inactive'}`;
   }
 
-  return [
-    'If you just bought Standard or Premium, run `/claim-plan` in this server before continuing setup.',
-    'If this is still a free server, skip this and follow the next step below.',
-  ].join('\n');
+  return 'Paid plan is active.';
 }
 
 function buildCommissionerLines(tier = 'free') {
   const lines = [
-    '1. Assign coaches with `/member assign`.',
-    '2. Start the week with `/create-threads`.',
-    '3. End the week with `/delete-threads`.',
-    '4. Run `/weeklyupdate`.',
-    '5. Repeat each week.',
+    '`/member assign` coaches',
+    '`/create-threads` to open the week',
+    '`/weeklyupdate` after advance',
   ];
   if (String(tier).toLowerCase() === 'standard' || String(tier).toLowerCase() === 'premium') {
-    lines.splice(1, 0, '2. Use `/member onboard` if you want the DM onboarding pack too.');
+    lines.splice(1, 0, '`/member onboard` for coach DMs');
   }
   return lines.join('\n');
 }
 
 function buildCoachLines() {
   return [
-    '1. Run `/help`.',
-    '2. Find your game thread.',
-    '3. Play your game.',
-    '4. Repeat each week.',
+    '`/help`',
+    '`/schedule`',
+    'Use your game thread',
   ].join('\n');
 }
 
@@ -87,77 +70,74 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
   // If plan is not free and billing is not active, require /claim-plan as the very first step
   if (!billingOk && (billing?.plan || 'free') !== 'free') {
     return {
-      title: 'Activate your paid plan',
-      action: 'Run `/claim-plan` to activate your paid plan for this server, then rerun `/setup`.',
-      details: `Current billing status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
+      title: 'Activate Plan',
+      action: 'Run `/claim-plan`, then press Refresh Setup.',
+      details: `Status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
     };
   }
   if (!readiness.hasRequiredPermissions) {
     return {
-      title: 'Fix Discord bot permissions',
-      action: 'A server admin needs to fix the LEAGUEbuddy bot role permissions in Discord, then rerun `/setup`.',
+      title: 'Fix Permissions',
+      action: 'Give LEAGUEbuddy the required Discord permissions, then press Refresh Setup.',
       details: buildSetupReadinessLines(readiness),
     };
   }
   if (readiness.hierarchyWarning) {
     return {
-      title: 'Move the LEAGUEbuddy role higher',
-      action: 'Move the LEAGUEbuddy role above `Admin` or any protected roles, then rerun `/setup`.',
+      title: 'Move Bot Role',
+      action: 'Move the LEAGUEbuddy role higher in Server Settings, then press Refresh Setup.',
       details: readiness.hierarchyWarning,
     };
   }
   if (!leagueId) {
     return {
-      title: 'Connect the league',
-      action: 'Open the league dashboard, connect EA, choose the league, then come back here.',
-      details: 'This is the main first step after inviting LEAGUEbuddy.',
+      title: 'Connect League',
+      action: 'Open the dashboard, connect EA, pick your league, then press Refresh Setup.',
       actionKey: 'connect',
     };
   }
   if (!snapshotOk) {
     return {
-      title: 'Import league data',
-      action: 'Wait a moment, then press Refresh Setup. If it still is not ready, run `/sync` once.',
-      details: 'Pins and role setup need a current league snapshot.',
+      title: 'Sync League',
+      action: 'Press Refresh Setup. If data is still not ready, run `/sync` once.',
       actionKey: 'refresh',
     };
   }
   if (!status.overlayStatus.exists || status.missingRequiredChannels.length > 0) {
     return {
-      title: 'Create or repair the channels',
-      action: 'Press Create Channels, then refresh setup.',
+      title: 'Create Channels',
+      action: 'Press Create Channels.',
       details: status.missingRequiredChannels.length
         ? `Still missing: ${formatMissingItems(status.missingRequiredChannels)}`
-        : 'The LEAGUEbuddy channel layout has not been created yet.',
+        : '',
       actionKey: 'channels',
     };
   }
   if (status.missingRequiredPins.length > 0) {
     return {
-      title: 'Seed the pins',
-      action: 'Press Create Pins, then refresh setup.',
+      title: 'Create Pins',
+      action: 'Press Create Pins.',
       details: `Still missing: ${formatMissingItems(status.missingRequiredPins)}`,
       actionKey: 'pins',
     };
   }
   if (status.missingRequiredRoles.length > 0) {
     return {
-      title: 'Create the final roles',
-      action: 'Press Create Roles, then refresh setup.',
+      title: 'Create Roles',
+      action: 'Press Create Roles.',
       details: `Still missing: ${formatMissingItems(status.missingRequiredRoles)}`,
       actionKey: 'roles',
     };
   }
   if (status.syncNeeded || !status.setupCompleted) {
     return {
-      title: 'Finish setup',
-      action: 'Press Refresh Setup to finalize access sync.',
-      details: 'LEAGUEbuddy will mark setup complete during this final pass.',
+      title: 'Finish Setup',
+      action: 'Press Refresh Setup.',
       actionKey: 'refresh',
     };
   }
   return {
-    title: 'Setup complete',
+    title: 'Setup Complete',
     action: 'Setup is complete.',
     details: `League: ${leagueId} • Package: ${status.overlayStatus.tier || billing?.plan || 'free'}`,
   };
@@ -249,20 +229,18 @@ function buildConnectionHealthField(guildId, leagueId, snapshotOk) {
   const connection = status?.connection || null;
   const tokens = getGuildEATokens(guildId);
   const coverage = loadSnapshotCoverage(leagueId);
-  const missingBuckets = Array.isArray(coverage.missingBuckets) ? coverage.missingBuckets.length : 0;
   const leagueName = connection?.leagueName || connection?.summary?.leagueName || leagueId || 'not connected';
   const syncError = connection?.summary?.lastSyncError ? String(connection.summary.lastSyncError) : '';
   const lines = [
     `League: **${leagueName}**`,
-    `EA account: **${tokens?.accessToken && tokens?.refreshToken ? 'connected' : 'not connected'}**${tokens?.personaName ? ` (${tokens.personaName})` : ''}`,
-    `Platform: **${tokens?.console || connection?.summary?.console || 'unknown'}**`,
-    `Snapshot: **${snapshotOk ? 'ready' : 'not ready'}** (${formatSnapshotAge(leagueId)})`,
+    `EA: **${tokens?.accessToken && tokens?.refreshToken ? 'connected' : 'not connected'}**${tokens?.personaName ? ` (${tokens.personaName})` : ''}`,
+    `Data: **${snapshotOk ? 'ready' : 'not ready'}** (${formatSnapshotAge(leagueId)})`,
   ];
-  if (coverage.weeklyStatBuckets != null || coverage.scheduleWeeks != null) {
-    lines.push(`Data coverage: **${coverage.weeklyStatBuckets || 0}** stat weeks, **${coverage.scheduleWeeks || 0}** schedule weeks`);
+  if (syncError) {
+    lines.push(`Sync issue: ${syncError.slice(0, 160)}`);
+  } else if (Array.isArray(coverage.missingBuckets) && coverage.missingBuckets.length) {
+    lines.push(`Missing data: **${coverage.missingBuckets.length}** bucket${coverage.missingBuckets.length === 1 ? '' : 's'}`);
   }
-  if (missingBuckets) lines.push(`Missing stat buckets: **${missingBuckets}**`);
-  if (syncError) lines.push(`Last sync issue: ${syncError.slice(0, 160)}`);
   return {
     name: 'Connection',
     value: lines.join('\n').slice(0, 1024),
@@ -302,7 +280,7 @@ export async function execute(interaction) {
   const billing = getBillingSummary(guildId);
   const billingOk = ['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'));
   const decision = buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk });
-  const setupComplete = decision.title === 'Setup complete';
+  const setupComplete = decision.title === 'Setup Complete';
   const tier = status.overlayStatus.tier || billing?.plan || 'free';
   const claimPrompt = buildClaimPrompt({ billing, billingOk });
   const connectionHealthField = buildConnectionHealthField(guildId, leagueId, snapshotOk);
@@ -311,8 +289,8 @@ export async function execute(interaction) {
   let earlyInfo = null;
   if ((billing?.plan || 'free') !== 'free' && !billingOk) {
     earlyInfo = [
-      'This server is set for a paid plan, but it is not active yet.',
-      'Run `/claim-plan` first, then come back to `/setup`.',
+      'Paid plan is not active yet.',
+      'Run `/claim-plan`, then press Refresh Setup.',
     ].join('\n');
   }
 
@@ -324,19 +302,19 @@ export async function execute(interaction) {
     .setDescription([
       earlyInfo,
       setupComplete
-        ? 'Setup is complete. Use the steps below to start your league.'
-        : 'Use this dashboard as your setup home. Do the next action below, then refresh.',
+        ? 'Ready.'
+        : 'Do the next action below.',
     ].filter(Boolean).join('\n\n'));
 
   if (setupComplete) {
     embed.addFields(
       connectionHealthField,
       {
-        name: 'Commissioner Next',
+        name: 'Commissioner',
         value: buildCommissionerLines(tier),
       },
       {
-        name: 'Coaches Next',
+        name: 'Coaches',
         value: buildCoachLines(),
       },
     );
@@ -355,13 +333,9 @@ export async function execute(interaction) {
         value: decision.action,
       },
       ...(decision.details ? [{
-        name: 'Why',
+        name: 'Details',
         value: decision.details,
       }] : []),
-      {
-        name: 'Repeat',
-        value: buildFlowLines(),
-      },
     );
     embed.addFields(...fields);
   }

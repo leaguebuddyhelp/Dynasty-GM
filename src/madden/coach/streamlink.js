@@ -834,7 +834,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch (error) {
-    await interaction.reply({ content: error?.message || 'No league is connected yet. Run `/connectleague`, finish the dashboard flow, then run `/sync`.', flags: 64 });
+    await interaction.reply({ content: error?.message || 'No league is connected yet. Run `/setup` and press Connect League, then run `/sync`.', flags: 64 });
     return;
   }
 
