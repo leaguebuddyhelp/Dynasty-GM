@@ -445,7 +445,7 @@ export async function execute(interaction) {
       return;
     }
     if (!leagueId) {
-      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league is connected yet. Run `/setup` and press Connect League, then run `/sync`.' }));
+      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' }));
       return;
     }
     const snapshot = loadLeagueSnapshot(leagueId);

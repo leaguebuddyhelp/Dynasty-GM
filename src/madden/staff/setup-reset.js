@@ -215,7 +215,7 @@ export async function execute(interaction) {
 
     if (cfg && !deleteChannels && !deleteRoles) {
         lines.push('');
-        lines.push('Tip: run `/setup` and follow the buttons until setup is complete.');
+        lines.push('Tip: run `/setup` and press the button it shows.');
         lines.push('Optional: run `/setup-reset delete_channels:true delete_roles:true` to cleanup Discord artifacts too.');
     }
 

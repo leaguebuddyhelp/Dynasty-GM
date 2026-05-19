@@ -58,7 +58,7 @@ export async function execute(interaction) {
     try {
       leagueId = requireLeagueIdForGuild(interaction.guildId);
     } catch (error) {
-      await interaction.reply({ content: error?.message || 'No league is mapped to this server yet. Run `/setup` and press Connect League, then run `/sync`.', ephemeral: true });
+      await interaction.reply({ content: error?.message || 'No league is mapped to this server yet. Run `/setup` and press Open Setup Dashboard.', ephemeral: true });
       return;
     }
   }

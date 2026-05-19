@@ -116,7 +116,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    const payload = { content: 'No league is connected yet. Run `/setup` and press Connect League, then run `/sync`.' };
+    const payload = { content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;

@@ -160,7 +160,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
     .setColor(0x5865f2)
     .setDescription([
       'Pick a monthly plan, then use the buy buttons below.',
-      'After checkout: save the claim code -> invite LEAGUEbuddy -> run `/claim-plan` -> run `/setup`.',
+      'After checkout: save the claim code, invite LEAGUEbuddy, run `/claim-plan`, then run `/setup`.',
     ].join('\n'))
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
@@ -191,7 +191,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
       '2. Save the claim code.',
       '3. Invite LEAGUEbuddy to the server you want to activate.',
       '4. Run `/claim-plan` there.',
-      '5. Run `/setup` there and follow the next step it gives you.',
+      '5. Run `/setup` and press the button it shows.',
     ].join('\n'));
 
   return [pricing, nextStep];
@@ -206,7 +206,7 @@ export function buildPostPaymentEmbed() {
       '1. Save the claim code from the success page.',
       '2. Invite LEAGUEbuddy to the server you want to activate.',
       '3. Run `/claim-plan` there.',
-      '4. Run `/setup` there until setup is complete.',
+      '4. Run `/setup` and press the button it shows.',
       '5. Use `/pricing` there if you want to confirm the package or upgrade later.',
     ].join('\n'));
 }
@@ -308,7 +308,7 @@ export function buildActivationFollowup({ guildId, plan }) {
     `Plan **${plan}** is now active for guild **${guildId}**.`,
     'Next:',
     '• Run `/setup`.',
-    '• Follow the next step it gives you until setup is complete.',
+    '• Press the button it shows.',
     '• Use `/pricing` if you want to confirm the current package.',
   ].join('\n');
 }
@@ -320,7 +320,7 @@ export function buildClaimInstructions() {
     '2. Save the claim code from the success page.',
     '3. Go to the server you want to upgrade and run `/claim-plan`.',
     '4. If you lose the code, use the Stripe payment reference from your receipt email instead.',
-    '5. Run `/setup` there until setup is complete.',
+    '5. Run `/setup` and press the button it shows.',
   ].join('\n');
 }
 

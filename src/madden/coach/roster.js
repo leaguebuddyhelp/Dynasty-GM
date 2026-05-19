@@ -118,7 +118,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    await interaction.reply({ content: coachErrorBlurb('noLeague', 'No league is connected yet. Run `/setup` and press Connect League, then run `/sync`.'), ephemeral: true });
+    await interaction.reply({ content: coachErrorBlurb('noLeague', 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.'), ephemeral: true });
     return;
   }
   try {

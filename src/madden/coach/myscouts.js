@@ -411,7 +411,7 @@ function buildPagesForUser(userId, guildId, member = null) {
   try {
     leagueId = requireLeagueIdForGuild(guildId);
   } catch (error) {
-    return { error: error?.message || 'No league is connected yet. Run `/setup` and press Connect League, then run `/sync`.' };
+    return { error: error?.message || 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' };
   }
   const snapshot = loadLeagueSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};

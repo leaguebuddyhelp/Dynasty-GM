@@ -90,7 +90,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch (error) {
-    await interaction.editReply({ content: error?.message || 'No league is mapped to this server yet. Run `/setup` and press Connect League, then run `/sync`.', components: [] });
+    await interaction.editReply({ content: error?.message || 'No league is mapped to this server yet. Run `/setup` and press Open Setup Dashboard.', components: [] });
     return;
   }
   if (!canTrade(leagueId)) {

@@ -156,10 +156,10 @@ function buildFeatureSummary(guildId, packsEnabled = []) {
 }
 
 function buildRecommendedNextAction({ overlayExists, overlayComplete, setupCompleted, syncNeeded, blockedFeatures }) {
-  if (!overlayExists) return 'Run /setup. It will point you to the next required setup step.';
-  if (!overlayComplete) return 'Run /setup and follow the next step it shows until setup is complete.';
-  if (syncNeeded) return 'Run /setup once more so LEAGUEbuddy can finalize the setup state.';
-  if (!setupCompleted) return 'Run /setup once more to finish the last setup pass.';
+  if (!overlayExists) return 'Run /setup and press the button it shows.';
+  if (!overlayComplete) return 'Run /setup and follow the button it shows.';
+  if (syncNeeded) return 'Run /setup and press Check Again.';
+  if (!setupCompleted) return 'Run /setup and press Check Again.';
   return 'Setup is complete. You can move on to /create-threads or your normal weekly workflow.';
 }
 

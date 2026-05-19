@@ -33,23 +33,11 @@ export async function execute(interaction) {
       new EmbedBuilder()
         .setTitle('Connect League')
         .setColor(0x5865f2)
-        .setDescription([
-          'Use the dashboard below to connect your league, then go back to `/setup`.',
-          '',
-          'Quick start:',
-          '1. Open the dashboard.',
-          '2. Save your league name. Add the league password too if you want LEAGUEbuddy to reuse it later for onboarding.',
-          '3. Connect EA and paste the returned browser URL.',
-          '4. Choose your Madden account/persona.',
-          '5. Choose your league.',
-          '6. Return to Discord and press Refresh Setup on `/setup`.',
-        ].join('\n'))
+        .setDescription('Open the dashboard, follow the highlighted step, then return to `/setup`.')
         .addFields(
           { name: 'Discord Server', value: interaction.guild?.name || 'Unknown Server', inline: false },
-          { name: 'Dashboard Link', value: setupUrl, inline: false },
-          { name: 'EA Step', value: 'The dashboard will walk you through the reverse EA login flow and league selection.', inline: false },
           { name: 'Expires', value: `<t:${Math.floor(new Date(session.expiresAt).getTime() / 1000)}:R>`, inline: false },
-          { name: 'Next', value: 'After the dashboard looks right, return to `/setup` and press Refresh Setup. If you need to restart from zero later, run `/disconnectleague`.', inline: false },
+          { name: 'Next', value: 'Return to `/setup` and press Check Again.', inline: false },
         ),
     ],
     components: [row],

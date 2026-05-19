@@ -719,7 +719,7 @@ export async function execute(interaction) {
                 tradeEnabled,
                 details: [
                     'Overlay config saved',
-                    'Channels are ready for the next setup commands',
+                    'Channels are ready',
                 ],
             })],
         });
@@ -739,7 +739,7 @@ export async function execute(interaction) {
                 new EmbedBuilder()
                     .setColor(0x57f287)
                     .setTitle('Channels Ready')
-                    .setDescription('Return to `/setup` and press Refresh Setup.')
+                    .setDescription('Return to `/setup` and press Check Again.')
                     .addFields(
                         {
                             name: 'Package',

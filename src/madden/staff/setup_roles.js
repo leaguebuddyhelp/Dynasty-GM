@@ -152,7 +152,7 @@ export async function execute(interaction) {
       new EmbedBuilder()
         .setColor(staffSummary.failed.length ? 0xf39c12 : 0x57f287)
         .setTitle('Roles Ready')
-        .setDescription('Return to `/setup` and press Refresh Setup.')
+        .setDescription('Return to `/setup` and press Check Again.')
         .addFields(
           {
             name: 'Staff Roles',
@@ -174,7 +174,7 @@ export async function execute(interaction) {
             name: 'Next',
             value: staffSummary.failed.length
               ? 'Fix the server role issue, then return to `/setup`.'
-              : 'Press Refresh Setup.',
+              : 'Press Check Again.',
           },
         ),
     ],

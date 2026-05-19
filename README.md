@@ -88,7 +88,7 @@ npm run dev
   2. If needed: `/pricing`
   3. If this is a paid server: `/claim-plan`
   4. `/setup`
-  5. Follow the setup dashboard buttons until setup is complete
+  5. Run `/setup` and press the button it shows
   6. `/create-threads`
 - The admin summary command for this flow is:
   - `/setup`

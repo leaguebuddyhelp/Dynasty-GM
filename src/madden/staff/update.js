@@ -1111,7 +1111,7 @@ async function execute(interaction) {
     }
     const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
     if (!leagueId) {
-      await interaction.editReply({ content: 'No league is connected yet. Run `/setup` and press Connect League, then run `/sync`.' });
+      await interaction.editReply({ content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' });
       return;
     }
     const provider = new SnallabotProvider();

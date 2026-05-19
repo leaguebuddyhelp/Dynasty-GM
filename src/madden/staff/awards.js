@@ -43,7 +43,7 @@ export async function execute(interaction) {
 
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
-    return interaction.editReply({ content: 'No league is connected yet. Run `/setup` and press Connect League, then run `/sync`.' });
+    return interaction.editReply({ content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' });
   }
 
   try {

@@ -14,7 +14,6 @@ import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getMaddenLeagueSnapshotPath } from '../../leaguebuddy/paths.js';
 import { displaySetupItemName, getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
 import { getLeagueForGuild } from '../madden_config.js';
-import { getGuildEATokens } from '../ea_guild_auth.js';
 import {
   buildSetupReadinessLines,
   inspectSetupReadiness,
@@ -40,7 +39,7 @@ function formatMissingItems(items = []) {
 function buildClaimPrompt({ billing, billingOk }) {
   const plan = String(billing?.plan || 'free').toLowerCase();
   if (plan !== 'free' && !billingOk) {
-    return `Run \`/claim-plan\`, then press Refresh Setup. Status: ${billing?.subscriptionStatus || 'inactive'}`;
+    return `Run \`/claim-plan\`, then press Check Again. Status: ${billing?.subscriptionStatus || 'inactive'}`;
   }
 
   return 'Paid plan is active.';
@@ -71,35 +70,35 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
   if (!billingOk && (billing?.plan || 'free') !== 'free') {
     return {
       title: 'Activate Plan',
-      action: 'Run `/claim-plan`, then press Refresh Setup.',
+      action: 'Run `/claim-plan`, then press Check Again.',
       details: `Status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
     };
   }
   if (!readiness.hasRequiredPermissions) {
     return {
       title: 'Fix Permissions',
-      action: 'Give LEAGUEbuddy the required Discord permissions, then press Refresh Setup.',
+      action: 'Give LEAGUEbuddy the required Discord permissions, then press Check Again.',
       details: buildSetupReadinessLines(readiness),
     };
   }
   if (readiness.hierarchyWarning) {
     return {
       title: 'Move Bot Role',
-      action: 'Move the LEAGUEbuddy role higher in Server Settings, then press Refresh Setup.',
+      action: 'Move the LEAGUEbuddy role higher in Server Settings, then press Check Again.',
       details: readiness.hierarchyWarning,
     };
   }
   if (!leagueId) {
     return {
       title: 'Connect League',
-      action: 'Open the dashboard, connect EA, pick your league, then press Refresh Setup.',
+      action: 'Press Open Setup Dashboard. It will walk you through EA login and league selection.',
       actionKey: 'connect',
     };
   }
   if (!snapshotOk) {
     return {
       title: 'Sync League',
-      action: 'Press Refresh Setup. If data is still not ready, run `/sync` once.',
+      action: 'Press Check Again. If data is still not ready, run `/sync` once.',
       actionKey: 'refresh',
     };
   }
@@ -132,7 +131,7 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
   if (status.syncNeeded || !status.setupCompleted) {
     return {
       title: 'Finish Setup',
-      action: 'Press Refresh Setup.',
+      action: 'Press Check Again.',
       actionKey: 'refresh',
     };
   }
@@ -157,7 +156,7 @@ function buildSetupButtons({ decision, interaction }) {
     buttons.push(
       new ButtonBuilder()
         .setStyle(ButtonStyle.Link)
-        .setLabel('Connect League')
+        .setLabel('Open Setup Dashboard')
         .setURL(setupUrl),
     );
   }
@@ -193,24 +192,13 @@ function buildSetupButtons({ decision, interaction }) {
     new ButtonBuilder()
       .setCustomId('madden_setup|refresh')
       .setStyle(ButtonStyle.Secondary)
-      .setLabel('Refresh Setup'),
+      .setLabel('Check Again'),
   );
 
   if (buttons.length) {
     rows.push(new ActionRowBuilder().addComponents(buttons.slice(0, 5)));
   }
   return rows;
-}
-
-function formatSnapshotAge(leagueId) {
-  if (!leagueId) return 'none';
-  try {
-    const filePath = getMaddenLeagueSnapshotPath(leagueId);
-    const stat = fs.statSync(filePath);
-    return `<t:${Math.floor(stat.mtimeMs / 1000)}:R>`;
-  } catch {
-    return 'none';
-  }
 }
 
 function loadSnapshotCoverage(leagueId) {
@@ -224,17 +212,16 @@ function loadSnapshotCoverage(leagueId) {
   }
 }
 
-function buildConnectionHealthField(guildId, leagueId, snapshotOk) {
+function buildStatusField(guildId, leagueId, snapshotOk, tier) {
   const status = connectionService.getLeagueConnectionStatus(guildId);
   const connection = status?.connection || null;
-  const tokens = getGuildEATokens(guildId);
   const coverage = loadSnapshotCoverage(leagueId);
   const leagueName = connection?.leagueName || connection?.summary?.leagueName || leagueId || 'not connected';
   const syncError = connection?.summary?.lastSyncError ? String(connection.summary.lastSyncError) : '';
   const lines = [
+    `Package: **${tier || 'free'}**`,
     `League: **${leagueName}**`,
-    `EA: **${tokens?.accessToken && tokens?.refreshToken ? 'connected' : 'not connected'}**${tokens?.personaName ? ` (${tokens.personaName})` : ''}`,
-    `Data: **${snapshotOk ? 'ready' : 'not ready'}** (${formatSnapshotAge(leagueId)})`,
+    `Data: **${snapshotOk ? 'ready' : 'not ready'}**`,
   ];
   if (syncError) {
     lines.push(`Sync issue: ${syncError.slice(0, 160)}`);
@@ -242,7 +229,7 @@ function buildConnectionHealthField(guildId, leagueId, snapshotOk) {
     lines.push(`Missing data: **${coverage.missingBuckets.length}** bucket${coverage.missingBuckets.length === 1 ? '' : 's'}`);
   }
   return {
-    name: 'Connection',
+    name: 'Status',
     value: lines.join('\n').slice(0, 1024),
   };
 }
@@ -283,32 +270,32 @@ export async function execute(interaction) {
   const setupComplete = decision.title === 'Setup Complete';
   const tier = status.overlayStatus.tier || billing?.plan || 'free';
   const claimPrompt = buildClaimPrompt({ billing, billingOk });
-  const connectionHealthField = buildConnectionHealthField(guildId, leagueId, snapshotOk);
+  const statusField = buildStatusField(guildId, leagueId, snapshotOk, tier);
 
   // --- EARLY INFO: Paid Plan Activation Reminder ---
   let earlyInfo = null;
   if ((billing?.plan || 'free') !== 'free' && !billingOk) {
     earlyInfo = [
       'Paid plan is not active yet.',
-      'Run `/claim-plan`, then press Refresh Setup.',
+      'Run `/claim-plan`, then press Check Again.',
     ].join('\n');
   }
 
   const embed = new EmbedBuilder()
-    .setTitle('LEAGUEbuddy Setup')
+    .setTitle(setupComplete ? 'Setup Complete' : `Setup: ${decision.title}`)
     .setColor(!readiness.hasRequiredPermissions || readiness.hierarchyWarning || status.missingRequiredRoles.length || status.syncNeeded
       ? 0xf1c40f
       : 0x57f287)
     .setDescription([
       earlyInfo,
       setupComplete
-        ? 'Ready.'
-        : 'Do the next action below.',
+        ? 'Ready. Your league can start using LEAGUEbuddy.'
+        : decision.action,
     ].filter(Boolean).join('\n\n'));
 
   if (setupComplete) {
     embed.addFields(
-      connectionHealthField,
+      statusField,
       {
         name: 'Commissioner',
         value: buildCommissionerLines(tier),
@@ -320,7 +307,7 @@ export async function execute(interaction) {
     );
   } else {
     const fields = [];
-    fields.push(connectionHealthField);
+    fields.push(statusField);
     if ((billing?.plan || 'free') !== 'free') {
       fields.push({
         name: 'Paid Plan',
@@ -328,10 +315,6 @@ export async function execute(interaction) {
       });
     }
     fields.push(
-      {
-        name: decision.title,
-        value: decision.action,
-      },
       ...(decision.details ? [{
         name: 'Details',
         value: decision.details,

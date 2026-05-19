@@ -46,7 +46,7 @@ export async function execute(interaction) {
           .setColor(0xf39c12)
           .setDescription('No league is connected to this server yet.')
           .addFields(
-            { name: 'Next', value: 'Run `/setup`, press Connect League, finish the dashboard flow, then refresh setup.', inline: false },
+            { name: 'Next', value: 'Run `/setup`, press Open Setup Dashboard.', inline: false },
           ),
       ],
     });
@@ -70,7 +70,7 @@ export async function execute(interaction) {
           ...(syncError ? [{ name: 'Sync Error', value: syncError.slice(0, 1024), inline: false }] : []),
           { name: 'Next', value: connection.status === 'sync_error'
             ? buildSyncNextStep(syncError)
-            : 'Your league is linked. Return to `/setup` and press Refresh Setup. To fully restart from scratch later, run `/disconnectleague`.',
+            : 'Your league is linked. Return to `/setup` and press Check Again. To fully restart from scratch later, run `/disconnectleague`.',
             inline: false },
         ),
     ],

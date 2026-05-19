@@ -596,7 +596,7 @@ export async function execute(interaction) {
             new EmbedBuilder()
                 .setColor(hasFailures ? 0xf39c12 : 0x57f287)
                 .setTitle(`${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}Pins Ready`)
-                .setDescription('Return to `/setup` and press Refresh Setup.')
+                .setDescription('Return to `/setup` and press Check Again.')
                 .addFields(
                     {
                         name: hasFailures ? 'Needs Attention' : 'Updated',
@@ -606,7 +606,7 @@ export async function execute(interaction) {
                         name: 'Next',
                         value: hasFailures
                             ? buildPinsNextStepText(out.results)
-                            : 'Press Refresh Setup.',
+                            : 'Press Check Again.',
                     },
                 ),
         ],

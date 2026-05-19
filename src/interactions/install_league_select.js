@@ -28,8 +28,8 @@ export async function execute(interaction) {
     .setTitle('League Connected')
     .setDescription(`This server is now mapped to league \`${leagueId}\`.`)
     .addFields({
-      name: 'Next Steps',
-      value: '1. Run `/sync`\n2. Run `/setup`\n3. Do the one next step it shows\n4. Run `/setup` again until it says complete',
+      name: 'Next',
+      value: 'Run `/setup` and press the button it shows.',
     });
 
   await interaction.update({

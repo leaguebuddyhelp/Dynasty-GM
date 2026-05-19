@@ -558,7 +558,7 @@ async function execute(interaction) {
         embeds: [
           new EmbedBuilder()
             .setTitle('Madden Sync')
-            .setDescription('No league is connected to this server yet. Run `/setup` and press Connect League, then rerun `/sync`.')
+            .setDescription('No league is connected to this server yet. Run `/setup` and press Open Setup Dashboard.')
             .setColor(0xffcc00)
         ]
       });
@@ -590,7 +590,7 @@ async function execute(interaction) {
         { name: 'Stats Weeks', value: String(summary.statsWeeks), inline: true },
         { name: 'Coverage', value: `Schedule weeks: ${summary.coverage?.scheduleWeeks ?? 0}\nMissing stat buckets: ${summary.coverage?.missingBuckets?.length ?? 0}`, inline: true },
         { name: 'Saved', value: summary.outPath, inline: false },
-        { name: 'Next', value: 'Return to `/setup` and press Refresh Setup.', inline: false }
+        { name: 'Next', value: 'Return to `/setup` and press Check Again.', inline: false }
       );
 
     await interaction.editReply({ embeds: [embed] });

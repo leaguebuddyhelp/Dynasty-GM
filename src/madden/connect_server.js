@@ -1151,7 +1151,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   }
 
   const eaStepCopy = !hasEaConnection
-    ? 'Open EA Login and save the returned browser URL.'
+    ? 'Open EA Login, sign in, then paste the returned URL here.'
     : authDraft?.personas?.length && !hasPersona
       ? 'EA login is saved. Choose the correct Madden account/persona next.'
       : `Connected as ${guildTokens?.personaName || selectedPersona?.displayName || 'your EA account'}.`;
@@ -1176,7 +1176,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
         ? leaguePassword
           ? `Using ${leagueName} with optional onboarding password saved.`
           : `Using ${leagueName}. League password is optional.`
-        : 'Save your league name to begin setup. Add the password only if you want LEAGUEbuddy to reuse it for onboarding later.',
+        : 'Save your league name. Password is optional.',
     },
     {
       key: 'ea',
@@ -1225,8 +1225,8 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           : syncInProgress
             ? 'Wait on this page while LEAGUEbuddy imports the first league snapshot.'
           : status === 'sync_error'
-            ? syncErrorSummary.next
-            : 'Go back to Discord and run /setup.';
+        ? syncErrorSummary.next
+        : 'Go back to Discord and run /setup.';
 
   function stepClass(step) {
     if (step < nextStep) return 'timeline-step done';
@@ -1304,19 +1304,19 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
       <img src="/madden/assets/lb-official-logo.png" alt="LEAGUEbuddy logo" />
       <div>
         <span class="eyebrow">LEAGUEbuddy Madden</span>
-        <h1>League Dashboard Setup</h1>
-        <p>Set up your league here first, then finish the rest in Discord. Connect EA, choose your Madden account, choose your league, and LEAGUEbuddy will handle the rest.</p>
+        <h1>Connect Your League</h1>
+        <p>Follow the highlighted step. When this page says Ready, go back to Discord and run /setup.</p>
       </div>
     </section>
     <div class="layout">
       <div class="stack primary-stack">
         <section class="panel">
           ${noticeBanner(notice)}
-          <h2>Setup Overview</h2>
-          <p style="color:#4b5563;">This dashboard is already linked to your Discord server. Complete these steps in order.</p>
+          <h2>Do This Next</h2>
+          <p style="color:#4b5563;">${escapeHtml(currentTask)}</p>
           <div class="subtle" style="margin-bottom:14px;">
-            <strong>This server is being linked to:</strong> ${escapeHtml(activeLeagueName)} <code>${escapeHtml(activeLeagueId)}</code><br />
-            <strong>Saved join info:</strong> ${leaguePassword ? `Password <code>${escapeHtml(leaguePassword)}</code> ready for onboarding later` : 'league password not saved (optional)'}
+            <strong>Discord server:</strong> ${escapeHtml(guildName)}<br />
+            <strong>League:</strong> ${escapeHtml(activeLeagueName)}
           </div>
           <div class="inline-actions">
             <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
@@ -1348,28 +1348,28 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           <div class="timeline">
             <div class="${stepClass(1)}">
               ${stepState(1)}
-              <strong>1. Name your league</strong>
-              <span>Save the league name now. The league password is optional and only used for onboarding later.</span>
+              <strong>1. League name</strong>
+              <span>Save the name. Password is optional.</span>
             </div>
             <div class="${stepClass(2)}">
               ${stepState(2)}
               <strong>2. Connect EA</strong>
-              <span>Use the reverse login flow and paste the returned URL back here.</span>
+              <span>Sign in and paste the returned URL.</span>
             </div>
             <div class="${stepClass(3)}">
               ${stepState(3)}
-              <strong>3. Choose Madden account</strong>
-              <span>Select the Madden persona LEAGUEbuddy should use for this league.</span>
+              <strong>3. Madden account</strong>
+              <span>Pick the account tied to this league.</span>
             </div>
             <div class="${stepClass(4)}">
               ${stepState(4)}
               <strong>4. Choose league</strong>
-              <span>Select the Madden league LEAGUEbuddy should manage for this Discord server.</span>
+              <span>Pick the league for this Discord server.</span>
             </div>
             <div class="${stepClass(5)}">
               ${stepState(5)}
               <strong>5. Return to Discord</strong>
-              <span>Run <code>/setup</code> and continue the normal server setup there.</span>
+              <span>Run <code>/setup</code>.</span>
             </div>
           </div>
         </section>
@@ -1384,32 +1384,14 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           </div>
           <div class="step-mobile-summary">${hasLeagueName ? (leaguePassword ? `Saved as ${escapeHtml(leagueName)} with optional onboarding password.` : `Saved as ${escapeHtml(leagueName)}.`) : 'Save your league name to begin.'}</div>
           <div class="step-body">
-          <p style="color:#4b5563;">Start here. Save the exact league name your commissioners use in Madden. The league password is optional and is only stored so LEAGUEbuddy can reuse it later for onboarding commands in Standard and Premium. It is not used for EA login or Madden access.</p>
+          <p style="color:#4b5563;">Save the league name. Add the password only if you want commissioner onboarding to include it later.</p>
           <div class="checklist">
             <div class="check-item ${hasLeagueName ? 'done' : nextStep === 1 ? 'active' : 'locked'}">
               <span class="check-icon">${hasLeagueName ? '✓' : nextStep === 1 ? '1' : '•'}</span>
               <div class="check-copy">
-                <strong>Save the league join info for this Discord server</strong>
-                <span>${hasLeagueName ? (leaguePassword ? `Saved as ${escapeHtml(leagueName)} with the optional league password ready for onboarding.` : `Saved as ${escapeHtml(leagueName)}. You can add the optional league password later if you want.`) : 'This unlocks the rest of the setup flow.'}</span>
+                <strong>Save league info</strong>
+                <span>${hasLeagueName ? (leaguePassword ? `Saved as ${escapeHtml(leagueName)} with password.` : `Saved as ${escapeHtml(leagueName)}.`) : 'This unlocks the next step.'}</span>
               </div>
-            </div>
-          </div>
-          <div class="guide-grid">
-            <div class="guide-card desktop-only">
-              <h3>What this step does</h3>
-              <ul>
-                <li>Ties this dashboard to your Discord server</li>
-                <li>Saves the league name and optionally the league password for onboarding later</li>
-                <li>Prepares the rest of the setup flow</li>
-              </ul>
-            </div>
-            <div class="guide-card">
-              <h3>What happens next</h3>
-              <ul>
-                <li>Connect EA</li>
-                <li>Choose your Madden account</li>
-                <li>Choose the league to link</li>
-              </ul>
             </div>
           </div>
           <form method="POST" action="/madden/connect/league?token=${encodeURIComponent(token)}">
@@ -1418,7 +1400,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             <label for="league_password"><strong>League Password</strong> <span style="color:#6b7280;">(optional)</span></label><br />
             <input id="league_password" name="league_password" value="${escapeHtml(leaguePassword)}" placeholder="Only saved for onboarding later" />
             <div class="subtle" style="margin-top:10px;">
-              LEAGUEbuddy only stores this so commissioners can reuse it later in onboarding. It is not used for EA login, Madden authentication, or league sync.
+              Password is optional and only used for onboarding messages.
             </div>
             <button type="submit">Save League Info</button>
           </form>
@@ -1435,14 +1417,14 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           </div>
           <div class="step-mobile-summary">${hasEaConnection ? escapeHtml(eaStepCopy) : 'Connect EA to continue.'}</div>
           <div class="step-body">
-          <p style="color:#4b5563;">This matches the Snallabot-style reverse login flow. You sign in with EA in a new tab, then paste the returned browser URL here.</p>
+          <p style="color:#4b5563;">Sign in with EA in a new tab, then paste the returned browser URL here.</p>
           <div class="info">
-            <strong>How to connect EA:</strong>
+            <strong>EA login:</strong>
             <ol class="step-list">
-              <li>Click <strong>Open EA Login</strong>.</li>
+              <li>Open EA Login.</li>
               <li>Sign in with EA in the new tab.</li>
-              <li>After login, copy the full URL from your browser if it starts with <code>http://127.0.0.1/success</code>.</li>
-              <li>Paste that full URL here and submit it.</li>
+              <li>Copy the full returned URL.</li>
+              <li>Paste it below.</li>
             </ol>
           </div>
           <div class="method-grid">
@@ -1479,7 +1461,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           </div>
           <div class="step-mobile-summary">${hasPersona ? `${escapeHtml(resolvedPersona?.displayName || guildTokens?.personaName || 'Persona selected')}` : 'Choose the correct Madden account.'}</div>
           <div class="step-body">
-          <p style="color:#4b5563;">After EA login is saved, choose the correct Madden account for this league.</p>
+          <p style="color:#4b5563;">Choose the Madden account tied to this league.</p>
           ${authDraft?.personas?.length ? `
             <form method="POST" action="/madden/connect/persona?token=${encodeURIComponent(token)}">
               <label for="persona_id"><strong>Available Personas</strong></label><br />
@@ -1512,11 +1494,11 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           </div>
           <div class="step-mobile-summary">${hasLeague ? escapeHtml(leagueStepCopy) : 'Choose the league for this server.'}</div>
           <div class="step-body">
-          <p style="color:#4b5563;">Choose the Madden league LEAGUEbuddy should connect to this Discord server.</p>
+          <p style="color:#4b5563;">Choose the league for this Discord server.</p>
           ${leagueFetchError ? `<div class="warning"><strong>League list unavailable.</strong><br />${escapeHtml(leagueFetchError)}</div>` : ''}
           ${availableLeagues.length ? `
             <div class="subtle" style="margin-bottom:14px;">
-              <strong>Important:</strong> If your EA account has multiple leagues, double-check the league name and the team shown in the dropdown before you connect it.
+              Double-check the league name and team before you connect it.
             </div>
             <form method="POST" action="/madden/connect/league-select?token=${encodeURIComponent(token)}">
               <label for="selected_league_id"><strong>Available Leagues</strong></label><br />
@@ -1561,12 +1543,11 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
             <span class="step-chip ${syncSucceeded ? 'done' : status === 'sync_error' ? 'error' : 'active'}">${syncSucceeded ? 'Ready' : status === 'sync_error' ? 'Needs Sync' : 'In Progress'}</span>
           </div>
-          <p style="color:#4b5563;">Once your league is connected, this becomes your confirmation page before returning to Discord.</p>
+          <p style="color:#4b5563;">When this says Ready, return to Discord and run `/setup`.</p>
           <div class="source-card">
             <strong>${escapeHtml(activeLeagueName)}</strong>
             <div class="source-meta">
               <div><strong>Connected to Discord server:</strong> ${escapeHtml(guildName)}</div>
-              <div>Source: ${escapeHtml(connection?.sourceType || 'ea_dashboard')}</div>
               <div>Status: ${escapeHtml(status)}</div>
               <div>Week: ${escapeHtml(snapshot?.summary?.week || connection?.summary?.week || 'unknown')}</div>
               <div>League ID: <code>${escapeHtml(activeLeagueId)}</code></div>
