@@ -1725,6 +1725,13 @@ export function startConnectServer() {
     path: '/madden/connect/status',
     handler: async (req, res) => {
       const token = parseToken(req);
+      const acceptHeader = String(req.headers?.accept || '').toLowerCase();
+      const wantsJson = acceptHeader.includes('application/json');
+      if (!wantsJson) {
+        res.writeHead(302, { location: `/madden/connect?token=${encodeURIComponent(token)}` });
+        res.end();
+        return;
+      }
       const dashboard = await connectionService.getLeagueConnectionDashboardState(token);
       if (!dashboard.ok) {
         res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
