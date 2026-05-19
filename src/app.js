@@ -11,7 +11,6 @@ import { inferRecognitionContext, recordRecognitionCommandUse, recordRecognition
 import { ensureSportsbookWeekPosted, refreshSportsbookHeaders } from './shared/madden_sportsbook.js';
 import { collectParticipation, getThreadState, hydrateThreadStateFromLiveThread, listThreadStates } from './shared/madden_thread_notifier.js';
 import { featureAccessDenyMessage, hasFeatureAccess, DEFAULT_DENY_MESSAGE } from './leaguebuddy/access.js';
-import overlayRepository from './leaguebuddy/repositories/guild_overlay_repository.js';
 import { resolveInteractionAccess } from './leaguebuddy/interaction_access_resolver.js';
 import { validateStartupConfig } from './leaguebuddy/startup_validation.js';
 import { markHealthReady, startHealthcheckServer } from './leaguebuddy/healthcheck.js';
@@ -57,11 +56,6 @@ async function startOptionalService({ enabled, label, loader }) {
   } catch (err) {
     console.warn(`[${label}] Failed to start: ${err?.message || err}`);
   }
-}
-
-function hasPackEnabled(guildId, featureKey) {
-  if (!guildId || !featureKey) return false;
-  return overlayRepository.hasPackEnabled(guildId, featureKey);
 }
 
 async function denyInteraction(interaction, message = DEFAULT_DENY_MESSAGE) {
@@ -222,8 +216,6 @@ client.on('interactionCreate', async interaction => {
     try {
       const guildId = interaction.guildId;
       if (guildId) {
-        const packs = overlayRepository.getPacksEnabled(guildId);
-
         /** @type {Record<string, string>} */
         const COMMAND_FEATURE_MAP = {
           // scouting/draft tools
@@ -240,11 +232,8 @@ client.on('interactionCreate', async interaction => {
           const check = hasFeatureAccess(guildId, featureKey, {
             requireSetup: command.featureRequiresSetup !== false,
           });
-          const packEnabled = packs.includes(featureKey);
-          if (!check.ok || !packEnabled) {
-            const msg = !check.ok
-              ? featureAccessDenyMessage(check)
-              : 'This feature is not configured for this server yet. Run `/setup` to finish enabling it.';
+          if (!check.ok) {
+            const msg = featureAccessDenyMessage(check);
             if (interaction.deferred || interaction.replied) {
               await interaction.editReply({ content: msg });
             } else {
@@ -368,19 +357,16 @@ client.on('interactionCreate', async interaction => {
     const accessMatch = resolveInteractionAccess(interaction);
     if (accessMatch?.featureKey) {
       const { featureKey, ruleId, customId } = accessMatch;
-      const packEnabled = hasPackEnabled(interaction.guildId, featureKey);
       const check = hasFeatureAccess(interaction.guildId, featureKey);
-      if (!check.ok || !packEnabled) {
-        const denialMessage = !check.ok
-          ? featureAccessDenyMessage(check)
-          : 'This feature is not configured for this server yet. Run `/setup` to finish enabling it.';
+      if (!check.ok) {
+        const denialMessage = featureAccessDenyMessage(check);
         if (LB_VERBOSE_LOGS) {
           console.log('[plans] interaction denied', {
             guildId: interaction.guildId,
             ruleId,
             featureKey,
             customId,
-            reason: check.ok ? 'pack_not_enabled' : check.reason,
+            reason: check.reason,
           });
         }
         await denyInteraction(
