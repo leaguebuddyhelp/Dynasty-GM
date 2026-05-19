@@ -3,7 +3,7 @@ import { getFeature, normalizePlan, planRank } from './plans.js';
 import planRepository from './repositories/guild_plan_repository.js';
 import { getTestingBypassBilling } from './testing_bypass.js';
 
-export const DEFAULT_DENY_MESSAGE = '🔒 This feature is not available on your current plan. Check pricing to upgrade.';
+export const DEFAULT_DENY_MESSAGE = '🔒 This feature is not enabled for this server plan. Ask staff to confirm the active LEAGUEbuddy package.';
 export const SETUP_INCOMPLETE_DENY_MESSAGE = '🔒 This feature is part of your package, but setup is not finished yet. Run `/setup` and complete the required steps first.';
 export const SUBSCRIPTION_INACTIVE_DENY_MESSAGE = '🔒 This paid feature is not active on this server yet. Use `/setplan plan:Premium subscription_status:active` during private testing, then try again.';
 

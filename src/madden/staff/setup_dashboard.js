@@ -14,6 +14,7 @@ import { ensureGuildActivated, setSetupCompleted } from '../../leaguebuddy/guild
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getMaddenLeagueSnapshotPath } from '../../leaguebuddy/paths.js';
 import { displaySetupItemName, getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
+import { isBuyingEnabled } from '../../leaguebuddy/upgrade_ux.js';
 import { loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 import { getExplicitLeagueForGuild } from '../madden_config.js';
 import { applyOverwrites, buildSetupOverwrites } from './madden-setup.js';
@@ -50,6 +51,9 @@ function formatMissingItems(items = []) {
 function buildClaimPrompt({ billing, billingOk }) {
   const plan = String(billing?.plan || 'free').toLowerCase();
   if (plan !== 'free' && !billingOk) {
+    if (!isBuyingEnabled()) {
+      return `Run \`/setplan plan:${plan === 'premium' ? 'Premium' : 'Standard'} subscription_status:active\`, then press Check Again. Status: ${billing?.subscriptionStatus || 'inactive'}`;
+    }
     return `Run \`/setup code:<claim-code>\`, then press Check Again. Status: ${billing?.subscriptionStatus || 'inactive'}`;
   }
 
@@ -108,9 +112,12 @@ function buildLeagueSetupFacts(guildId) {
 function buildSetupDecision({ leagueId, snapshotOk, connection, connectionHealthy, readiness, status, billing, billingOk, displayTier }) {
   // If plan is not free and billing is not active, require the claim code as the first step.
   if (!billingOk && (billing?.plan || 'free') !== 'free') {
+    const plan = String(billing?.plan || '').toLowerCase() === 'premium' ? 'Premium' : 'Standard';
     return {
       title: 'Activate Plan',
-      action: 'Run `/setup code:<claim-code>`, then press Check Again.',
+      action: isBuyingEnabled()
+        ? 'Run `/setup code:<claim-code>`, then press Check Again.'
+        : `Run \`/setplan plan:${plan} subscription_status:active\`, then press Check Again.`,
       details: `Status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
     };
   }
@@ -406,9 +413,12 @@ export async function execute(interaction) {
   // --- EARLY INFO: Paid Plan Activation Reminder ---
   let earlyInfo = null;
   if ((billing?.plan || 'free') !== 'free' && !billingOk) {
+    const plan = String(billing?.plan || '').toLowerCase() === 'premium' ? 'Premium' : 'Standard';
     earlyInfo = [
       'Paid plan is not active yet.',
-      'Run `/setup code:<claim-code>`, then press Check Again.',
+      isBuyingEnabled()
+        ? 'Run `/setup code:<claim-code>`, then press Check Again.'
+        : `Run \`/setplan plan:${plan} subscription_status:active\`, then press Check Again.`,
     ].join('\n');
   } else if (claimedPlan) {
     earlyInfo = `Plan claimed: **${claimedPlan.record.plan}**.`;
