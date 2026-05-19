@@ -203,8 +203,9 @@ function buildSetupButtons({ decision, interaction }) {
   const rows = [];
   const buttons = [];
   const actionKey = decision?.actionKey || null;
+  const setupComplete = decision?.title === 'Setup Complete';
 
-  if (actionKey === 'connect') {
+  if (actionKey === 'connect' || setupComplete) {
     const { setupUrl } = connectionService.beginLeagueConnection({
       guildId: interaction.guildId,
       guildName: interaction.guild?.name || null,
@@ -213,7 +214,7 @@ function buildSetupButtons({ decision, interaction }) {
     buttons.push(
       new ButtonBuilder()
         .setStyle(ButtonStyle.Link)
-        .setLabel('Open Setup Dashboard')
+        .setLabel(setupComplete ? 'Reconnect League' : 'Open Setup Dashboard')
         .setURL(setupUrl),
     );
   }
@@ -447,6 +448,10 @@ export async function execute(interaction) {
         name: 'Coaches',
         value: buildCoachLines(),
       },
+      {
+        name: 'League Recreated?',
+        value: 'Press **Reconnect League** to reconnect EA and choose the new Madden league.',
+      },
     );
   } else {
     const fields = [];
@@ -473,7 +478,7 @@ export async function execute(interaction) {
   await interaction.editReply({
     embeds: [embed],
     content: '',
-    components: setupComplete ? [] : buildSetupButtons({ decision, interaction }),
+    components: buildSetupButtons({ decision, interaction }),
   });
 }
 
