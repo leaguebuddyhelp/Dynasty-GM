@@ -11,7 +11,7 @@ import {
     saveGuildMaddenConfig,
 } from '../../shared/madden_guild_config.js';
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
-import { getLeagueForGuild } from '../madden_config.js';
+import { getExplicitLeagueForGuild } from '../madden_config.js';
 import { loadLeagueSnapshot } from '../madden_data.js';
 import { inspectSetupReadiness } from './setup_readiness.js';
 
@@ -644,7 +644,7 @@ export async function execute(interaction) {
             },
         };
 
-        const leagueId = getLeagueForGuild(guild.id);
+        const leagueId = getExplicitLeagueForGuild(guild.id);
 
         await updateProgress('creating channels', [
             `Package: ${tier}${tierChoice.source === 'override' ? ' (manual override)' : tierChoice.source === 'package' ? ' (auto-detected from this server)' : tierChoice.source === 'testing_bypass' ? ' (testing bypass)' : ''}`,

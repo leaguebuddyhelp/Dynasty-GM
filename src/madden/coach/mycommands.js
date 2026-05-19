@@ -41,7 +41,8 @@ async function execute(interaction) {
         value: [
           '`/setup`',
           '`/sync` if setup says league data is not ready',
-          '`/disconnectleague` only when you need to start over',
+          '`/resetleague` when you need to start over',
+          '`/setup-reset` only if you need to delete LEAGUEbuddy channels or roles too',
         ].join('\n'),
       },
       {

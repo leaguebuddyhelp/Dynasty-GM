@@ -1,6 +1,6 @@
 import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { loadGuildMaddenConfig, saveGuildMaddenConfig } from '../../shared/madden_guild_config.js';
-import { getLeagueForGuild } from '../madden_config.js';
+import { getExplicitLeagueForGuild } from '../madden_config.js';
 import { loadLeagueSnapshot } from '../madden_data.js';
 import { buildCoachRoleSpecs, DEFAULT_ROLE_SPECS, TRADE_ROLE_SPECS, syncRoleSpecs } from './setup_role_utils.js';
 import { applyOverwrites, buildSetupOverwrites } from './madden-setup.js';
@@ -79,7 +79,7 @@ export async function execute(interaction) {
     if (spec.key === 'LB Co-Commish') cfg.compat.maddenRoleMap['Ghost Legacy Co-Commish'] = role.id;
   }
 
-  const leagueId = getLeagueForGuild(guild.id);
+  const leagueId = getExplicitLeagueForGuild(guild.id);
   let coachSummaryText = 'Coach roles skipped (no synced league snapshot).';
   const canContinueToCoachRoles = staffSummary.failed.length === 0;
   if (leagueId && canContinueToCoachRoles) {

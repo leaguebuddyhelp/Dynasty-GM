@@ -11,7 +11,7 @@ import {
     loadGuildMaddenConfig,
     upsertGuildPin,
 } from '../../shared/madden_guild_config.js';
-import { getLeagueForGuild } from '../madden_config.js';
+import { getExplicitLeagueForGuild } from '../madden_config.js';
 import { loadLeagueSnapshot } from '../madden_data.js';
 import { updateAvailableTeamsPin } from '../../../madden/available_teams.js';
 import { updateStandings } from '../../../madden/standings_pin.js';
@@ -305,7 +305,7 @@ function buildAwardsButtonComponents() {
 
 async function hydrateSeededPins(interaction, guildId, channelMap, snapshot, options = {}) {
     const top100Included = options.top100Included !== false;
-    const leagueId = getLeagueForGuild(guildId);
+    const leagueId = getExplicitLeagueForGuild(guildId);
     if (!leagueId || !snapshot) {
         return { snapshotMissing: true, results: [] };
     }
@@ -497,7 +497,7 @@ export async function seedAndHydratePins(client, guildId) {
     }
 
     let snapshot = null;
-    const leagueId = getLeagueForGuild(guildId);
+    const leagueId = getExplicitLeagueForGuild(guildId);
     if (leagueId) {
         try {
             snapshot = loadLeagueSnapshot(leagueId);

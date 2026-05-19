@@ -14,7 +14,7 @@ import { ensureGuildActivated, setSetupCompleted } from '../../leaguebuddy/guild
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getMaddenLeagueSnapshotPath } from '../../leaguebuddy/paths.js';
 import { displaySetupItemName, getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
-import { getLeagueForGuild } from '../madden_config.js';
+import { getExplicitLeagueForGuild } from '../madden_config.js';
 import {
   buildSetupReadinessLines,
   inspectSetupReadiness,
@@ -74,7 +74,23 @@ function buildCoachLines() {
   ].join('\n');
 }
 
-function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk }) {
+function buildLeagueSetupFacts(guildId) {
+  const leagueStatus = connectionService.getLeagueConnectionStatus(guildId);
+  const explicitLeagueId = getExplicitLeagueForGuild(guildId) || null;
+  const connection = leagueStatus?.connection || null;
+  const leagueId = explicitLeagueId || connection?.leagueExternalId || null;
+  const connectionHealthy = Boolean(connection && leagueId && connection.status === 'connected');
+  const snapshotOk = snapshotExists(leagueId);
+  return {
+    leagueId,
+    snapshotOk,
+    connection,
+    connectionHealthy,
+    syncError: connection?.summary?.lastSyncError ? String(connection.summary.lastSyncError) : '',
+  };
+}
+
+function buildSetupDecision({ leagueId, snapshotOk, connection, connectionHealthy, readiness, status, billing, billingOk }) {
   // If plan is not free and billing is not active, require the claim code as the first step.
   if (!billingOk && (billing?.plan || 'free') !== 'free') {
     return {
@@ -97,10 +113,20 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
       details: readiness.hierarchyWarning,
     };
   }
-  if (!leagueId) {
+  if (!leagueId || !connection) {
     return {
       title: 'Connect League',
       action: 'Press Open Setup Dashboard. It will walk you through EA login and league selection.',
+      actionKey: 'connect',
+    };
+  }
+  if (!connectionHealthy) {
+    return {
+      title: 'Finish League Connection',
+      action: 'Press Open Setup Dashboard to reconnect EA or choose the league again, then press Check Again.',
+      details: connection?.status === 'sync_error'
+        ? `Last sync issue: ${String(connection?.summary?.lastSyncError || 'Initial sync failed.').slice(0, 220)}`
+        : `Current league status: ${connection?.status || 'pending'}`,
       actionKey: 'connect',
     };
   }
@@ -221,15 +247,14 @@ function loadSnapshotCoverage(leagueId) {
   }
 }
 
-function buildStatusField(guildId, leagueId, snapshotOk, tier) {
-  const status = connectionService.getLeagueConnectionStatus(guildId);
-  const connection = status?.connection || null;
+function buildStatusField({ leagueId, snapshotOk, tier, connection, connectionHealthy }) {
   const coverage = loadSnapshotCoverage(leagueId);
   const leagueName = connection?.leagueName || connection?.summary?.leagueName || leagueId || 'not connected';
   const syncError = connection?.summary?.lastSyncError ? String(connection.summary.lastSyncError) : '';
   const lines = [
     `Package: **${tier || 'free'}**`,
     `League: **${leagueName}**`,
+    `Connection: **${connectionHealthy ? 'ready' : connection?.status || 'not connected'}**`,
     `Data: **${snapshotOk ? 'ready' : 'not ready'}**`,
   ];
   if (syncError) {
@@ -243,15 +268,15 @@ function buildStatusField(guildId, leagueId, snapshotOk, tier) {
   };
 }
 
-async function maybeSyncSetupState(interaction) {
+async function maybeSyncSetupState(interaction, setupIsComplete) {
   const guildId = interaction.guildId;
   const actor = buildActorFromInteraction(interaction);
   let status = getSetupStatus(guildId);
-  const shouldSync = status.overlayStatus.isComplete !== status.setupCompleted;
+  const shouldSync = setupIsComplete !== status.setupCompleted;
   if (!shouldSync) return status;
 
   ensureGuildActivated(guildId, { actor, source: 'command:/setup' });
-  setSetupCompleted(guildId, status.overlayStatus.isComplete, { actor, source: 'command:/setup' });
+  setSetupCompleted(guildId, setupIsComplete, { actor, source: 'command:/setup' });
   return getSetupStatus(guildId);
 }
 
@@ -300,7 +325,13 @@ export async function execute(interaction) {
   }
 
   const readiness = await inspectSetupReadiness(interaction.guild);
-  const status = await maybeSyncSetupState(interaction);
+  const leagueFacts = buildLeagueSetupFacts(guildId);
+  const setupIsComplete = Boolean(
+    getSetupStatus(guildId).overlayStatus.isComplete
+    && leagueFacts.connectionHealthy
+    && leagueFacts.snapshotOk
+  );
+  const status = await maybeSyncSetupState(interaction, setupIsComplete);
   // Auto-sync after dashboard setup changes
   try {
     const { syncGuild } = await import('../../shared/guild_auto_sync.js');
@@ -308,15 +339,28 @@ export async function execute(interaction) {
   } catch (e) {
     console.error('[AUTO_SYNC] Failed to sync after setup_dashboard:', e);
   }
-  const leagueId = getLeagueForGuild(guildId) || null;
-  const snapshotOk = snapshotExists(leagueId);
   const billing = getBillingSummary(guildId);
   const billingOk = ['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'));
-  const decision = buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk });
+  const decision = buildSetupDecision({
+    leagueId: leagueFacts.leagueId,
+    snapshotOk: leagueFacts.snapshotOk,
+    connection: leagueFacts.connection,
+    connectionHealthy: leagueFacts.connectionHealthy,
+    readiness,
+    status,
+    billing,
+    billingOk,
+  });
   const setupComplete = decision.title === 'Setup Complete';
   const tier = status.overlayStatus.tier || billing?.plan || 'free';
   const claimPrompt = buildClaimPrompt({ billing, billingOk });
-  const statusField = buildStatusField(guildId, leagueId, snapshotOk, tier);
+  const statusField = buildStatusField({
+    leagueId: leagueFacts.leagueId,
+    snapshotOk: leagueFacts.snapshotOk,
+    tier,
+    connection: leagueFacts.connection,
+    connectionHealthy: leagueFacts.connectionHealthy,
+  });
 
   // --- EARLY INFO: Paid Plan Activation Reminder ---
   let earlyInfo = null;
@@ -362,6 +406,10 @@ export async function execute(interaction) {
         value: claimPrompt,
       });
     }
+    fields.push({
+      name: 'Reset',
+      value: 'Use `/resetleague confirm:true` to restart the league connection. Use `/setup-reset` only if you also need to delete LEAGUEbuddy channels or roles.',
+    });
     fields.push(
       ...(decision.details ? [{
         name: 'Details',
