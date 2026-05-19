@@ -255,10 +255,12 @@ export async function execute(interaction) {
   const currentWeek = snapshot?.currentWeek ?? seasonInfo.displayWeek ?? 0;
   const seasonWeekType = seasonInfo.seasonWeekType ?? snapshot?.stage ?? 0; // 0=pre,1=reg,2=post,3=off,8=off
   const seasonTitle = (seasonInfo.seasonTitle || '').toLowerCase();
+  const offSeasonStage = Number(seasonInfo.offSeasonStage || 0);
   const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && seasonWeekType !== 1;
-  const isRegularOrPost = seasonWeekType === 1 || seasonWeekType === 2;
-  const isOffseason = seasonWeekType === 3 || seasonWeekType === 8 || seasonTitle.includes('offseason') || draftInactive || !isRegularOrPost;
-  const scoutingOpen = (isRegularOrPost && currentWeek >= 1) || isOffseason;
+  const isRegularSeason = seasonWeekType === 1;
+  const isPostseason = seasonWeekType === 2 || seasonTitle.includes('super bowl') || seasonTitle.includes('playoff');
+  const isOffseason = offSeasonStage > 0 || seasonWeekType === 3 || seasonWeekType === 8 || seasonTitle.includes('offseason') || draftInactive;
+  const scoutingOpen = (isRegularSeason && currentWeek >= 1) || isPostseason || isOffseason;
   if (!scoutingOpen) {
     const payload = { content: 'Scouting opens after the Week 1 regular-season update and stays open through playoffs and offseason.' };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
