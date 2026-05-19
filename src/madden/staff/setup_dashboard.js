@@ -325,8 +325,9 @@ async function repairConfiguredChannelPermissions(guild) {
 }
 
 async function maybeClaimPlanFromSetup(interaction) {
-  const claimCode = interaction.options.getString('code');
-  const paymentReference = interaction.options.getString('payment_reference');
+  if (!interaction?.isChatInputCommand?.() || !interaction.isChatInputCommand()) return null;
+  const claimCode = interaction.options?.getString?.('code');
+  const paymentReference = interaction.options?.getString?.('payment_reference');
   if (!claimCode && !paymentReference) return null;
 
   const actor = buildActorFromInteraction(interaction);
