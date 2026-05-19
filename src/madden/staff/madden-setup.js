@@ -283,19 +283,53 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
         deny: [],
     }] : [];
 
+    const coachGroupReadOnlyAccess = coachGroupId ? [{
+        id: coachGroupId,
+        allow: allow(
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.UseApplicationCommands,
+        ),
+        deny: deny(
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.SendMessagesInThreads,
+            PermissionFlagsBits.CreatePublicThreads,
+            PermissionFlagsBits.CreatePrivateThreads,
+        ),
+    }] : [];
+
     function withBotAccess(overwrites = []) {
         return [...botAccess, ...overwrites];
     }
 
-    function withCommonRoleAccess(overwrites = []) {
+    function withCommonReadOnlyAccess(overwrites = []) {
         return withBotAccess([
             ...staffRoleAccess,
-            ...coachGroupAccess,
+            ...coachGroupReadOnlyAccess,
             ...overwrites,
         ]);
     }
 
-    const publicReadOnly = withCommonRoleAccess([
+    const categoryBase = withBotAccess([
+        {
+            id: everyoneId,
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.UseApplicationCommands,
+            ),
+            deny: deny(
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.CreatePrivateThreads,
+            ),
+        },
+        ...staffRoleAccess,
+        ...coachGroupReadOnlyAccess,
+    ]);
+
+    const publicReadOnly = withCommonReadOnlyAccess([
         {
             id: everyoneId,
             allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
@@ -305,22 +339,6 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                 PermissionFlagsBits.CreatePublicThreads,
                 PermissionFlagsBits.CreatePrivateThreads,
             ),
-        },
-    ]);
-
-    const publicInteractive = withCommonRoleAccess([
-        {
-            id: everyoneId,
-            allow: allow(
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.SendMessagesInThreads,
-                PermissionFlagsBits.CreatePublicThreads,
-                PermissionFlagsBits.CreatePrivateThreads,
-                PermissionFlagsBits.UseApplicationCommands,
-            ),
-            deny: [],
         },
     ]);
 
@@ -336,6 +354,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             ),
         },
         ...staffRoleAccess,
+        ...coachGroupReadOnlyAccess,
     ]);
 
     const publicReactionCheck = withBotAccess([
@@ -355,6 +374,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             ),
         },
         ...staffRoleAccess,
+        ...coachGroupReadOnlyAccess,
     ]);
 
     const publicInteractiveWithCoachAccess = withBotAccess([
@@ -363,14 +383,16 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             allow: allow(
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.UseApplicationCommands,
+            ),
+            deny: deny(
                 PermissionFlagsBits.SendMessages,
                 PermissionFlagsBits.SendMessagesInThreads,
                 PermissionFlagsBits.CreatePublicThreads,
                 PermissionFlagsBits.CreatePrivateThreads,
-                PermissionFlagsBits.UseApplicationCommands,
             ),
-            deny: [],
         },
+        ...staffRoleAccess,
         ...coachGroupAccess,
     ]);
 
@@ -410,7 +432,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
     ]);
 
     return {
-        category: publicInteractive,
+        category: categoryBase,
         channels: {
             // Staff/admin only
             'League Staff': staffOnly,
