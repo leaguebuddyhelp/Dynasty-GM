@@ -8,6 +8,7 @@ import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js'
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
+const DEFAULT_PROMO_INVITE_URL = process.env.LB_PROMO_INVITE_URL || 'https://discord.gg/VHB7UXttwB';
 
 function safeEditReply(interaction, payload) {
   return interaction.editReply(payload).catch(async (err) => {
@@ -273,7 +274,7 @@ export async function execute(interaction) {
       (openLines.length
         ? openLines.map(l => `✅ ${l}`).join('\n')
         : '⛔ No open teams right now.'),
-      includeLink ? '\n🔗 **Join:** https://discord.gg/ghostsgaming' : null,
+      includeLink ? `\n🔗 **Join:** ${DEFAULT_PROMO_INVITE_URL}` : null,
     ].filter(Boolean).join('\n');
 
     await safeEditReply(interaction, { content: promoLines });
