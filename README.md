@@ -30,12 +30,12 @@ npm run dev
 - Root `node_modules` is from the old layout; reinstall per app as needed.
 - Env files stay where you prefer; place per-app `.env` files inside each app for clarity.
 
-## LEAGUEbuddy pricing / manual activation
+## LEAGUEbuddy pricing / activation
 - Customer-facing commands:
   - `/pricing` shows Free, Standard, and Premium plus Stripe checkout buttons when configured.
   - `/plan` shows current plan, setup state, packs enabled, blocked features, and next steps.
   - `/claim-plan` lets a server manager claim a paid plan after Stripe checkout.
-- Admin billing commands:
+- Internal billing commands:
   - `/activateplan`
   - `/deactivateplan`
   - `/attachpaymentref`
@@ -47,13 +47,12 @@ npm run dev
 - Bot invite is configured with:
   - `LB_BOT_INVITE_URL`
   - or falls back to `CLIENT_ID`
-- Current sales flow is manual by design:
+- Current customer flow:
   1. Customer invites LEAGUEbuddy to the target server
-  2. Customer runs `/start-here`
-  3. If they still need plan info, they run `/pricing`
-  4. Customer pays through the Stripe link
-  5. Customer runs `/claim-plan`
-  6. Customer runs `/plan` and `/setup-check`
+  2. If they need plan info, they run `/pricing`
+  3. Customer pays through the Stripe link
+  4. Customer runs `/claim-plan`
+  5. Customer runs `/setup`
 - No Stripe webhook automation is implemented in this flow.
 
 ## Optional Stripe claim webhook
@@ -78,8 +77,8 @@ npm run dev
 1. Configure `DISCORD_TOKEN` and the Discord app ids in your env file.
 2. Configure `LB_UPGRADE_URL_STANDARD` and `LB_UPGRADE_URL_PREMIUM` if you want live customer upgrade links.
 3. Run `/setup` in the target server.
-4. Use the setup dashboard buttons to connect the league, create channels, seed pins, create roles, and refresh setup until complete.
-5. Run `/plan` to verify customer-facing access state.
+4. Press the button `/setup` shows until setup is complete.
+5. Run `/plan` only if you need to verify customer-facing access state.
 6. Run `/create-threads` when you are ready to open the current week or playoff matchup threads.
 
 ## Start Here
@@ -87,9 +86,8 @@ npm run dev
   1. Invite the bot
   2. If needed: `/pricing`
   3. If this is a paid server: `/claim-plan`
-  4. `/setup`
-  5. Run `/setup` and press the button it shows
-  6. `/create-threads`
+  4. Run `/setup` and press the button it shows
+  5. `/create-threads`
 - The admin summary command for this flow is:
   - `/setup`
 
