@@ -27,18 +27,23 @@ const CONFIG_FILE = path.join(process.cwd(), 'data', 'config.json');
 
 const STORE_FILE = getMaddenDataFilePath('mock_draft_sessions.json');
 const AVP_FILE = getMaddenDataFilePath('madden_avp.json');
+const BUNDLED_AVP_FILE = path.join(process.cwd(), 'bundled_data', 'madden', 'madden_avp.json');
 const MAX_SELECT_OPTIONS = 25;
 const SESSION_MAX_IDLE_MS = 1000 * 60 * 60 * 6;
 
 function loadAvpStore() {
-  try {
-    if (!fs.existsSync(AVP_FILE)) return null;
-    const raw = fs.readFileSync(AVP_FILE, 'utf8');
-    const data = JSON.parse(raw);
-    return data && typeof data === 'object' ? data : null;
-  } catch {
-    return null;
+  const candidates = [AVP_FILE, BUNDLED_AVP_FILE];
+  for (const filePath of candidates) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      const raw = fs.readFileSync(filePath, 'utf8');
+      const data = JSON.parse(raw);
+      if (data && typeof data === 'object') return data;
+    } catch {
+      // Try the next source.
+    }
   }
+  return null;
 }
 
 function loadBotConfig() {
@@ -862,10 +867,30 @@ export function avpForProspect(session, prospect) {
   const normalized = normalizedId ? avpStore.prospects?.[normalizedId]?.avp : null;
   if (normalized != null) return normalized;
 
-  const legacyKey = prospect?.name && prospect?.position
-    ? `${String(prospect.name).replace(/[^a-z0-9]/gi, '').toLowerCase()}_${String(prospect.position).toUpperCase()}`
-    : null;
-  return legacyKey ? avpStore.prospects?.[legacyKey]?.avp ?? null : null;
+  const nameKey = prospect?.name ? String(prospect.name).replace(/[^a-z0-9]/gi, '').toLowerCase() : null;
+  const posKey = prospect?.position ? String(prospect.position).toUpperCase() : null;
+  const posAliases = {
+    LEDG: ['LEDGE'],
+    LEDGE: ['LEDG'],
+    REDG: ['REDGE'],
+    REDGE: ['REDG'],
+    HB: ['RB'],
+    RB: ['HB'],
+  };
+  const candidatePositions = [posKey, ...(posAliases[posKey] || [])].filter(Boolean);
+  for (const candidatePos of candidatePositions) {
+    const key = nameKey && candidatePos ? `${nameKey}_${candidatePos}` : null;
+    const value = key ? avpStore.prospects?.[key]?.avp : null;
+    if (value != null) return value;
+  }
+
+  if (nameKey) {
+    const nameMatches = Object.entries(avpStore.prospects || {})
+      .filter(([key]) => String(key).toLowerCase().startsWith(`${nameKey}_`));
+    if (nameMatches.length === 1) return nameMatches[0][1]?.avp ?? null;
+  }
+
+  return null;
 }
 
 function formatPickExpectation(value) {
