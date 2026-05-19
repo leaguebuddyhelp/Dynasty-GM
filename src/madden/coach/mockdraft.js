@@ -60,6 +60,27 @@ export const featureKey = 'scouting_draft';
 let currentCalendarYear = 2025;
 const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
+
+function standingWins(team = {}) {
+  return Number(team.totalWins ?? team.wins ?? team.w ?? 0);
+}
+
+function standingLosses(team = {}) {
+  return Number(team.totalLosses ?? team.losses ?? team.l ?? 0);
+}
+
+function standingTies(team = {}) {
+  return Number(team.totalTies ?? team.ties ?? team.t ?? 0);
+}
+
+function standingWinPct(team = {}) {
+  const wins = standingWins(team);
+  const losses = standingLosses(team);
+  const ties = standingTies(team);
+  const games = wins + losses + ties;
+  return games ? (wins + ties * 0.5) / games : 0;
+}
+
 // Utility: pick latest league snapshot
 function getLatestLeagueFile() {
   const dir = getMaddenLeaguesDir();
@@ -80,9 +101,9 @@ function buildSoS(league) {
   const teamById = Object.fromEntries(teamInfo.map(t => [t.teamId, t]));
   const record = Object.fromEntries(
     standings.map(t => [t.teamId, {
-      w: t.totalWins,
-      l: t.totalLosses,
-      t: t.totalTies
+      w: standingWins(t),
+      l: standingLosses(t),
+      t: standingTies(t)
     }])
   );
 
@@ -244,11 +265,11 @@ function buildSuperBowlPair(afcChamp, nfcChamp) {
 function computeSeedsByConference(standings) {
   const seedMap = {};
   const cmpRecord = (a, b) => {
-    const wpA = (a.totalWins + a.totalLosses + a.totalTies) ? a.totalWins / (a.totalWins + a.totalLosses + a.totalTies) : 0;
-    const wpB = (b.totalWins + b.totalLosses + b.totalTies) ? b.totalWins / (b.totalWins + b.totalLosses + b.totalTies) : 0;
+    const wpA = standingWinPct(a);
+    const wpB = standingWinPct(b);
     return wpB - wpA
-      || b.totalWins - a.totalWins
-      || a.totalLosses - b.totalLosses
+      || standingWins(b) - standingWins(a)
+      || standingLosses(a) - standingLosses(b)
       || (b.netPts || 0) - (a.netPts || 0)
       || (b.ptsFor || 0) - (a.ptsFor || 0);
   };
@@ -465,9 +486,9 @@ export function draftOrder(league) {
       id: Number(t.teamId),
       name: t.teamName,
       nick: t.teamNickName,
-      w: Number(t.totalWins || 0),
-      l: Number(t.totalLosses || 0),
-      ties: Number(t.totalTies || 0),
+      w: standingWins(t),
+      l: standingLosses(t),
+      ties: standingTies(t),
       net: Number(t.netPts || 0),
       pf: Number(t.ptsFor || 0),
       playoff: Number(t.playoffStatus || 0),
@@ -475,20 +496,18 @@ export function draftOrder(league) {
       seed: Number(t.seed || 0),
     }))
     .sort((a, b) => b.rank - a.rank || a.id - b.id);
-  if (rankDrivenOrder.length >= 32) {
-    return rankDrivenOrder.slice(0, 32);
-  }
 
   const teams = standings.map(t => ({
     id: t.teamId,
     name: t.teamName,
     nick: t.teamNickName,
-    w: t.totalWins,
-    l: t.totalLosses,
-    ties: t.totalTies,
+    w: standingWins(t),
+    l: standingLosses(t),
+    ties: standingTies(t),
     net: t.netPts || 0,
     pf: t.ptsFor || 0,
     playoff: t.playoffStatus || 0,
+    seed: Number(t.seed || 0),
   }));
   const teamByName = Object.fromEntries(teams.map(t => [(t.name || '').toLowerCase(), t]));
   const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
@@ -601,30 +620,21 @@ export function draftOrder(league) {
     if (a.pf !== b.pf) return a.pf - b.pf;
     return (a.name || '').localeCompare(b.name || '');
   });
-  const sortProjectedPlayoffBucket = (arr) => arr.sort((a, b) => {
-    const aSeed = Number(a.projectedSeed || 0);
-    const bSeed = Number(b.projectedSeed || 0);
-    if (aSeed !== bSeed) return bSeed - aSeed;
-    if (a.w !== b.w) return a.w - b.w;
-    if (a.l !== b.l) return b.l - a.l;
-    const sa = sos[a.id] ?? 0, sb = sos[b.id] ?? 0;
-    if (sa !== sb) return sa - sb;
-    if (a.net !== b.net) return a.net - b.net;
-    if (a.pf !== b.pf) return a.pf - b.pf;
-    return (a.name || '').localeCompare(b.name || '');
-  });
-
   // Order: non -> WC -> DIV -> CONF -> SB loser -> SB winner
   const order = [
     ...sortWithTies(buckets.non),
-    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.wc) : sortWithTies(buckets.wc)),
-    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.div) : sortWithTies(buckets.div)),
-    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.conf) : sortWithTies(buckets.conf)),
-    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.sbl) : buckets.sbl),
-    ...(buckets.projected ? sortProjectedPlayoffBucket(buckets.sbw) : buckets.sbw),
+    ...sortWithTies(buckets.wc),
+    ...sortWithTies(buckets.div),
+    ...sortWithTies(buckets.conf),
+    ...buckets.sbl,
+    ...buckets.sbw,
   ];
 
-  return order.slice(0, 32);
+  if (order.length >= 32) return order.slice(0, 32);
+
+  const used = new Set(order.map((team) => Number(team.id)));
+  const fallback = rankDrivenOrder.filter((team) => !used.has(Number(team.id)));
+  return [...order, ...fallback].slice(0, 32);
 }
 
 function loadOfficialDraftOrderOverride(league, seasonYear) {

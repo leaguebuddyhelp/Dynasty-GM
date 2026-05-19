@@ -28,31 +28,81 @@ function teamNameMap(snapshot) {
 }
 
 function formatRecord(s) {
-  const w = s?.totalWins ?? 0;
-  const l = s?.totalLosses ?? 0;
-  const t = s?.totalTies ?? 0;
+  const w = s?.totalWins ?? s?.wins ?? s?.w ?? 0;
+  const l = s?.totalLosses ?? s?.losses ?? s?.l ?? 0;
+  const t = s?.totalTies ?? s?.ties ?? s?.t ?? 0;
   return t ? `${w}-${l}-${t}` : `${w}-${l}`;
 }
 
-function seedSort(a, b) {
-  const aSeed = a.seed ?? 0;
-  const bSeed = b.seed ?? 0;
+function standingWins(team = {}) {
+  return Number(team.totalWins ?? team.wins ?? team.w ?? 0);
+}
+
+function standingLosses(team = {}) {
+  return Number(team.totalLosses ?? team.losses ?? team.l ?? 0);
+}
+
+function standingTies(team = {}) {
+  return Number(team.totalTies ?? team.ties ?? team.t ?? 0);
+}
+
+function standingWinPct(team = {}) {
+  const wins = standingWins(team);
+  const losses = standingLosses(team);
+  const ties = standingTies(team);
+  const games = wins + losses + ties;
+  return games ? (wins + ties * 0.5) / games : 0;
+}
+
+function recordSort(a, b) {
+  return standingWinPct(b) - standingWinPct(a)
+    || standingWins(b) - standingWins(a)
+    || standingLosses(a) - standingLosses(b)
+    || (b.netPts ?? 0) - (a.netPts ?? 0)
+    || (b.ptsFor ?? 0) - (a.ptsFor ?? 0);
+}
+
+function existingSeedSort(a, b) {
+  const aSeed = Number(a.seed ?? 0);
+  const bSeed = Number(b.seed ?? 0);
   if (aSeed && bSeed) return aSeed - bSeed;
   if (aSeed && !bSeed) return -1;
   if (!aSeed && bSeed) return 1;
-  return (b.winPct ?? 0) - (a.winPct ?? 0)
-    || (b.totalWins ?? 0) - (a.totalWins ?? 0)
-    || (b.netPts ?? 0) - (a.netPts ?? 0);
+  return recordSort(a, b);
+}
+
+function computeConferenceSeeds(standings, conferenceName) {
+  const list = standings.filter(s => (s.conferenceName || '').toLowerCase().includes(conferenceName));
+  if (!list.length) return [];
+  const explicitSeeds = list
+    .filter((team) => Number(team.seed || 0) > 0)
+    .sort(existingSeedSort);
+  if (explicitSeeds.length >= 7) return explicitSeeds.slice(0, 7);
+
+  const byDiv = {};
+  list.forEach((team) => {
+    const div = team.divisionId || team.divisionName || 'division';
+    byDiv[div] = byDiv[div] || [];
+    byDiv[div].push(team);
+  });
+  const divisionWinners = Object.values(byDiv)
+    .map((divisionTeams) => [...divisionTeams].sort(recordSort)[0])
+    .filter(Boolean)
+    .sort(recordSort);
+  const winnerIds = new Set(divisionWinners.map((team) => Number(team.teamId)));
+  const wildcards = list
+    .filter((team) => !winnerIds.has(Number(team.teamId)))
+    .sort(recordSort);
+  return [...divisionWinners.slice(0, 4), ...wildcards.slice(0, 3)];
 }
 
 function topSeeds(standings, conferenceName, teams) {
-  const list = standings.filter(s => (s.conferenceName || '').toLowerCase().includes(conferenceName));
+  const list = computeConferenceSeeds(standings, conferenceName);
   if (!list.length) return Array.from({ length: 7 }, (_, i) => `${i + 1}) N/A`);
-  list.sort(seedSort);
   const seeds = list.slice(0, 7).map((s, idx) => {
     const name = teams[s.teamId] || 'Team';
     const record = formatRecord(s);
-    const seed = s.seed || idx + 1;
+    const seed = Number(s.seed || 0) || idx + 1;
     return `${seed}) ${name} — ${record}`;
   });
   while (seeds.length < 7) seeds.push(`${seeds.length + 1}) N/A`);
