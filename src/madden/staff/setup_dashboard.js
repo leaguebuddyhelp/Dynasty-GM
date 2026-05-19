@@ -74,6 +74,13 @@ function buildCoachLines() {
   ].join('\n');
 }
 
+function resolveDisplayTier(status, billing) {
+  if (status?.overlayStatus?.exists && status?.overlayStatus?.tier) {
+    return status.overlayStatus.tier;
+  }
+  return billing?.plan || status?.plan || 'free';
+}
+
 function buildLeagueSetupFacts(guildId) {
   const leagueStatus = connectionService.getLeagueConnectionStatus(guildId);
   const explicitLeagueId = getExplicitLeagueForGuild(guildId) || null;
@@ -90,7 +97,7 @@ function buildLeagueSetupFacts(guildId) {
   };
 }
 
-function buildSetupDecision({ leagueId, snapshotOk, connection, connectionHealthy, readiness, status, billing, billingOk }) {
+function buildSetupDecision({ leagueId, snapshotOk, connection, connectionHealthy, readiness, status, billing, billingOk, displayTier }) {
   // If plan is not free and billing is not active, require the claim code as the first step.
   if (!billingOk && (billing?.plan || 'free') !== 'free') {
     return {
@@ -173,7 +180,7 @@ function buildSetupDecision({ leagueId, snapshotOk, connection, connectionHealth
   return {
     title: 'Setup Complete',
     action: 'Setup is complete.',
-    details: `League: ${leagueId} • Package: ${status.overlayStatus.tier || billing?.plan || 'free'}`,
+    details: `League: ${leagueId} • Package: ${displayTier}`,
   };
 }
 
@@ -341,6 +348,7 @@ export async function execute(interaction) {
   }
   const billing = getBillingSummary(guildId);
   const billingOk = ['active', 'trialing'].includes(String(billing?.subscriptionStatus || 'inactive'));
+  const displayTier = resolveDisplayTier(status, billing);
   const decision = buildSetupDecision({
     leagueId: leagueFacts.leagueId,
     snapshotOk: leagueFacts.snapshotOk,
@@ -350,9 +358,10 @@ export async function execute(interaction) {
     status,
     billing,
     billingOk,
+    displayTier,
   });
   const setupComplete = decision.title === 'Setup Complete';
-  const tier = status.overlayStatus.tier || billing?.plan || 'free';
+  const tier = displayTier;
   const claimPrompt = buildClaimPrompt({ billing, billingOk });
   const statusField = buildStatusField({
     leagueId: leagueFacts.leagueId,
