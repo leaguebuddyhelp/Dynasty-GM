@@ -398,6 +398,7 @@ function selectResource(lane, preferredTags = [], seedKey = '', options = {}) {
   const tagSet = new Set(preferredTags.filter(Boolean).map((tag) => String(tag).toLowerCase()));
   const avoidBeginner = Boolean(options?.avoidBeginner);
   const persistChoice = options?.persistChoice !== false;
+  const reuseAssignment = options?.reuseAssignment !== false;
   const history = persistChoice ? loadResourceHistory() : null;
   const { assignmentKey, scopeKey, week } = scopeFromSeedKey(lane, seedKey);
   const recentUrls = persistChoice
@@ -409,7 +410,7 @@ function selectResource(lane, preferredTags = [], seedKey = '', options = {}) {
     .filter((resource) => isDirectLearningResource(resource))
     .filter((resource) => !(avoidBeginner && (resource.tags || []).includes('beginner')))
     .filter((resource) => !avoidUrls.has(normalizeResourceUrl(resource.url)));
-  if (persistChoice) {
+  if (persistChoice && reuseAssignment) {
     const existingUrl = normalizeResourceUrl(history.assignments?.[assignmentKey]?.url);
     const existing = RESOURCES.find((resource) => resource.lane === lane && normalizeResourceUrl(resource.url) === existingUrl);
     if (existing) return existing;
@@ -446,7 +447,7 @@ function selectResource(lane, preferredTags = [], seedKey = '', options = {}) {
   const index = hashSeed(lane, seedKey, ...preferredTags) % fallbackPool.length;
   const chosen = fallbackPool[index];
   if (persistChoice && chosen) {
-    history.assignments[assignmentKey] = { week, url: chosen.url };
+    if (reuseAssignment) history.assignments[assignmentKey] = { week, url: chosen.url };
     const recent = Array.isArray(history.recentByScope[scopeKey]) ? history.recentByScope[scopeKey] : [];
     const withoutCurrentWeek = recent.filter((entry) => entry?.week !== week);
     history.recentByScope[scopeKey] = [...withoutCurrentWeek, { week, url: chosen.url }].slice(-6);
@@ -472,6 +473,7 @@ export function pickOffenseLearningResource(profileTag = 'balanced', fieldProfil
   return selectResource('offense', tags, seedKey, {
     avoidBeginner: advancedTags.includes('advanced'),
     avoidUrls: options?.avoidUrls || [],
+    reuseAssignment: options?.reuseAssignment,
   });
 }
 
@@ -501,6 +503,7 @@ export function pickDefenseLearningResource(profileTag = 'balanced', defensiveMi
   return selectResource('defense', tags, seedKey, {
     avoidBeginner: advancedTags.includes('advanced'),
     avoidUrls: options?.avoidUrls || [],
+    reuseAssignment: options?.reuseAssignment,
   });
 }
 
@@ -516,6 +519,7 @@ export function pickTendencyLearningResource(tendency = 'balanced', fieldVulnera
   return selectResource('tendency', tags, seedKey, {
     avoidBeginner: advancedTags.includes('advanced'),
     avoidUrls: options?.avoidUrls || [],
+    reuseAssignment: options?.reuseAssignment,
   });
 }
 

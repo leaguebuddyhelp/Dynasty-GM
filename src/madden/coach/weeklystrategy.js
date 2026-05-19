@@ -120,6 +120,28 @@ function compactResourceLine(resource, max = 150) {
   return formatted ? `Film: ${formatted}` : '';
 }
 
+function compactResourceLink(resource = null, label = 'Resource') {
+  if (!resource?.url) return '';
+  const title = String(resource.label || label).replace(/\s+/g, ' ').trim();
+  const source = String(resource.source || '').replace(/\s+/g, ' ').trim();
+  const compactTitle = title.length > 72 ? `${title.slice(0, 69).trim()}...` : title;
+  return `**${label}:** [${compactTitle}](${resource.url})${source ? ` (${source})` : ''}`;
+}
+
+function buildResourceLinksField(resources = []) {
+  const lines = [];
+  const seen = new Set();
+  for (const item of resources) {
+    if (!item?.resource?.url) continue;
+    const key = String(item.resource.url).trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const line = compactResourceLink(item.resource, item.label);
+    if (line) lines.push(line);
+  }
+  return lines.length ? truncateToBudget(lines.join('\n'), 900) : '';
+}
+
 function buildStrategyEmbeds({
   ownTeamName,
   opponentTeamName,
@@ -2636,6 +2658,7 @@ async function execute(interaction) {
     const oppInjuryPlayers = teamInjuryPlayers(snapshot, opponentTeamId, 2);
     const { weekType, displayWeek } = currentWeekInfo(snapshot);
     const phaseLabel = weekType === 2 ? 'Postseason' : `Week ${displayWeek}`;
+    const runSeed = `${Date.now()}:${interaction.id || ''}`;
 
     const dangerLines = buildDangerLines(ownStats, oppStats, ownRanks, oppRanks);
     const offensiveCoverageMismatch = findCoverageMismatch(ownRoster, oppRoster);
@@ -2711,10 +2734,10 @@ async function execute(interaction) {
       ? pickTendencyLearningResource(
         relativeTendencyLabel(oppStats, leagueProfile),
         defensiveFieldVulnerability,
-        tendencySeedKey,
+        `${tendencySeedKey}:${runSeed}`,
         ownStats,
         oppStats,
-        { avoidUrls: chosenResourceUrls },
+        { avoidUrls: chosenResourceUrls, reuseAssignment: false },
       )
       : '';
     if (tendencyResource?.url) chosenResourceUrls.push(tendencyResource.url);
@@ -2724,8 +2747,8 @@ async function execute(interaction) {
         offensiveFieldProfile,
         ownStats,
         oppStats,
-        offenseSeedKey,
-        { avoidUrls: chosenResourceUrls },
+        `${offenseSeedKey}:${runSeed}`,
+        { avoidUrls: chosenResourceUrls, reuseAssignment: false },
       )
       : '';
     if (offenseResource?.url) chosenResourceUrls.push(offenseResource.url);
@@ -2734,10 +2757,10 @@ async function execute(interaction) {
         defensiveProfile,
         defensiveMismatch,
         defensiveFieldVulnerability,
-        defenseSeedKey,
+        `${defenseSeedKey}:${runSeed}`,
         ownStats,
         oppStats,
-        { avoidUrls: chosenResourceUrls },
+        { avoidUrls: chosenResourceUrls, reuseAssignment: false },
       )
       : '';
     const offenseStruggleNote = buildLearningStruggleNote('offense', ownStats, oppStats);
@@ -2810,6 +2833,18 @@ async function execute(interaction) {
         'sentence',
       );
       fields.push({ name: 'Defensive Game Plan', value: maxedEmbedFieldValue(combined), inline: false });
+    }
+    const resourceLinks = buildResourceLinksField([
+      tendencyBreakdown ? { label: 'Tendency', resource: tendencyResource } : null,
+      offensiveGamePlan ? { label: 'Offense', resource: offenseResource } : null,
+      defensiveGamePlan ? { label: 'Defense', resource: defenseResource } : null,
+    ].filter(Boolean));
+    if (resourceLinks) {
+      fields.push({
+        name: 'Resource Links',
+        value: resourceLinks,
+        inline: false,
+      });
     }
     if (offenseGamePlanActive || defenseGamePlanActive) {
       fields.push({
