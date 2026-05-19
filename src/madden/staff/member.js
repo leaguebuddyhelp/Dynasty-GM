@@ -29,8 +29,12 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) => o.setName('role').setDescription('Role to remove').setRequired(true).setAutocomplete(true))
       .addStringOption((o) => o.setName('extra_role').setDescription('Optional second role').setRequired(false).setAutocomplete(true)));
 
+function getSubcommandName(interaction) {
+  return interaction?.options?.data?.[0]?.name || interaction.options.getSubcommand(false);
+}
+
 export async function execute(interaction) {
-  const action = interaction.options.getSubcommand();
+  const action = getSubcommandName(interaction);
   if (action === 'onboard') {
     const guildId = interaction.guildId;
     if (guildId) {
@@ -54,7 +58,7 @@ export async function execute(interaction) {
 
 export async function autocomplete(interaction) {
   try {
-    const action = interaction.options.getSubcommand(false);
+    const action = getSubcommandName(interaction);
     if (action === 'onboard') return onboardAutocomplete(interaction);
     if (action === 'assign') return assignAutocomplete(interaction);
     if (action === 'remove') return removeAutocomplete(interaction);

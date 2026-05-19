@@ -263,42 +263,39 @@ export async function execute(interaction) {
 
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
-  const roleMap = loadRoleMapForGuild(interaction.guildId);
-  const focused = interaction.options.getFocused();
-  const focusedName = interaction.options.getFocused(true)?.name || 'role1';
-  const selectedRole1 = interaction.options.getString('role') || interaction.options.getString('role1');
-
-  let filteredRoles = [];
   try {
+    const roleMap = loadRoleMapForGuild(interaction.guildId);
+    const focused = interaction.options.getFocused();
+    const focusedName = interaction.options.getFocused(true)?.name || 'role1';
+    const selectedRole1 = interaction.options.getString('role') || interaction.options.getString('role1');
+
+    let filteredRoles = roleChoices(roleMap, interaction.guild);
     const targetOpt = interaction.options.get('user');
     const targetId = targetOpt?.value;
-    if (!targetId) {
-      await interaction.respond([]);
-      return;
+    if (targetId) {
+      const member = await interaction.guild.members.fetch(targetId).catch(() => null);
+      if (member) {
+        filteredRoles = filteredRoles.filter(r => {
+          const id = roleMap[r.name];
+          const role = (id ? interaction.guild.roles.cache.get(id) : null)
+            || interaction.guild.roles.cache.find((item) => item.name === r.name)
+            || null;
+          return role && member.roles.cache.has(role.id);
+        });
+      }
     }
-    const member = await interaction.guild.members.fetch(targetId).catch(() => null);
-    if (!member) {
-      await interaction.respond([]);
-      return;
-    }
-    filteredRoles = roleChoices(roleMap, interaction.guild).filter(r => {
-      const id = roleMap[r.name];
-      const role = (id ? interaction.guild.roles.cache.get(id) : null)
-        || interaction.guild.roles.cache.find((item) => item.name === r.name)
-        || null;
-      return role && member.roles.cache.has(role.id);
-    });
-  } catch {
-    filteredRoles = [];
-  }
 
-  const options = filteredRoles
-    .filter((item) => !['role2', 'extra_role'].includes(focusedName) || normalizeKey(item.name) !== normalizeKey(selectedRole1))
-    .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) + baseRoleBoost(item.name, focusedName) }))
-    .filter((item) => !focused || item.score > 0)
-    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-    .slice(0, 25);
-  await interaction.respond(options.map(({ name, value }) => ({ name, value })));
+    const options = filteredRoles
+      .filter((item) => !['role2', 'extra_role'].includes(focusedName) || normalizeKey(item.name) !== normalizeKey(selectedRole1))
+      .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) + baseRoleBoost(item.name, focusedName) }))
+      .filter((item) => !focused || item.score > 0)
+      .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+      .slice(0, 25);
+    await interaction.respond(options.map(({ name, value }) => ({ name, value })));
+  } catch (err) {
+    console.warn('[madden-removerole autocomplete] respond failed:', err?.message || err);
+    await interaction.respond([]).catch(() => null);
+  }
 }
 
 export default { data, execute, autocomplete };

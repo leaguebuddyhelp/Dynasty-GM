@@ -244,22 +244,23 @@ export async function execute(interaction) {
 
 export async function autocomplete(interaction) {
   if (!interaction.isAutocomplete()) return;
-  const roleMap = loadRoleMapForGuild(interaction.guildId);
-  const focused = interaction.options.getFocused();
-  const focusedName = interaction.options.getFocused(true)?.name || 'role1';
-  const selectedRole1 = interaction.options.getString('role') || interaction.options.getString('role1');
-  const options = [...roleChoices(roleMap, interaction.guild), ...coachChoicesFromSnapshot(interaction, roleMap)]
-    .filter((item, index, arr) => arr.findIndex((other) => normalizeKey(other.name) === normalizeKey(item.name)) === index)
-    .filter((item) => !['role2', 'extra_role'].includes(focusedName) || normalizeKey(item.name) !== normalizeKey(selectedRole1))
-    .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) + baseRoleBoost(item.name, focusedName) }))
-    .filter((item) => !focused || item.score > 0)
-    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-    .slice(0, 25);
   try {
+    const roleMap = loadRoleMapForGuild(interaction.guildId);
+    const focused = interaction.options.getFocused();
+    const focusedName = interaction.options.getFocused(true)?.name || 'role1';
+    const selectedRole1 = interaction.options.getString('role') || interaction.options.getString('role1');
+    const options = [...roleChoices(roleMap, interaction.guild), ...coachChoicesFromSnapshot(interaction, roleMap)]
+      .filter((item, index, arr) => arr.findIndex((other) => normalizeKey(other.name) === normalizeKey(item.name)) === index)
+      .filter((item) => !['role2', 'extra_role'].includes(focusedName) || normalizeKey(item.name) !== normalizeKey(selectedRole1))
+      .map((item) => ({ ...item, score: scoreAutocompleteChoice(item.name, focused) + baseRoleBoost(item.name, focusedName) }))
+      .filter((item) => !focused || item.score > 0)
+      .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+      .slice(0, 25);
     await interaction.respond(options.map(({ name, value }) => ({ name, value })));
   } catch (err) {
     // Ignore stale/unknown interaction errors; they occur if the client cancels the autocomplete
     console.warn('[madden-assignrole autocomplete] respond failed:', err?.message || err);
+    await interaction.respond([]).catch(() => null);
   }
 }
 

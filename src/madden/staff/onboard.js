@@ -802,6 +802,20 @@ export async function autocomplete(interaction) {
             if (options.length >= 25) break;
         }
 
+        if (!options.length) {
+            const roleMap = loadRoleMapForGuild(interaction.guildId);
+            const fallbackTeams = Object.keys(roleMap || {})
+                .filter((name) => / coach$/i.test(name))
+                .map((name) => name.replace(/ coach$/i, '').trim())
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b));
+            for (const teamName of fallbackTeams) {
+                if (focused && !teamName.toLowerCase().includes(focused)) continue;
+                options.push({ name: teamName.slice(0, 100), value: teamName.slice(0, 100) });
+                if (options.length >= 25) break;
+            }
+        }
+
         await interaction.respond(options);
     } catch (error) {
         console.warn('[madden-onboard] autocomplete failed:', error?.message || error);
