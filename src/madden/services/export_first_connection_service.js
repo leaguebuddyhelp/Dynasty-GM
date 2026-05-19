@@ -437,6 +437,17 @@ export async function getLeagueConnectionDashboardState(token) {
 
   const guildTokens = getGuildEATokens(dashboard.session.guildId);
   const authDraft = dashboard.session?.authDraft || null;
+  let authUrl = null;
+  let authUrlError = null;
+  try {
+    authUrl = getGuildAuthStartUrl(dashboard.session.guildId);
+  } catch (error) {
+    authUrlError = error?.message || 'Could not prepare the EA login link right now.';
+    console.error('[madden-connect] failed to build auth url', {
+      guildId: dashboard.session.guildId,
+      error: authUrlError,
+    });
+  }
   let availableLeagues = Array.isArray(dashboard.session?.availableLeagues)
     ? dashboard.session.availableLeagues
     : [];
@@ -462,7 +473,8 @@ export async function getLeagueConnectionDashboardState(token) {
 
   return {
     ...dashboard,
-    authUrl: getGuildAuthStartUrl(dashboard.session.guildId),
+    authUrl,
+    authUrlError,
     guildTokens,
     authDraft,
     availableLeagues,

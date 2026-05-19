@@ -1060,6 +1060,8 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   const snapshot = dashboard.latestSnapshot;
   const guildTokens = dashboard.guildTokens || null;
   const authDraft = dashboard.authDraft || null;
+  const authUrl = dashboard.authUrl || '';
+  const authUrlError = dashboard.authUrlError || '';
   const availableLeagues = Array.isArray(dashboard.availableLeagues) ? dashboard.availableLeagues : [];
   const leagueName = connection?.leagueName || '';
   const leaguePassword = connection?.leaguePassword || connection?.summary?.leaguePassword || '';
@@ -1432,8 +1434,9 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
               <span class="method-badge">${hasEaConnection ? 'Connected' : 'Required'}</span>
               <h3>EA Account Connection</h3>
               <p>${escapeHtml(eaStepCopy)}</p>
+              ${authUrlError ? `<div class="warning"><strong>EA login is unavailable right now.</strong><br />${escapeHtml(authUrlError)}</div>` : ''}
               <div class="source-actions">
-                <a class="button-link" href="${escapeHtml(dashboard.authUrl)}" target="_blank" rel="noreferrer">Open EA Login</a>
+                ${authUrl ? `<a class="button-link" href="${escapeHtml(authUrl)}" target="_blank" rel="noreferrer">Open EA Login</a>` : '<span class="button-link" style="opacity:.6;pointer-events:none;">Open EA Login</span>'}
                 ${hasEaConnection ? `
                   <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
                     <button type="submit" class="secondary">Reconnect EA</button>
