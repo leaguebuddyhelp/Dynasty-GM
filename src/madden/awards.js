@@ -10,6 +10,7 @@ import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
+import { stablePlayerKey } from './player_identity.js';
 
 const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
 const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
@@ -233,7 +234,7 @@ function mergePlayerStats(weekly) {
   const agg = new Map();
   const add = (list, fields) => {
     (list || []).forEach(p => {
-      const id = p.rosterId || `${p.fullName}-${p.teamId || ''}`;
+      const id = stablePlayerKey(p);
       if (!id) return;
       const cur = agg.get(id) || { ...p, totals: {} };
       fields.forEach(f => {
@@ -712,7 +713,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   })();
   const weeklyGradeMap = new Map(
     weeklyTopList.map(p => [
-      p.rosterId ?? `${p.name || p.fullName || ''}-${p.teamId || ''}`,
+      stablePlayerKey(p) || p.id || `${p.name || p.fullName || ''}-${p.teamId || ''}`,
       p.grade != null ? Number(p.grade) : undefined
     ])
   );
@@ -768,7 +769,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   };
   const gradeMap = (() => {
     const list = [];
-    const idFor = (p) => p?.rosterId ?? `${p?.fullName || ''}-${p?.teamId || p?.teamName || ''}`;
+    const idFor = (p) => stablePlayerKey(p) || p?.id || `${p?.fullName || p?.name || ''}-${p?.teamId || p?.teamName || ''}`;
     const weeklyStats = gatherWeeklyStats(snapshot, targetWeekIdx);
     const merged = mergePlayerStats(weeklyStats || {});
     merged.forEach(p => {
@@ -818,7 +819,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     const mention = coachMention(p.teamName, roleMap);
     const emoji = teamEmoji(p.teamName);
     const id = gradeMap.idFor(p);
-    const gradeFromList = weeklyGradeMap.get(p.rosterId ?? `${p.fullName || ''}-${p.teamId || ''}`) ?? p.grade;
+    const gradeFromList = weeklyGradeMap.get(id) ?? p.grade;
     const grade = gradeFromList != null ? Number(gradeFromList) : gradeMap.map.get(id);
     const gradeText = grade ? ` (Grade ${grade.toFixed(1)})` : '';
     const header = `${emoji ? emoji + ' ' : ''}${p.position || ''} ${p.fullName || p.name || 'Unknown'} — ${p.teamName}${gradeText}`;

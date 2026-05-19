@@ -8,6 +8,7 @@ import { upsertGuildPin } from '../shared/madden_guild_config.js';
 import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { getMessageForWeek } from './madden_utils.js';
 import { formatTeamLabelWithEmoji } from '../shared/madden_visuals.js';
+import { stablePlayerKey } from './player_identity.js';
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -61,7 +62,7 @@ function sumCategory(weeklyStats, key, listKey, fields) {
     const list = wk?.[key]?.[listKey];
     if (!Array.isArray(list)) return;
     list.forEach(p => {
-      const id = p.rosterId || `${p.fullName}-${p.teamId || ''}`;
+      const id = stablePlayerKey(p);
       if (!id) return;
       const cur = agg.get(id) || { fullName: p.fullName || 'Unknown', teamId: p.teamId, totals: {} };
       fields.forEach(f => {

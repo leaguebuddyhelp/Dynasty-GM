@@ -14,6 +14,7 @@ import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getMaddenLeagueSnapshotPath } from '../../leaguebuddy/paths.js';
 import { displaySetupItemName, getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
 import { getLeagueForGuild } from '../madden_config.js';
+import { getGuildEATokens } from '../ea_guild_auth.js';
 import {
   buildSetupReadinessLines,
   inspectSetupReadiness,
@@ -221,6 +222,53 @@ function buildSetupButtons({ decision, interaction }) {
   return rows;
 }
 
+function formatSnapshotAge(leagueId) {
+  if (!leagueId) return 'none';
+  try {
+    const filePath = getMaddenLeagueSnapshotPath(leagueId);
+    const stat = fs.statSync(filePath);
+    return `<t:${Math.floor(stat.mtimeMs / 1000)}:R>`;
+  } catch {
+    return 'none';
+  }
+}
+
+function loadSnapshotCoverage(leagueId) {
+  if (!leagueId) return {};
+  try {
+    const raw = fs.readFileSync(getMaddenLeagueSnapshotPath(leagueId), 'utf8');
+    const snapshot = JSON.parse(raw);
+    return snapshot?.syncCoverage || {};
+  } catch {
+    return {};
+  }
+}
+
+function buildConnectionHealthField(guildId, leagueId, snapshotOk) {
+  const status = connectionService.getLeagueConnectionStatus(guildId);
+  const connection = status?.connection || null;
+  const tokens = getGuildEATokens(guildId);
+  const coverage = loadSnapshotCoverage(leagueId);
+  const missingBuckets = Array.isArray(coverage.missingBuckets) ? coverage.missingBuckets.length : 0;
+  const leagueName = connection?.leagueName || connection?.summary?.leagueName || leagueId || 'not connected';
+  const syncError = connection?.summary?.lastSyncError ? String(connection.summary.lastSyncError) : '';
+  const lines = [
+    `League: **${leagueName}**`,
+    `EA account: **${tokens?.accessToken && tokens?.refreshToken ? 'connected' : 'not connected'}**${tokens?.personaName ? ` (${tokens.personaName})` : ''}`,
+    `Platform: **${tokens?.console || connection?.summary?.console || 'unknown'}**`,
+    `Snapshot: **${snapshotOk ? 'ready' : 'not ready'}** (${formatSnapshotAge(leagueId)})`,
+  ];
+  if (coverage.weeklyStatBuckets != null || coverage.scheduleWeeks != null) {
+    lines.push(`Data coverage: **${coverage.weeklyStatBuckets || 0}** stat weeks, **${coverage.scheduleWeeks || 0}** schedule weeks`);
+  }
+  if (missingBuckets) lines.push(`Missing stat buckets: **${missingBuckets}**`);
+  if (syncError) lines.push(`Last sync issue: ${syncError.slice(0, 160)}`);
+  return {
+    name: 'Connection',
+    value: lines.join('\n').slice(0, 1024),
+  };
+}
+
 async function maybeSyncSetupState(interaction) {
   const guildId = interaction.guildId;
   const actor = buildActorFromInteraction(interaction);
@@ -257,6 +305,7 @@ export async function execute(interaction) {
   const setupComplete = decision.title === 'Setup complete';
   const tier = status.overlayStatus.tier || billing?.plan || 'free';
   const claimPrompt = buildClaimPrompt({ billing, billingOk });
+  const connectionHealthField = buildConnectionHealthField(guildId, leagueId, snapshotOk);
 
   // --- EARLY INFO: Paid Plan Activation Reminder ---
   let earlyInfo = null;
@@ -281,6 +330,7 @@ export async function execute(interaction) {
 
   if (setupComplete) {
     embed.addFields(
+      connectionHealthField,
       {
         name: 'Commissioner Next',
         value: buildCommissionerLines(tier),
@@ -292,6 +342,7 @@ export async function execute(interaction) {
     );
   } else {
     const fields = [];
+    fields.push(connectionHealthField);
     if ((billing?.plan || 'free') !== 'free') {
       fields.push({
         name: 'Paid Plan',

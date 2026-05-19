@@ -9,6 +9,7 @@ import { resolveLeagueIdWithConfig } from './madden_data.js';
 import { loadTokens as loadTokensDb } from './madden_db.js';
 import { SnallabotProvider } from './providers/SnallabotProvider.js';
 import { getGuildEATokens, saveGuildEATokens } from './ea_guild_auth.js';
+import { stablePlayerKey } from './player_identity.js';
 import {
   getMaddenDataFilePath,
   getMaddenLeagueSnapshotPath,
@@ -46,7 +47,7 @@ function buildPlayerTotals(week) {
   const agg = new Map();
   const add = (list, fields) => {
     (list || []).forEach(p => {
-      const id = p.rosterId || `${p.fullName || ''}-${p.teamId || ''}`.trim();
+      const id = stablePlayerKey(p);
       if (!id) return;
       const cur = agg.get(id) || {
         rosterId: p.rosterId,
@@ -245,7 +246,12 @@ export async function runSync(leagueId, provider, options = {}) {
           const res = await client.getSchedules(Number(leagueId), stg, wk);
           const list = res?.gameScheduleInfoList || res?.schedules || [];
           for (const g of list) {
-            const key = g?.scheduleId || `${g?.homeTeamId}-${g?.awayTeamId}-${g?.weekIndex}-${stg}`;
+            const key = [
+              g?.seasonIndex ?? g?.seasonId ?? seasonIdx ?? '',
+              g?.stageIndex ?? g?.stage ?? stg,
+              g?.weekIndex ?? wk,
+              g?.scheduleId ?? `${g?.homeTeamId}-${g?.awayTeamId}`,
+            ].join(':');
             if (seen.has(key)) continue;
             seen.add(key);
             allSchedules.push(g);
@@ -466,6 +472,24 @@ export async function runSync(leagueId, provider, options = {}) {
     };
 
     const incompleteWeeks = mergedWeekly.filter(w => w.isIncomplete || (w.playerCount ?? 0) === 0);
+    const coverage = {
+      teams: (teams?.leagueTeamInfoList?.length ?? 0) > 0,
+      standings: (standings?.teamStandingInfoList?.length ?? 0) > 0,
+      scheduleWeeks: new Set((finalSchedule?.schedules || []).map((game) => `${game.stageIndex ?? game.stage ?? ''}:${game.weekIndex ?? ''}`)).size,
+      rosterTeams: Object.keys(rosters).length,
+      freeAgents: Array.isArray(freeAgents?.rosterInfoList)
+        ? freeAgents.rosterInfoList.length
+        : Array.isArray(freeAgents)
+          ? freeAgents.length
+          : 0,
+      weeklyStatBuckets: mergedWeekly.length,
+      missingBuckets: incompleteWeeks.map(w => ({
+        stage: w.stage ?? w.stageIndex ?? 0,
+        weekIndex: w.weekIndex,
+        playerCount: w.playerCount ?? 0,
+      })),
+    };
+    snapshot.syncCoverage = coverage;
 
     await emitProgress(options, 'Saving snapshot', 'Writing the updated league snapshot to disk.');
     const prevPath = path.join(prevDir, `${leagueId}.json`);
@@ -498,13 +522,10 @@ export async function runSync(leagueId, provider, options = {}) {
       standingsCount: standings?.teamStandingInfoList?.length ?? 0,
       gamesCount: finalSchedule?.schedules?.length ?? 0,
       rosterCount: Object.keys(rosters).length,
-      hasFreeAgents: !!freeAgents,
+      hasFreeAgents: coverage.freeAgents > 0,
       statsWeeks: mergedWeekly?.length ?? 0,
-      missingWeeks: incompleteWeeks.map(w => ({
-        stage: w.stage ?? w.stageIndex ?? 0,
-        weekIndex: w.weekIndex,
-        playerCount: w.playerCount ?? 0,
-      })),
+      missingWeeks: coverage.missingBuckets,
+      coverage,
       outPath,
       offSeasonStage: seasonInfoFinal.offSeasonStage ?? 0,
     };
@@ -567,8 +588,9 @@ async function execute(interaction) {
         { name: 'Games', value: String(summary.gamesCount), inline: true },
         { name: 'Rosters', value: `${summary.rosterCount} teams${summary.hasFreeAgents ? ' + FA' : ''}`, inline: true },
         { name: 'Stats Weeks', value: String(summary.statsWeeks), inline: true },
+        { name: 'Coverage', value: `Schedule weeks: ${summary.coverage?.scheduleWeeks ?? 0}\nMissing stat buckets: ${summary.coverage?.missingBuckets?.length ?? 0}`, inline: true },
         { name: 'Saved', value: summary.outPath, inline: false },
-        { name: 'Next', value: 'Run `/setup-channels`, then `/setup-pins`, then `/setup-roles`.', inline: false }
+        { name: 'Next', value: 'Return to `/setup` and press Refresh Setup.', inline: false }
       );
 
     await interaction.editReply({ embeds: [embed] });

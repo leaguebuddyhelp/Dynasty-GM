@@ -9,6 +9,7 @@ import { getPinId, setPinId } from './pins_store.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
 import { formatTeamLabelWithEmoji } from '../shared/madden_visuals.js';
+import { stablePlayerKey } from './player_identity.js';
 
 const TOP_FILE = path.join(process.cwd(), 'data', 'madden', 'top_players.json');
 const TOP_HISTORY_DIR = path.join(process.cwd(), 'data', 'madden', 'top_players_history');
@@ -84,7 +85,7 @@ function buildRichestPlayerEntries(snapshot) {
   };
   const consider = (list) => {
     (list || []).forEach(p => {
-      const id = p.rosterId != null ? String(p.rosterId) : (p.fullName || `${p.teamId || ''}-${p.statId || ''}`);
+      const id = stablePlayerKey(p);
       if (!id) return;
       const candidate = liftMetadata(p);
       if (!candidate) return;
@@ -119,7 +120,7 @@ function buildRichestPlayerEntries(snapshot) {
 function enrichWeeklyWithRichest(weekly, richest) {
   const enrichList = (list) => {
     return (list || []).map(p => {
-      const id = p.rosterId != null ? String(p.rosterId) : (p.fullName || `${p.teamId || ''}-${p.statId || ''}`);
+      const id = stablePlayerKey(p);
       const rich = richest.get(id);
       return rich ? { ...p, ...rich } : p;
     });
@@ -138,7 +139,7 @@ function buildRosterLookup(snapshot) {
   const teams = snapshot?.rosters?.teams || {};
   Object.values(teams).forEach(team => {
     (team?.rosterInfoList || []).forEach(pl => {
-      const key = pl.rosterId || pl.playerId || pl.esnId;
+      const key = stablePlayerKey(pl) || pl.playerId || pl.esnId;
       if (!key) return;
       const full = `${pl.firstName || ''} ${pl.lastName || ''}`.trim();
       map.set(key, {
@@ -158,7 +159,7 @@ function mergePlayerStats(weekly) {
   const agg = new Map();
   const add = (list, fields) => {
     (list || []).forEach(p => {
-      const id = p.rosterId || `${p.fullName}-${p.teamId || ''}`;
+      const id = stablePlayerKey(p);
       if (!id) return;
       const cur = agg.get(id) || { ...p, totals: {} };
       fields.forEach(f => {
@@ -1014,11 +1015,12 @@ function computeWeeklyList(snapshot, weekIndex) {
         else if (totalSkillTDs >= 3 && scrimYds < 110) score *= 0.62;
       }
     }
-    const rosterInfo = rosterEntry || rosterLookup.get(p.rosterId);
+    const playerId = stablePlayerKey(p);
+    const rosterInfo = rosterEntry || rosterLookup.get(playerId) || rosterLookup.get(p.rosterId);
     const yearsPro = rosterInfo?.yearsPro ?? p.yearsPro;
     const isRookie = yearsPro !== undefined && yearsPro !== null ? Number(yearsPro) === 0 : (p.isRookie ?? undefined);
     const common = {
-      id: p.rosterId || `${p.fullName}-${p.teamId || ''}`,
+      id: playerId || p.rosterId || `${p.fullName}-${p.teamId || ''}`,
       rosterId: p.rosterId,
       name: (rosterInfo?.fullName) || p.fullName || p.displayName || 'Unknown',
       position: (rosterInfo?.position || pos || 'UNK').toUpperCase(),
@@ -1092,7 +1094,7 @@ function computeWeeklyList(snapshot, weekIndex) {
       const pos = pl.position;
       const finalScore = Math.max(28, playerScore - idx * 3);
       rawList.push({
-        id: pl.rosterId || `${pl.firstName || ''}-${pl.lastName || ''}-${teamId}-${pos}`,
+        id: stablePlayerKey({ ...pl, teamId }) || pl.rosterId || `${pl.firstName || ''}-${pl.lastName || ''}-${teamId}-${pos}`,
         name: `${pl.firstName || ''} ${pl.lastName || ''}`.trim() || pos,
         position: pos,
         teamId: Number(teamId),
@@ -1319,7 +1321,7 @@ function topOffSeasonListFromRoster(snapshot, currentTop = [], targetCount = 100
   const teams = snapshot?.rosters?.teams || {};
   Object.entries(teams).forEach(([teamId, team]) => {
     (team?.rosterInfoList || []).forEach((player) => {
-      const id = String(player?.rosterId || player?.playerId || player?.esnId || `${player?.firstName || ''}-${player?.lastName || ''}-${teamId}`);
+      const id = String(stablePlayerKey({ ...player, teamId }) || player?.playerId || player?.esnId || `${player?.firstName || ''}-${player?.lastName || ''}-${teamId}`);
       if (!id || existingIds.has(id)) return;
       const name = `${player?.firstName || ''} ${player?.lastName || ''}`.trim() || player?.displayName || player?.name || 'Unknown Player';
       const position = String(player?.position || '').toUpperCase() || 'UNK';

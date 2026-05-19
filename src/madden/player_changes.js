@@ -6,6 +6,7 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenDataFilePath, getMaddenLeagueSnapshotPath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 import { getDevTraitEmoji } from '../shared/application_emojis.js';
+import { stablePlayerKey } from './player_identity.js';
 
 const LEAGUE_DIR = getMaddenLeaguesDir();
 const PREV_DIR = path.join(LEAGUE_DIR, 'previous');
@@ -45,7 +46,8 @@ function buildPlayerMap(snapshot) {
     const list = roster?.rosterInfoList || [];
     byTeam[teamId] = {};
     list.forEach(p => {
-      const key = p.rosterId ?? `${p.firstName}-${p.lastName}-${p.position}`;
+      const key = stablePlayerKey(p);
+      if (!key) return;
       byTeam[teamId][key] = p;
       players[key] = { ...p, teamId };
     });

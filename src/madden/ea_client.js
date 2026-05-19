@@ -227,7 +227,23 @@ async function sendBlazeRequest(token, session, request) {
   return parsed;
 }
 
-async function getExportData(token, session, exportType, body) {
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableExportError(errorOrText) {
+  const text = String(errorOrText?.message || errorOrText || '').toLowerCase();
+  return text.includes('err_timeout')
+    || text.includes('timeout')
+    || text.includes('temporarily')
+    || text.includes('econnreset')
+    || text.includes('socket hang up')
+    || text.includes('503')
+    || text.includes('502')
+    || text.includes('504');
+}
+
+async function getExportDataOnce(token, session, exportType, body) {
   const res = await fetch(
     `https://wal2.tools.gos.bio-iad.ea.com/wal/mca/${exportType}/${session.sessionKey}`,
     {
@@ -239,11 +255,34 @@ async function getExportData(token, session, exportType, body) {
   );
   const text = await res.text();
   const cleaned = text.replaceAll(/[\u0000-\u001F\u007F-\u009F]/g, "");
+  if (!res.ok || cleaned.includes('ERR_TIMEOUT')) {
+    throw new Error(`Blaze export error (${exportType}) status=${res.status}: ${cleaned}`);
+  }
   try {
     return JSON.parse(cleaned);
   } catch (e) {
     throw new Error(`Blaze export parse error (${exportType}): ${cleaned}`);
   }
+}
+
+async function getExportData(token, session, exportType, body) {
+  const maxAttempts = Number(process.env.EA_EXPORT_MAX_ATTEMPTS || 5);
+  const baseDelayMs = Number(process.env.EA_EXPORT_RETRY_BASE_MS || 1000);
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await getExportDataOnce(token, session, exportType, body);
+    } catch (error) {
+      lastError = error;
+      if (attempt >= maxAttempts || !isRetryableExportError(error)) break;
+      const delayMs = baseDelayMs * (2 ** (attempt - 1));
+      console.warn(`[ea] export retry ${attempt}/${maxAttempts} for ${exportType}: ${error?.message || error}`);
+      await wait(delayMs);
+    }
+  }
+
+  throw lastError;
 }
 
 export async function createEAClientFromEnv(env, options = {}) {
