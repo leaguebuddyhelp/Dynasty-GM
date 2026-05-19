@@ -348,11 +348,11 @@ function getTeamStrength(session, teamName, altName = '') {
 function strengthVerdict(session, teamName, group) {
   // Conservative thresholds: only call "strength" when the room is clearly stable.
   const st = getTeamStrength(session, teamName);
-  if (!st) return { strong: false, detail: null };
+  if (!st) return { strong: false, detail: null, level: 'unknown', starterCount: 0, topOvr: 0 };
 
   if (group === 'QB') {
     const qb = st?.qb;
-    if (!qb) return { strong: false, detail: null };
+    if (!qb) return { strong: false, detail: null, level: 'unknown', starterCount: 0, topOvr: 0 };
     const strongStarter = qb.starterOvr >= 82 && qb.starterYearsLeft >= 2 && qb.starterAge <= 33;
     const stableStarter = qb.starterOvr >= 80 && qb.starterYearsLeft >= 1 && qb.starterAge <= 34;
     const startingLevel = qb.starterOvr >= 78 && qb.starterAge <= 35;
@@ -362,47 +362,73 @@ function strengthVerdict(session, teamName, group) {
       ? `They’re already set at QB (starter ${qb.starterOvr} OVR, ${qb.starterYearsLeft} yrs left${hasBackup ? `, backup ${qb.backupOvr}` : ''}).`
       : null;
     const level = strongStarter ? 'strong' : stableStarter ? 'stable' : startingLevel ? 'starter' : 'thin';
-    return { strong, detail, level };
+    return { strong, detail, level, starterCount: qb.starterOvr >= 78 ? 1 : 0, topOvr: qb.starterOvr };
   }
 
   const top = st?.groups?.[group];
-  if (!Array.isArray(top) || !top.length) return { strong: false, detail: null };
+  if (!Array.isArray(top) || !top.length) return { strong: false, detail: null, level: 'thin', starterCount: 0, topOvr: 0 };
   const top1 = top[0] || { ovr: 0, yearsLeft: 0 };
   const top2 = top[1] || { ovr: 0, yearsLeft: 0 };
-  const starter = top1.ovr >= 84 && top1.yearsLeft >= 1;
-  const strong2 = top2.ovr >= 80 && top2.yearsLeft >= 1;
-  const solid2 = top2.ovr >= 77 && top2.yearsLeft >= 1;
+  const top1Active = top1.yearsLeft >= 1;
+  const top2Active = top2.yearsLeft >= 1;
+  const starterCount = top.filter((p) => Number(p?.ovr || 0) >= 78 && Number(p?.yearsLeft || 0) >= 1).length;
+  const topOvr = Number(top1.ovr || 0);
+  const superstar = topOvr >= 90 && top1Active;
+  const star = topOvr >= 86 && top1Active;
+  const starter = topOvr >= 82 && top1Active;
+  const highStarter = topOvr >= 84 && top1Active;
+  const strong2 = Number(top2.ovr || 0) >= 80 && top2Active;
+  const solid2 = Number(top2.ovr || 0) >= 77 && top2Active;
 
   // Depth expectations by group.
   let strong = false;
   if (group === 'WR' || group === 'CB') {
-    // Need two legit starters to call it a strength.
-    strong = starter && solid2;
+    // Three-WR/three-CB football means one good player is not enough unless he is a true star.
+    strong = (star && solid2) || (highStarter && strong2);
   } else if (group === 'OT' || group === 'IOL' || group === 'EDGE' || group === 'DT') {
-    // Trenches: one strong starter is enough to not be "screaming", but call it strength only with a strong #2.
-    strong = starter && strong2;
+    // Trenches need multiple bodies. A star plus a playable #2, or two strong starters, is settled.
+    strong = (star && solid2) || (highStarter && strong2);
   } else if (group === 'S' || group === 'LB') {
-    strong = starter && solid2;
+    strong = superstar || (highStarter && solid2) || (starter && strong2);
   } else if (group === 'TE' || group === 'RB') {
-    // Skill non-premium: only call it strength if the starter is clearly above average.
-    strong = top1.ovr >= 86 && top1.yearsLeft >= 1;
+    // One clear starter can make these luxury picks unless the position is a real need.
+    strong = starter;
   }
 
+  const level =
+    superstar ? 'superstar' :
+      star ? 'star' :
+        starter ? 'starter' :
+          starterCount > 0 ? 'depth' :
+            'thin';
   const detail = strong
-    ? `${group} wasn’t a fire-drill (top ${group}: ${top1.ovr}${top2?.ovr ? ` / ${top2.ovr}` : ''} OVR).`
+    ? `${group} already had an answer (top ${group}: ${top1.ovr}${top2?.ovr ? ` / ${top2.ovr}` : ''} OVR).`
     : null;
-  return { strong, detail };
+  return { strong, detail, level, starterCount, topOvr };
 }
 
-function isStrongAtPosition(session, teamName, group) {
-  // Prefer roster-driven strength if present; fall back to needs heuristics.
-  const verdict = strengthVerdict(session, teamName, group);
-  if (verdict.strong) return true;
+function isNonPremiumSkill(group) {
+  return ['RB', 'TE', 'LB', 'S'].includes(group);
+}
 
-  const needs = findNeedsForTeam(teamName, session?.teamNeeds || {}, null);
-  const idx = (needs || []).indexOf(group);
-  if (group === 'QB') return idx === -1;
-  return idx === -1 || idx >= 4;
+function luxuryGradeCap(group, pickNumber, strengthLevel = 'starter') {
+  const level = String(strengthLevel || 'starter');
+  const eliteRoom = ['strong', 'superstar', 'star'].includes(level);
+  const nonPremium = isNonPremiumSkill(group) || group === 'IOL' || group === 'DT';
+
+  if (pickNumber <= 10) {
+    if (group === 'QB') return eliteRoom ? 64 : 68;
+    if (nonPremium) return eliteRoom ? 66 : 70;
+    return eliteRoom ? 68 : 72;
+  }
+  if (pickNumber <= 20) {
+    if (group === 'QB') return 74;
+    if (nonPremium) return eliteRoom ? 74 : 78;
+    return eliteRoom ? 76 : 80;
+  }
+  if (group === 'QB') return 80;
+  if (nonPremium) return 82;
+  return 86;
 }
 
 function seededPickOne(seedStr, salt, arr) {
@@ -547,6 +573,8 @@ export function buildMockDraftPickEmbed(session, pick) {
   const details = [
     pick.position ? `**Pos:** ${pick.position}` : null,
     pick.school ? `**School:** ${pick.school}` : null,
+    pick.boardRank != null ? `**Board:** #${pick.boardRank}` : null,
+    pick.avp != null ? `**AVP:** ${Number(pick.avp).toFixed(1)}` : null,
     typeof pick.via === 'string' && pick.via ? `**Via:** ${pick.via}` : null,
     pick.actorLabel ? `**GM:** ${pick.actorLabel}` : (pick.userId ? `**GM:** <@${pick.userId}>` : null),
   ].filter(Boolean);
@@ -774,7 +802,13 @@ function autoPickProspect(session) {
     if (needSet.has(group)) score -= 12;
     const strength = strengthVerdict(session, slot.name, group);
     if (strength.strong && needRank === -1) {
-      score += group === 'QB' ? 80 : 24;
+      const eliteRoom = ['strong', 'superstar', 'star'].includes(String(strength.level || ''));
+      const luxuryPenalty =
+        group === 'QB' ? 90 :
+          pickNumber <= 12 ? 48 :
+            pickNumber <= 24 ? 34 :
+              22;
+      score += luxuryPenalty + (eliteRoom ? 10 : 0);
     }
     if (['RB', 'TE'].includes(group) && idx < 12 && overall < 84 && !needSet.has(group)) score += 20;
     score += seededRand(session.variantSeed || session.id, `${slot.name}|${session.currentPickIndex}|${prospect.name}`, 8);
@@ -905,9 +939,10 @@ function buildPickSynopsis({
 
   const needsCtx = session ? buildNeedsContext(session, { name: teamName }, group) : null;
   const strongVerdict = session ? strengthVerdict(session, teamName, group) : { strong: false, detail: null };
-  const strongAtPos = session ? (strongVerdict?.strong || isStrongAtPosition(session, teamName, group)) : false;
+  const strongAtPos = Boolean(strongVerdict?.strong);
   const offNeedStrength = strongAtPos && (needsCtx?.isOffNeed ?? (needRank === -1));
-  const luxuryQB = group === 'QB' && offNeedStrength;
+  const luxuryPick = offNeedStrength;
+  const luxuryQB = group === 'QB' && luxuryPick;
 
   function findBestPremiumStillOnBoard() {
     if (!session || !Array.isArray(session.availableProspects)) return [];
@@ -932,8 +967,8 @@ function buildPickSynopsis({
   }
 
   const talentText =
-    luxuryQB ? 'The talent may be real, but the roster context drags the pick down.' :
-    eliteTier === 'generational' ? 'Franchise-caliber talent at the top of the class.' :
+    luxuryPick ? 'The talent may be real, but the roster context drags the pick down.' :
+      eliteTier === 'generational' ? 'Franchise-caliber talent at the top of the class.' :
       eliteTier === 'elite' ? 'Legit elite talent—difference-maker profile.' :
         eliteTier === 'high' ? 'High-end profile with starter traits.' :
           eliteTier === 'solid' ? 'Solid overall profile if the development hits.' :
@@ -993,7 +1028,8 @@ function buildPickSynopsis({
                 'neutral';
 
   const headline =
-    luxuryQB ? 'Bad roster process.' :
+    luxuryPick && numericScore < 72 ? 'Bad roster process.' :
+      luxuryPick ? 'Luxury pick.' :
       isEliteGrade ? 'Home-run process.' :
       isGoodGrade ? 'Strong process.' :
         severity === 'ugly' ? 'This is a rough one.' :
@@ -1006,13 +1042,17 @@ function buildPickSynopsis({
 
   const boardLine = `#${boardRank} overall (No. ${posRank} ${group})`;
   const consensusLine = avp != null ? `AVP ${Number(avp).toFixed(1)}` : null;
-  const valueLine = luxuryQB
+  const valueLine = luxuryPick
     ? `${valueText}${spotsText ? ` ${spotsText}` : ''}, but market value is not the issue here`
     : `${valueText}${spotsText ? ` ${spotsText}` : ''}`;
 
   const processClose =
-    luxuryQB
-      ? 'Premium capital at quarterback only makes sense if they are forcing a reset, and this roster does not read that way.'
+    luxuryPick
+      ? (
+        luxuryQB
+          ? 'Premium capital at quarterback only makes sense if they are forcing a reset, and this roster does not read that way.'
+          : 'That is premium capital spent where the roster already had a credible answer.'
+      )
       : isEliteGrade
       ? 'This is the kind of pick you turn in fast and feel great about.'
       : isGoodGrade
@@ -1120,8 +1160,12 @@ function buildPickSynopsis({
     : '';
 
   const fitClause =
-    luxuryQB
-      ? `It does not line up with the roster; this is a luxury swing at the most expensive position on the board.`
+    luxuryPick
+      ? (
+        luxuryQB
+          ? `It does not line up with the roster; this is a luxury swing at the most expensive position on the board.`
+          : `It does not line up with the roster; this is a luxury swing at a settled position.`
+      )
       : tier === 'major_reach'
       ? `It lines up as ${fitText}, but it’s a major overdraft.`
       : tier === 'reach'
@@ -1208,7 +1252,7 @@ function evaluatePickGrade(session, slot, prospect) {
   const premium = maddenPositionValue(group, metaMode);
 
   const rosterStrength = strengthVerdict(session, slot?.name, group);
-  const strongAtPos = rosterStrength?.strong || isStrongAtPosition(session, slot?.name, group);
+  const strongAtPos = Boolean(rosterStrength?.strong);
 
   // Put a name on the situation (drives both score + blurb via boardDelta)
   // consensusDelta = expectedPick - actualPick
@@ -1347,36 +1391,34 @@ function evaluatePickGrade(session, slot, prospect) {
   if (group === 'QB' && needRank === 0) score += 6;
 
   // Needs vs strength: if the team is already strong at the drafted position, treat it as a "luxury" move.
-  // This is intentionally harsher for QB because it blocks value at other premium positions.
+  // This is intentionally harsher early because first-round picks should solve real roster problems.
   if (isOffNeed && strongAtPos) {
     if (group === 'QB') {
       score -= boardExpectation <= 10 ? 34 : 18;
-    } else if (['RB', 'TE'].includes(group)) {
-      score -= boardExpectation <= 16 ? 10 : 6;
+    } else if (isNonPremiumSkill(group) || ['IOL', 'DT'].includes(group)) {
+      score -= boardExpectation <= 16 ? 18 : 10;
     } else {
-      score -= boardExpectation <= 16 ? 8 : 4;
+      score -= boardExpectation <= 16 ? 14 : 8;
     }
   }
 
   // If it's an elite/generational prospect, soften "non-need" penalties (teams can justify it)
-  if (needRank === -1 && group !== 'QB' && ['elite', 'generational'].includes(talentTier)) score += 5;
+  if (needRank === -1 && !strongAtPos && group !== 'QB' && ['elite', 'generational'].includes(talentTier)) score += 5;
 
   // Reaches hurt a bit less if you're drafting a true premium position with elite talent
-  if (group !== 'QB' && ['reach', 'major_reach'].includes(reachTier) && premium >= 7 && ['elite', 'generational'].includes(talentTier)) score += 4;
+  if (!strongAtPos && group !== 'QB' && ['reach', 'major_reach'].includes(reachTier) && premium >= 7 && ['elite', 'generational'].includes(talentTier)) score += 4;
 
-  if (group === 'QB' && isOffNeed && strongAtPos) {
-    if (boardExpectation <= 10) {
-      const cap = rosterStrength?.level === 'strong' ? 64 : 68;
-      score = Math.min(score, cap);
-    } else if (boardExpectation <= 20) {
-      score = Math.min(score, 74);
-    }
+  if (isOffNeed && strongAtPos) {
+    const cap = luxuryGradeCap(group, boardExpectation, rosterStrength?.level);
+    if (cap != null) score = Math.min(score, cap);
   }
 
   score = Math.max(55, Math.min(99, score));
   return {
     score,
     grade: gradeLabelFromScore(score),
+    avp,
+    boardRank,
     synopsis: buildPickSynopsis({
       teamName: slot.name,
       prospect,
@@ -1413,6 +1455,8 @@ export function applyPick(session, userId, prospect, options = {}) {
     prospectName: prospect.name,
     position: prospect.position,
     school: prospect.school,
+    boardRank: review?.boardRank ?? (Number(prospect.rank || null) || null),
+    avp: review?.avp ?? avpForProspect(session, prospect),
     grade: review?.grade || null,
     gradeScore: review?.score || null,
     synopsis: review?.synopsis || null,
