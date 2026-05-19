@@ -595,6 +595,8 @@ export const data = new SlashCommandBuilder()
     .addStringOption((o) => o.setName('team').setDescription('Team name (e.g., "Rams")').setRequired(true).setAutocomplete(true))
     .setDefaultMemberPermissions(null);
 
+export const skipDeploy = true;
+
 export async function execute(interaction) {
     const roleMap = loadRoleMapForGuild(interaction.guildId);
     // Defer immediately to avoid the command "thinking" while we fetch roles/snapshot.
