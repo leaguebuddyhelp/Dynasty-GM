@@ -37,6 +37,8 @@ const BETA_MADDEN_COMMANDS = new Set([
   'scout',
   'tradeblock',
   'member',
+  'onboard',
+  'promo',
   'create-threads',
   'delete-threads',
   'weeklyupdate',
