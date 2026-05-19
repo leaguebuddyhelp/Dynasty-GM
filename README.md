@@ -34,7 +34,7 @@ npm run dev
 - Customer-facing commands:
   - `/pricing` shows Free, Standard, and Premium plus Stripe checkout buttons when configured.
   - `/plan` shows current plan, setup state, packs enabled, blocked features, and next steps.
-  - `/claim-plan` lets a server manager claim a paid plan after Stripe checkout.
+  - `/setup` lets a server manager claim a paid plan and finish setup.
 - Internal billing commands:
   - `/activateplan`
   - `/deactivateplan`
@@ -51,8 +51,8 @@ npm run dev
   1. Customer invites LEAGUEbuddy to the target server
   2. If they need plan info, they run `/pricing`
   3. Customer pays through the Stripe link
-  4. Customer runs `/claim-plan`
-  5. Customer runs `/setup`
+  4. Customer runs `/setup code:<claim-code>`
+  5. Customer presses the button `/setup` shows
 - No Stripe webhook automation is implemented in this flow.
 
 ## Optional Stripe claim webhook
@@ -85,7 +85,7 @@ npm run dev
 - The clean commissioner flow inside Discord is:
   1. Invite the bot
   2. If needed: `/pricing`
-  3. If this is a paid server: `/claim-plan`
+  3. If this is a paid server: `/setup code:<claim-code>`
   4. Run `/setup` and press the button it shows
   5. `/create-threads`
 - The admin summary command for this flow is:

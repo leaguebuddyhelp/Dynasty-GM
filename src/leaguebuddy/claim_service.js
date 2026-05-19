@@ -144,7 +144,7 @@ export function createPendingClaim({
   const claim = claimRepository.upsertClaim(generateClaimId(), {
     claimCode,
     // Keep `paymentReference` for backward compatibility, but allow multiple references.
-    // This makes it easy for users to paste either `pi_...` or `cs_...` into /claim-plan.
+    // This makes it easy for users to paste either `pi_...` or `cs_...` into /setup.
     paymentReference: allRefs[0] || null,
     paymentReferences: allRefs,
     paymentSource,

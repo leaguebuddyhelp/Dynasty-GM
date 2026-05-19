@@ -59,7 +59,7 @@ async function execute(interaction) {
         value: [
           '`/pricing`',
           '`/plan`',
-          '`/claim-plan`',
+          '`/setup code:<claim-code>`',
         ].join('\n'),
       },
       {

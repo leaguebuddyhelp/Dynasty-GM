@@ -20,7 +20,6 @@ const BETA_MADDEN_COMMANDS = new Set([
   'sync',
   'pricing',
   'plan',
-  'claim-plan',
   'setup',
   'help',
   'franchisehub',

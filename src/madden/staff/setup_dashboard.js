@@ -9,6 +9,7 @@ import {
 } from 'discord.js';
 
 import { buildActorFromInteraction } from '../../leaguebuddy/audit.js';
+import { claimPlanForGuild } from '../../leaguebuddy/claim_service.js';
 import { ensureGuildActivated, setSetupCompleted } from '../../leaguebuddy/guild_access_service.js';
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getMaddenLeagueSnapshotPath } from '../../leaguebuddy/paths.js';
@@ -23,7 +24,15 @@ import connectionService from '../services/export_first_connection_service.js';
 export const data = new SlashCommandBuilder()
   .setName('setup')
   .setDescription('Admin-only: set up this server.')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .addStringOption((o) =>
+    o.setName('code')
+      .setDescription('Optional claim code after checkout')
+      .setRequired(false))
+  .addStringOption((o) =>
+    o.setName('payment_reference')
+      .setDescription('Optional Stripe payment reference from your receipt')
+      .setRequired(false));
 
 export const deferOnDispatch = { flags: 64 };
 
@@ -39,7 +48,7 @@ function formatMissingItems(items = []) {
 function buildClaimPrompt({ billing, billingOk }) {
   const plan = String(billing?.plan || 'free').toLowerCase();
   if (plan !== 'free' && !billingOk) {
-    return `Run \`/claim-plan\`, then press Check Again. Status: ${billing?.subscriptionStatus || 'inactive'}`;
+    return `Run \`/setup code:<claim-code>\`, then press Check Again. Status: ${billing?.subscriptionStatus || 'inactive'}`;
   }
 
   return 'Paid plan is active.';
@@ -66,11 +75,11 @@ function buildCoachLines() {
 }
 
 function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, billingOk }) {
-  // If plan is not free and billing is not active, require /claim-plan as the very first step
+  // If plan is not free and billing is not active, require the claim code as the first step.
   if (!billingOk && (billing?.plan || 'free') !== 'free') {
     return {
       title: 'Activate Plan',
-      action: 'Run `/claim-plan`, then press Check Again.',
+      action: 'Run `/setup code:<claim-code>`, then press Check Again.',
       details: `Status: ${billing?.subscriptionStatus || 'inactive'} • Plan: ${billing?.plan || 'unknown'}`,
     };
   }
@@ -246,10 +255,47 @@ async function maybeSyncSetupState(interaction) {
   return getSetupStatus(guildId);
 }
 
+async function maybeClaimPlanFromSetup(interaction) {
+  const claimCode = interaction.options.getString('code');
+  const paymentReference = interaction.options.getString('payment_reference');
+  if (!claimCode && !paymentReference) return null;
+
+  const actor = buildActorFromInteraction(interaction);
+  const { claim, record } = await claimPlanForGuild({
+    guildId: interaction.guildId,
+    claimCode,
+    paymentReference,
+    actor,
+    source: 'command:/setup',
+  });
+
+  return { claim, record };
+}
+
 export async function execute(interaction) {
   const guildId = interaction.guildId;
   if (!guildId) {
     await interaction.editReply({ content: 'This command can only be used in a server.' });
+    return;
+  }
+
+  let claimedPlan = null;
+  try {
+    claimedPlan = await maybeClaimPlanFromSetup(interaction);
+  } catch (error) {
+    await interaction.editReply({
+      content: '',
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xed4245)
+          .setTitle('Plan Claim Failed')
+          .setDescription(error?.message || 'The plan could not be claimed right now.')
+          .addFields({
+            name: 'Next',
+            value: 'Check the claim code or use the Stripe payment reference from your receipt.',
+          }),
+      ],
+    });
     return;
   }
 
@@ -277,8 +323,10 @@ export async function execute(interaction) {
   if ((billing?.plan || 'free') !== 'free' && !billingOk) {
     earlyInfo = [
       'Paid plan is not active yet.',
-      'Run `/claim-plan`, then press Check Again.',
+      'Run `/setup code:<claim-code>`, then press Check Again.',
     ].join('\n');
+  } else if (claimedPlan) {
+    earlyInfo = `Plan claimed: **${claimedPlan.record.plan}**.`;
   }
 
   const embed = new EmbedBuilder()

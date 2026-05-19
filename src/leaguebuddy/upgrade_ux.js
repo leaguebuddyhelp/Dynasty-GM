@@ -160,7 +160,7 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
     .setColor(0x5865f2)
     .setDescription([
       'Pick a monthly plan, then use the buy buttons below.',
-      'After checkout: save the claim code, invite LEAGUEbuddy, run `/claim-plan`, then run `/setup`.',
+      'After checkout: save the claim code, invite LEAGUEbuddy, then run `/setup code:<claim-code>`.',
     ].join('\n'))
     .addFields(
       ...[PLANS.free, PLANS.standard, PLANS.premium].map((plan) => {
@@ -190,8 +190,8 @@ export function buildPricingEmbeds({ currentPlan = null } = {}) {
       '1. Finish checkout.',
       '2. Save the claim code.',
       '3. Invite LEAGUEbuddy to the server you want to activate.',
-      '4. Run `/claim-plan` there.',
-      '5. Run `/setup` and press the button it shows.',
+      '4. Run `/setup code:<claim-code>` there.',
+      '5. Press the button `/setup` shows.',
     ].join('\n'));
 
   return [pricing, nextStep];
@@ -205,8 +205,8 @@ export function buildPostPaymentEmbed() {
     .setDescription([
       '1. Save the claim code from the success page.',
       '2. Invite LEAGUEbuddy to the server you want to activate.',
-      '3. Run `/claim-plan` there.',
-      '4. Run `/setup` and press the button it shows.',
+      '3. Run `/setup code:<claim-code>` there.',
+      '4. Press the button `/setup` shows.',
       '5. Use `/pricing` there if you want to confirm the package or upgrade later.',
     ].join('\n'));
 }
@@ -318,9 +318,9 @@ export function buildClaimInstructions() {
     'How to activate paid access:',
     '1. Buy from `/pricing` if you need a paid plan.',
     '2. Save the claim code from the success page.',
-    '3. Go to the server you want to upgrade and run `/claim-plan`.',
+    '3. Go to the server you want to upgrade and run `/setup code:<claim-code>`.',
     '4. If you lose the code, use the Stripe payment reference from your receipt email instead.',
-    '5. Run `/setup` and press the button it shows.',
+    '5. Press the button `/setup` shows.',
   ].join('\n');
 }
 

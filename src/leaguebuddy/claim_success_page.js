@@ -122,10 +122,10 @@ async function handleClaimSuccess(req, res) {
             '<p><strong>In Discord:</strong></p>',
             '<ol class="steps">',
             '<li>Go to the server (guild) you want upgraded.</li>',
-            '<li>Run <code>/claim-plan</code> and enter the code above.</li>',
+            '<li>Run <code>/setup code:&lt;claim-code&gt;</code> with the code above.</li>',
             '<li>Run <code>/plan</code> to confirm your server is active.</li>',
             '</ol>',
-            '<p><strong>If you lose the code:</strong> run <code>/claim-plan</code> and use the Stripe payment reference from your receipt email or the backup reference shown above.</p>',
+            '<p><strong>If you lose the code:</strong> run <code>/setup payment_reference:&lt;receipt-reference&gt;</code> with the Stripe payment reference from your receipt email or the backup reference shown above.</p>',
         ].join(''),
     }));
 }

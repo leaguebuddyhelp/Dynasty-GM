@@ -31,8 +31,8 @@ export async function execute(interaction) {
   if (!claimCode && !paymentReference) {
     const embed = new EmbedBuilder()
       .setColor(0xf39c12)
-      .setTitle('Claim Your Plan')
-      .setDescription('Enter either a one-time claim code or the Stripe payment reference from your receipt email.')
+  .setTitle('Claim Your Plan')
+      .setDescription('Recommended: use `/setup code:<claim-code>`. This command is a fallback.')
       .addFields({
         name: 'How It Works',
         value: buildClaimInstructions(),
@@ -65,14 +65,13 @@ export async function execute(interaction) {
         {
           name: 'Next Steps',
           value: [
-            '• Run `/plan` to confirm access.',
-            '• Run `/setup` to see the next server step.',
-            '• If this is a brand new server, a manager should run `/setup` and press the button it shows.',
+            '• Run `/setup` and press the button it shows.',
+            '• Run `/plan` only if you want to confirm access.',
           ].join('\n'),
         },
         {
           name: 'Recovery Tip',
-          value: 'If someone loses the one-time code, `/claim-plan payment_reference:...` can still use the Stripe receipt reference instead.',
+          value: 'If someone loses the one-time code, `/setup payment_reference:...` can still use the Stripe receipt reference instead.',
         },
       );
 
