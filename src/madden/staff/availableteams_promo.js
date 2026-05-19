@@ -1,13 +1,10 @@
 import { SlashCommandBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
-import { draftOrder, applyPickTrades } from '../coach/mockdraft.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
 import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
+import { getMessageForWeek } from '../madden_utils.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const DEFAULT_PROMO_INVITE_URL = process.env.LB_PROMO_INVITE_URL || 'https://discord.gg/VHB7UXttwB';
 
 function safeEditReply(interaction, payload) {
@@ -17,14 +14,6 @@ function safeEditReply(interaction, payload) {
     }
     throw err;
   });
-}
-
-function loadRoleMap() {
-  try {
-    return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8'));
-  } catch {
-    return {};
-  }
 }
 
 function normalizeName(name) {
@@ -93,48 +82,41 @@ function normalizeKey(name = '') {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function buildPickMap(snapshot) {
-  if (!snapshot) return new Map();
-  let order = [];
-  try {
-    const seasonYear =
-      snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear ||
-      snapshot?.info?.calendarYear ||
-      snapshot?.calendarYear;
-    order = applyPickTrades(draftOrder(snapshot), seasonYear);
-  } catch { return new Map(); }
-  const map = new Map();
-  order.forEach((pick, idx) => {
-    const ownerName = pick.name || pick.nick || '';
-    const keys = [
-      normalizeKey(ownerName),
-      normalizeKey(ownerName.split(/\s+/).pop() || ownerName),
-    ].filter(Boolean);
-    if (!keys.length) return;
-    const entry = { num: idx + 1, via: pick.via };
-    keys.forEach(k => {
-      const list = map.get(k) || [];
-      list.push(entry);
-      map.set(k, list);
-    });
-  });
-  return map;
-}
-
-function uniqPicks(picks = []) {
-  const seen = new Set();
-  const out = [];
-  for (const p of picks) {
-    const key = `${p.num}|${p.via || ''}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(p);
+function firstPositiveNumber(...values) {
+  for (const value of values) {
+    const num = Number(value);
+    if (Number.isFinite(num) && num > 0) return num;
   }
-  return out;
+  return null;
 }
 
-function firstRoundOnly(picks = []) {
-  return (picks || []).filter(p => Number(p?.num) >= 1 && Number(p?.num) <= 32);
+function currentWeekNumber(snapshot, seasonInfo = {}) {
+  const displayWeek = firstPositiveNumber(seasonInfo.displayWeek, snapshot?.currentWeek);
+  if (displayWeek) return displayWeek;
+  const zeroBased = Number(seasonInfo.seasonWeek ?? seasonInfo.weekIndex);
+  if (Number.isFinite(zeroBased) && zeroBased >= 0) return zeroBased + 1;
+  return 1;
+}
+
+function promoSeasonLabel(snapshot, seasonInfo = {}) {
+  const seasonNumber = seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? seasonInfo.calendarYear ?? snapshot?.calendarYear ?? '–';
+  const stage = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? snapshot?.stage ?? 1);
+  const offSeasonStage = Number(seasonInfo.offSeasonStage || 0);
+  const seasonTitle = String(seasonInfo.seasonTitle || '').trim();
+  const week = currentWeekNumber(snapshot, seasonInfo);
+
+  let phaseLabel;
+  if (offSeasonStage > 0 || stage === 8 || seasonTitle.toLowerCase().includes('offseason')) {
+    phaseLabel = `Offseason Stage ${offSeasonStage || 1}`;
+  } else if (stage === 0) {
+    phaseLabel = `Preseason Week ${Math.max(1, week)}`;
+  } else if (stage === 2 || week >= 19) {
+    phaseLabel = getMessageForWeek(week, 2, 0);
+  } else {
+    phaseLabel = `Regular Season Week ${Math.max(1, week)}`;
+  }
+
+  return `Season ${seasonNumber} • ${phaseLabel}`;
 }
 
 export const data = new SlashCommandBuilder()
@@ -174,27 +156,10 @@ export async function execute(interaction) {
 
     const snapshot = loadLeagueSnapshot(leagueId);
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-    const isOffseason = (seasonInfo.seasonWeekType === 8) ||
-      (seasonInfo.seasonTitle || '').toLowerCase().includes('offseason') ||
-      (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && seasonInfo.seasonWeekType !== 1);
-    const pickMap = buildPickMap(snapshot);
     const debug = process.env.MOCK_DEBUG === 'true';
     if (debug) {
       console.log('[promo] seasonInfo', seasonInfo);
-      console.log('[promo] isOffseason', isOffseason);
     }
-    const seasonNumber = seasonInfo.seasonNumber ?? seasonInfo.seasonIndex ?? (seasonInfo.calendarYear ? seasonInfo.calendarYear + 1 : '–');
-    const rawWeek = seasonInfo.displayWeek ?? seasonInfo.seasonWeek ?? seasonInfo.weekIndex ?? '–';
-    const weekNumber = (isOffseason && seasonInfo.offSeasonStage)
-      ? `Offseason (Stage ${seasonInfo.offSeasonStage})`
-      : (() => {
-        const n = Number(rawWeek);
-        if (Number.isFinite(n)) return `Week ${n}`;
-        const label = String(rawWeek || '').trim();
-        const match = label.match(/\b(?:week|w)\s*\.?\s*(\d+)\b/i) || label.match(/^\s*(\d+)\s*$/);
-        if (match) return `Week ${match[1]}`;
-        return label || '–';
-      })();
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
     const standings = snapshot?.standings?.teamStandingInfoList || [];
     const standingsByTeam = new Map();
@@ -220,51 +185,27 @@ export async function execute(interaction) {
         assigned = assigned || count > 0;
       }
       if (assigned) continue;
-      if (isOffseason) {
-        const nameFormatted = teamName;
-        const keys = [
-          normalizeKey(nameFormatted),
-          normalizeKey((nameFormatted.split(/\s+/).pop()) || ''),
-          normalizeKey(t.nickName || ''),
-          normalizeKey((t.nickName || '').split(/\s+/).pop() || ''),
-        ].filter(Boolean);
-        const seen = new Set();
-        let merged = [];
-        for (const k of keys) {
-          if (seen.has(k)) continue;
-          seen.add(k);
-          const arr = pickMap.get(k);
-          if (arr && arr.length) merged = merged.concat(arr);
-        }
-        if (debug) console.log('[promo] open team', nameFormatted, 'keys', keys, 'picks', merged);
-        const deduped = firstRoundOnly(uniqPicks(merged)).sort((a, b) => a.num - b.num);
-        const pickText = deduped && deduped.length
-          ? deduped.map(p => p.via ? `#${p.num} via ${p.via}` : `#${p.num}`).join(', ')
-          : 'No 1st';
-        openLines.push(`${nameFormatted} - 1st: ${pickText}`);
-      } else {
-        const rec = standingsByTeam.get(t.teamId);
-        const wins = rec?.totalWins ?? rec?.wins ?? 0;
-        const losses = rec?.totalLosses ?? rec?.losses ?? 0;
-        const ties = rec?.totalTies ?? rec?.ties ?? 0;
-        const record = ties ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
-        openLines.push(`${teamName} - ${record}`);
-      }
+      const rec = standingsByTeam.get(t.teamId);
+      const wins = rec?.totalWins ?? rec?.wins ?? 0;
+      const losses = rec?.totalLosses ?? rec?.losses ?? 0;
+      const ties = rec?.totalTies ?? rec?.ties ?? 0;
+      const record = ties ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
+      openLines.push(`${teamName} - ${record}`);
     }
 
     const promoLines = [
-      '**LEAGUEbuddy Madden**',
-      `Season ${seasonNumber} • ${weekNumber}`,
+      '🏈 **LEAGUEbuddy Madden**',
+      promoSeasonLabel(snapshot, seasonInfo),
       '',
       'A cleaner Discord home for connected franchise leagues.',
       '',
-      '**League Tools**',
+      '🧰 **League Tools**',
       '• Live standings, schedules, stats, awards, and weekly updates',
       '• Auto game threads, reminders, stream links, and staff logs',
       '• Scouting hub, draft primer, mock draft, big board, and matchup prep',
       '• Premium adds recognition points, sportsbook, perks, and deeper engagement',
       '',
-      `**Open Teams (${openLines.length})**`,
+      `📋 **Open Teams (${openLines.length})**`,
       (openLines.length
         ? openLines.map(l => `• ${l}`).join('\n')
         : 'No open teams right now.'),
