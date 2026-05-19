@@ -1,5 +1,8 @@
 import fs from 'fs';
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   EmbedBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
@@ -13,9 +16,9 @@ import { displaySetupItemName, getSetupStatus } from '../../leaguebuddy/setup_st
 import { getLeagueForGuild } from '../madden_config.js';
 import {
   buildSetupReadinessLines,
-  buildSetupReadinessNextSteps,
   inspectSetupReadiness,
 } from './setup_readiness.js';
+import connectionService from '../services/export_first_connection_service.js';
 
 export const data = new SlashCommandBuilder()
   .setName('setup')
@@ -35,9 +38,8 @@ function formatMissingItems(items = []) {
 
 function buildFlowLines() {
   return [
-    '1. Do the one next step below.',
-    '2. Run `/setup` again.',
-    '3. Repeat until setup is complete.',
+    'Use the button below, then press Refresh Setup.',
+    'If a button is unavailable, fix the item shown above and refresh.',
   ].join('\n');
 }
 
@@ -106,45 +108,51 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
   if (!leagueId) {
     return {
       title: 'Connect the league',
-      action: 'Run `/connectleague`, finish the dashboard flow, then rerun `/setup`.',
-      details: 'For a free server, this is the main first step after inviting LEAGUEbuddy.',
+      action: 'Open the league dashboard, connect EA, choose the league, then come back here.',
+      details: 'This is the main first step after inviting LEAGUEbuddy.',
+      actionKey: 'connect',
     };
   }
   if (!snapshotOk) {
     return {
-      title: 'Wait for a healthy snapshot',
-      action: 'Run `/league-status`. Once the league snapshot looks healthy, rerun `/setup`.',
-      details: 'Pins and role setup depend on current league data.',
+      title: 'Import league data',
+      action: 'Wait a moment, then press Refresh Setup. If it still is not ready, run `/sync` once.',
+      details: 'Pins and role setup need a current league snapshot.',
+      actionKey: 'refresh',
     };
   }
   if (!status.overlayStatus.exists || status.missingRequiredChannels.length > 0) {
     return {
       title: 'Create or repair the channels',
-      action: 'Run `/setup-channels`, then rerun `/setup`.',
+      action: 'Press Create Channels, then refresh setup.',
       details: status.missingRequiredChannels.length
         ? `Still missing: ${formatMissingItems(status.missingRequiredChannels)}`
         : 'The LEAGUEbuddy channel layout has not been created yet.',
+      actionKey: 'channels',
     };
   }
   if (status.missingRequiredPins.length > 0) {
     return {
       title: 'Seed the pins',
-      action: 'Run `/setup-pins`, then rerun `/setup`.',
+      action: 'Press Create Pins, then refresh setup.',
       details: `Still missing: ${formatMissingItems(status.missingRequiredPins)}`,
+      actionKey: 'pins',
     };
   }
   if (status.missingRequiredRoles.length > 0) {
     return {
       title: 'Create the final roles',
-      action: 'Run `/setup-roles`, then rerun `/setup`.',
+      action: 'Press Create Roles, then refresh setup.',
       details: `Still missing: ${formatMissingItems(status.missingRequiredRoles)}`,
+      actionKey: 'roles',
     };
   }
   if (status.syncNeeded || !status.setupCompleted) {
     return {
       title: 'Finish setup',
-      action: 'Rerun `/setup` once more to finalize access sync automatically.',
+      action: 'Press Refresh Setup to finalize access sync.',
       details: 'LEAGUEbuddy will mark setup complete during this final pass.',
+      actionKey: 'refresh',
     };
   }
   return {
@@ -152,6 +160,65 @@ function buildSetupDecision({ leagueId, snapshotOk, readiness, status, billing, 
     action: 'Setup is complete.',
     details: `League: ${leagueId} • Package: ${status.overlayStatus.tier || billing?.plan || 'free'}`,
   };
+}
+
+function buildSetupButtons({ decision, interaction }) {
+  const rows = [];
+  const buttons = [];
+  const actionKey = decision?.actionKey || null;
+
+  if (actionKey === 'connect') {
+    const { setupUrl } = connectionService.beginLeagueConnection({
+      guildId: interaction.guildId,
+      guildName: interaction.guild?.name || null,
+      createdByUserId: interaction.user.id,
+    });
+    buttons.push(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel('Connect League')
+        .setURL(setupUrl),
+    );
+  }
+
+  if (actionKey === 'channels') {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId('madden_setup|channels')
+        .setStyle(ButtonStyle.Primary)
+        .setLabel('Create Channels'),
+    );
+  }
+
+  if (actionKey === 'pins') {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId('madden_setup|pins')
+        .setStyle(ButtonStyle.Primary)
+        .setLabel('Create Pins'),
+    );
+  }
+
+  if (actionKey === 'roles') {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId('madden_setup|roles')
+        .setStyle(ButtonStyle.Primary)
+        .setLabel('Create Roles'),
+    );
+  }
+
+  buttons.push(
+    new ButtonBuilder()
+      .setCustomId('madden_setup|refresh')
+      .setStyle(ButtonStyle.Secondary)
+      .setLabel('Refresh Setup'),
+  );
+
+  if (buttons.length) {
+    rows.push(new ActionRowBuilder().addComponents(buttons.slice(0, 5)));
+  }
+  return rows;
 }
 
 async function maybeSyncSetupState(interaction) {
@@ -209,7 +276,7 @@ export async function execute(interaction) {
       earlyInfo,
       setupComplete
         ? 'Setup is complete. Use the steps below to start your league.'
-        : 'Use `/setup` as your guide. Do the next step below, then come back here.',
+        : 'Use this dashboard as your setup home. Do the next action below, then refresh.',
     ].filter(Boolean).join('\n\n'));
 
   if (setupComplete) {
@@ -248,7 +315,11 @@ export async function execute(interaction) {
     embed.addFields(...fields);
   }
 
-  await interaction.editReply({ embeds: [embed], content: '' });
+  await interaction.editReply({
+    embeds: [embed],
+    content: '',
+    components: setupComplete ? [] : buildSetupButtons({ decision, interaction }),
+  });
 }
 
 export default { data, execute, deferOnDispatch };

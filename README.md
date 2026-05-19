@@ -77,34 +77,21 @@ npm run dev
 ## Self-hosting checklist
 1. Configure `DISCORD_TOKEN` and the Discord app ids in your env file.
 2. Configure `LB_UPGRADE_URL_STANDARD` and `LB_UPGRADE_URL_PREMIUM` if you want live customer upgrade links.
-3. Run `/connectleague` in the target server and finish the dashboard flow.
-4. Run `/league-status` to confirm the server is linked to the correct Madden league.
-5. Run `/setup-channels` to create the Madden overlay config, category, and channels.
-6. Run `/setup-pins` to seed and hydrate the pinned league boards.
-7. Run `/setup-roles` to create the staff, trade, and coach roles.
-8. Run `/syncsetupstatus` to mark setup complete.
-9. Run `/plan` to verify customer-facing access state.
-10. Run `/setup-check` to verify setup completion.
-11. Run `/server-check` as an admin to confirm the server is ready.
-12. Run `/create-threads` when you are ready to open the current week or playoff matchup threads.
+3. Run `/setup` in the target server.
+4. Use the setup dashboard buttons to connect the league, create channels, seed pins, create roles, and refresh setup until complete.
+5. Run `/plan` to verify customer-facing access state.
+6. Run `/create-threads` when you are ready to open the current week or playoff matchup threads.
 
 ## Start Here
 - The clean commissioner flow inside Discord is:
   1. Invite the bot
-  2. `/start-here`
-  3. If needed: `/pricing`
-  4. `/activateplan`
-  5. `/connectleague`
-  6. Finish the dashboard flow
-  7. `/league-status`
-  8. `/setup-channels`
-  9. `/setup-pins`
-  10. `/setup-roles`
-  11. `/syncsetupstatus`
-  12. `/server-check`
-  13. `/create-threads`
+  2. If needed: `/pricing`
+  3. If this is a paid server: `/claim-plan`
+  4. `/setup`
+  5. Follow the setup dashboard buttons until setup is complete
+  6. `/create-threads`
 - The admin summary command for this flow is:
-  - `/start-here`
+  - `/setup`
 
 ## Command deploy model
 - Development uses guild command deploys so updates appear quickly in your test servers.
