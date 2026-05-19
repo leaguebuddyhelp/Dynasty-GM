@@ -1546,7 +1546,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
             <span class="step-chip ${syncSucceeded ? 'done' : status === 'sync_error' ? 'error' : 'active'}">${syncSucceeded ? 'Ready' : status === 'sync_error' ? 'Needs Sync' : 'In Progress'}</span>
           </div>
-          <p style="color:#4b5563;">When this says Ready, return to Discord and run `/setup`.</p>
+          <p style="color:#4b5563;">When this says Ready, return to Discord and run <code>/setup</code>.</p>
           <div class="source-card">
             <strong>${escapeHtml(activeLeagueName)}</strong>
             <div class="source-meta">
