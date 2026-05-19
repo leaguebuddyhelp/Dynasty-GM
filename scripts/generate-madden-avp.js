@@ -9,6 +9,7 @@ import {
     prospectGroup,
 } from '../src/madden/coach/mockdraft.js';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../src/madden/madden_data.js';
+import { getMaddenDraftClassId } from '../src/shared/madden_draft_class.js';
 
 const OUTPUT_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_avp.json');
 
@@ -181,7 +182,8 @@ function main() {
     const rawOrder = officialOrder || draftOrder(league);
     const order = (officialOrder || applyPickTrades(rawOrder, draftYear)).slice(0, 32);
 
-    const prospects = loadDraftClass().map((p) => ({
+    const classId = getMaddenDraftClassId(league);
+    const prospects = (loadDraftClass(classId, { command: 'madden:avp', guildId }) || []).map((p) => ({
         id: String(p.id || `${(p.name || 'player').toLowerCase().replace(/[^a-z0-9]/g, '')}_${p.position_1 || p.position || ''}`),
         name: p.name,
         rank: Number(p.RNK || p.rank || p.order || 9999),
@@ -189,6 +191,11 @@ function main() {
         school: p.school,
         overall: Number(p.overall ?? p.ovr ?? p.rating ?? p.OVR ?? 0),
     })).sort((a, b) => a.rank - b.rank);
+
+    if (!prospects.length) {
+        console.error(`Draft class ${classId} is not loaded for this guild.`);
+        process.exit(1);
+    }
 
     const teamNeeds = deriveTeamNeeds(league);
 

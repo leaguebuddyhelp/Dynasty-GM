@@ -47,6 +47,19 @@ const DEV_TRAIT_NAMES = {
   3: ['xfactor_dev'],
 };
 
+const RECOGNITION_EMOJI_IDS = {
+  prod: {
+    activity: '1506342706862096536',
+    legacy: '1506342070149976226',
+    impact: '1506342069222903978',
+  },
+  dev: {
+    activity: '1506342672057630791',
+    legacy: '1506335999939186789',
+    impact: '1506337456998322228',
+  },
+};
+
 function normalizeEmojiKey(value = '') {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -98,8 +111,16 @@ export function findApplicationEmoji(candidates = [], fallback = '') {
   return fallback;
 }
 
+function getRecognitionEmojiFallback(tier) {
+  const key = normalizeEmojiKey(tier);
+  const env = String(process.env.APP_ENV || process.env.NODE_ENV || '').toLowerCase();
+  const scope = env === 'prod' || env === 'production' ? 'prod' : 'dev';
+  const id = RECOGNITION_EMOJI_IDS[scope]?.[key];
+  return id ? `<:${key}:${id}>` : '•';
+}
+
 export function getRecognitionEmoji(tier) {
-  return findApplicationEmoji([tier], '•');
+  return findApplicationEmoji([tier], getRecognitionEmojiFallback(tier));
 }
 
 export function getDevTraitEmoji(devTrait, { fallbackText = true } = {}) {

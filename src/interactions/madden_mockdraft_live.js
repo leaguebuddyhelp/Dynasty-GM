@@ -15,6 +15,7 @@ import {
 import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import {
   autoPickMockDraft,
+  buildMockDraftProspectOption,
   buildMockDraftOnClockEmbed,
   buildMockDraftPickEmbed,
   buildMockDraftSessionMessage,
@@ -1082,12 +1083,7 @@ async function handleSearchModal(interaction) {
       || prospect.position.toLowerCase().includes(query)
       || prospect.school.toLowerCase().includes(query))
     .slice(0, 25)
-    .map((prospect) =>
-      new StringSelectMenuOptionBuilder()
-        .setLabel(`#${prospect.rank} ${prospect.name}`.slice(0, 100))
-        .setDescription(`${prospect.position} • ${prospect.school}`.slice(0, 100))
-        .setValue(prospect.id),
-    );
+    .map((prospect) => buildMockDraftProspectOption(prospect, session));
 
   if (!matches.length) {
     await interaction.reply(privatePayload(`No draft-board matches found for "${query}".`));

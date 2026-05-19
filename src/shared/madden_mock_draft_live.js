@@ -849,7 +849,7 @@ function normalizeProspectIdForAvp(id) {
   return `${namePart}_${posPart}`;
 }
 
-function avpForProspect(session, prospect) {
+export function avpForProspect(session, prospect) {
   // AVP is loaded once per call-site (menu + grade). Don't crash grading if file is missing.
   const avpStore = session?.__avpStore || loadAvpStore();
   if (session && !session.__avpStore) session.__avpStore = avpStore;
@@ -866,6 +866,33 @@ function avpForProspect(session, prospect) {
     ? `${String(prospect.name).replace(/[^a-z0-9]/gi, '').toLowerCase()}_${String(prospect.position).toUpperCase()}`
     : null;
   return legacyKey ? avpStore.prospects?.[legacyKey]?.avp ?? null : null;
+}
+
+function formatPickExpectation(value) {
+  if (value == null || value === '') return null;
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  return Number.isInteger(num) ? String(num) : num.toFixed(1);
+}
+
+export function buildMockDraftProspectOption(prospect, session = null) {
+  const avp = avpForProspect(session, prospect);
+  const avpText = formatPickExpectation(avp);
+  const boardText = formatPickExpectation(prospect?.rank);
+  const labelParts = [
+    `#${prospect.rank} ${prospect.name}`,
+    avpText ? `AVP ${avpText}` : (boardText ? `Board ${boardText}` : null),
+  ].filter(Boolean);
+  const descriptionParts = [
+    prospect.position,
+    prospect.school,
+    avpText && Number.isFinite(Number(prospect.rank)) ? `Board #${Number(prospect.rank)}` : null,
+  ].filter(Boolean);
+
+  return new StringSelectMenuOptionBuilder()
+    .setLabel(labelParts.join(' • ').slice(0, 100))
+    .setDescription(descriptionParts.join(' • ').slice(0, 100))
+    .setValue(prospect.id);
 }
 
 function buildPickSynopsis({
@@ -1489,37 +1516,16 @@ export function listUserAssignedSlots(session, userId) {
 
 export function buildPickMenu(session) {
   const avpStore = loadAvpStore();
+  const optionSession = { ...session, __avpStore: avpStore };
 
   const slot = session?.order?.[session?.currentPickIndex];
   const needsCtx = slot ? buildNeedsContext(session, slot, null) : null;
   const topNeeds = (needsCtx?.topNeeds || []).filter(Boolean).slice(0, 3);
   const needsLabel = topNeeds.length ? `Needs: ${topNeeds.join(', ')}` : 'Needs: BPA';
 
-  const avpFor = (prospect) => {
-    if (!avpStore?.prospects) return null;
-    const direct = avpStore.prospects?.[prospect?.id]?.avp;
-    if (direct != null) return direct;
-
-    const normalizedId = normalizeProspectIdForAvp(prospect?.id);
-    const normalized = normalizedId ? avpStore.prospects?.[normalizedId]?.avp : null;
-    if (normalized != null) return normalized;
-
-    // Last resort: sometimes callers may have legacy ids that match AVP keys by name+pos.
-    const legacyKey = prospect?.name && prospect?.position
-      ? `${String(prospect.name).replace(/[^a-z0-9]/gi, '').toLowerCase()}_${String(prospect.position).toUpperCase()}`
-      : null;
-    return legacyKey ? avpStore.prospects?.[legacyKey]?.avp ?? null : null;
-  };
-  const options = (session.availableProspects || []).slice(0, MAX_SELECT_OPTIONS).map((prospect) =>
-    (() => {
-      const avp = avpFor(prospect);
-      const avpText = avp != null ? ` • AVP ${Number(avp).toFixed(1)}` : '';
-      return new StringSelectMenuOptionBuilder()
-        .setLabel(`#${prospect.rank} ${prospect.name}`.slice(0, 100))
-        .setDescription(`${prospect.position} • ${prospect.school}${avpText}`.slice(0, 100))
-        .setValue(prospect.id);
-    })(),
-  );
+  const options = (session.availableProspects || [])
+    .slice(0, MAX_SELECT_OPTIONS)
+    .map((prospect) => buildMockDraftProspectOption(prospect, optionSession));
   const row = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId(`madden_mockdraft_pick|${session.id}`)
