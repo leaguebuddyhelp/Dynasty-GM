@@ -14,7 +14,9 @@ import { ensureGuildActivated, setSetupCompleted } from '../../leaguebuddy/guild
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getMaddenLeagueSnapshotPath } from '../../leaguebuddy/paths.js';
 import { displaySetupItemName, getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
+import { loadGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 import { getExplicitLeagueForGuild } from '../madden_config.js';
+import { applyOverwrites, buildSetupOverwrites } from './madden-setup.js';
 import {
   buildSetupReadinessLines,
   inspectSetupReadiness,
@@ -293,6 +295,27 @@ async function maybeSyncSetupState(interaction, setupIsComplete) {
   return getSetupStatus(guildId);
 }
 
+async function repairConfiguredChannelPermissions(guild) {
+  const cfg = loadGuildMaddenConfig(guild?.id);
+  const roleMap = cfg?.compat?.maddenRoleMap || {};
+  const channelMap = cfg?.compat?.maddenChannelMap || {};
+  if (!guild || !Object.keys(roleMap).length || !Object.keys(channelMap).length) return;
+
+  const overwritePlan = buildSetupOverwrites(guild, roleMap);
+  const categoryId = channelMap['LB Madden'];
+  if (categoryId) {
+    const category = guild.channels.cache.get(categoryId) || await guild.channels.fetch(categoryId).catch(() => null);
+    if (category) await applyOverwrites(category, overwritePlan.category);
+  }
+
+  for (const [key, channelId] of Object.entries(channelMap)) {
+    if (key === 'LB Madden') continue;
+    const channel = channelId ? guild.channels.cache.get(channelId) || await guild.channels.fetch(channelId).catch(() => null) : null;
+    if (!channel) continue;
+    await applyOverwrites(channel, overwritePlan.channels[key] || []);
+  }
+}
+
 async function maybeClaimPlanFromSetup(interaction) {
   const claimCode = interaction.options.getString('code');
   const paymentReference = interaction.options.getString('payment_reference');
@@ -345,6 +368,9 @@ export async function execute(interaction) {
     && leagueFacts.snapshotOk
   );
   const status = await maybeSyncSetupState(interaction, setupIsComplete);
+  await repairConfiguredChannelPermissions(interaction.guild).catch((e) => {
+    console.warn('[setup-dashboard] permission repair skipped:', e?.message || e);
+  });
   // Auto-sync after dashboard setup changes
   try {
     const { syncGuild } = await import('../../shared/guild_auto_sync.js');

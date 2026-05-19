@@ -420,7 +420,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             'Madden League Buddy Announcements': publicReadOnlyWithStaffPosting,
             rulesOps: publicReadOnlyWithStaffPosting,
             breakdown: publicReadOnlyWithStaffPosting,
-            scoutingHub: publicReadOnlyWithStaffPosting,
+            scoutingHub: publicInteractiveWithCoachAccess,
             'Strike Board': publicReadOnly,
 
             // Public read-only boards

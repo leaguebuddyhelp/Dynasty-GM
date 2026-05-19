@@ -94,6 +94,8 @@ export async function execute(interaction) {
       const coachRoleSpecs = coachSpecs.map((spec) => ({
         key: spec.roleName,
         name: spec.roleName,
+        teamName: spec.teamName,
+        emojiName: spec.emojiName,
         color: 0x99AAB5,
         hoist: false,
       }));
