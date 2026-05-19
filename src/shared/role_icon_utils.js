@@ -1,4 +1,7 @@
-import { getTeamApplicationEmojiData } from './application_emojis.js';
+import {
+  findApplicationEmojiData,
+  getTeamApplicationEmojiData,
+} from './application_emojis.js';
 
 const ROLE_ICON_IMAGE_LIMIT_BYTES = 256 * 1024;
 
@@ -22,10 +25,16 @@ function roleIconLooksSet(role) {
   return Boolean(role?.icon || role?.unicodeEmoji);
 }
 
-export async function applyTeamEmojiRoleIcon(role, teamName, { logger = console } = {}) {
+function resolveRoleEmojiData(teamName, emojiName) {
+  const direct = findApplicationEmojiData([emojiName]);
+  if (direct) return direct;
+  return getTeamApplicationEmojiData(teamName);
+}
+
+export async function applyTeamEmojiRoleIcon(role, teamName, { emojiName = '', logger = console } = {}) {
   if (!role?.editable || !teamName || roleIconLooksSet(role)) return { ok: false, skipped: true };
 
-  const emoji = getTeamApplicationEmojiData(teamName);
+  const emoji = resolveRoleEmojiData(teamName, emojiName);
   if (!emoji?.id) return { ok: false, skipped: true };
 
   try {

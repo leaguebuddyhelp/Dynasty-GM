@@ -32,11 +32,13 @@ export function buildCoachRoleSpecs(snapshot) {
       const city = String(team?.cityName || '').trim();
       const display = String(team?.displayName || '').trim();
       const nick = String(team?.nickName || '').trim();
+      const abbr = String(team?.abbrName || '').trim().toLowerCase();
       const fullName = [city, display].filter(Boolean).join(' ').trim() || display || nick;
       if (!fullName) return null;
       return {
         teamId: String(team?.teamId ?? fullName),
         teamName: fullName,
+        emojiName: abbr,
         roleName: `${fullName} Coach`,
         aliases: uniqueStrings([
           `${fullName} Coach`,
@@ -108,7 +110,7 @@ async function createRoleOnce(guild, spec) {
 async function maybeApplyRoleIcon(role, spec, logger) {
   const teamName = spec?.teamName || String(spec?.name || '').replace(/ coach$/i, '').trim();
   if (!/ coach$/i.test(String(spec?.name || '')) || !teamName) return;
-  await applyTeamEmojiRoleIcon(role, teamName, { logger });
+  await applyTeamEmojiRoleIcon(role, teamName, { emojiName: spec?.emojiName, logger });
 }
 
 export async function createOrVerifyRole(guild, spec, {

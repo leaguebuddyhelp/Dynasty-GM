@@ -75,7 +75,7 @@ function resolveTeamRoleIdFromRoleMap(teamName, roleMap) {
     return null;
 }
 
-async function ensureCoachRole(interaction, roleName) {
+async function ensureCoachRole(interaction, roleName, { emojiName = '' } = {}) {
     let role = interaction.guild.roles.cache.find((item) => item.name === roleName) || null;
     if (!role) {
         role = await interaction.guild.roles.create({
@@ -86,7 +86,7 @@ async function ensureCoachRole(interaction, roleName) {
     }
 
     const baseName = roleName.replace(/ coach$/i, '').trim();
-    await applyTeamEmojiRoleIcon(role, baseName).catch(() => null);
+    await applyTeamEmojiRoleIcon(role, baseName, { emojiName }).catch(() => null);
 
     const cfg = loadGuildMaddenConfig(interaction.guildId) || {};
     cfg.compat = cfg.compat || {};
@@ -631,12 +631,16 @@ export async function execute(interaction) {
     let coachRole = coachRoleId ? await interaction.guild.roles.fetch(String(coachRoleId)).catch(() => null) : null;
     if (!coachRole) {
         try {
-            coachRole = await ensureCoachRole(interaction, `${teamDisplay} Coach`);
+            coachRole = await ensureCoachRole(interaction, `${teamDisplay} Coach`, {
+                emojiName: team?.abbrName || '',
+            });
         } catch (error) {
             await interaction.editReply({ content: `Could not create a coach role for "${teamDisplay}". ${error?.message || error}` });
             return;
         }
     }
+
+    await applyTeamEmojiRoleIcon(coachRole, teamDisplay, { emojiName: team?.abbrName || '' }).catch(() => null);
 
     // Hard-block: don't allow onboarding onto an already-claimed team.
     // (Autocomplete hides assigned teams, but execute must still enforce it.)
