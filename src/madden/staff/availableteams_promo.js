@@ -239,42 +239,36 @@ export async function execute(interaction) {
         if (debug) console.log('[promo] open team', nameFormatted, 'keys', keys, 'picks', merged);
         const deduped = firstRoundOnly(uniqPicks(merged)).sort((a, b) => a.num - b.num);
         const pickText = deduped && deduped.length
-          ? deduped.map(p => p.via ? `${p.num} (via ${p.via})` : `${p.num}`).join(', ')
-          : 'none';
-        openLines.push(`${nameFormatted} — Picks: ${pickText}`);
+          ? deduped.map(p => p.via ? `#${p.num} via ${p.via}` : `#${p.num}`).join(', ')
+          : 'No 1st';
+        openLines.push(`${nameFormatted} - 1st: ${pickText}`);
       } else {
         const rec = standingsByTeam.get(t.teamId);
         const wins = rec?.totalWins ?? rec?.wins ?? 0;
         const losses = rec?.totalLosses ?? rec?.losses ?? 0;
         const ties = rec?.totalTies ?? rec?.ties ?? 0;
         const record = ties ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
-        openLines.push(`${teamName} (${record})`);
+        openLines.push(`${teamName} - ${record}`);
       }
     }
 
     const promoLines = [
-      '🔥 **LEAGUEbuddy MADDEN** 🔥',
+      '**LEAGUEbuddy Madden**',
       `Season ${seasonNumber} • ${weekNumber}`,
       '',
-      '🤖 A Madden league experience powered by **LEAGUEbuddy**',
+      'A cleaner Discord home for connected franchise leagues.',
       '',
-      '📌 **Quick Info**',
-      '⏱️ Organized advances, game threads, and weekly reminders',
-      '🎮 Built for connected franchise leagues',
-      '📺 Stream links, matchup prep, and coach accountability tools',
-      '🧭 Staff setup, onboarding, roles, channels, and league ops handled in Discord',
+      '**League Tools**',
+      '• Live standings, schedules, stats, awards, and weekly updates',
+      '• Auto game threads, reminders, stream links, and staff logs',
+      '• Scouting hub, draft primer, mock draft, big board, and matchup prep',
+      '• Premium adds recognition points, sportsbook, perks, and deeper engagement',
       '',
-      '✨ **What LEAGUEbuddy Adds**',
-      '📡 Live league updates: standings, schedules, stat leaders, Top 100s, awards, and weekly content',
-      '🧵 Automated game threads, reminders, staff logs, and cleaner trade flow',
-      '🕵️ Franchise tools: scouting hub, draft primer, mock draft, big board, and matchup strategy',
-      '🏆 Premium systems: recognition points, sportsbook, perk tracking, and deeper league engagement',
-      '',
-      `🚨 **OPEN TEAMS (${openLines.length})** 🚨`,
+      `**Open Teams (${openLines.length})**`,
       (openLines.length
-        ? openLines.map(l => `✅ ${l}`).join('\n')
-        : '⛔ No open teams right now.'),
-      includeLink ? `\n🔗 **Join:** ${DEFAULT_PROMO_INVITE_URL}` : null,
+        ? openLines.map(l => `• ${l}`).join('\n')
+        : 'No open teams right now.'),
+      includeLink ? `\n**Join:** ${DEFAULT_PROMO_INVITE_URL}` : null,
     ].filter(Boolean).join('\n');
 
     await safeEditReply(interaction, { content: promoLines });
