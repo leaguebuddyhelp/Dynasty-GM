@@ -244,36 +244,35 @@ async function sendOnboardingDM({ client, guild, user, teamDisplay, snapshot, ch
 
     const embed = new EmbedBuilder()
         .setColor(0x5865f2)
-        .setTitle('Welcome to LEAGUEbuddy Madden')
+        .setTitle(`Welcome, ${teamDisplay}`)
         .setDescription(
             [
-                `You’ve been assigned to **${teamDisplay}** in **${guild?.name || 'the league'}**.`,
-                `Season: **${seasonNumber}**${weekNumber ? ` • Week: **${weekNumber}**` : ''}`,
+                `You’re set up in **${guild?.name || 'the league'}**.`,
+                `Season **${seasonNumber}**${weekNumber ? ` • Week **${weekNumber}**` : ''}`,
             ].filter(Boolean).join('\n'),
         )
         .addFields(
             {
-                name: 'Start Here',
+                name: 'Start',
                 value: [
                     '• `/help`',
                     '• `/schedule`',
                     '• `/roster`',
-                    '• Check your game thread',
+                    '• Your game thread',
                 ].join('\n'),
             },
-            {
-                name: 'League Join Info',
-                value: showJoinInfo
-                    ? [
+            ...(showJoinInfo
+                ? [{
+                    name: 'League Login',
+                    value: [
                         `League: **${connection?.leagueName || guild?.name || 'This server league'}**`,
                         `Password: **${savedPassword}**`,
-                        'Your commissioner or server admin still controls rules and league settings.',
-                    ].join('\n')
-                    : 'Your commissioner or server admin handles the league name, password, and rules for this server.',
-            },
+                    ].join('\n'),
+                }]
+                : []),
             ...((channelLink(rulesOpsId) || channelLink(breakdownId) || channelLink(scoutingHubId) || channelLink(tradeSubmitId))
                 ? [{
-                    name: 'Useful Channels',
+                    name: 'Channels',
                     value: [
                         channelLink(rulesOpsId),
                         channelLink(breakdownId),
@@ -284,12 +283,12 @@ async function sendOnboardingDM({ client, guild, user, teamDisplay, snapshot, ch
                 : []),
             ...(Array.isArray(threadLinks) && threadLinks.length
                 ? [{
-                    name: 'Your Game Thread',
+                    name: 'Game Thread',
                     value: threadLinks.join('\n'),
                 }]
                 : []),
         )
-        .setFooter({ text: 'LEAGUEbuddy • ask your server admin for league-specific rules and join details' })
+        .setFooter({ text: 'Ask staff for league rules or help getting settled.' })
         .setTimestamp();
 
     await user.send({ embeds: [embed] });
