@@ -195,6 +195,7 @@ export async function execute(interaction) {
 
     const promoLines = [
       '🏈 **LEAGUEbuddy Madden**',
+      '**STARTING FROM SUPER BOWL / OFFSEASON**',
       promoSeasonLabel(snapshot, seasonInfo),
       '',
       'A cleaner Discord home for connected franchise leagues.',

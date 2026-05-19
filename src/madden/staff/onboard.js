@@ -249,6 +249,7 @@ async function sendOnboardingDM({ client, guild, user, teamDisplay, snapshot, ch
             [
                 `You’re set up in **${guild?.name || 'the league'}**.`,
                 `Season **${seasonNumber}**${weekNumber ? ` • Week **${weekNumber}**` : ''}`,
+                '**Custom coaches only.**',
             ].filter(Boolean).join('\n'),
         )
         .addFields(
