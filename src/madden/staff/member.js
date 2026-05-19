@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { execute as onboardExecute, autocomplete as onboardAutocomplete } from './onboard.js';
 import { execute as assignExecute, autocomplete as assignAutocomplete } from './assignteam.js';
 import { execute as removeExecute, autocomplete as removeAutocomplete } from './removeteam.js';
@@ -7,7 +7,7 @@ import { featureAccessDenyMessage, hasFeatureAccess } from '../../leaguebuddy/ac
 export const data = new SlashCommandBuilder()
   .setName('member')
   .setDescription('Admin-only: onboard, assign, or remove league members in one place.')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .setDefaultMemberPermissions(null)
   .addSubcommand((subcommand) =>
     subcommand
       .setName('onboard')
