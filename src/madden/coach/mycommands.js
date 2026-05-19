@@ -34,22 +34,30 @@ async function execute(interaction) {
   const staffEmbed = new EmbedBuilder()
     .setColor(0xffd700)
     .setTitle(`${logo ? `${logo} ` : ''}${coachVoiceTitle('staffCommands', 'Admin Commands')}`)
-    .setDescription('Start with `/setup`. It shows the only next step.')
+    .setDescription('Current staff command list for this server.')
     .addFields(
       {
         name: 'Setup',
         value: [
           '`/setup`',
-          '`/sync` if setup says league data is not ready',
-          '`/resetleague` when you need to start over',
-          '`/setup-reset` only if you need to delete LEAGUEbuddy channels or roles too',
+          '`/sync`',
+          '`/resetleague`',
+          '`/disconnectleague`',
+          '`/setup-reset`',
         ].join('\n'),
       },
       {
-        name: 'Weekly',
+        name: 'Members',
         value: [
+          '`/member onboard`',
           '`/member assign`',
           '`/member remove`',
+          '`/promo`',
+        ].join('\n'),
+      },
+      {
+        name: 'Weekly Ops',
+        value: [
           '`/create-threads`',
           '`/delete-threads`',
           '`/weeklyupdate`',
@@ -58,21 +66,25 @@ async function execute(interaction) {
       {
         name: 'Plans',
         value: [
-          '`/pricing`',
           '`/plan`',
-          '`/setup code:<claim-code>`',
+          '`/viewplan`',
+          '`/setplan`',
+          '`/activateplan`',
+          '`/deactivateplan`',
         ].join('\n'),
       },
       {
-        name: 'Premium Tools',
+        name: 'Coach Tools Staff May Use',
         value: [
+          '`/schedule`, `/roster`, `/playersearch`',
+          '`/tradeblock`, `/streamlink`',
+          '`/draftclass`, `/scout`, `/myscouts`, `/bigboard`, `/draftprimer`, `/mockdraft`, `/recruiting`',
           '`/franchisehub`',
           '`/gamestrategy`',
-          '`/streamlink`',
         ].join('\n'),
       },
     )
-    .setFooter({ text: coachVoiceFooter('staffOnly', 'Setup subcommands are handled by the /setup buttons.') });
+    .setFooter({ text: coachVoiceFooter('staffOnly', 'Buying is disabled during private testing; use manual plan commands.') });
 
   const coachEmbed = new EmbedBuilder()
     .setColor(0x1e90ff)
@@ -80,9 +92,10 @@ async function execute(interaction) {
     .setDescription('Common commands for league members.')
     .addFields(
       {
-        name: 'Start Here',
+        name: 'Basics',
         value: [
           '`/help`',
+          '`/plan`',
           '`/schedule`, `/roster`, `/playersearch`',
         ].join('\n'),
       },
