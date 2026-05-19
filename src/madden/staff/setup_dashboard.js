@@ -75,6 +75,12 @@ function buildCoachLines() {
 }
 
 function resolveDisplayTier(status, billing) {
+  const billingPlan = String(billing?.plan || 'free').toLowerCase();
+  const billingStatus = String(billing?.subscriptionStatus || 'inactive').toLowerCase();
+  const billingActive = ['active', 'trialing'].includes(billingStatus);
+  if (billingActive && billingPlan !== 'free') {
+    return billingPlan;
+  }
   if (status?.overlayStatus?.exists && status?.overlayStatus?.tier) {
     return status.overlayStatus.tier;
   }

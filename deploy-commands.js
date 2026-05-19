@@ -19,6 +19,10 @@ const BUYING_ENABLED = ['true', '1', 'yes', 'on'].includes(String(process.env.LB
 const BETA_MADDEN_COMMANDS = new Set([
   'disconnectleague',
   'resetleague',
+  'activateplan',
+  'deactivateplan',
+  'setplan',
+  'viewplan',
   'setup-reset',
   'sync',
   'plan',
