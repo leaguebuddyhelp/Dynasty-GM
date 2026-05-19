@@ -1,30 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
 import { withFeatureGuard } from '../../leaguebuddy/access.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
-import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
-const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 export const featureKey = 'ops_light';
-
-function loadJson(file) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
-}
-
-function loadRoleMap(guildId = null) {
-  const overlay = getGuildRoleMap(guildId);
-  if (overlay && Object.keys(overlay).length) return overlay;
-  const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-  return loadJson(ROLE_MAP_FILE);
-}
-
-function hasStaffRole(member, roleMap) {
-  return STAFF_ROLES.some(r => {
-    const id = roleMap[r];
-    return id && member.roles.cache.has(id);
-  });
-}
 
 export const data = new SlashCommandBuilder()
   .setName('activitycheck')
@@ -33,7 +12,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   await interaction.deferReply({ ephemeral: true });
-  const roleMap = loadRoleMap(interaction.guildId);
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   const channelMap = loadMaddenChannelMap(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {

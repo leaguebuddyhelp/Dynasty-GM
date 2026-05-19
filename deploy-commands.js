@@ -42,6 +42,7 @@ const BETA_MADDEN_COMMANDS = new Set([
   'tradeblock',
   'member',
   'promo',
+  'activitycheck',
   'create-threads',
   'delete-threads',
   'weeklyupdate',
