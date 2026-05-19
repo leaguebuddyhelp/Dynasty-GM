@@ -60,7 +60,7 @@ export const featureKey = 'scouting_draft';
 let currentCalendarYear = 2025;
 const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
-const DEFAULT_FIRST_MADDEN_DRAFT_YEAR = 2027;
+const DEFAULT_FIRST_MADDEN_DRAFT_YEAR = 2026;
 const DEFAULT_FIRST_MADDEN_DRAFT_ORIGINAL_ORDER = [
   'LV', 'NYJ', 'ARI', 'TEN', 'NYG', 'CLE', 'WSH', 'NO',
   'KC', 'CIN', 'MIA', 'DAL', 'ATL', 'BAL', 'TB', 'IND',
