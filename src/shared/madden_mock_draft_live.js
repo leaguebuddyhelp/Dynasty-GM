@@ -38,6 +38,7 @@ function loadAvpStore() {
       if (!fs.existsSync(filePath)) continue;
       const raw = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(raw);
+      if (String(data?.source || '').toLowerCase() === 'draft_export') continue;
       if (data && typeof data === 'object') return data;
     } catch {
       // Try the next source.

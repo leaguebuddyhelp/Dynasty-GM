@@ -1,2248 +1,2248 @@
 {
-  "generatedAt": 1779214738898,
-  "source": "draft_export",
-  "sourceLeagueId": "16594549",
-  "fetchedAt": "2026-03-06T00:48:49.251Z",
+  "generatedAt": 1779215576567,
+  "source": "board_rank_seed",
+  "classId": "cus_01",
+  "note": "Fallback AVP seed from the current big board. Runtime data/madden/madden_avp.json overrides this when generated.",
   "prospects": {
-    "halianalani_WR": {
-      "name": "Hali'a Nalani",
-      "position": "WR",
-      "school": "USC",
-      "boardRank": null,
-      "avp": 34,
-      "medianPick": 34,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kareemreynolds_WR": {
-      "name": "Kareem Reynolds",
-      "position": "WR",
-      "school": "Cincinnati",
-      "boardRank": null,
-      "avp": 35,
-      "medianPick": 35,
-      "samples": 1,
-      "source": "draft_export"
-    },
     "laronwilliams_QB": {
       "name": "LaRon Williams",
       "position": "QB",
       "school": "Tennessee",
-      "boardRank": null,
-      "avp": 36,
-      "medianPick": 36,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kadenwashingtonjr_FS": {
-      "name": "Kaden Washington Jr.",
-      "position": "FS",
-      "school": "Penn State",
-      "boardRank": null,
-      "avp": 37,
-      "medianPick": 37,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "malikmuhammed_LEDGE": {
-      "name": "Malik Muhammed",
-      "position": "LEDGE",
-      "school": "Florida State",
-      "boardRank": null,
-      "avp": 38,
-      "medianPick": 38,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jaylenkelly_QB": {
-      "name": "Jaylen Kelly",
-      "position": "QB",
-      "school": "USC",
-      "boardRank": null,
-      "avp": 39,
-      "medianPick": 39,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "brandonwilliams_DT": {
-      "name": "Brandon Williams",
-      "position": "DT",
-      "school": "Ole Miss",
-      "boardRank": null,
-      "avp": 40,
-      "medianPick": 40,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "keondavis_DT": {
-      "name": "Keon Davis",
-      "position": "DT",
-      "school": "Florida",
-      "boardRank": null,
-      "avp": 41,
-      "medianPick": 41,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 1,
+      "avp": 1,
+      "medianPick": 1,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "micahhoward_CB": {
       "name": "Micah Howard",
       "position": "CB",
       "school": "Stanford",
-      "boardRank": null,
-      "avp": 42,
-      "medianPick": 42,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 2,
+      "avp": 2,
+      "medianPick": 2,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "hokuaonanialohilani_LEDGE": {
-      "name": "Hokuaonani Alohilani",
-      "position": "LEDGE",
-      "school": "Ohio State",
-      "boardRank": null,
-      "avp": 43,
-      "medianPick": 43,
-      "samples": 1,
-      "source": "draft_export"
+    "halianalani_WR": {
+      "name": "Hali'a Nalani",
+      "position": "WR",
+      "school": "USC",
+      "boardRank": 3,
+      "avp": 3,
+      "medianPick": 3,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "kadenwashingtonjr_FS": {
+      "name": "Kaden Washington Jr.",
+      "position": "FS",
+      "school": "Penn State",
+      "boardRank": 4,
+      "avp": 4,
+      "medianPick": 4,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "jakeosborn_QB": {
       "name": "Jake Osborn",
       "position": "QB",
       "school": "Michigan",
-      "boardRank": null,
-      "avp": 44,
-      "medianPick": 44,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 5,
+      "avp": 5,
+      "medianPick": 5,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "demontestokes_LEDGE": {
-      "name": "Demonte Stokes",
-      "position": "LEDGE",
-      "school": "Alabama",
-      "boardRank": null,
-      "avp": 45,
-      "medianPick": 45,
-      "samples": 1,
-      "source": "draft_export"
+    "jaylenkelly_QB": {
+      "name": "Jaylen Kelly",
+      "position": "QB",
+      "school": "USC",
+      "boardRank": 6,
+      "avp": 6,
+      "medianPick": 6,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jahdaebrown_HB": {
-      "name": "Jahdae Brown",
-      "position": "HB",
-      "school": "Texas A&M",
-      "boardRank": null,
-      "avp": 46,
-      "medianPick": 46,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "marquishall_WR": {
-      "name": "Marquis Hall",
-      "position": "WR",
-      "school": "Georgia",
-      "boardRank": null,
-      "avp": 47,
-      "medianPick": 47,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "mckinleyjennings_CB": {
-      "name": "McKinley Jennings",
-      "position": "CB",
-      "school": "Georgia",
-      "boardRank": null,
-      "avp": 48,
-      "medianPick": 48,
-      "samples": 1,
-      "source": "draft_export"
+    "malikmuhammed_LEDG": {
+      "name": "Malik Muhammed",
+      "position": "LEDG",
+      "school": "Florida State",
+      "boardRank": 7,
+      "avp": 7,
+      "medianPick": 7,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "quwansmith_RT": {
       "name": "Qu'wan Smith",
       "position": "RT",
       "school": "Penn State",
-      "boardRank": null,
-      "avp": 49,
-      "medianPick": 49,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "camthompson_QB": {
-      "name": "Cam Thompson",
-      "position": "QB",
-      "school": "Virginia",
-      "boardRank": null,
-      "avp": 50,
-      "medianPick": 50,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jaxtyonchandler_HB": {
-      "name": "Jaxtyon Chandler",
-      "position": "HB",
-      "school": "UCLA",
-      "boardRank": null,
-      "avp": 51,
-      "medianPick": 51,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "trevonwilliams_LT": {
-      "name": "Trevon Williams",
-      "position": "LT",
-      "school": "Texas",
-      "boardRank": null,
-      "avp": 52,
-      "medianPick": 52,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "devontejones_MIKE": {
-      "name": "DeVonte Jones",
-      "position": "MIKE",
-      "school": "Notre Dame",
-      "boardRank": null,
-      "avp": 53,
-      "medianPick": 53,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "ryanandrade_LT": {
-      "name": "Ryan Andrade",
-      "position": "LT",
-      "school": "Stanford",
-      "boardRank": null,
-      "avp": 54,
-      "medianPick": 54,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 8,
+      "avp": 8,
+      "medianPick": 8,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "nickmulligan_WILL": {
       "name": "Nick Mulligan",
       "position": "WILL",
       "school": "Ohio State",
-      "boardRank": null,
-      "avp": 55,
-      "medianPick": 55,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 9,
+      "avp": 9,
+      "medianPick": 9,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "ebrajabdinyamba_CB": {
-      "name": "Ebrajabdi Nyamba",
-      "position": "CB",
-      "school": "Louisville",
-      "boardRank": null,
-      "avp": 56,
-      "medianPick": 56,
-      "samples": 1,
-      "source": "draft_export"
+    "brandonwilliams_DT": {
+      "name": "Brandon Williams",
+      "position": "DT",
+      "school": "Ole Miss",
+      "boardRank": 10,
+      "avp": 10,
+      "medianPick": 10,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "nicolasordonez_RG": {
-      "name": "Nicolas Ordonez",
-      "position": "RG",
-      "school": "North Dakota State",
-      "boardRank": null,
-      "avp": 57,
-      "medianPick": 57,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "fredericvalenti_HB": {
-      "name": "Frederic Valenti",
-      "position": "HB",
-      "school": "Auburn",
-      "boardRank": null,
-      "avp": 58,
-      "medianPick": 58,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "nicodesroches_TE": {
-      "name": "Nico Desroches",
-      "position": "TE",
-      "school": "Iowa",
-      "boardRank": null,
-      "avp": 59,
-      "medianPick": 59,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "benmontague_C": {
-      "name": "Ben Montague",
-      "position": "C",
+    "hokuaonanialohilani_LEDG": {
+      "name": "Hokuaonani Alohilani",
+      "position": "LEDG",
       "school": "Ohio State",
-      "boardRank": null,
-      "avp": 60,
-      "medianPick": 60,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 11,
+      "avp": 11,
+      "medianPick": 11,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "karldavisjr_MIKE": {
-      "name": "Karl Davis Jr.",
-      "position": "MIKE",
+    "demontestokes_LEDG": {
+      "name": "Demonte Stokes",
+      "position": "LEDG",
+      "school": "Alabama",
+      "boardRank": 12,
+      "avp": 12,
+      "medianPick": 12,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "keondavis_DT": {
+      "name": "Keon Davis",
+      "position": "DT",
       "school": "Florida",
-      "boardRank": null,
-      "avp": 61,
-      "medianPick": 61,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 13,
+      "avp": 13,
+      "medianPick": 13,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "kadenreed_CB": {
-      "name": "Kaden Reed",
+    "mckinleyjennings_CB": {
+      "name": "McKinley Jennings",
       "position": "CB",
-      "school": "Baylor",
-      "boardRank": null,
-      "avp": 62,
-      "medianPick": 62,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Georgia",
+      "boardRank": 14,
+      "avp": 14,
+      "medianPick": 14,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "kyreebenjamin_FS": {
-      "name": "Kyree Benjamin",
-      "position": "FS",
-      "school": "Florida Tech",
-      "boardRank": null,
-      "avp": 63,
-      "medianPick": 63,
-      "samples": 1,
-      "source": "draft_export"
+    "devontejones_MIKE": {
+      "name": "DeVonte Jones",
+      "position": "MIKE",
+      "school": "Notre Dame",
+      "boardRank": 15,
+      "avp": 15,
+      "medianPick": 15,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "jayvonmoss_WR": {
       "name": "Jayvon Moss",
       "position": "WR",
-      "school": "USF",
-      "boardRank": null,
-      "avp": 64,
-      "medianPick": 64,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "UCF",
+      "boardRank": 16,
+      "avp": 16,
+      "medianPick": 16,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "brandynedwards_WR": {
-      "name": "Brandyn Edwards",
+    "kareemreynolds_WR": {
+      "name": "Kareem Reynolds",
       "position": "WR",
-      "school": "Alabama",
-      "boardRank": null,
-      "avp": 65,
-      "medianPick": 65,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "bowilliamson_LEDGE": {
-      "name": "Bo Williamson",
-      "position": "LEDGE",
-      "school": "Ole Miss",
-      "boardRank": null,
-      "avp": 66,
-      "medianPick": 66,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jamarcusbuckner_HB": {
-      "name": "Jamarcus Buckner",
-      "position": "HB",
-      "school": "Ohio State",
-      "boardRank": null,
-      "avp": 67,
-      "medianPick": 67,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Cincinnati",
+      "boardRank": 17,
+      "avp": 17,
+      "medianPick": 17,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "kadrickrichardsjr_WR": {
       "name": "Kadrick Richards Jr.",
       "position": "WR",
       "school": "USC",
-      "boardRank": null,
-      "avp": 68,
-      "medianPick": 68,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 18,
+      "avp": 18,
+      "medianPick": 18,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "lavernebutterfield_CB": {
-      "name": "Laverne Butterfield",
-      "position": "CB",
-      "school": "Missouri",
-      "boardRank": null,
-      "avp": 69,
-      "medianPick": 69,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jalenfarnsworth_LG": {
-      "name": "Jalen Farnsworth",
-      "position": "LG",
-      "school": "Michigan State",
-      "boardRank": null,
-      "avp": 70,
-      "medianPick": 70,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tristramjennings_CB": {
-      "name": "Tristram Jennings",
-      "position": "CB",
-      "school": "Syracuse",
-      "boardRank": null,
-      "avp": 71,
-      "medianPick": 71,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "malikhall_SAM": {
-      "name": "Malik Hall",
-      "position": "SAM",
-      "school": "Ohio State",
-      "boardRank": null,
-      "avp": 72,
-      "medianPick": 72,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "sincerejackson_SAM": {
-      "name": "Sincere Jackson",
-      "position": "SAM",
-      "school": "Troy",
-      "boardRank": null,
-      "avp": 73,
-      "medianPick": 73,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "brandonmwaki_LEDGE": {
-      "name": "Brandon Mwaki",
-      "position": "LEDGE",
-      "school": "Michigan",
-      "boardRank": null,
-      "avp": 74,
-      "medianPick": 74,
-      "samples": 1,
-      "source": "draft_export"
+    "trevonwilliams_LT": {
+      "name": "Trevon Williams",
+      "position": "LT",
+      "school": "Texas",
+      "boardRank": 19,
+      "avp": 19,
+      "medianPick": 19,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "jarontepoole_FS": {
       "name": "Jaronte Poole",
       "position": "FS",
       "school": "Michigan",
-      "boardRank": null,
-      "avp": 75,
-      "medianPick": 75,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 20,
+      "avp": 20,
+      "medianPick": 20,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jaylinmedina_DT": {
-      "name": "Jaylin Medina",
-      "position": "DT",
-      "school": "Tulsa",
-      "boardRank": null,
-      "avp": 76,
-      "medianPick": 76,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jakedolan_LT": {
-      "name": "Jake Dolan",
+    "ryanandrade_LT": {
+      "name": "Ryan Andrade",
       "position": "LT",
+      "school": "Stanford",
+      "boardRank": 21,
+      "avp": 21,
+      "medianPick": 21,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jahdaebrown_HB": {
+      "name": "Jahdae Brown",
+      "position": "HB",
+      "school": "Texas A&M",
+      "boardRank": 22,
+      "avp": 22,
+      "medianPick": 22,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "camthompson_QB": {
+      "name": "Cam Thompson",
+      "position": "QB",
+      "school": "Virginia",
+      "boardRank": 23,
+      "avp": 23,
+      "medianPick": 23,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "nicodesroches_TE": {
+      "name": "Nico Desroches",
+      "position": "TE",
+      "school": "Iowa",
+      "boardRank": 24,
+      "avp": 24,
+      "medianPick": 24,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "kadenreed_CB": {
+      "name": "Kaden Reed",
+      "position": "CB",
+      "school": "Baylor",
+      "boardRank": 25,
+      "avp": 25,
+      "medianPick": 25,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jalenfarnsworth_LG": {
+      "name": "Jalen Farnsworth",
+      "position": "LG",
+      "school": "Michigan State",
+      "boardRank": 26,
+      "avp": 26,
+      "medianPick": 26,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "brandynedwards_WR": {
+      "name": "Brandyn Edwards",
+      "position": "WR",
+      "school": "Alabama",
+      "boardRank": 27,
+      "avp": 27,
+      "medianPick": 27,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "nicolasordonez_RG": {
+      "name": "Nicolas Ordonez",
+      "position": "RG",
+      "school": "North Dakota State",
+      "boardRank": 28,
+      "avp": 28,
+      "medianPick": 28,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "bowilliamson_LEDG": {
+      "name": "Bo Williamson",
+      "position": "LEDG",
+      "school": "Boise State",
+      "boardRank": 29,
+      "avp": 29,
+      "medianPick": 29,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jaxtynchandler_HB": {
+      "name": "Jaxtyn Chandler",
+      "position": "HB",
+      "school": "UCLA",
+      "boardRank": 30,
+      "avp": 30,
+      "medianPick": 30,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "brandonmwaki_LEDG": {
+      "name": "Brandon Mwaki",
+      "position": "LEDG",
       "school": "Michigan",
-      "boardRank": null,
-      "avp": 77,
-      "medianPick": 77,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 31,
+      "avp": 31,
+      "medianPick": 31,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "malikhall_SAM": {
+      "name": "Malik Hall",
+      "position": "SAM",
+      "school": "Ohio State",
+      "boardRank": 32,
+      "avp": 32,
+      "medianPick": 32,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "lavernebutterfield_CB": {
+      "name": "Laverne Butterfield",
+      "position": "CB",
+      "school": "Missouri",
+      "boardRank": 33,
+      "avp": 33,
+      "medianPick": 33,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "benmontague_C": {
+      "name": "Ben Montague",
+      "position": "C",
+      "school": "Ohio State",
+      "boardRank": 34,
+      "avp": 34,
+      "medianPick": 34,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "fredericvalenti_HB": {
+      "name": "Frederic Valenti",
+      "position": "HB",
+      "school": "Auburn",
+      "boardRank": 35,
+      "avp": 35,
+      "medianPick": 35,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "mikeyvarley_RG": {
       "name": "Mikey Varley",
       "position": "RG",
       "school": "Tennessee",
-      "boardRank": null,
-      "avp": 78,
-      "medianPick": 78,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 36,
+      "avp": 36,
+      "medianPick": 36,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "ianokumuringa_WILL": {
-      "name": "Ian Okumuringa",
-      "position": "WILL",
-      "school": "Bowling Green State",
-      "boardRank": null,
-      "avp": 79,
-      "medianPick": 79,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jonoschheinrich_WILL": {
-      "name": "Jonosch Heinrich",
-      "position": "WILL",
-      "school": "California",
-      "boardRank": null,
-      "avp": 80,
-      "medianPick": 80,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jakedepofi_REDGE": {
+    "jakedepofi_REDG": {
       "name": "Jake DePofi",
-      "position": "REDGE",
+      "position": "REDG",
       "school": "Iowa",
-      "boardRank": null,
-      "avp": 81,
-      "medianPick": 81,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 37,
+      "avp": 37,
+      "medianPick": 37,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "kentrellsmith_TE": {
-      "name": "Kentrell Smith",
-      "position": "TE",
-      "school": "Kentucky",
-      "boardRank": null,
-      "avp": 82,
-      "medianPick": 82,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "isiahwhitaker_SAM": {
-      "name": "Isiah Whitaker",
-      "position": "SAM",
-      "school": "Kent State",
-      "boardRank": null,
-      "avp": 83,
-      "medianPick": 83,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "isiahflowers_RT": {
-      "name": "Isiah Flowers",
-      "position": "RT",
-      "school": "Miami",
-      "boardRank": null,
-      "avp": 84,
-      "medianPick": 84,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kaleljones_RG": {
-      "name": "Kal-El Jones",
-      "position": "RG",
-      "school": "Auburn",
-      "boardRank": null,
-      "avp": 85,
-      "medianPick": 85,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "sonnywilkerson_HB": {
-      "name": "Sonny Wilkerson",
-      "position": "HB",
-      "school": "Oklahoma State",
-      "boardRank": null,
-      "avp": 86,
-      "medianPick": 86,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jaymorejohnson_LEDGE": {
-      "name": "Jaymore Johnson",
-      "position": "LEDGE",
-      "school": "Syracuse",
-      "boardRank": null,
-      "avp": 87,
-      "medianPick": 87,
-      "samples": 1,
-      "source": "draft_export"
+    "kobethomas_REDG": {
+      "name": "Kobe Thomas",
+      "position": "REDG",
+      "school": "Alabama",
+      "boardRank": 38,
+      "avp": 38,
+      "medianPick": 38,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "jonathangunnarsson_SS": {
       "name": "Jonathan Gunnarsson",
       "position": "SS",
       "school": "Oklahoma",
-      "boardRank": null,
-      "avp": 88,
-      "medianPick": 88,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "dederickjohnson_LT": {
-      "name": "Dederick Johnson",
-      "position": "LT",
-      "school": "Georgia",
-      "boardRank": null,
-      "avp": 89,
-      "medianPick": 89,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "coreyswain_LG": {
-      "name": "Corey Swain",
-      "position": "LG",
-      "school": "West Virginia",
-      "boardRank": null,
-      "avp": 90,
-      "medianPick": 90,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "willschwenke_LT": {
-      "name": "Will Schwenke",
-      "position": "LT",
-      "school": "Clemson",
-      "boardRank": null,
-      "avp": 91,
-      "medianPick": 91,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jordanmcdonnell_WR": {
-      "name": "Jordan McDonnell",
-      "position": "WR",
-      "school": "Missouri",
-      "boardRank": null,
-      "avp": 92,
-      "medianPick": 92,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "lucasoberg_RG": {
-      "name": "Lucas Oberg",
-      "position": "RG",
-      "school": "Washington",
-      "boardRank": null,
-      "avp": 93,
-      "medianPick": 93,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kobethomas_REDGE": {
-      "name": "Kobe Thomas",
-      "position": "REDGE",
-      "school": "Alabama",
-      "boardRank": null,
-      "avp": 94,
-      "medianPick": 94,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jerquisgrant_WILL": {
-      "name": "Jerquis Grant",
-      "position": "WILL",
-      "school": "Miami",
-      "boardRank": null,
-      "avp": 95,
-      "medianPick": 95,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "dariuswilliams_LT": {
-      "name": "Darius Williams",
-      "position": "LT",
-      "school": "Kentucky",
-      "boardRank": null,
-      "avp": 96,
-      "medianPick": 96,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "chriswinkler_TE": {
-      "name": "Chris Winkler",
-      "position": "TE",
-      "school": "Michigan",
-      "boardRank": null,
-      "avp": 97,
-      "medianPick": 97,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 39,
+      "avp": 39,
+      "medianPick": 39,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "khamisibamgboshe_SS": {
       "name": "Khamisi Bamgboshe",
       "position": "SS",
       "school": "Alabama",
-      "boardRank": null,
-      "avp": 98,
-      "medianPick": 98,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 40,
+      "avp": 40,
+      "medianPick": 40,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "donaldsmallwood_C": {
-      "name": "Donald Smallwood",
-      "position": "C",
-      "school": "LSU",
-      "boardRank": null,
-      "avp": 99,
-      "medianPick": 99,
-      "samples": 1,
-      "source": "draft_export"
+    "marquishall_WR": {
+      "name": "Marquis Hall",
+      "position": "WR",
+      "school": "Georgia",
+      "boardRank": 41,
+      "avp": 41,
+      "medianPick": 41,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "sonnywilkerson_HB": {
+      "name": "Sonny Wilkerson",
+      "position": "HB",
+      "school": "Oklahoma State",
+      "boardRank": 42,
+      "avp": 42,
+      "medianPick": 42,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "dederickjohnson_LT": {
+      "name": "Dederick Johnson",
+      "position": "LT",
+      "school": "Georgia",
+      "boardRank": 43,
+      "avp": 43,
+      "medianPick": 43,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jakedolan_LT": {
+      "name": "Jake Dolan",
+      "position": "LT",
+      "school": "Michigan",
+      "boardRank": 44,
+      "avp": 44,
+      "medianPick": 44,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "sincerejackson_SAM": {
+      "name": "Sincere Jackson",
+      "position": "SAM",
+      "school": "Troy",
+      "boardRank": 45,
+      "avp": 45,
+      "medianPick": 45,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "kaleljones_RG": {
+      "name": "Kal-El Jones",
+      "position": "RG",
+      "school": "Auburn",
+      "boardRank": 46,
+      "avp": 46,
+      "medianPick": 46,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jerquisgrant_WILL": {
+      "name": "Jerquis Grant",
+      "position": "WILL",
+      "school": "Miami",
+      "boardRank": 47,
+      "avp": 47,
+      "medianPick": 47,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jonoschheinrich_WILL": {
+      "name": "Jonosch Heinrich",
+      "position": "WILL",
+      "school": "California",
+      "boardRank": 48,
+      "avp": 48,
+      "medianPick": 48,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jaymorejohnson_LEDG": {
+      "name": "Jaymore Johnson",
+      "position": "LEDG",
+      "school": "Syracuse",
+      "boardRank": 49,
+      "avp": 49,
+      "medianPick": 49,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "ebrajabdinyamba_CB": {
+      "name": "Ebrajabdi Nyamba",
+      "position": "CB",
+      "school": "Louisville",
+      "boardRank": 50,
+      "avp": 50,
+      "medianPick": 50,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jaylinmedina_DT": {
+      "name": "Jaylin Medina",
+      "position": "DT",
+      "school": "Tulsa",
+      "boardRank": 51,
+      "avp": 51,
+      "medianPick": 51,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "karldavisjr_MIKE": {
+      "name": "Karl Davis Jr.",
+      "position": "MIKE",
+      "school": "Florida",
+      "boardRank": 52,
+      "avp": 52,
+      "medianPick": 52,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "ianokumuringa_WILL": {
+      "name": "Ian Okumuringa",
+      "position": "WILL",
+      "school": "Bowling Green",
+      "boardRank": 53,
+      "avp": 53,
+      "medianPick": 53,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "chriswinkler_TE": {
+      "name": "Chris Winkler",
+      "position": "TE",
+      "school": "Michigan",
+      "boardRank": 54,
+      "avp": 54,
+      "medianPick": 54,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jordanmcdonnell_WR": {
+      "name": "Jordan McDonnell",
+      "position": "WR",
+      "school": "Missouri",
+      "boardRank": 55,
+      "avp": 55,
+      "medianPick": 55,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "isiahwhitaker_SAM": {
+      "name": "Isiah Whitaker",
+      "position": "SAM",
+      "school": "Kent State",
+      "boardRank": 56,
+      "avp": 56,
+      "medianPick": 56,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "lucasoberg_RG": {
+      "name": "Lucas Oberg",
+      "position": "RG",
+      "school": "Washington",
+      "boardRank": 57,
+      "avp": 57,
+      "medianPick": 57,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "kaemonjones_REDG": {
+      "name": "Kaemon Jones",
+      "position": "REDG",
+      "school": "Oklahoma",
+      "boardRank": 58,
+      "avp": 58,
+      "medianPick": 58,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jamarcusbuckner_HB": {
+      "name": "Jamarcus Buckner",
+      "position": "HB",
+      "school": "Ohio State",
+      "boardRank": 59,
+      "avp": 59,
+      "medianPick": 59,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "willschwenke_LT": {
+      "name": "Will Schwenke",
+      "position": "LT",
+      "school": "Clemson",
+      "boardRank": 60,
+      "avp": 60,
+      "medianPick": 60,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "raphaelarredondo_SAM": {
       "name": "Raphael Arredondo",
       "position": "SAM",
-      "school": "Connecticut",
-      "boardRank": null,
-      "avp": 100,
-      "medianPick": 100,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "alibryant_CB": {
-      "name": "Ali Bryant",
-      "position": "CB",
-      "school": "Kansas State",
-      "boardRank": null,
-      "avp": 101,
-      "medianPick": 101,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "UConn",
+      "boardRank": 61,
+      "avp": 61,
+      "medianPick": 61,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "braydencantrell_CB": {
       "name": "Brayden Cantrell",
       "position": "CB",
-      "school": "Connecticut",
-      "boardRank": null,
-      "avp": 102,
-      "medianPick": 102,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "UConn",
+      "boardRank": 62,
+      "avp": 62,
+      "medianPick": 62,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "michaelstubblefield_LT": {
-      "name": "Michael Stubblefield",
-      "position": "LT",
-      "school": "Auburn",
-      "boardRank": null,
-      "avp": 103,
-      "medianPick": 103,
-      "samples": 1,
-      "source": "draft_export"
+    "adrianratliffsmith_REDG": {
+      "name": "Adrian Ratliff-Smith",
+      "position": "REDG",
+      "school": "Wisconsin",
+      "boardRank": 63,
+      "avp": 63,
+      "medianPick": 63,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "adamtolbert_HB": {
-      "name": "Adam Tolbert",
-      "position": "HB",
-      "school": "Charlotte",
-      "boardRank": null,
-      "avp": 104,
-      "medianPick": 104,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tajjenkins_WILL": {
-      "name": "Taj Jenkins",
-      "position": "WILL",
-      "school": "N.C. State",
-      "boardRank": null,
-      "avp": 105,
-      "medianPick": 105,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "johnathanlevy_WR": {
-      "name": "Johnathan Levy",
-      "position": "WR",
-      "school": "North Dakota State",
-      "boardRank": null,
-      "avp": 106,
-      "medianPick": 106,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "dakuanwallace_WR": {
-      "name": "Da'kuan Wallace",
-      "position": "WR",
-      "school": "SMU",
-      "boardRank": null,
-      "avp": 107,
-      "medianPick": 107,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "ariesjohnson_MIKE": {
-      "name": "Aries Johnson",
-      "position": "MIKE",
-      "school": "Ohio State",
-      "boardRank": null,
-      "avp": 108,
-      "medianPick": 108,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jeremiahdavis_WR": {
-      "name": "Jeremiah Davis",
-      "position": "WR",
-      "school": "Ohio State",
-      "boardRank": null,
-      "avp": 109,
-      "medianPick": 109,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tyndallalexander_MIKE": {
-      "name": "Tyndall Alexander",
-      "position": "MIKE",
-      "school": "UCF",
-      "boardRank": null,
-      "avp": 110,
-      "medianPick": 110,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "samgray_HB": {
-      "name": "Sam Gray",
-      "position": "HB",
-      "school": "LA. Tech",
-      "boardRank": null,
-      "avp": 111,
-      "medianPick": 111,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "charleybrown_TE": {
-      "name": "Charley Brown",
-      "position": "TE",
-      "school": "Oregon",
-      "boardRank": null,
-      "avp": 112,
-      "medianPick": 112,
-      "samples": 1,
-      "source": "draft_export"
+    "coreyswain_LG": {
+      "name": "Corey Swain",
+      "position": "LG",
+      "school": "West Virginia",
+      "boardRank": 64,
+      "avp": 64,
+      "medianPick": 64,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "sufyanjoseph_CB": {
       "name": "Sufyan Joseph",
       "position": "CB",
       "school": "Illinois",
-      "boardRank": null,
-      "avp": 113,
-      "medianPick": 113,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 65,
+      "avp": 65,
+      "medianPick": 65,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "ahmirrichards_C": {
-      "name": "Ahmir Richards",
-      "position": "C",
-      "school": "Oregon State",
-      "boardRank": null,
-      "avp": 114,
-      "medianPick": 114,
-      "samples": 1,
-      "source": "draft_export"
+    "tyrellbernard_LEDG": {
+      "name": "Tyrell Bernard",
+      "position": "LEDG",
+      "school": "Tennessee",
+      "boardRank": 66,
+      "avp": 66,
+      "medianPick": 66,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "abdoulayeshuaibu_LG": {
-      "name": "Abdoulaye Shuaibu",
-      "position": "LG",
-      "school": "Utah State",
-      "boardRank": null,
-      "avp": 115,
-      "medianPick": 115,
-      "samples": 1,
-      "source": "draft_export"
+    "kentrellsmith_TE": {
+      "name": "Kentrell Smith",
+      "position": "TE",
+      "school": "Kentucky",
+      "boardRank": 67,
+      "avp": 67,
+      "medianPick": 67,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "adrianratliffsmith_REDGE": {
-      "name": "Adrian Ratliff-Smith",
-      "position": "REDGE",
-      "school": "Wisconsin",
-      "boardRank": null,
-      "avp": 116,
-      "medianPick": 116,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "trunicholson_CB": {
-      "name": "Tru Nicholson",
-      "position": "CB",
-      "school": "Buffalo",
-      "boardRank": null,
-      "avp": 117,
-      "medianPick": 117,
-      "samples": 1,
-      "source": "draft_export"
+    "adamtolbert_HB": {
+      "name": "Adam Tolbert",
+      "position": "HB",
+      "school": "Charlotte",
+      "boardRank": 68,
+      "avp": 68,
+      "medianPick": 68,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "jonahsmith_RG": {
       "name": "Jonah Smith",
       "position": "RG",
       "school": "Indiana",
-      "boardRank": null,
-      "avp": 118,
-      "medianPick": 118,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 69,
+      "avp": 69,
+      "medianPick": 69,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "christopherwhitt_RT": {
-      "name": "Christopher Whitt",
-      "position": "RT",
-      "school": "BYU",
-      "boardRank": null,
-      "avp": 119,
-      "medianPick": 119,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tonycollier_SS": {
-      "name": "Tony Collier",
-      "position": "SS",
-      "school": "Texas",
-      "boardRank": null,
-      "avp": 120,
-      "medianPick": 120,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "camtyson_WILL": {
-      "name": "Cam Tyson",
-      "position": "WILL",
-      "school": "Liberty",
-      "boardRank": null,
-      "avp": 121,
-      "medianPick": 121,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jamesevansscott_RG": {
-      "name": "James Evans-Scott",
-      "position": "RG",
-      "school": "Clemson",
-      "boardRank": null,
-      "avp": 122,
-      "medianPick": 122,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "quaveansmalls_HB": {
-      "name": "Quavean Smalls",
-      "position": "HB",
-      "school": "Clemson",
-      "boardRank": null,
-      "avp": 123,
-      "medianPick": 123,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kennymassey_MIKE": {
-      "name": "Kenny Massey",
+    "ariesjohnson_MIKE": {
+      "name": "Aries Johnson",
       "position": "MIKE",
-      "school": "Mississippi State",
-      "boardRank": null,
-      "avp": 124,
-      "medianPick": 124,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "caseyanthony_WR": {
-      "name": "Casey Anthony",
-      "position": "WR",
-      "school": "Kansas",
-      "boardRank": null,
-      "avp": 125,
-      "medianPick": 125,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "codysmith_MIKE": {
-      "name": "Cody Smith",
-      "position": "MIKE",
-      "school": "Clemson",
-      "boardRank": null,
-      "avp": 126,
-      "medianPick": 126,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jaleelrichards_HB": {
-      "name": "Jaleel Richards",
-      "position": "HB",
-      "school": "Miami",
-      "boardRank": null,
-      "avp": 127,
-      "medianPick": 127,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jacobroach_C": {
-      "name": "Jacob Roach",
-      "position": "C",
-      "school": "Washington",
-      "boardRank": null,
-      "avp": 128,
-      "medianPick": 128,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "brendenanguiano_RG": {
-      "name": "Brenden Anguiano",
-      "position": "RG",
-      "school": "TCU",
-      "boardRank": null,
-      "avp": 129,
-      "medianPick": 129,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "willieshelton_DT": {
-      "name": "Willie Shelton",
-      "position": "DT",
-      "school": "Florida",
-      "boardRank": null,
-      "avp": 130,
-      "medianPick": 130,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Ohio State",
+      "boardRank": 70,
+      "avp": 70,
+      "medianPick": 70,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "matteorossi_QB": {
       "name": "Matteo Rossi",
       "position": "QB",
       "school": "Washington State",
-      "boardRank": null,
-      "avp": 131,
-      "medianPick": 131,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 71,
+      "avp": 71,
+      "medianPick": 71,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "rashiddavis_HB": {
-      "name": "Rashid Davis",
-      "position": "HB",
-      "school": "Boise State",
-      "boardRank": null,
-      "avp": 132,
-      "medianPick": 132,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tyrellbernard_LEDGE": {
-      "name": "Tyrell Bernard",
-      "position": "LEDGE",
-      "school": "Tennessee",
-      "boardRank": null,
-      "avp": 133,
-      "medianPick": 133,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "lonnycoleman_FS": {
-      "name": "Lonny Coleman",
-      "position": "FS",
-      "school": "Tennessee",
-      "boardRank": null,
-      "avp": 134,
-      "medianPick": 134,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kashtonhutchinson_REDGE": {
-      "name": "Kashton Hutchinson",
-      "position": "REDGE",
-      "school": "Georgia",
-      "boardRank": null,
-      "avp": 135,
-      "medianPick": 135,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "brionhenson_LG": {
-      "name": "Brion Henson",
+    "abdoulayeshuaibu_LG": {
+      "name": "Abdoulaye Shuaibu",
       "position": "LG",
-      "school": "Ole Miss",
-      "boardRank": null,
-      "avp": 136,
-      "medianPick": 136,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Utah State",
+      "boardRank": 72,
+      "avp": 72,
+      "medianPick": 72,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "kaemonjones_REDGE": {
-      "name": "Kaemon Jones",
-      "position": "REDGE",
-      "school": "Oklahoma",
-      "boardRank": null,
-      "avp": 137,
-      "medianPick": 137,
-      "samples": 1,
-      "source": "draft_export"
+    "jeremiahdavis_WR": {
+      "name": "Jeremiah Davis",
+      "position": "WR",
+      "school": "Ohio State",
+      "boardRank": 73,
+      "avp": 73,
+      "medianPick": 73,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jamesevansscott_RG": {
+      "name": "James Evans-Scott",
+      "position": "RG",
+      "school": "Clemson",
+      "boardRank": 74,
+      "avp": 74,
+      "medianPick": 74,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "christopherwhitt_RT": {
+      "name": "Christopher Whitt",
+      "position": "RT",
+      "school": "BYU",
+      "boardRank": 75,
+      "avp": 75,
+      "medianPick": 75,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "isiahflowers_RT": {
+      "name": "Isiah Flowers",
+      "position": "RT",
+      "school": "Miami",
+      "boardRank": 76,
+      "avp": 76,
+      "medianPick": 76,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "kennymassey_MIKE": {
+      "name": "Kenny Massey",
+      "position": "MIKE",
+      "school": "Mississippi State",
+      "boardRank": 77,
+      "avp": 77,
+      "medianPick": 77,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "tristramjennings_CB": {
+      "name": "Tristram Jennings",
+      "position": "CB",
+      "school": "Syracuse",
+      "boardRank": 78,
+      "avp": 78,
+      "medianPick": 78,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "zareenjones_CB": {
       "name": "Zareen Jones",
       "position": "CB",
       "school": "Tulane",
-      "boardRank": null,
-      "avp": 138,
-      "medianPick": 138,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 79,
+      "avp": 79,
+      "medianPick": 79,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "axelnichols_WILL": {
-      "name": "Axel Nichols",
+    "codysmith_MIKE": {
+      "name": "Cody Smith",
+      "position": "MIKE",
+      "school": "Clemson",
+      "boardRank": 80,
+      "avp": 80,
+      "medianPick": 80,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "quaveansmalls_HB": {
+      "name": "Quavean Smalls",
+      "position": "HB",
+      "school": "Clemson",
+      "boardRank": 81,
+      "avp": 81,
+      "medianPick": 81,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "tajjenkins_WILL": {
+      "name": "Taj Jenkins",
       "position": "WILL",
-      "school": "Florida State",
-      "boardRank": null,
-      "avp": 139,
-      "medianPick": 139,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "NC State",
+      "boardRank": 82,
+      "avp": 82,
+      "medianPick": 82,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "fredshepherdjr_HB": {
-      "name": "Fred Shepherd Jr",
+    "jaleelrichards_HB": {
+      "name": "Jaleel Richards",
       "position": "HB",
-      "school": "Buffalo",
-      "boardRank": null,
-      "avp": 140,
-      "medianPick": 140,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Miami",
+      "boardRank": 83,
+      "avp": 83,
+      "medianPick": 83,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jackbryant_DT": {
-      "name": "Jack Bryant",
-      "position": "DT",
-      "school": "Ohio State",
-      "boardRank": null,
-      "avp": 141,
-      "medianPick": 141,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "xzavierfox_FS": {
-      "name": "Xzavier Fox",
-      "position": "FS",
-      "school": "UNLV",
-      "boardRank": null,
-      "avp": 142,
-      "medianPick": 142,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "zahairbooker_SAM": {
-      "name": "Zahair Booker",
-      "position": "SAM",
-      "school": "Florida",
-      "boardRank": null,
-      "avp": 143,
-      "medianPick": 143,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jamirthompson_LEDGE": {
-      "name": "Jamir Thompson",
-      "position": "LEDGE",
+    "kashtonhutchinson_REDG": {
+      "name": "Kashton Hutchinson",
+      "position": "REDG",
       "school": "Georgia",
-      "boardRank": null,
-      "avp": 144,
-      "medianPick": 144,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 84,
+      "avp": 84,
+      "medianPick": 84,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "terrychurchilljr_WR": {
-      "name": "Terry Churchill Jr",
-      "position": "WR",
-      "school": "Colorado",
-      "boardRank": null,
-      "avp": 145,
-      "medianPick": 145,
-      "samples": 1,
-      "source": "draft_export"
+    "lonnycoleman_FS": {
+      "name": "Lonny Coleman",
+      "position": "FS",
+      "school": "Tennessee",
+      "boardRank": 85,
+      "avp": 85,
+      "medianPick": 85,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jaydonsalgado_HB": {
-      "name": "Jaydon Salgado",
-      "position": "HB",
-      "school": "Texas",
-      "boardRank": null,
-      "avp": 146,
-      "medianPick": 146,
-      "samples": 1,
-      "source": "draft_export"
+    "tyndallalexander_MIKE": {
+      "name": "Tyndall Alexander",
+      "position": "MIKE",
+      "school": "UCF",
+      "boardRank": 86,
+      "avp": 86,
+      "medianPick": 86,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "messiahwilliams_TE": {
-      "name": "Messiah Williams",
+    "charleybrown_TE": {
+      "name": "Charley Brown",
       "position": "TE",
-      "school": "Oklahoma",
-      "boardRank": null,
-      "avp": 147,
-      "medianPick": 147,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "mackroberson_RT": {
-      "name": "Mack Roberson",
-      "position": "RT",
-      "school": "Pittsburgh",
-      "boardRank": null,
-      "avp": 148,
-      "medianPick": 148,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "bankstondaniels_LG": {
-      "name": "Bankston Daniels",
-      "position": "LG",
-      "school": "Auburn",
-      "boardRank": null,
-      "avp": 149,
-      "medianPick": 149,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Oregon",
+      "boardRank": 87,
+      "avp": 87,
+      "medianPick": 87,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "isaiahgreen_CB": {
       "name": "Isaiah Green",
       "position": "CB",
       "school": "Georgia",
-      "boardRank": null,
-      "avp": 150,
-      "medianPick": 150,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 88,
+      "avp": 88,
+      "medianPick": 88,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "willieshelton_DT": {
+      "name": "Willie Shelton",
+      "position": "DT",
+      "school": "Florida",
+      "boardRank": 89,
+      "avp": 89,
+      "medianPick": 89,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "rashiddavis_HB": {
+      "name": "Rashid Davis",
+      "position": "HB",
+      "school": "Boise State",
+      "boardRank": 90,
+      "avp": 90,
+      "medianPick": 90,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jackbryant_DT": {
+      "name": "Jack Bryant",
+      "position": "DT",
+      "school": "Ohio State",
+      "boardRank": 91,
+      "avp": 91,
+      "medianPick": 91,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "brionhenson_LG": {
+      "name": "Brion Henson",
+      "position": "LG",
+      "school": "Ole Miss",
+      "boardRank": 92,
+      "avp": 92,
+      "medianPick": 92,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "donaldsmallwood_C": {
+      "name": "Donald Smallwood",
+      "position": "C",
+      "school": "LSU",
+      "boardRank": 93,
+      "avp": 93,
+      "medianPick": 93,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "tonycollier_SS": {
+      "name": "Tony Collier",
+      "position": "SS",
+      "school": "Texas",
+      "boardRank": 94,
+      "avp": 94,
+      "medianPick": 94,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "camtyson_WILL": {
+      "name": "Cam Tyson",
+      "position": "WILL",
+      "school": "Liberty",
+      "boardRank": 95,
+      "avp": 95,
+      "medianPick": 95,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "michaelstubblefield_LT": {
+      "name": "Michael Stubblefield",
+      "position": "LT",
+      "school": "Auburn",
+      "boardRank": 96,
+      "avp": 96,
+      "medianPick": 96,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jamirthompson_LEDG": {
+      "name": "Jamir Thompson",
+      "position": "LEDG",
+      "school": "Georgia",
+      "boardRank": 97,
+      "avp": 97,
+      "medianPick": 97,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "samgray_HB": {
+      "name": "Sam Gray",
+      "position": "HB",
+      "school": "LA Tech",
+      "boardRank": 98,
+      "avp": 98,
+      "medianPick": 98,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "johnnyboston_MIKE": {
       "name": "Johnny Boston",
       "position": "MIKE",
       "school": "Utah",
-      "boardRank": null,
-      "avp": 151,
-      "medianPick": 151,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 99,
+      "avp": 99,
+      "medianPick": 99,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "trententrimble_TE": {
-      "name": "Trenten Trimble",
+    "messiahwilliams_TE": {
+      "name": "Messiah Williams",
       "position": "TE",
-      "school": "Virginia",
-      "boardRank": null,
-      "avp": 152,
-      "medianPick": 152,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Oklahoma",
+      "boardRank": 100,
+      "avp": 100,
+      "medianPick": 100,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "cadetrevino_CB": {
-      "name": "Cade Trevino",
-      "position": "CB",
-      "school": "South Carolina",
-      "boardRank": null,
-      "avp": 153,
-      "medianPick": 153,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "masonkeener_HB": {
-      "name": "Mason Keener",
-      "position": "HB",
-      "school": "Houston",
-      "boardRank": null,
-      "avp": 154,
-      "medianPick": 154,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "omonteezwilliams_WR": {
-      "name": "Omonteez Williams",
-      "position": "WR",
-      "school": "North Carolina",
-      "boardRank": null,
-      "avp": 155,
-      "medianPick": 155,
-      "samples": 1,
-      "source": "draft_export"
+    "bankstondaniels_LG": {
+      "name": "Bankston Daniels",
+      "position": "LG",
+      "school": "Auburn",
+      "boardRank": 101,
+      "avp": 101,
+      "medianPick": 101,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "erickmottershead_LT": {
       "name": "Erick Mottershead",
       "position": "LT",
       "school": "Southern Miss",
-      "boardRank": null,
-      "avp": 156,
-      "medianPick": 156,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 102,
+      "avp": 102,
+      "medianPick": 102,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jaylanpenny_DT": {
-      "name": "Jaylan Penny",
-      "position": "DT",
-      "school": "Georgia",
-      "boardRank": null,
-      "avp": 157,
-      "medianPick": 157,
-      "samples": 1,
-      "source": "draft_export"
+    "cadetrevino_CB": {
+      "name": "Cade Trevino",
+      "position": "CB",
+      "school": "South Carolina",
+      "boardRank": 103,
+      "avp": 103,
+      "medianPick": 103,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "brennonweinstein_RG": {
-      "name": "Brennon Weinstein",
+    "brendenanguiano_RG": {
+      "name": "Brenden Anguiano",
       "position": "RG",
-      "school": "Baylor",
-      "boardRank": null,
-      "avp": 158,
-      "medianPick": 158,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "TCU",
+      "boardRank": 104,
+      "avp": 104,
+      "medianPick": 104,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "jamichaelhawkins_LG": {
       "name": "Jamichael Hawkins",
       "position": "LG",
       "school": "Alabama",
-      "boardRank": null,
-      "avp": 159,
-      "medianPick": 159,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 105,
+      "avp": 105,
+      "medianPick": 105,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "joshfelder_WR": {
-      "name": "Josh Felder",
+    "omonteezwilliams_WR": {
+      "name": "Omonteez Williams",
       "position": "WR",
-      "school": "Nebraska",
-      "boardRank": null,
-      "avp": 160,
-      "medianPick": 160,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "North Carolina",
+      "boardRank": 106,
+      "avp": 106,
+      "medianPick": 106,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "austinkempjr_DT": {
-      "name": "Austin Kemp Jr",
+    "zahairbooker_SAM": {
+      "name": "Zahair Booker",
+      "position": "SAM",
+      "school": "Florida",
+      "boardRank": 107,
+      "avp": 107,
+      "medianPick": 107,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jaylanpenny_DT": {
+      "name": "Jaylan Penny",
       "position": "DT",
-      "school": "Clemson",
-      "boardRank": null,
-      "avp": 161,
-      "medianPick": 161,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Georgia",
+      "boardRank": 108,
+      "avp": 108,
+      "medianPick": 108,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jadenhenningjr_QB": {
-      "name": "Jaden Henning Jr.",
-      "position": "QB",
-      "school": "Virginia Tech",
-      "boardRank": null,
-      "avp": 162,
-      "medianPick": 162,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "nickalbertson_LT": {
-      "name": "Nick Albertson",
-      "position": "LT",
-      "school": "Wake Forest",
-      "boardRank": null,
-      "avp": 163,
-      "medianPick": 163,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "devinjames_WILL": {
-      "name": "Devin James",
-      "position": "WILL",
-      "school": "Texas Tech",
-      "boardRank": null,
-      "avp": 164,
-      "medianPick": 164,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "bradleymarshall_DT": {
-      "name": "Bradley Marshall",
-      "position": "DT",
-      "school": "Boise State",
-      "boardRank": null,
-      "avp": 165,
-      "medianPick": 165,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "johnathonqualls_REDGE": {
-      "name": "Johnathon Qualls",
-      "position": "REDGE",
-      "school": "Memphis",
-      "boardRank": null,
-      "avp": 166,
-      "medianPick": 166,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "imanifsarowiwa_WR": {
-      "name": "Imanif Saro-Wiwa",
-      "position": "WR",
-      "school": "Syracuse",
-      "boardRank": null,
-      "avp": 167,
-      "medianPick": 167,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "mattshuler_FS": {
-      "name": "Matt Shuler",
+    "kyreebenjamin_FS": {
+      "name": "Kyree Benjamin",
       "position": "FS",
-      "school": "Army",
-      "boardRank": null,
-      "avp": 168,
-      "medianPick": 168,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Florida Tech",
+      "boardRank": 109,
+      "avp": 109,
+      "medianPick": 109,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "malikcolebryant_CB": {
-      "name": "Malik Cole-Bryant",
-      "position": "CB",
-      "school": "Ohio",
-      "boardRank": null,
-      "avp": 169,
-      "medianPick": 169,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "latrellmyrick_REDGE": {
-      "name": "Latrell Myrick",
-      "position": "REDGE",
-      "school": "Miami",
-      "boardRank": null,
-      "avp": 170,
-      "medianPick": 170,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "gerhardstanton_TE": {
-      "name": "Gerhard Stanton",
-      "position": "TE",
-      "school": "Illinois",
-      "boardRank": null,
-      "avp": 171,
-      "medianPick": 171,
-      "samples": 1,
-      "source": "draft_export"
+    "johnathonqualls_REDG": {
+      "name": "Johnathon Qualls",
+      "position": "REDG",
+      "school": "Memphis",
+      "boardRank": 110,
+      "avp": 110,
+      "medianPick": 110,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "zackbroyles_QB": {
       "name": "Zack Broyles",
       "position": "QB",
       "school": "Pittsburgh",
-      "boardRank": null,
-      "avp": 172,
-      "medianPick": 172,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 111,
+      "avp": 111,
+      "medianPick": 111,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "flynnrobinson_LG": {
-      "name": "Flynn Robinson",
-      "position": "LG",
-      "school": "Colorado State",
-      "boardRank": null,
-      "avp": 173,
-      "medianPick": 173,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tjjefferson_QB": {
-      "name": "T.J. Jefferson",
-      "position": "QB",
-      "school": "Washington",
-      "boardRank": null,
-      "avp": 174,
-      "medianPick": 174,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "wyattbarnett_WR": {
-      "name": "Wyatt Barnett",
+    "dakuanwallace_WR": {
+      "name": "Da'kuan Wallace",
       "position": "WR",
-      "school": "Florida State",
-      "boardRank": null,
-      "avp": 175,
-      "medianPick": 175,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "SMU",
+      "boardRank": 112,
+      "avp": 112,
+      "medianPick": 112,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "johnstarkey_TE": {
-      "name": "John Starkey",
+    "trunicholson_CB": {
+      "name": "Tru Nicholson",
+      "position": "CB",
+      "school": "Buffalo",
+      "boardRank": 113,
+      "avp": 113,
+      "medianPick": 113,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jadenhenningjr_QB": {
+      "name": "Jaden Henning Jr.",
+      "position": "QB",
+      "school": "Virginia Tech",
+      "boardRank": 114,
+      "avp": 114,
+      "medianPick": 114,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "trententrimble_TE": {
+      "name": "Trenten Trimble",
       "position": "TE",
-      "school": "Northern Illinois",
-      "boardRank": null,
-      "avp": 176,
-      "medianPick": 176,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "niklausoconnor_WILL": {
-      "name": "Niklaus O'Connor",
-      "position": "WILL",
-      "school": "Missouri",
-      "boardRank": null,
-      "avp": 177,
-      "medianPick": 177,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Virginia",
+      "boardRank": 115,
+      "avp": 115,
+      "medianPick": 115,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "mordechaiwilliams_DT": {
       "name": "Mordechai Williams",
       "position": "DT",
       "school": "Penn State",
-      "boardRank": null,
-      "avp": 178,
-      "medianPick": 178,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 116,
+      "avp": 116,
+      "medianPick": 116,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "nicpoindexter_RT": {
-      "name": "Nic Poindexter",
-      "position": "RT",
-      "school": "Ole Miss",
-      "boardRank": null,
-      "avp": 179,
-      "medianPick": 179,
-      "samples": 1,
-      "source": "draft_export"
+    "latrellmyrick_REDG": {
+      "name": "Latrell Myrick",
+      "position": "REDG",
+      "school": "Miami",
+      "boardRank": 117,
+      "avp": 117,
+      "medianPick": 117,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "brennonweinstein_RG": {
+      "name": "Brennon Weinstein",
+      "position": "RG",
+      "school": "Baylor",
+      "boardRank": 118,
+      "avp": 118,
+      "medianPick": 118,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "austinkempjr_DT": {
+      "name": "Austin Kemp Jr",
+      "position": "DT",
+      "school": "Clemson",
+      "boardRank": 119,
+      "avp": 119,
+      "medianPick": 119,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "malikcolebryant_CB": {
+      "name": "Malik Cole-Bryant",
+      "position": "CB",
+      "school": "Ohio",
+      "boardRank": 120,
+      "avp": 120,
+      "medianPick": 120,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "fredshepherdjr_HB": {
+      "name": "Fred Shepherd Jr",
+      "position": "HB",
+      "school": "Buffalo",
+      "boardRank": 121,
+      "avp": 121,
+      "medianPick": 121,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "xzavierfox_FS": {
+      "name": "Xzavier Fox",
+      "position": "FS",
+      "school": "UNLV",
+      "boardRank": 122,
+      "avp": 122,
+      "medianPick": 122,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "fsmattshuler_FS": {
+      "name": "FS Matt Shuler",
+      "position": "FS",
+      "school": "Army",
+      "boardRank": 123,
+      "avp": 123,
+      "medianPick": 123,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "imanifsarowiwa_WR": {
+      "name": "Imanif Saro-Wiwa",
+      "position": "WR",
+      "school": "Syracuse",
+      "boardRank": 124,
+      "avp": 124,
+      "medianPick": 124,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "flynnrobinson_LG": {
+      "name": "Flynn Robinson",
+      "position": "LG",
+      "school": "Colorado State",
+      "boardRank": 125,
+      "avp": 125,
+      "medianPick": 125,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "masonkeener_HB": {
+      "name": "Mason Keener",
+      "position": "HB",
+      "school": "Houston",
+      "boardRank": 126,
+      "avp": 126,
+      "medianPick": 126,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "ahmirrichards_C": {
+      "name": "Ahmir Richards",
+      "position": "C",
+      "school": "Orgeon State",
+      "boardRank": 127,
+      "avp": 127,
+      "medianPick": 127,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "kapricefarmer_CB": {
       "name": "Kaprice Farmer",
       "position": "CB",
       "school": "Eastern Washington",
-      "boardRank": null,
-      "avp": 180,
-      "medianPick": 180,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 128,
+      "avp": 128,
+      "medianPick": 128,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "darontjohnson_REDGE": {
+    "darontjohnson_REDG": {
       "name": "Daronté Johnson",
-      "position": "REDGE",
+      "position": "REDG",
       "school": "Auburn",
-      "boardRank": null,
-      "avp": 181,
-      "medianPick": 181,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 129,
+      "avp": 129,
+      "medianPick": 129,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jakekuykendall_C": {
-      "name": "Jake Kuykendall",
-      "position": "C",
-      "school": "Toledo",
-      "boardRank": null,
-      "avp": 182,
-      "medianPick": 182,
-      "samples": 1,
-      "source": "draft_export"
+    "gerhardstanton_TE": {
+      "name": "Gerhard Stanton",
+      "position": "TE",
+      "school": "Illinois",
+      "boardRank": 130,
+      "avp": 130,
+      "medianPick": 130,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "kalebbryan_CB": {
       "name": "Kaleb Bryan",
       "position": "CB",
       "school": "Ohio State",
-      "boardRank": null,
-      "avp": 183,
-      "medianPick": 183,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 131,
+      "avp": 131,
+      "medianPick": 131,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "randariousbrooks_CB": {
-      "name": "Randarious Brooks",
-      "position": "CB",
-      "school": "LSU",
-      "boardRank": null,
-      "avp": 184,
-      "medianPick": 184,
-      "samples": 1,
-      "source": "draft_export"
+    "johnstarkey_TE": {
+      "name": "John Starkey",
+      "position": "TE",
+      "school": "Northern Illinois",
+      "boardRank": 132,
+      "avp": 132,
+      "medianPick": 132,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "terrychurchilljr_WR": {
+      "name": "Terry Churchill Jr",
+      "position": "WR",
+      "school": "Colorado State",
+      "boardRank": 133,
+      "avp": 133,
+      "medianPick": 133,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "alijahperalta_SAM": {
       "name": "Alijah Peralta",
       "position": "SAM",
       "school": "Oklahoma",
-      "boardRank": null,
-      "avp": 185,
-      "medianPick": 185,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 134,
+      "avp": 134,
+      "medianPick": 134,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "deonandrews_SAM": {
-      "name": "Deon Andrews",
-      "position": "SAM",
-      "school": "Iowa State",
-      "boardRank": null,
-      "avp": 186,
-      "medianPick": 186,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "raymundrowntree_SS": {
-      "name": "Raymund Rowntree",
-      "position": "SS",
-      "school": "Virginia Tech",
-      "boardRank": null,
-      "avp": 187,
-      "medianPick": 187,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "brysonmcnair_WR": {
-      "name": "Bryson McNair",
-      "position": "WR",
-      "school": "USC",
-      "boardRank": null,
-      "avp": 188,
-      "medianPick": 188,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tyroyster_FS": {
-      "name": "Ty Royster",
-      "position": "FS",
-      "school": "Beth Cookman",
-      "boardRank": null,
-      "avp": 189,
-      "medianPick": 189,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jarredmayer_REDGE": {
-      "name": "Jarred Mayer",
-      "position": "REDGE",
-      "school": "USC",
-      "boardRank": null,
-      "avp": 190,
-      "medianPick": 190,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "treviongilliand_DT": {
-      "name": "Trevion Gilliand",
+    "bradleymarshall_DT": {
+      "name": "Bradley Marshall",
       "position": "DT",
-      "school": "Georgia Tech",
-      "boardRank": null,
-      "avp": 191,
-      "medianPick": 191,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Boise State",
+      "boardRank": 135,
+      "avp": 135,
+      "medianPick": 135,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "karonstokes_HB": {
-      "name": "Ka'ron Stokes",
-      "position": "HB",
-      "school": "Georgia",
-      "boardRank": null,
-      "avp": 192,
-      "medianPick": 192,
-      "samples": 1,
-      "source": "draft_export"
+    "mackroberson_RT": {
+      "name": "Mack Roberson",
+      "position": "RT",
+      "school": "Pittsburgh",
+      "boardRank": 136,
+      "avp": 136,
+      "medianPick": 136,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "treymelendez_SAM": {
       "name": "Trey Melendez",
       "position": "SAM",
       "school": "Florida A&M",
-      "boardRank": null,
-      "avp": 193,
-      "medianPick": 193,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 137,
+      "avp": 137,
+      "medianPick": 137,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "brysonmcnair_WR": {
+      "name": "Bryson McNair",
+      "position": "WR",
+      "school": "USC",
+      "boardRank": 138,
+      "avp": 138,
+      "medianPick": 138,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "deonandrews_SAM": {
+      "name": "Deon Andrews",
+      "position": "SAM",
+      "school": "Iowa State",
+      "boardRank": 139,
+      "avp": 139,
+      "medianPick": 139,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jarredmayer_REDG": {
+      "name": "Jarred Mayer",
+      "position": "REDG",
+      "school": "USC",
+      "boardRank": 140,
+      "avp": 140,
+      "medianPick": 140,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "iancunningham_CB": {
       "name": "Ian Cunningham",
       "position": "CB",
       "school": "Ohio State",
-      "boardRank": null,
-      "avp": 194,
-      "medianPick": 194,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 141,
+      "avp": 141,
+      "medianPick": 141,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "drewaldridgejr_QB": {
-      "name": "Drew Aldridge Jr",
-      "position": "QB",
-      "school": "Colorado",
-      "boardRank": null,
-      "avp": 195,
-      "medianPick": 195,
-      "samples": 1,
-      "source": "draft_export"
+    "nicpoindexter_RT": {
+      "name": "Nic Poindexter",
+      "position": "RT",
+      "school": "Ole Miss",
+      "boardRank": 142,
+      "avp": 142,
+      "medianPick": 142,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jakekuykendall_C": {
+      "name": "Jake Kuykendall",
+      "position": "C",
+      "school": "Toledo",
+      "boardRank": 143,
+      "avp": 143,
+      "medianPick": 143,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "randariousbrooks_CB": {
+      "name": "Randarious Brooks",
+      "position": "CB",
+      "school": "LSU",
+      "boardRank": 144,
+      "avp": 144,
+      "medianPick": 144,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "makaiwilliams_QB": {
       "name": "Makai Williams",
       "position": "QB",
       "school": "Notre Dame",
-      "boardRank": null,
-      "avp": 196,
-      "medianPick": 196,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 145,
+      "avp": 145,
+      "medianPick": 145,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "alexbhm_TE": {
-      "name": "Alex Böhm",
-      "position": "TE",
-      "school": "Ohio",
-      "boardRank": null,
-      "avp": 197,
-      "medianPick": 197,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "julianhicks_REDGE": {
-      "name": "Julian Hicks",
-      "position": "REDGE",
-      "school": "Pittsburgh",
-      "boardRank": null,
-      "avp": 198,
-      "medianPick": 198,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jonathansierra_C": {
-      "name": "Jonathan Sierra",
-      "position": "C",
-      "school": "Boise State",
-      "boardRank": null,
-      "avp": 199,
-      "medianPick": 199,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kemalbryantjr_TE": {
-      "name": "Kemal Bryant Jr.",
-      "position": "TE",
-      "school": "Notre Dame",
-      "boardRank": null,
-      "avp": 200,
-      "medianPick": 200,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jaylenmiles_FS": {
-      "name": "Jaylen Miles",
-      "position": "FS",
-      "school": "Clemson",
-      "boardRank": null,
-      "avp": 201,
-      "medianPick": 201,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "zdariusgriffin_CB": {
-      "name": "Zédarius Griffin",
-      "position": "CB",
-      "school": "Washington",
-      "boardRank": null,
-      "avp": 202,
-      "medianPick": 202,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "samhollandii_SS": {
-      "name": "Sam Holland II",
-      "position": "SS",
-      "school": "Louisville",
-      "boardRank": null,
-      "avp": 203,
-      "medianPick": 203,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jonathanschuster_RG": {
-      "name": "Jonathan Schuster",
-      "position": "RG",
-      "school": "Arkansas State",
-      "boardRank": null,
-      "avp": 204,
-      "medianPick": 204,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "hoopaahoke_FS": {
-      "name": "Ho'opa'a Hoke",
-      "position": "FS",
-      "school": "Notre Dame",
-      "boardRank": null,
-      "avp": 205,
-      "medianPick": 205,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "taylorgarrad_REDGE": {
-      "name": "Taylor Garrad",
-      "position": "REDGE",
-      "school": "Penn State",
-      "boardRank": null,
-      "avp": 206,
-      "medianPick": 206,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "rishardburks_WR": {
-      "name": "Rishard Burks",
-      "position": "WR",
-      "school": "Idaho State",
-      "boardRank": null,
-      "avp": 207,
-      "medianPick": 207,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "josiahmullins_SAM": {
-      "name": "Josiah Mullins",
-      "position": "SAM",
-      "school": "Oregon",
-      "boardRank": null,
-      "avp": 208,
-      "medianPick": 208,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tylerbrock_FB": {
-      "name": "Tyler Brock",
-      "position": "FB",
-      "school": "Clemson",
-      "boardRank": null,
-      "avp": 209,
-      "medianPick": 209,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kaydronboyd_MIKE": {
-      "name": "Kaydron Boyd",
-      "position": "MIKE",
-      "school": "UCF",
-      "boardRank": null,
-      "avp": 210,
-      "medianPick": 210,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "raydavenport_HB": {
-      "name": "Ray Davenport",
+    "jaydonsalgado_HB": {
+      "name": "Jaydon Salgado",
       "position": "HB",
-      "school": "Ohio State",
-      "boardRank": null,
-      "avp": 211,
-      "medianPick": 211,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "nalaniwilliams_RT": {
-      "name": "Nalani Williams",
-      "position": "RT",
-      "school": "Indiana",
-      "boardRank": null,
-      "avp": 212,
-      "medianPick": 212,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "terrancemay_QB": {
-      "name": "Terrance May",
-      "position": "QB",
-      "school": "Southern Miss",
-      "boardRank": null,
-      "avp": 213,
-      "medianPick": 213,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "badruomehia_REDGE": {
-      "name": "Badru Omehia",
-      "position": "REDGE",
-      "school": "Memphis",
-      "boardRank": null,
-      "avp": 214,
-      "medianPick": 214,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Texas",
+      "boardRank": 146,
+      "avp": 146,
+      "medianPick": 146,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "thaireeesmith_WR": {
       "name": "Thaireee Smith",
       "position": "WR",
       "school": "Alabama",
-      "boardRank": null,
-      "avp": 215,
-      "medianPick": 215,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 147,
+      "avp": 147,
+      "medianPick": 147,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "traerockwell_LEDGE": {
-      "name": "Trae Rockwell",
-      "position": "LEDGE",
-      "school": "Notre Dame",
-      "boardRank": null,
-      "avp": 216,
-      "medianPick": 216,
-      "samples": 1,
-      "source": "draft_export"
+    "treviongilliland_DT": {
+      "name": "Trevion Gilliland",
+      "position": "DT",
+      "school": "Georgia Tech",
+      "boardRank": 148,
+      "avp": 148,
+      "medianPick": 148,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "maxmedrano_LG": {
-      "name": "Max Medrano",
-      "position": "LG",
-      "school": "Kentucky",
-      "boardRank": null,
-      "avp": 217,
-      "medianPick": 217,
-      "samples": 1,
-      "source": "draft_export"
+    "karonstokes_HB": {
+      "name": "Ka'ron Stokes",
+      "position": "HB",
+      "school": "Georgia",
+      "boardRank": 149,
+      "avp": 149,
+      "medianPick": 149,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "quedellclarke_CB": {
-      "name": "Quedell Clarke",
-      "position": "CB",
-      "school": "Mississippi State",
-      "boardRank": null,
-      "avp": 218,
-      "medianPick": 218,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "leeshawncaldwell_TE": {
-      "name": "Leeshawn Caldwell",
-      "position": "TE",
-      "school": "TCU",
-      "boardRank": null,
-      "avp": 219,
-      "medianPick": 219,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tymanning_C": {
-      "name": "Ty Manning",
-      "position": "C",
-      "school": "Temple",
-      "boardRank": null,
-      "avp": 220,
-      "medianPick": 220,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "williebanks_LG": {
-      "name": "Willie Banks",
-      "position": "LG",
-      "school": "Ohio State",
-      "boardRank": null,
-      "avp": 221,
-      "medianPick": 221,
-      "samples": 1,
-      "source": "draft_export"
+    "jaylenmiles_FS": {
+      "name": "Jaylen Miles",
+      "position": "FS",
+      "school": "Clemson",
+      "boardRank": 150,
+      "avp": 150,
+      "medianPick": 150,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "moussasmalls_WR": {
       "name": "Moussa Smalls",
       "position": "WR",
       "school": "Michigan",
-      "boardRank": null,
-      "avp": 222,
-      "medianPick": 222,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "marckozlowski_LEDGE": {
-      "name": "Marc Kozlowski",
-      "position": "LEDGE",
-      "school": "Louisville",
-      "boardRank": null,
-      "avp": 223,
-      "medianPick": 223,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "andreyoung_RT": {
-      "name": "Andre Young",
-      "position": "RT",
-      "school": "Arkansas",
-      "boardRank": null,
-      "avp": 224,
-      "medianPick": 224,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "davonkitchens_RG": {
-      "name": "Davon Kitchens",
-      "position": "RG",
-      "school": "Syracuse",
-      "boardRank": null,
-      "avp": 225,
-      "medianPick": 225,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jamirisidiadhiamuru_HB": {
-      "name": "Jamirisidi Adhiamuru",
-      "position": "HB",
-      "school": "Arizona State",
-      "boardRank": null,
-      "avp": 226,
-      "medianPick": 226,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 151,
+      "avp": 151,
+      "medianPick": 151,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "treyharding_WR": {
       "name": "Trey Harding",
       "position": "WR",
       "school": "Indiana",
-      "boardRank": null,
-      "avp": 227,
-      "medianPick": 227,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 152,
+      "avp": 152,
+      "medianPick": 152,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jumaaneakinjide_SAM": {
-      "name": "Jumaane Akinjide",
-      "position": "SAM",
-      "school": "Iowa",
-      "boardRank": null,
-      "avp": 228,
-      "medianPick": 228,
-      "samples": 1,
-      "source": "draft_export"
+    "tjjefferson_QB": {
+      "name": "T.J. Jefferson",
+      "position": "QB",
+      "school": "Washington",
+      "boardRank": 153,
+      "avp": 153,
+      "medianPick": 153,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "julianhicks_REDG": {
+      "name": "Julian Hicks",
+      "position": "REDG",
+      "school": "Pittsburgh",
+      "boardRank": 154,
+      "avp": 154,
+      "medianPick": 154,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "alexanderbhm_TE": {
+      "name": "Alexander Böhm",
+      "position": "TE",
+      "school": "Ohio",
+      "boardRank": 155,
+      "avp": 155,
+      "medianPick": 155,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jonathonschuster_RG": {
+      "name": "Jonathon Schuster",
+      "position": "RG",
+      "school": "Arkansas State",
+      "boardRank": 156,
+      "avp": 156,
+      "medianPick": 156,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "niklausoconnor_WILL": {
+      "name": "Niklaus O’Connor",
+      "position": "WILL",
+      "school": "Missouri",
+      "boardRank": 157,
+      "avp": 157,
+      "medianPick": 157,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "raymundrowntree_SS": {
+      "name": "Raymund Rowntree",
+      "position": "SS",
+      "school": "Virginia Tech",
+      "boardRank": 158,
+      "avp": 158,
+      "medianPick": 158,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "hoopaahoke_FS": {
+      "name": "Ho'opa'a Hoke",
+      "position": "FS",
+      "school": "Notre Dame",
+      "boardRank": 159,
+      "avp": 159,
+      "medianPick": 159,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "jalenfinch_WR": {
       "name": "Jalen Finch",
       "position": "WR",
       "school": "Kansas",
-      "boardRank": null,
-      "avp": 229,
-      "medianPick": 229,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 160,
+      "avp": 160,
+      "medianPick": 160,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "eithanbarker_RT": {
-      "name": "Eithan Barker",
+    "raydavenport_HB": {
+      "name": "Ray Davenport",
+      "position": "HB",
+      "school": "Ohio State",
+      "boardRank": 161,
+      "avp": 161,
+      "medianPick": 161,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "taylorgarrard_REDG": {
+      "name": "Taylor Garrard",
+      "position": "REDG",
+      "school": "Penn State",
+      "boardRank": 162,
+      "avp": 162,
+      "medianPick": 162,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "zdariusgriffin_CB": {
+      "name": "Zédarius Griffin",
+      "position": "CB",
+      "school": "Washington",
+      "boardRank": 163,
+      "avp": 163,
+      "medianPick": 163,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "josiahmullins_SAM": {
+      "name": "Josiah Mullins",
+      "position": "SAM",
+      "school": "Oregon",
+      "boardRank": 164,
+      "avp": 164,
+      "medianPick": 164,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "alibryan_CB": {
+      "name": "Ali Bryan",
+      "position": "CB",
+      "school": "Kansas State",
+      "boardRank": 165,
+      "avp": 165,
+      "medianPick": 165,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "traerockwell_LEDG": {
+      "name": "Trae Rockwell",
+      "position": "LEDG",
+      "school": "Notre Dame",
+      "boardRank": 166,
+      "avp": 166,
+      "medianPick": 166,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "nalaniwilliams_RT": {
+      "name": "Nalani Williams",
       "position": "RT",
-      "school": "Boise State",
-      "boardRank": null,
-      "avp": 230,
-      "medianPick": 230,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Indiana",
+      "boardRank": 167,
+      "avp": 167,
+      "medianPick": 167,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "badruomehia_REDG": {
+      "name": "Badru Omehia",
+      "position": "REDG",
+      "school": "Memphis",
+      "boardRank": 168,
+      "avp": 168,
+      "medianPick": 168,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "kyreemoses_WR": {
       "name": "Kyree Moses",
       "position": "WR",
       "school": "Penn State",
-      "boardRank": null,
-      "avp": 231,
-      "medianPick": 231,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 169,
+      "avp": 169,
+      "medianPick": 169,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jamesonmorrison_WILL": {
-      "name": "Jameson Morrison",
+    "marckozlowski_LEDG": {
+      "name": "Marc Kozlowski",
+      "position": "LEDG",
+      "school": "Louisville",
+      "boardRank": 170,
+      "avp": 170,
+      "medianPick": 170,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "johnathansierra_C": {
+      "name": "Johnathan Sierra",
+      "position": "C",
+      "school": "Boise State",
+      "boardRank": 171,
+      "avp": 171,
+      "medianPick": 171,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "axelnichols_WILL": {
+      "name": "Axel Nichols",
       "position": "WILL",
-      "school": "Northwestern",
-      "boardRank": null,
-      "avp": 232,
-      "medianPick": 232,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Florida State",
+      "boardRank": 172,
+      "avp": 172,
+      "medianPick": 172,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "milesaranda_WR": {
-      "name": "Miles Aranda",
+    "maxmedrano_LG": {
+      "name": "Max Medrano",
+      "position": "LG",
+      "school": "Kentucky",
+      "boardRank": 173,
+      "avp": 173,
+      "medianPick": 173,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "caseyanthony_WR": {
+      "name": "Casey Anthony",
       "position": "WR",
-      "school": "Tennessee",
-      "boardRank": null,
-      "avp": 233,
-      "medianPick": 233,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "ezekielphillips_SS": {
-      "name": "Ezekiel Phillips",
-      "position": "SS",
-      "school": "Illinois State",
-      "boardRank": null,
-      "avp": 234,
-      "medianPick": 234,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "daterriusbowman_DT": {
-      "name": "Daterrius Bowman",
-      "position": "DT",
-      "school": "Michigan",
-      "boardRank": null,
-      "avp": 235,
-      "medianPick": 235,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "kevinlinwood_CB": {
-      "name": "Kevin Linwood",
-      "position": "CB",
-      "school": "West Virginia",
-      "boardRank": null,
-      "avp": 236,
-      "medianPick": 236,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "tylerbarrett_QB": {
-      "name": "Tyler Barrett",
-      "position": "QB",
-      "school": "Alabama",
-      "boardRank": null,
-      "avp": 237,
-      "medianPick": 237,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jaylencrawford_DT": {
-      "name": "Jaylen Crawford",
-      "position": "DT",
-      "school": "USC",
-      "boardRank": null,
-      "avp": 238,
-      "medianPick": 238,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "evanmallard_CB": {
-      "name": "Evan Mallard",
-      "position": "CB",
-      "school": "SMU",
-      "boardRank": null,
-      "avp": 239,
-      "medianPick": 239,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "brendanwilkinson_CB": {
-      "name": "Brendan Wilkinson",
-      "position": "CB",
-      "school": "Virginia Tech",
-      "boardRank": null,
-      "avp": 240,
-      "medianPick": 240,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "iancobb_FS": {
-      "name": "Ian Cobb",
-      "position": "FS",
-      "school": "Illinois",
-      "boardRank": null,
-      "avp": 241,
-      "medianPick": 241,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jamaalsmoot_LEDGE": {
-      "name": "Jamaal Smoot",
-      "position": "LEDGE",
-      "school": "Duke",
-      "boardRank": null,
-      "avp": 242,
-      "medianPick": 242,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "mortybush_CB": {
-      "name": "Morty Bush",
-      "position": "CB",
-      "school": "Virginia",
-      "boardRank": null,
-      "avp": 243,
-      "medianPick": 243,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "leepatten_RT": {
-      "name": "Lee Patten",
-      "position": "RT",
-      "school": "Oklahoma State",
-      "boardRank": null,
-      "avp": 244,
-      "medianPick": 244,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Kansas",
+      "boardRank": 174,
+      "avp": 174,
+      "medianPick": 174,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "sammysarmiento_P": {
       "name": "Sammy Sarmiento",
       "position": "P",
       "school": "Iowa",
-      "boardRank": null,
-      "avp": 245,
-      "medianPick": 245,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 175,
+      "avp": 175,
+      "medianPick": 175,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "quedellclarke_CB": {
+      "name": "Quedell Clarke",
+      "position": "CB",
+      "school": "Mississippi State",
+      "boardRank": 176,
+      "avp": 176,
+      "medianPick": 176,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "andreyoung_RT": {
+      "name": "Andre Young",
+      "position": "RT",
+      "school": "Arkansas",
+      "boardRank": 177,
+      "avp": 177,
+      "medianPick": 177,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jumaaneakinjide_SAM": {
+      "name": "Jumaane Akinjide",
+      "position": "SAM",
+      "school": "Iowa",
+      "boardRank": 178,
+      "avp": 178,
+      "medianPick": 178,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "tymanning_C": {
+      "name": "Ty Manning",
+      "position": "C",
+      "school": "Temple",
+      "boardRank": 179,
+      "avp": 179,
+      "medianPick": 179,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "davonkitchens_RG": {
+      "name": "Davon Kitchens",
+      "position": "RG",
+      "school": "Syracuse",
+      "boardRank": 180,
+      "avp": 180,
+      "medianPick": 180,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "kemalbryantjr_TE": {
+      "name": "Kemal Bryant Jr.",
+      "position": "TE",
+      "school": "Notre Dame",
+      "boardRank": 181,
+      "avp": 181,
+      "medianPick": 181,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "darterriusbowman_DT": {
+      "name": "Darterrius Bowman",
+      "position": "DT",
+      "school": "Michigan",
+      "boardRank": 182,
+      "avp": 182,
+      "medianPick": 182,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "eithanbarker_RT": {
+      "name": "Eithan Barker",
+      "position": "RT",
+      "school": "Boise State",
+      "boardRank": 183,
+      "avp": 183,
+      "medianPick": 183,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jamirisidiadhiamuru_HB": {
+      "name": "Jamirisidi Adhiamuru",
+      "position": "HB",
+      "school": "Arizona State",
+      "boardRank": 184,
+      "avp": 184,
+      "medianPick": 184,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "milesaranda_WR": {
+      "name": "Miles Aranda",
+      "position": "WR",
+      "school": "Tennessee",
+      "boardRank": 185,
+      "avp": 185,
+      "medianPick": 185,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "terrancemay_QB": {
+      "name": "Terrance May",
+      "position": "QB",
+      "school": "Southern Miss",
+      "boardRank": 186,
+      "avp": 186,
+      "medianPick": 186,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jaylencrawford_DT": {
+      "name": "Jaylen Crawford",
+      "position": "DT",
+      "school": "USC",
+      "boardRank": 187,
+      "avp": 187,
+      "medianPick": 187,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "tracyechols_DT": {
       "name": "Tracy Echols",
       "position": "DT",
       "school": "Cincinnati",
-      "boardRank": null,
-      "avp": 246,
-      "medianPick": 246,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 188,
+      "avp": 188,
+      "medianPick": 188,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jarenrush_RT": {
-      "name": "Jaren Rush",
-      "position": "RT",
-      "school": "Texas A&M-Commerce",
-      "boardRank": null,
-      "avp": 247,
-      "medianPick": 247,
-      "samples": 1,
-      "source": "draft_export"
+    "kevinlinwood_CB": {
+      "name": "Kevin Linwood",
+      "position": "CB",
+      "school": "West Virginia",
+      "boardRank": 189,
+      "avp": 189,
+      "medianPick": 189,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "mateorivera_SS": {
-      "name": "Mateo Rivera",
+    "samhollandii_SS": {
+      "name": "Sam Holland II",
       "position": "SS",
-      "school": "Auburn",
-      "boardRank": null,
-      "avp": 248,
-      "medianPick": 248,
-      "samples": 1,
-      "source": "draft_export"
+      "school": "Louisville",
+      "boardRank": 190,
+      "avp": 190,
+      "medianPick": 190,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "dariuswilliams_LT": {
+      "name": "Darius Williams",
+      "position": "LT",
+      "school": "Kentucky",
+      "boardRank": 191,
+      "avp": 191,
+      "medianPick": 191,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "brendanwilkinson_CB": {
+      "name": "Brendan Wilkinson",
+      "position": "CB",
+      "school": "Virginia Tech",
+      "boardRank": 192,
+      "avp": 192,
+      "medianPick": 192,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "mortybush_CB": {
+      "name": "Morty Bush",
+      "position": "CB",
+      "school": "Virginia",
+      "boardRank": 193,
+      "avp": 193,
+      "medianPick": 193,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "tylerbarrett_QB": {
+      "name": "Tyler Barrett",
+      "position": "QB",
+      "school": "Alabama",
+      "boardRank": 194,
+      "avp": 194,
+      "medianPick": 194,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "leeshawncaldwell_TE": {
+      "name": "Leeshawn Caldwell",
+      "position": "TE",
+      "school": "TCU",
+      "boardRank": 195,
+      "avp": 195,
+      "medianPick": 195,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "tylerbrock_FB": {
+      "name": "Tyler Brock",
+      "position": "FB",
+      "school": "Clemson",
+      "boardRank": 196,
+      "avp": 196,
+      "medianPick": 196,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "iancobb_FS": {
+      "name": "Ian Cobb",
+      "position": "FS",
+      "school": "Illinois",
+      "boardRank": 197,
+      "avp": 197,
+      "medianPick": 197,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "kaydronboyd_MIKE": {
+      "name": "Kaydron Boyd",
+      "position": "MIKE",
+      "school": "UCF",
+      "boardRank": 198,
+      "avp": 198,
+      "medianPick": 198,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jamaalsmoot_LEDG": {
+      "name": "Jamaal Smoot",
+      "position": "LEDG",
+      "school": "Duke",
+      "boardRank": 199,
+      "avp": 199,
+      "medianPick": 199,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jamesonmorrison_WILL": {
+      "name": "Jameson Morrison",
+      "position": "WILL",
+      "school": "Northwestern",
+      "boardRank": 200,
+      "avp": 200,
+      "medianPick": 200,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "leepatten_RT": {
+      "name": "Lee Patten",
+      "position": "RT",
+      "school": "Oklahoma State",
+      "boardRank": 201,
+      "avp": 201,
+      "medianPick": 201,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "tyshawnpage_REDG": {
+      "name": "Tyshawn Page",
+      "position": "REDG",
+      "school": "Mississippi State",
+      "boardRank": 202,
+      "avp": 202,
+      "medianPick": 202,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jazielwilliams_SAM": {
+      "name": "Jaziel Williams",
+      "position": "SAM",
+      "school": "NC State",
+      "boardRank": 203,
+      "avp": 203,
+      "medianPick": 203,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "arronhiggins_RG": {
       "name": "Arron Higgins",
       "position": "RG",
       "school": "Texas A&M",
-      "boardRank": null,
-      "avp": 249,
-      "medianPick": 249,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 204,
+      "avp": 204,
+      "medianPick": 204,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "jasiahanderson_QB": {
-      "name": "Jasiah Anderson",
-      "position": "QB",
-      "school": "Rutgers",
-      "boardRank": null,
-      "avp": 250,
-      "medianPick": 250,
-      "samples": 1,
-      "source": "draft_export"
+    "jarenrush_RT": {
+      "name": "Jaren Rush",
+      "position": "RT",
+      "school": "Texas A&M-Commerce",
+      "boardRank": 205,
+      "avp": 205,
+      "medianPick": 205,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "julianhollingsworth_TE": {
-      "name": "Julian Hollingsworth",
-      "position": "TE",
-      "school": "East Carolina",
-      "boardRank": null,
-      "avp": 251,
-      "medianPick": 251,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "claytonsaunders_FS": {
-      "name": "Clayton Saunders",
-      "position": "FS",
-      "school": "North Texas",
-      "boardRank": null,
-      "avp": 252,
-      "medianPick": 252,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jahlilbolden_MIKE": {
-      "name": "Jahlil Bolden",
-      "position": "MIKE",
-      "school": "Purdue",
-      "boardRank": null,
-      "avp": 253,
-      "medianPick": 253,
-      "samples": 1,
-      "source": "draft_export"
-    },
-    "jazielwilliams_SAM": {
-      "name": "Jaziel Williams",
-      "position": "SAM",
-      "school": "N.C. State",
-      "boardRank": null,
-      "avp": 254,
-      "medianPick": 254,
-      "samples": 1,
-      "source": "draft_export"
+    "williebanks_LG": {
+      "name": "Willie Banks",
+      "position": "LG",
+      "school": "Ohio State",
+      "boardRank": 206,
+      "avp": 206,
+      "medianPick": 206,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
     "willmcfarland_DT": {
       "name": "Will McFarland",
       "position": "DT",
       "school": "Louisville",
-      "boardRank": null,
-      "avp": 255,
-      "medianPick": 255,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 207,
+      "avp": 207,
+      "medianPick": 207,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "mikepantoja_HB": {
-      "name": "Mike Pantoja",
+    "maxwhittington_LEDG": {
+      "name": "Max Whittington",
+      "position": "LEDG",
+      "school": "LSU",
+      "boardRank": 208,
+      "avp": 208,
+      "medianPick": 208,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "ezekielphillips_SS": {
+      "name": "Ezekiel Phillips",
+      "position": "SS",
+      "school": "Illinois State",
+      "boardRank": 209,
+      "avp": 209,
+      "medianPick": 209,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "benjiellisson_CB": {
+      "name": "Benji Ellisson",
+      "position": "CB",
+      "school": "Ole Miss",
+      "boardRank": 210,
+      "avp": 210,
+      "medianPick": 210,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "nickmcdermott_K": {
+      "name": "Nick McDermott",
+      "position": "K",
+      "school": "Oregon",
+      "boardRank": 211,
+      "avp": 211,
+      "medianPick": 211,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "julianhollingsworth_TE": {
+      "name": "Julian Hollingsworth",
+      "position": "TE",
+      "school": "East Carolina",
+      "boardRank": 212,
+      "avp": 212,
+      "medianPick": 212,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "joshfelder_WR": {
+      "name": "Josh Felder",
+      "position": "WR",
+      "school": "Nebraska",
+      "boardRank": 213,
+      "avp": 213,
+      "medianPick": 213,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jalinmason_CB": {
+      "name": "Jalin Mason",
+      "position": "CB",
+      "school": "Delaware",
+      "boardRank": 214,
+      "avp": 214,
+      "medianPick": 214,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "nickalbertson_LT": {
+      "name": "Nick Albertson",
+      "position": "LT",
+      "school": "Wake Forest",
+      "boardRank": 215,
+      "avp": 215,
+      "medianPick": 215,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jacksonpitts_SS": {
+      "name": "Jackson Pitts",
+      "position": "SS",
+      "school": "LSU",
+      "boardRank": 216,
+      "avp": 216,
+      "medianPick": 216,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "devinmiller_MIKE": {
+      "name": "Devin Miller",
+      "position": "MIKE",
+      "school": "Temple",
+      "boardRank": 217,
+      "avp": 217,
+      "medianPick": 217,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "michaelpantoja_HB": {
+      "name": "Michael Pantoja",
       "position": "HB",
       "school": "Arkansas",
-      "boardRank": null,
-      "avp": 256,
-      "medianPick": 256,
-      "samples": 1,
-      "source": "draft_export"
+      "boardRank": 218,
+      "avp": 218,
+      "medianPick": 218,
+      "samples": 0,
+      "source": "board_rank_seed"
     },
-    "tyshawnpage_REDGE": {
-      "name": "Tyshawn Page",
-      "position": "REDGE",
-      "school": "Mississippi State",
-      "boardRank": null,
-      "avp": 257,
-      "medianPick": 257,
-      "samples": 1,
-      "source": "draft_export"
+    "johnathanlevy_WR": {
+      "name": "Johnathan Levy",
+      "position": "WR",
+      "school": "Stanford",
+      "boardRank": 219,
+      "avp": 219,
+      "medianPick": 219,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "nicocastaneda_REDG": {
+      "name": "Nico Castaneda",
+      "position": "REDG",
+      "school": "Utah",
+      "boardRank": 220,
+      "avp": 220,
+      "medianPick": 220,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jacobroach_C": {
+      "name": "Jacob Roach",
+      "position": "C",
+      "school": "Washington",
+      "boardRank": 221,
+      "avp": 221,
+      "medianPick": 221,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "axelchandler_SAM": {
+      "name": "Axel Chandler",
+      "position": "SAM",
+      "school": "Maryland",
+      "boardRank": 222,
+      "avp": 222,
+      "medianPick": 222,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jamalwarner_LG": {
+      "name": "Jamal Warner",
+      "position": "LG",
+      "school": "Georgia",
+      "boardRank": 223,
+      "avp": 223,
+      "medianPick": 223,
+      "samples": 0,
+      "source": "board_rank_seed"
+    },
+    "jasiahanderson_QB": {
+      "name": "Jasiah Anderson",
+      "position": "QB",
+      "school": "Rutgers",
+      "boardRank": 224,
+      "avp": 224,
+      "medianPick": 224,
+      "samples": 0,
+      "source": "board_rank_seed"
     }
   }
 }
