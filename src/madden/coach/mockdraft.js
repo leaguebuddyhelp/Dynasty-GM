@@ -60,6 +60,47 @@ export const featureKey = 'scouting_draft';
 let currentCalendarYear = 2025;
 const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
+const DEFAULT_FIRST_MADDEN_DRAFT_YEAR = 2027;
+const DEFAULT_FIRST_MADDEN_DRAFT_ORIGINAL_ORDER = [
+  'LV', 'NYJ', 'ARI', 'TEN', 'NYG', 'CLE', 'WSH', 'NO',
+  'KC', 'CIN', 'MIA', 'DAL', 'ATL', 'BAL', 'TB', 'IND',
+  'DET', 'MIN', 'CAR', 'GB', 'PIT', 'LAC', 'PHI', 'JAC',
+  'CHI', 'BUF', 'SF', 'HOU', 'LAR', 'DEN', 'NE', 'SEA',
+];
+const NFL_TEAM_ALIASES = new Map([
+  ['ARI', ['ari', 'az', 'arizona', 'cardinals', 'arizonacardinals']],
+  ['ATL', ['atl', 'atlanta', 'falcons', 'atlantafalcons']],
+  ['BAL', ['bal', 'baltimore', 'ravens', 'baltimoreravens']],
+  ['BUF', ['buf', 'buffalo', 'bills', 'buffalobills']],
+  ['CAR', ['car', 'carolina', 'panthers', 'carolinapanthers']],
+  ['CHI', ['chi', 'chicago', 'bears', 'chicagobears']],
+  ['CIN', ['cin', 'cincinnati', 'bengals', 'cincinnatibengals']],
+  ['CLE', ['cle', 'cleveland', 'browns', 'clevelandbrowns']],
+  ['DAL', ['dal', 'dallas', 'cowboys', 'dallascowboys']],
+  ['DEN', ['den', 'denver', 'broncos', 'denverbroncos']],
+  ['DET', ['det', 'detroit', 'lions', 'detroitlions']],
+  ['GB', ['gb', 'greenbay', 'packers', 'greenbaypackers']],
+  ['HOU', ['hou', 'houston', 'texans', 'houstontexans']],
+  ['IND', ['ind', 'indianapolis', 'colts', 'indianapoliscolts']],
+  ['JAC', ['jac', 'jax', 'jacksonville', 'jaguars', 'jacksonvillejaguars']],
+  ['KC', ['kc', 'kansascity', 'chiefs', 'kansascitychiefs']],
+  ['LV', ['lv', 'lasvegas', 'raiders', 'lasvegasraiders']],
+  ['LAC', ['lac', 'la chargers', 'losangeleschargers', 'chargers']],
+  ['LAR', ['lar', 'la rams', 'losangelesrams', 'rams']],
+  ['MIA', ['mia', 'miami', 'dolphins', 'miamidolphins']],
+  ['MIN', ['min', 'minnesota', 'vikings', 'minnesotavikings']],
+  ['NE', ['ne', 'newengland', 'patriots', 'newenglandpatriots']],
+  ['NO', ['no', 'neworleans', 'saints', 'neworleanssaints']],
+  ['NYG', ['nyg', 'newyorkgiants', 'giants']],
+  ['NYJ', ['nyj', 'newyorkjets', 'jets']],
+  ['PHI', ['phi', 'philadelphia', 'eagles', 'philadelphiaeagles']],
+  ['PIT', ['pit', 'pittsburgh', 'steelers', 'pittsburghsteelers']],
+  ['SF', ['sf', 'sanfrancisco', '49ers', 'sanfrancisco49ers']],
+  ['SEA', ['sea', 'seattle', 'seahawks', 'seattleseahawks']],
+  ['TB', ['tb', 'tampa', 'tampabay', 'buccaneers', 'tampabaybuccaneers']],
+  ['TEN', ['ten', 'tennessee', 'titans', 'tennesseetitans']],
+  ['WSH', ['wsh', 'was', 'washington', 'commanders', 'washingtoncommanders']],
+]);
 
 function standingWins(team = {}) {
   return Number(team.totalWins ?? team.wins ?? team.w ?? 0);
@@ -700,6 +741,48 @@ function normalizeTeamKey(name = '') {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function teamCodeFor(value = '') {
+  const key = normalizeTeamKey(value);
+  if (!key) return null;
+  for (const [code, aliases] of NFL_TEAM_ALIASES.entries()) {
+    if (aliases.some((alias) => normalizeTeamKey(alias) === key)) return code;
+  }
+  for (const [code, aliases] of NFL_TEAM_ALIASES.entries()) {
+    if (aliases.some((alias) => {
+      const normAlias = normalizeTeamKey(alias);
+      return normAlias && (key.endsWith(normAlias) || normAlias.endsWith(key));
+    })) return code;
+  }
+  return null;
+}
+
+function teamCodeForPick(team = {}) {
+  return teamCodeFor(team.abbr)
+    || teamCodeFor(team.teamAbbr)
+    || teamCodeFor(team.nick)
+    || teamCodeFor(team.name)
+    || teamCodeFor(String(team.name || '').split(/\s+/).filter(Boolean).pop());
+}
+
+function applyDefaultFirstYearOriginalOrder(order, seasonYear) {
+  if (Number(seasonYear) !== DEFAULT_FIRST_MADDEN_DRAFT_YEAR) return order;
+  if (!Array.isArray(order) || order.length < 32) return order;
+
+  const byCode = new Map();
+  for (const team of order) {
+    const code = teamCodeForPick(team);
+    if (code && !byCode.has(code)) byCode.set(code, team);
+  }
+  if (!DEFAULT_FIRST_MADDEN_DRAFT_ORIGINAL_ORDER.every((code) => byCode.has(code))) {
+    return order;
+  }
+
+  return DEFAULT_FIRST_MADDEN_DRAFT_ORIGINAL_ORDER.map((code) => ({
+    ...byCode.get(code),
+    originalOwnerCode: code,
+  }));
+}
+
 function loadPickOverridesList(seasonYear) {
   const file = getMaddenDataFilePath('pick_overrides.json');
   try {
@@ -716,16 +799,18 @@ function loadPickOverridesList(seasonYear) {
 
 // Pick trades/forfeitures (manual overrides)
 function applyPickTrades(order, seasonYear = currentCalendarYear) {
-  const scopeKey = order?.[0]?.guildId || null;
+  const originalOrder = applyDefaultFirstYearOriginalOrder(order, seasonYear);
+  const scopeKey = originalOrder?.[0]?.guildId || null;
   const overrides = getEffectiveFirstRoundOverrides(seasonYear, scopeKey);
   const teamLookup = new Map();
   const addTeamVariant = (value, team) => {
     const key = normalizeTeamKey(value || '');
     if (key) teamLookup.set(key, team);
   };
-  (order || []).forEach((team) => {
+  (originalOrder || []).forEach((team) => {
     addTeamVariant(team.name, team);
     addTeamVariant(team.nick, team);
+    addTeamVariant(team.originalOwnerCode, team);
     const mascot = String(team.name || '').split(/\s+/).filter(Boolean).pop();
     addTeamVariant(mascot, team);
   });
@@ -735,16 +820,29 @@ function applyPickTrades(order, seasonYear = currentCalendarYear) {
     if (!key) return;
     const targetTeam = teamLookup.get(normalizeTeamKey(o.to || o.owner || '')) || null;
     const sourceTeam = teamLookup.get(normalizeTeamKey(o.from || '')) || null;
-    map.set(key, {
+    const override = {
       owner: targetTeam?.name || o.to || o.owner,
       nick: targetTeam?.nick || null,
       via: o.via || sourceTeam?.nick || (o.from && o.from.slice(0, 3).toUpperCase()),
+    };
+    const sourceVariants = [
+      o.from,
+      o.owner,
+      sourceTeam?.originalOwnerCode,
+      sourceTeam?.name,
+      sourceTeam?.nick,
+      String(sourceTeam?.name || '').split(/\s+/).filter(Boolean).pop(),
+    ];
+    sourceVariants.forEach((variant) => {
+      const variantKey = normalizeTeamKey(variant || '');
+      if (variantKey) map.set(variantKey, override);
     });
   });
 
-  return order.map(pick => {
-    const key = normalizeTeamKey(pick.name || pick.nick || '');
-    const o = map.get(key);
+  return originalOrder.map(pick => {
+    const codeKey = normalizeTeamKey(pick.originalOwnerCode || '');
+    const nameKey = normalizeTeamKey(pick.name || pick.nick || '');
+    const o = map.get(codeKey) || map.get(nameKey);
     return o ? { ...pick, name: o.owner, nick: o.nick || pick.nick, via: o.via } : pick;
   });
 }
