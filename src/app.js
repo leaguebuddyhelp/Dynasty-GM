@@ -10,7 +10,7 @@ import { updateFairSimBoard } from './shared/fairsim_board.js';
 import { inferRecognitionContext, recordRecognitionCommandUse, recordRecognitionThreadReply } from './shared/league_recognition.js';
 import { ensureSportsbookWeekPosted, refreshSportsbookHeaders } from './shared/madden_sportsbook.js';
 import { collectParticipation, getThreadState, hydrateThreadStateFromLiveThread, listThreadStates } from './shared/madden_thread_notifier.js';
-import { hasFeatureAccess, DEFAULT_DENY_MESSAGE } from './leaguebuddy/access.js';
+import { featureAccessDenyMessage, hasFeatureAccess, DEFAULT_DENY_MESSAGE } from './leaguebuddy/access.js';
 import overlayRepository from './leaguebuddy/repositories/guild_overlay_repository.js';
 import { resolveInteractionAccess } from './leaguebuddy/interaction_access_resolver.js';
 import { validateStartupConfig } from './leaguebuddy/startup_validation.js';
@@ -237,11 +237,13 @@ client.on('interactionCreate', async interaction => {
 
         const featureKey = command.featureKey || COMMAND_FEATURE_MAP[interaction.commandName] || null;
         if (featureKey) {
-          const check = hasFeatureAccess(guildId, featureKey);
+          const check = hasFeatureAccess(guildId, featureKey, {
+            requireSetup: command.featureRequiresSetup !== false,
+          });
           const packEnabled = packs.includes(featureKey);
           if (!check.ok || !packEnabled) {
             const msg = !check.ok
-              ? DEFAULT_DENY_MESSAGE
+              ? featureAccessDenyMessage(check)
               : 'This feature is not configured for this server yet. Run `/setup` to finish enabling it.';
             if (interaction.deferred || interaction.replied) {
               await interaction.editReply({ content: msg });
@@ -370,11 +372,7 @@ client.on('interactionCreate', async interaction => {
       const check = hasFeatureAccess(interaction.guildId, featureKey);
       if (!check.ok || !packEnabled) {
         const denialMessage = !check.ok
-          ? check.reason === 'subscription_inactive' && check.plan !== 'free'
-            ? '🔒 This paid feature is not active on this server yet. Run `/claim-plan` to activate the server plan, then try again.'
-            : check.reason === 'setup_incomplete'
-              ? '🔒 This feature is part of your package, but setup is not finished yet. Run `/setup` and complete the required steps first.'
-              : DEFAULT_DENY_MESSAGE
+          ? featureAccessDenyMessage(check)
           : 'This feature is not configured for this server yet. Run `/setup` to finish enabling it.';
         if (LB_VERBOSE_LOGS) {
           console.log('[plans] interaction denied', {

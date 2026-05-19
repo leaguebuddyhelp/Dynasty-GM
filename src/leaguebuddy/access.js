@@ -4,6 +4,8 @@ import planRepository from './repositories/guild_plan_repository.js';
 import { getTestingBypassBilling } from './testing_bypass.js';
 
 export const DEFAULT_DENY_MESSAGE = '🔒 This feature is not available on your current plan. Check pricing to upgrade.';
+export const SETUP_INCOMPLETE_DENY_MESSAGE = '🔒 This feature is part of your package, but setup is not finished yet. Run `/setup` and complete the required steps first.';
+export const SUBSCRIPTION_INACTIVE_DENY_MESSAGE = '🔒 This paid feature is not active on this server yet. Use `/setplan plan:Premium subscription_status:active` during private testing, then try again.';
 
 export function getGuildPlan(guildId) {
     const bypass = getTestingBypassBilling(guildId);
@@ -20,7 +22,7 @@ export function getGuildPlan(guildId) {
  * - subscriptionStatus must be active/trialing for paid plans to count.
  * - requiresSetup features require setupCompleted.
  */
-export function hasFeatureAccess(guildId, featureKey, { allowInactiveFree = true } = {}) {
+export function hasFeatureAccess(guildId, featureKey, { allowInactiveFree = true, requireSetup = true } = {}) {
     const bypass = getTestingBypassBilling(guildId);
     if (bypass) {
         const feature = getFeature(featureKey);
@@ -69,19 +71,29 @@ export function hasFeatureAccess(guildId, featureKey, { allowInactiveFree = true
         return { ok: false, reason: 'subscription_inactive', plan, feature };
     }
 
-    // Setup gate.
-    if (feature.requiresSetup) {
-        if (!rec || rec.setupCompleted !== true) {
-            return { ok: false, reason: 'setup_incomplete', plan, feature };
-        }
-    }
-
     const required = normalizePlan(feature.minPlan);
     if (planRank(plan) < planRank(required)) {
         return { ok: false, reason: 'plan_too_low', plan, feature };
     }
 
+    // Setup gate. Check this after plan tier so Premium/Standard servers get the right reason.
+    if (requireSetup && feature.requiresSetup) {
+        if (!rec || rec.setupCompleted !== true) {
+            return { ok: false, reason: 'setup_incomplete', plan, feature };
+        }
+    }
+
     return { ok: true, reason: 'ok', plan, feature };
+}
+
+export function featureAccessDenyMessage(check, {
+    defaultMessage = DEFAULT_DENY_MESSAGE,
+    setupMessage = SETUP_INCOMPLETE_DENY_MESSAGE,
+    inactiveMessage = SUBSCRIPTION_INACTIVE_DENY_MESSAGE,
+} = {}) {
+    if (check?.reason === 'setup_incomplete') return setupMessage;
+    if (check?.reason === 'subscription_inactive' && check?.plan !== PLANS.free) return inactiveMessage;
+    return defaultMessage;
 }
 
 /**
@@ -108,7 +120,7 @@ export function withFeatureGuard(featureKey, executeFn, { denyMessage = DEFAULT_
 
         const check = hasFeatureAccess(guildId, featureKey);
         if (!check.ok) {
-            const content = denyMessage;
+            const content = featureAccessDenyMessage(check, { defaultMessage: denyMessage });
             try {
                 if (interaction.replied || interaction.deferred) {
                     await interaction.editReply({ content });

@@ -2,7 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { execute as onboardExecute, autocomplete as onboardAutocomplete } from './onboard.js';
 import { execute as assignExecute, autocomplete as assignAutocomplete } from './assignteam.js';
 import { execute as removeExecute, autocomplete as removeAutocomplete } from './removeteam.js';
-import { hasFeatureAccess, DEFAULT_DENY_MESSAGE } from '../../leaguebuddy/access.js';
+import { featureAccessDenyMessage, hasFeatureAccess } from '../../leaguebuddy/access.js';
 
 export const data = new SlashCommandBuilder()
   .setName('member')
@@ -34,12 +34,13 @@ export async function execute(interaction) {
   if (action === 'onboard') {
     const guildId = interaction.guildId;
     if (guildId) {
-      const check = hasFeatureAccess(guildId, 'scouting_draft');
+      const check = hasFeatureAccess(guildId, 'scouting_draft', { requireSetup: false });
       if (!check.ok) {
+        const message = featureAccessDenyMessage(check);
         if (interaction.deferred || interaction.replied) {
-          await interaction.editReply({ content: DEFAULT_DENY_MESSAGE });
+          await interaction.editReply({ content: message });
         } else {
-          await interaction.reply({ content: DEFAULT_DENY_MESSAGE, ephemeral: true });
+          await interaction.reply({ content: message, ephemeral: true });
         }
         return;
       }

@@ -16,6 +16,7 @@ import connectionRepository from '../../leaguebuddy/repositories/madden_connecti
 import { applyTeamEmojiRoleIcon } from '../../shared/role_icon_utils.js';
 
 export const featureKey = 'scouting_draft';
+export const featureRequiresSetup = false;
 
 const ONBOARD_TIMEOUTS_MS = {
     threadAdd: 4500,
