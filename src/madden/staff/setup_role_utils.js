@@ -1,3 +1,5 @@
+import { applyTeamEmojiRoleIcon } from '../../shared/role_icon_utils.js';
+
 export const DEFAULT_ROLE_SPECS = [
   { key: 'LB Commish', name: 'LB Commish', color: 0x5865F2, hoist: true },
   { key: 'LB Co-Commish', name: 'LB Co-Commish', color: 0x57F287, hoist: true },
@@ -34,6 +36,7 @@ export function buildCoachRoleSpecs(snapshot) {
       if (!fullName) return null;
       return {
         teamId: String(team?.teamId ?? fullName),
+        teamName: fullName,
         roleName: `${fullName} Coach`,
         aliases: uniqueStrings([
           `${fullName} Coach`,
@@ -102,6 +105,12 @@ async function createRoleOnce(guild, spec) {
   return { role, source: 'create_response' };
 }
 
+async function maybeApplyRoleIcon(role, spec, logger) {
+  const teamName = spec?.teamName || String(spec?.name || '').replace(/ coach$/i, '').trim();
+  if (!/ coach$/i.test(String(spec?.name || '')) || !teamName) return;
+  await applyTeamEmojiRoleIcon(role, teamName, { logger });
+}
+
 export async function createOrVerifyRole(guild, spec, {
   timeoutMs = ROLE_CREATE_TIMEOUT_MS,
   retries = ROLE_CREATE_RETRIES,
@@ -111,6 +120,7 @@ export async function createOrVerifyRole(guild, spec, {
   const startedAt = Date.now();
   const existing = await findRoleByName(guild, spec.name, { fresh: true });
   if (existing) {
+    await maybeApplyRoleIcon(existing, spec, logger);
     logger.log('[setup-role] already existed', {
       guildId: guild.id,
       role: spec.name,
@@ -137,6 +147,7 @@ export async function createOrVerifyRole(guild, spec, {
         source: result.source,
         elapsedMs: Date.now() - attemptStarted,
       });
+      await maybeApplyRoleIcon(result.role, spec, logger);
       await sleep(ROLE_CREATE_SPACING_MS);
       return {
         ok: true,
@@ -160,6 +171,7 @@ export async function createOrVerifyRole(guild, spec, {
 
       const verified = await findRoleByName(guild, spec.name, { fresh: true });
       if (verified) {
+        await maybeApplyRoleIcon(verified, spec, logger);
         logger.log('[setup-role] verified after timeout/failure', {
           guildId: guild.id,
           role: spec.name,

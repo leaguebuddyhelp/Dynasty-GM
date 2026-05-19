@@ -1,5 +1,6 @@
 const emojiState = {
   byName: new Map(),
+  dataByName: new Map(),
   lastFetchedAt: 0,
   ready: false,
 };
@@ -80,14 +81,22 @@ export async function refreshApplicationEmojiMap(client) {
     await client.application.fetch();
     const collection = await client.application.emojis.fetch();
     const next = new Map();
+    const nextData = new Map();
     for (const emoji of collection.values()) {
       if (!emoji?.name || !emoji?.id) continue;
+      const key = normalizeEmojiKey(emoji.name);
       next.set(
-        normalizeEmojiKey(emoji.name),
+        key,
         `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>`,
       );
+      nextData.set(key, {
+        id: String(emoji.id),
+        name: String(emoji.name),
+        animated: emoji.animated === true,
+      });
     }
     emojiState.byName = next;
+    emojiState.dataByName = nextData;
     emojiState.lastFetchedAt = Date.now();
     emojiState.ready = true;
     console.log('[app-emojis] loaded', { count: next.size });
@@ -103,12 +112,25 @@ export function getApplicationEmoji(name, fallback = '') {
   return emojiState.byName.get(normalizeEmojiKey(name)) || fallback;
 }
 
+export function getApplicationEmojiData(name) {
+  if (!name) return null;
+  return emojiState.dataByName.get(normalizeEmojiKey(name)) || null;
+}
+
 export function findApplicationEmoji(candidates = [], fallback = '') {
   for (const candidate of candidates) {
     const emoji = getApplicationEmoji(candidate);
     if (emoji) return emoji;
   }
   return fallback;
+}
+
+export function findApplicationEmojiData(candidates = []) {
+  for (const candidate of candidates) {
+    const emoji = getApplicationEmojiData(candidate);
+    if (emoji) return emoji;
+  }
+  return null;
 }
 
 function getRecognitionEmojiFallback(tier) {
@@ -166,6 +188,11 @@ export function getTeamEmojiCandidates(teamName = '') {
 export function getTeamApplicationEmoji(teamName = '', fallback = '') {
   const candidates = getTeamEmojiCandidates(teamName);
   return findApplicationEmoji(candidates, fallback);
+}
+
+export function getTeamApplicationEmojiData(teamName = '') {
+  const candidates = getTeamEmojiCandidates(teamName);
+  return findApplicationEmojiData(candidates);
 }
 
 export function getLeagueBuddyLogoEmoji(fallback = '') {

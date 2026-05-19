@@ -13,6 +13,7 @@ import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { loadGuildMaddenConfig, saveGuildMaddenConfig } from '../../shared/madden_guild_config.js';
 import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import connectionRepository from '../../leaguebuddy/repositories/madden_connection_repository.js';
+import { applyTeamEmojiRoleIcon } from '../../shared/role_icon_utils.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -84,10 +85,12 @@ async function ensureCoachRole(interaction, roleName) {
         });
     }
 
+    const baseName = roleName.replace(/ coach$/i, '').trim();
+    await applyTeamEmojiRoleIcon(role, baseName).catch(() => null);
+
     const cfg = loadGuildMaddenConfig(interaction.guildId) || {};
     cfg.compat = cfg.compat || {};
     cfg.compat.maddenRoleMap = cfg.compat.maddenRoleMap || {};
-    const baseName = roleName.replace(/ coach$/i, '').trim();
     cfg.compat.maddenRoleMap[roleName] = role.id;
     cfg.compat.maddenRoleMap[baseName] = cfg.compat.maddenRoleMap[baseName] || role.id;
     saveGuildMaddenConfig(interaction.guildId, cfg);
