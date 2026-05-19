@@ -252,6 +252,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.ReadMessageHistory,
                 PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.UseApplicationCommands,
                 PermissionFlagsBits.ManageMessages,
                 PermissionFlagsBits.ManageThreads,
             ),
@@ -263,6 +264,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.ReadMessageHistory,
                 PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.UseApplicationCommands,
                 PermissionFlagsBits.ManageMessages,
                 PermissionFlagsBits.ManageThreads,
             ),
@@ -332,7 +334,11 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
     const publicReadOnly = withCommonReadOnlyAccess([
         {
             id: everyoneId,
-            allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.UseApplicationCommands,
+            ),
             deny: deny(
                 PermissionFlagsBits.SendMessages,
                 PermissionFlagsBits.SendMessagesInThreads,
@@ -345,7 +351,11 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
     const publicReadOnlyWithStaffPosting = withBotAccess([
         {
             id: everyoneId,
-            allow: allow(PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory),
+            allow: allow(
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.UseApplicationCommands,
+            ),
             deny: deny(
                 PermissionFlagsBits.SendMessages,
                 PermissionFlagsBits.SendMessagesInThreads,
@@ -417,6 +427,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.ReadMessageHistory,
                 PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.UseApplicationCommands,
                 PermissionFlagsBits.ManageMessages,
             ),
         })),
@@ -426,6 +437,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.ReadMessageHistory,
                 PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.UseApplicationCommands,
             ),
             deny: [],
         }] : []),
