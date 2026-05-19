@@ -778,48 +778,35 @@ export async function execute(interaction) {
 export async function autocomplete(interaction) {
     if (!interaction.isAutocomplete()) return;
 
-    const roleMap = loadRoleMapForGuild(interaction.guildId);
-    const focused = String(interaction.options.getFocused() || '').toLowerCase();
+    try {
+        const focused = String(interaction.options.getFocused() || '').toLowerCase();
 
-    const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
-    if (!leagueId) {
-        await interaction.respond([]);
-        return;
+        const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
+        if (!leagueId) {
+            await interaction.respond([]);
+            return;
+        }
+
+        const snapshot = loadLeagueSnapshot(leagueId);
+        const teams = snapshot?.teams?.leagueTeamInfoList || [];
+
+        const options = [];
+        for (const t of teams) {
+            const fullName = getFullTeamName(t, `Team ${t?.teamId}`);
+            const displayName = fullName;
+
+            if (focused && !displayName.toLowerCase().includes(focused)) continue;
+
+            // Discord will truncate/limit option values; keep value stable as fullName
+            options.push({ name: displayName.slice(0, 100), value: displayName.slice(0, 100) });
+            if (options.length >= 25) break;
+        }
+
+        await interaction.respond(options);
+    } catch (error) {
+        console.warn('[madden-onboard] autocomplete failed:', error?.message || error);
+        await interaction.respond([]).catch(() => null);
     }
-
-    const snapshot = loadLeagueSnapshot(leagueId);
-    const teams = snapshot?.teams?.leagueTeamInfoList || [];
-
-    // Autocomplete must be correct: do the same best-effort role occupancy check as /madden-availableteams.
-    // If we can't verify counts, fail closed (return no suggestions) rather than showing owned teams.
-    const coachRoleCounts = await withTimeout(
-        buildCoachRoleMemberCountMap(interaction.guild, roleMap),
-        2200,
-        null,
-    );
-
-    const options = [];
-    for (const t of teams) {
-        const fullName = getFullTeamName(t, `Team ${t?.teamId}`);
-        const displayName = fullName;
-
-        // Find roleId for coach
-        const roleId = resolveTeamRoleIdFromRoleMap(fullName, roleMap)
-            || resolveTeamRoleIdFromRoleMap(t?.displayName, roleMap)
-            || resolveTeamRoleIdFromRoleMap(t?.nickName, roleMap);
-
-        const assignedCount = roleId ? coachRoleCounts?.get?.(String(roleId)) : 0;
-        const assigned = typeof assignedCount === 'number' ? assignedCount > 0 : false;
-        if (assigned) continue;
-
-        if (focused && !displayName.toLowerCase().includes(focused)) continue;
-
-        // Discord will truncate/limit option values; keep value stable as fullName
-        options.push({ name: displayName.slice(0, 100), value: displayName.slice(0, 100) });
-        if (options.length >= 25) break;
-    }
-
-    await interaction.respond(options);
 }
 
 export default { data, execute, autocomplete };

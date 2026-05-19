@@ -53,10 +53,16 @@ export async function execute(interaction) {
 }
 
 export async function autocomplete(interaction) {
-  const action = interaction.options.getSubcommand();
-  if (action === 'onboard') return onboardAutocomplete(interaction);
-  if (action === 'assign') return assignAutocomplete(interaction);
-  if (action === 'remove') return removeAutocomplete(interaction);
+  try {
+    const action = interaction.options.getSubcommand(false);
+    if (action === 'onboard') return onboardAutocomplete(interaction);
+    if (action === 'assign') return assignAutocomplete(interaction);
+    if (action === 'remove') return removeAutocomplete(interaction);
+    return interaction.respond([]);
+  } catch (error) {
+    console.warn('[madden-member] autocomplete failed:', error?.message || error);
+    return interaction.respond([]).catch(() => null);
+  }
 }
 
 export default { data, execute, autocomplete };
