@@ -11,25 +11,26 @@ export function getMaddenSeasonCalendarYear(snapshotOrLeague = null) {
 
 export function getMaddenSeasonOrdinal(snapshotOrLeague = null) {
   const seasonInfo = snapshotOrLeague?.info?.careerHubInfo?.seasonInfo || {};
-  const seasonOrdinal = Number(
+  const rawSeasonOrdinal =
     seasonInfo?.seasonYear
     ?? snapshotOrLeague?.info?.seasonYear
     ?? snapshotOrLeague?.seasonYear
-    ?? 0
-  );
+    ?? null;
+  if (rawSeasonOrdinal == null || rawSeasonOrdinal === '') return null;
+  const seasonOrdinal = Number(rawSeasonOrdinal);
   return Number.isFinite(seasonOrdinal) && seasonOrdinal >= 0 ? seasonOrdinal : null;
 }
 
 export function getMaddenDraftClassNumber(snapshotOrLeague = null) {
+  const seasonOrdinal = getMaddenSeasonOrdinal(snapshotOrLeague);
+  if (seasonOrdinal != null) return Math.max(1, seasonOrdinal + 1);
+
   const calendarYear = getMaddenSeasonCalendarYear(snapshotOrLeague);
   if (calendarYear && calendarYear >= 2025) {
     return Math.max(1, calendarYear - 2024);
   }
 
-  const seasonOrdinal = getMaddenSeasonOrdinal(snapshotOrLeague);
-  if (seasonOrdinal == null) return 1;
-  if (seasonOrdinal <= 0) return 1;
-  return seasonOrdinal;
+  return 1;
 }
 
 export function getMaddenDraftClassId(snapshotOrLeague = null) {
