@@ -2,10 +2,8 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import {
-  getMaddenDraftClassId,
   getMaddenDraftClassNumber,
-  getMaddenSeasonCalendarYear,
-  getMaddenSeasonOrdinal,
+  formatMaddenDraftClassLock,
 } from '../../shared/madden_draft_class.js';
 import { getLeagueBuddyLogoEmoji } from '../../shared/application_emojis.js';
 
@@ -24,29 +22,17 @@ export const data = new SlashCommandBuilder()
   .setDescription(coachCommandDescription('draftclass'))
   .setDMPermission(false);
 
-function formatSeasonLabel(snapshot) {
-  const calendarYear = getMaddenSeasonCalendarYear(snapshot);
-  const seasonOrdinal = getMaddenSeasonOrdinal(snapshot);
-  if (calendarYear && seasonOrdinal != null) {
-    return `Season ${seasonOrdinal + 1} (${calendarYear}/${calendarYear + 1})`;
-  }
-  if (calendarYear) return `${calendarYear}/${calendarYear + 1}`;
-  if (seasonOrdinal != null) return `Season ${seasonOrdinal + 1}`;
-  return 'Current league season';
-}
-
 function buildPublishedEmbed(snapshot) {
   const classNumber = getMaddenDraftClassNumber(snapshot);
-  const classId = getMaddenDraftClassId(snapshot).toUpperCase();
   const officialName = OFFICIAL_CLASS_NAMES[classNumber];
-  const seasonLabel = formatSeasonLabel(snapshot);
+  const classLock = formatMaddenDraftClassLock(snapshot);
   const logo = getLeagueBuddyLogoEmoji();
 
   return new EmbedBuilder()
     .setColor(0x1e90ff)
     .setTitle(`${logo ? `${logo} ` : ''}Official LEAGUEbuddy Draft Class`)
     .setDescription([
-      `${seasonLabel} is mapped to **${classId}**.`,
+      `**${classLock}**`,
       '',
       `Search/download: **${officialName}**`,
       `Creator/User ID: **${OFFICIAL_CLASS_CREATOR}**`,
@@ -76,15 +62,14 @@ function buildPublishedEmbed(snapshot) {
 
 function buildUnpublishedEmbed(snapshot) {
   const classNumber = getMaddenDraftClassNumber(snapshot);
-  const classId = getMaddenDraftClassId(snapshot).toUpperCase();
-  const seasonLabel = formatSeasonLabel(snapshot);
+  const classLock = formatMaddenDraftClassLock(snapshot);
   const logo = getLeagueBuddyLogoEmoji();
 
   return new EmbedBuilder()
     .setColor(0xffa726)
     .setTitle(`${logo ? `${logo} ` : ''}Official LEAGUEbuddy Draft Class`)
     .setDescription([
-      `${seasonLabel} is mapped to **${classId}**.`,
+      `**${classLock}**`,
       '',
       'That official LEAGUEbuddy draft class is not published in the app copy yet.',
     ].join('\n'))

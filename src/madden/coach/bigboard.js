@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
-import { classIdForSeason, buildPages } from '../../../madden/helpers/bigboard_helpers.js';
+import { classIdForSnapshot, buildPages } from '../../../madden/helpers/bigboard_helpers.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 
 export const featureKey = 'scouting_draft';
@@ -24,12 +24,7 @@ export async function execute(interaction) {
   }
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
-    const calendarYear =
-      snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear
-      || snapshot?.info?.calendarYear
-      || snapshot?.calendarYear;
-
-    const classId = classIdForSeason(calendarYear);
+    const classId = classIdForSnapshot(snapshot);
     const { embeds, baseId } = buildPages(snapshot, classId, leagueId);
 
     const components = [];

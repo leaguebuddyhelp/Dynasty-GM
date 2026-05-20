@@ -53,7 +53,7 @@ import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getDataFilePath, getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
-import { getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
+import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -1462,6 +1462,7 @@ export async function execute(interaction) {
   const needs = Object.fromEntries(Object.entries(needProfiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
   // Use robust draft class file lookup
   const classId = getMaddenDraftClassId(league);
+  const classLock = formatMaddenDraftClassLock(league);
   const prospects = loadDraftClass(classId) || [];
   if (!prospects.length) {
     const payload = { content: `The draft board is not loaded yet. (classId: ${classId})` };
@@ -1677,7 +1678,7 @@ export async function execute(interaction) {
     .setTitle('Madden Mock Draft (Picks 1–32)')
     .setDescription(picks.join('\n'))
     .setColor(0x1e90ff)
-    .setFooter({ text: `${coachVoiceFooter('mockdraft', 'Live board, live order, live class')} • league ${leagueId}` });
+    .setFooter({ text: `${coachVoiceFooter('mockdraft', 'Live board, live order, live class')} • ${classLock} • league ${leagueId}` });
 
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()

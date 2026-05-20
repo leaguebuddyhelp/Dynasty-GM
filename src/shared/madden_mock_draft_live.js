@@ -11,7 +11,7 @@ import {
 import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
-import { getMaddenDraftClassId, getMaddenDraftYear } from './madden_draft_class.js';
+import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from './madden_draft_class.js';
 import {
   applyPickTrades,
   draftOrder,
@@ -534,6 +534,9 @@ function buildLobbyEmbed(session) {
   if (session.startedAt) {
     embed.addFields({ name: 'Status', value: 'Already started.', inline: false });
   }
+  if (session.classLock) {
+    embed.setFooter({ text: session.classLock });
+  }
   return embed;
 }
 
@@ -642,6 +645,9 @@ function buildLiveEmbed(session) {
     { name: 'Top Available', value: topAvailable, inline: false },
     { name: 'Recent Picks', value: recentPicks, inline: false },
   );
+  if (session.classLock) {
+    embed.setFooter({ text: session.classLock });
+  }
   return embed;
 }
 
@@ -1590,6 +1596,7 @@ export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roo
   const rawOrder = officialOrder || draftOrder(league);
   const order = applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId })), draftYear).slice(0, 32);
   const classId = getMaddenDraftClassId(league);
+  const classLock = formatMaddenDraftClassLock(league);
   const prospects = (loadDraftClass(classId, { command: 'mockdraft_live', guildId, userId: hostId }) || []).map(trimProspect);
   if (!prospects.length) throw new Error('Draft class is not loaded.');
 
@@ -1602,6 +1609,8 @@ export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roo
     createdAt: Date.now(),
     updatedAt: Date.now(),
     draftYear,
+    classId,
+    classLock,
     roomType,
     status: 'lobby',
     participants: [{ userId: hostId, joinedAt: Date.now(), teamNames: [] }],

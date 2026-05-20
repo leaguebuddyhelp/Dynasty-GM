@@ -9,7 +9,7 @@ import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/l
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getLeagueBuddyBrandAsset } from '../../shared/madden_assets.js';
-import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
 
@@ -269,6 +269,7 @@ export async function execute(interaction) {
   }
 
   const classId = classIdForSnapshot(snapshot);
+  const classLock = formatMaddenDraftClassLock(snapshot);
   const { data: draftData, resolvedId: resolvedClassId } = loadDraftClass(classId);
   const classKey = resolvedClassId || classId;
   if (!draftData) {
@@ -415,7 +416,7 @@ export async function execute(interaction) {
   const embed = new EmbedBuilder()
     .setTitle(`${player.position} ${player.name}${yearLabel}`)
     .setDescription(fields.join('\n') || 'No info unlocked yet.')
-    .setFooter({ text: `Used ${cost} pts. ${pointsLeft} pts left ${isOffseason ? 'this offseason (300 total)' : `this week (${Math.min(MAX_WEEKLY_POINTS, POINTS_PER_WEEK + Number(userData.scoutingBonus || 0))})`}. Class ${classKey.toUpperCase()}` })
+    .setFooter({ text: `Used ${cost} pts. ${pointsLeft} pts left ${isOffseason ? 'this offseason (300 total)' : `this week (${Math.min(MAX_WEEKLY_POINTS, POINTS_PER_WEEK + Number(userData.scoutingBonus || 0))})`}. ${classLock}` })
     .setColor(0x1e90ff);
   const metaFields = [];
   const boardPos = player.RNK ?? player.rank ?? player.order ?? player['#'];

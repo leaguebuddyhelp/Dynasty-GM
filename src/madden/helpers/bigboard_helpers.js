@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { EmbedBuilder } from 'discord.js';
 import { resolveLeagueIdWithConfig } from '../madden_data.js';
-import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getDataFilePath } from '../../leaguebuddy/paths.js';
 
 const DRAFT_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
@@ -13,6 +13,10 @@ function safeReadJSON(file, fallback = null) {
 
 function classIdForSeason(calendarYear) {
   return getMaddenDraftClassId({ calendarYear });
+}
+
+function classIdForSnapshot(snapshot) {
+  return getMaddenDraftClassId(snapshot);
 }
 
 function findClassFile(classId) {
@@ -44,8 +48,8 @@ function chunk(arr, size) {
 }
 
 export function buildPages(snapshot, classIdOverride = null, leagueId = null) {
-  const calendarYear = snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear;
-  const classId = classIdOverride || classIdForSeason(calendarYear);
+  const classId = classIdOverride || classIdForSnapshot(snapshot);
+  const classLock = formatMaddenDraftClassLock(snapshot);
   const draftData = loadDraftClass(classId);
   if (!draftData) throw new Error(`Draft class ${classId} not found`);
 
@@ -56,9 +60,10 @@ export function buildPages(snapshot, classIdOverride = null, leagueId = null) {
     .setTitle(`Madden Big Board — ${classId.toUpperCase()} (Page ${idx + 1}/${pages.length})`)
     .setDescription(page.join('\n'))
     .setColor(0x00b0f4)
+    .setFooter({ text: classLock })
   );
   const baseId = leagueId ? `madden_bigboard_page_${leagueId}_${classId}` : `madden_bigboard_page_${classId}`;
   return { embeds, baseId };
 }
 
-export { classIdForSeason, loadDraftClass };
+export { classIdForSeason, classIdForSnapshot, loadDraftClass };

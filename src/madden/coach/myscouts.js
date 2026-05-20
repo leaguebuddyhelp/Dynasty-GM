@@ -9,7 +9,7 @@ import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/l
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
 
 export const featureKey = 'scouting_draft';
@@ -417,6 +417,7 @@ function buildPagesForUser(userId, guildId, member = null) {
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const calendarYear = seasonInfo?.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear;
   const currentClassId = classIdForSnapshot(snapshot);
+  const classLock = formatMaddenDraftClassLock(snapshot);
   const currentNorm = currentClassId.toLowerCase();
   const seasonKey = getScoutSeasonKey(snapshot);
   const recognitionContext = inferRecognitionContext('madden', guildId);
@@ -551,7 +552,8 @@ function buildPagesForUser(userId, guildId, member = null) {
       embed: new EmbedBuilder()
         .setTitle(`Your Big Board — ${resolvedClassKey.toUpperCase()}${classPages.length > 1 ? ` (Page ${idx + 1}/${classPages.length})` : ''}`)
         .setDescription([summary, lines.join('\n\n')].filter(Boolean).join('\n\n'))
-        .setColor(0x1e90ff),
+        .setColor(0x1e90ff)
+        .setFooter({ text: classLock }),
       players: classNames[idx] || [],
     });
   });

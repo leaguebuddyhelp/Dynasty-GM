@@ -11,7 +11,7 @@ import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_s
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
-import { getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
+import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 
 // Plan gating (LEAGUEbuddy packsEnabled / plan enforcement)
 export const featureKey = 'scouting_draft';
@@ -846,6 +846,7 @@ export async function execute(interaction) {
     const live = buildLiveDraftContext(league);
     const seasonContext = live.seasonContext || getSeasonPhaseContext(league, 0);
     const classKey = classIdForLeague(league);
+    const classLock = formatMaddenDraftClassLock(league);
     const scoutData = loadScoutStore();
     const scoutLog = loadScoutLog();
     const recognitionContext = inferRecognitionContext('madden', interaction.guildId);
@@ -2355,7 +2356,7 @@ export async function execute(interaction) {
             ...(primerAccessNote ? [{ name: 'Locked Intel', value: primerAccessNote, inline: false }] : []),
         )
         .setColor(0x00b0f4)
-        .setFooter({ text: formatPhaseFooter(seasonContext, draftYear) });
+        .setFooter({ text: `${formatPhaseFooter(seasonContext, draftYear)} • ${classLock}` });
     if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ embeds: [embed] });
     } else {

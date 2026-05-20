@@ -40,3 +40,14 @@ export function getMaddenDraftClassId(snapshotOrLeague = null) {
 export function getMaddenDraftYear(snapshotOrLeague = null) {
   return 2025 + getMaddenDraftClassNumber(snapshotOrLeague);
 }
+
+export function getMaddenSeasonSpanLabel(snapshotOrLeague = null) {
+  const draftYear = getMaddenDraftYear(snapshotOrLeague);
+  return `${draftYear - 1}/${draftYear}`;
+}
+
+export function formatMaddenDraftClassLock(snapshotOrLeague = null) {
+  const classId = getMaddenDraftClassId(snapshotOrLeague).replace('_', '').toUpperCase();
+  const draftYear = getMaddenDraftYear(snapshotOrLeague);
+  return `Season ${draftYear - 1}/${draftYear} -> ${classId} -> ${draftYear} Draft`;
+}
