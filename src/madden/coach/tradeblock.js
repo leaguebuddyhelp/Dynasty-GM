@@ -10,6 +10,7 @@ import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
+import { getFullTeamName } from '../../shared/madden_team_names.js';
 
 export const featureKey = 'trades_basic';
 
@@ -45,7 +46,11 @@ function saveTradeBlockStore(store) {
 
 function normalizeName(name) {
   if (!name) return '';
-  return name.trim().toLowerCase();
+  return String(name).trim().toLowerCase();
+}
+
+function normalizeTeamKey(name) {
+  return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 function formatHeight(heightInches) {
@@ -68,7 +73,36 @@ function computeTradeValue(player) {
 
 
 function getRoster(snapshot, teamId) {
-  return snapshot?.rosters?.teams?.[teamId]?.rosterInfoList || [];
+  const roster = snapshot?.rosters?.teams?.[teamId] || snapshot?.rosters?.teams?.[String(teamId)] || {};
+  return roster?.rosterInfoList || roster?.rosterPlayerInfoList || [];
+}
+
+function getTeamCandidates(team = {}) {
+  const fullName = getFullTeamName(team, '');
+  return [
+    team.displayName,
+    team.nickName,
+    team.teamName,
+    team.abbrName,
+    team.cityName,
+    fullName,
+  ].filter(Boolean);
+}
+
+function findTeam(snapshot, teamName) {
+  const teams = snapshot?.teams?.leagueTeamInfoList || [];
+  const target = normalizeTeamKey(teamName);
+  if (!target) return null;
+  const withCandidates = teams.map((team) => ({
+    team,
+    candidates: getTeamCandidates(team).map(normalizeTeamKey).filter(Boolean),
+  }));
+  const exact = withCandidates.find(({ candidates }) => candidates.includes(target));
+  if (exact) return exact.team;
+  const fuzzy = withCandidates.find(({ candidates }) =>
+    candidates.some((candidate) => candidate.includes(target) || target.includes(candidate))
+  );
+  return fuzzy?.team || null;
 }
 
 function loadChannelMap(guildId = null) {
@@ -146,13 +180,18 @@ function getPositions(snapshot, teamId) {
 function playerLabel(p) {
   const fn = p.firstName || '';
   const ln = p.lastName || '';
-  const name = `${fn} ${ln}`.trim() || (p.fullName || '').trim();
+  const name = `${fn} ${ln}`.trim() || (p.fullName || p.displayName || '').trim();
   return name || `#${p.rosterId}`;
 }
 
 function findPlayer(roster, name) {
   const target = normalizeName(name);
-  return roster.find(p => normalizeName(playerLabel(p)) === target);
+  const exact = roster.find(p => normalizeName(playerLabel(p)) === target);
+  if (exact) return exact;
+  return roster.find(p => {
+    const candidate = normalizeName(playerLabel(p));
+    return candidate && target && (candidate.includes(target) || target.includes(candidate));
+  });
 }
 
 function formatDev(dev) {
@@ -222,24 +261,20 @@ async function autocomplete(interaction) {
     const snapshot = loadLeagueSnapshot(leagueId);
     const userTeamName = getUserTeam(interaction.guildId, interaction.user.id);
     if (!userTeamName) {
-      // Debug: show all teams assigned to this user in this guild
-      const { getAllUserTeams } = await import('../../shared/user_team_lookup.js');
-      const allTeams = getAllUserTeams(interaction.guildId, interaction.user.id);
-      await interaction.editReply({ content: `Could not determine your team assignment. (Debug: assigned teams: ${JSON.stringify(allTeams)})` });
+      responded = true;
+      clearTimeout(timeout);
+      await interaction.respond([]);
       return;
     }
-    const teams = snapshot?.teams?.leagueTeamInfoList || [];
-    const teamObj = teams.find(t => {
-      const candidates = [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName);
-      return candidates.includes(normalizeName(userTeamName));
-    });
+    const teamObj = findTeam(snapshot, userTeamName);
     if (!teamObj) throw new Error('no team');
     const teamId = teamObj.teamId;
     const action = interaction.options.getString('action');
     const positionChoice = interaction.options.getString('position');
     const positionFilter = positionChoice === 'ALL' ? null : positionChoice;
     const roster = getRoster(snapshot, teamId);
-    const block = loadJson(BLOCK_FILE);
+    const blockStore = loadTradeBlockStore();
+    const block = getGuildTradeBlock(blockStore, interaction.guildId);
 
     if (focused.name === 'player') {
       if (action === 'remove') {
@@ -283,6 +318,7 @@ async function execute(interaction) {
     const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     const channelMap = loadChannelMap(interaction.guildId);
+    const roleMap = loadRoleMap(interaction.guildId);
     const userTeamName = getUserTeam(interaction.guildId, interaction.user.id);
     if (!userTeamName) {
       // Debug: show all teams assigned to this user in this guild
@@ -292,27 +328,18 @@ async function execute(interaction) {
       return;
     }
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
-    const normalizedUserTeam = normalizeName(userTeamName);
-    let teamObj = teams.find(t => {
-      const candidates = [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName);
-      return candidates.includes(normalizedUserTeam);
-    });
-    if (!teamObj) {
-      // Try fuzzy match: check if userTeamName is a substring of any official team name
-      teamObj = teams.find(t => {
-        const candidates = [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName);
-        return candidates.some(c => c.includes(normalizedUserTeam) || normalizedUserTeam.includes(c));
-      });
-    }
+    const teamObj = findTeam(snapshot, userTeamName);
     if (!teamObj) {
       // Show debug info: list all official team names (normalized)
       const officialNames = teams.map(t => {
         return {
           displayName: t.displayName,
           nickName: t.nickName,
+          teamName: t.teamName,
           abbrName: t.abbrName,
           cityName: t.cityName,
-          normalized: [t.displayName, t.nickName, t.abbrName, t.cityName].map(normalizeName).join(' | ')
+          fullName: getFullTeamName(t, ''),
+          normalized: getTeamCandidates(t).map(normalizeTeamKey).join(' | ')
         };
       });
       await interaction.editReply({ content: `Could not match your assigned team (\`${userTeamName}\`) to a league team.\n\nOfficial team names (normalized):\n\n\`${JSON.stringify(officialNames, null, 2)}\`` });
@@ -320,6 +347,10 @@ async function execute(interaction) {
     }
     const teamId = teamObj.teamId;
     const roster = getRoster(snapshot, teamId);
+    if (!roster.length) {
+      await interaction.editReply({ content: `No roster data found for ${getFullTeamName(teamObj, userTeamName)}. Run /sync, then try again.` });
+      return;
+    }
     const blockStore = loadTradeBlockStore();
     const block = getGuildTradeBlock(blockStore, interaction.guildId);
     block[teamId] = block[teamId] || [];
