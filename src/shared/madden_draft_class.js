@@ -22,8 +22,8 @@ export function getMaddenSeasonOrdinal(snapshotOrLeague = null) {
 
 export function getMaddenDraftClassNumber(snapshotOrLeague = null) {
   const calendarYear = getMaddenSeasonCalendarYear(snapshotOrLeague);
-  if (calendarYear && calendarYear >= 2026) {
-    return Math.max(1, calendarYear - 2025);
+  if (calendarYear && calendarYear >= 2025) {
+    return Math.max(1, calendarYear - 2024);
   }
 
   const seasonOrdinal = getMaddenSeasonOrdinal(snapshotOrLeague);
