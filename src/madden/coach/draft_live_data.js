@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
+import { getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 
 function normalizeName(name = '') {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -27,11 +28,7 @@ export function loadLatestLeagueSnapshot() {
 }
 
 export function getUpcomingDraftYear(league) {
-  const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
-  const calendarYear = seasonInfo?.calendarYear || league?.info?.calendarYear || league?.calendarYear || 2025;
-  const weekTypeRaw = seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? seasonInfo.weekType;
-  const weekType = Number.isFinite(Number(weekTypeRaw)) ? Number(weekTypeRaw) : 1;
-  return (weekType === 1 || weekType === 2) ? Number(calendarYear) + 1 : Number(calendarYear);
+  return getMaddenDraftYear(league);
 }
 
 export function getSeasonPhaseContext(league, completedRegularWeeks = 0) {

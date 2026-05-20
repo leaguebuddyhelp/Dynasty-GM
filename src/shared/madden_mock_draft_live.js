@@ -11,7 +11,7 @@ import {
 import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
-import { getMaddenDraftClassId } from './madden_draft_class.js';
+import { getMaddenDraftClassId, getMaddenDraftYear } from './madden_draft_class.js';
 import {
   applyPickTrades,
   draftOrder,
@@ -190,16 +190,7 @@ function normalizeTeamKey(name = '') {
 }
 
 function currentDraftYear(league) {
-  const currentCalendarYear = Number(
-    league?.info?.careerHubInfo?.seasonInfo?.calendarYear
-    || league?.info?.calendarYear
-    || league?.calendarYear
-    || new Date().getFullYear()
-  );
-  const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
-  const weekTypeRaw = seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? seasonInfo.weekType;
-  const weekType = Number.isFinite(Number(weekTypeRaw)) ? Number(weekTypeRaw) : 1;
-  return weekType === 1 || weekType === 2 ? currentCalendarYear + 1 : currentCalendarYear;
+  return getMaddenDraftYear(league);
 }
 
 function trimProspect(player, index) {

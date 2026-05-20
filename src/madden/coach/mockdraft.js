@@ -53,7 +53,7 @@ import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getDataFilePath, getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
-import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -1449,10 +1449,7 @@ export async function execute(interaction) {
   const seasonTitle = (seasonInfo.seasonTitle || '').toLowerCase();
   const weekTypeRaw = seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? seasonInfo.weekType;
   const weekType = Number.isFinite(Number(weekTypeRaw)) ? Number(weekTypeRaw) : 1;
-  const isRegularOrPost = weekType === 1 || weekType === 2;
-  const draftYear = isRegularOrPost
-    ? Number(currentCalendarYear) + 1
-    : Number(currentCalendarYear || 2025);
+  const draftYear = getMaddenDraftYear(league);
 
   // Madden's in-season mock draft order updates as standings change.
   // Our override file is a calibration reference (and can be used in offseason),

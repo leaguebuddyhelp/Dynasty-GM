@@ -11,7 +11,7 @@ import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_s
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
 import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
-import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
+import { getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 
 // Plan gating (LEAGUEbuddy packsEnabled / plan enforcement)
 export const featureKey = 'scouting_draft';
@@ -203,11 +203,7 @@ function seededText(seedKey, templates = [], replacements = {}) {
 }
 
 function getUpcomingDraftYear(league) {
-    const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
-    const calendarYear = seasonInfo?.calendarYear || league?.info?.calendarYear || league?.calendarYear || 2025;
-    const weekTypeRaw = seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? seasonInfo.weekType;
-    const weekType = Number.isFinite(Number(weekTypeRaw)) ? Number(weekTypeRaw) : 1;
-    return (weekType === 1 || weekType === 2) ? Number(calendarYear) + 1 : Number(calendarYear);
+    return getMaddenDraftYear(league);
 }
 
 function getMetricOvr(p) {

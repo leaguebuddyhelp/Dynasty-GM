@@ -36,3 +36,7 @@ export function getMaddenDraftClassNumber(snapshotOrLeague = null) {
 export function getMaddenDraftClassId(snapshotOrLeague = null) {
   return `cus_${String(getMaddenDraftClassNumber(snapshotOrLeague)).padStart(2, '0')}`;
 }
+
+export function getMaddenDraftYear(snapshotOrLeague = null) {
+  return 2025 + getMaddenDraftClassNumber(snapshotOrLeague);
+}
