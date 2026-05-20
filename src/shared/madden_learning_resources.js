@@ -10,14 +10,10 @@ function hashSeed(...values) {
 
 const RAW_RESOURCES = [
   { lane: 'offense', tags: ['slot', 'inside', 'separator'], label: 'Film Room: slot cross / inside separator', url: 'https://youtu.be/RcdTJQyplw8', source: 'Huddle.gg / YouTube' },
-  { lane: 'offense', tags: ['outside', 'flood', 'cover3'], label: 'Film Room: Flood concept vs Cover 3', url: 'https://youtu.be/x3YgSXUCq-w', source: 'MUT.GG / YouTube' },
   { lane: 'offense', tags: ['box', 'rb', 'angle', 'texas'], label: 'Film Room: RB angle / cross-flat concept', url: 'https://youtu.be/A6V0zSVINb4', source: 'Madden School / YouTube' },
   { lane: 'offense', tags: ['coverage', 'dagger', 'middle'], label: 'Film Room: Dagger concept', url: 'https://youtu.be/ovaUis1SyII', source: 'Madden School / YouTube' },
-  { lane: 'offense', tags: ['pressure', 'rpo', 'midblitz'], label: 'Film Room: RPO answer vs Mid Blitz', url: 'https://youtu.be/gdGK1jdCs1k', source: 'MUT.GG / YouTube' },
   { lane: 'offense', tags: ['balanced', 'y-post'], label: 'Film Room: Y-Post vs multiple coverages', url: 'https://youtu.be/VnSYjafXeEk', source: 'Madden School / YouTube' },
   { lane: 'offense', tags: ['general', 'offense', 'scheme'], label: 'Resource: Madden 26 offensive tips hub', url: 'https://www.madden-school.com/category/madden-26-offensive-tips/', source: 'Madden School' },
-  { lane: 'offense', tags: ['outside', 'deep', 'cover3'], label: 'Resource: how to beat Cover 3 in Madden', url: 'https://www.mut.gg/news/how-to-beat-cover-3-in-madden-25/', source: 'MUT.GG' },
-  { lane: 'offense', tags: ['pressure', 'blitz', 'hot'], label: 'Resource: how to beat Mid Blitz in Madden 26', url: 'https://www.mut.gg/news/how-to-beat-mid-blitz-in-madden-26/', source: 'MUT.GG' },
   { lane: 'offense', tags: ['slot', 'spacing', 'read'], label: 'Resource: reading the defense before you attack space', url: 'https://www.madden-school.com/reading-the-defense/', source: 'Madden School' },
   { lane: 'offense', tags: ['outside', 'trips', 'formation'], label: 'Search: Madden 26 trips / bunch beaters', url: 'https://www.youtube.com/results?search_query=madden+26+trips+bunch+beaters', source: 'YouTube search' },
   { lane: 'offense', tags: ['slot', 'pivot', 'choice'], label: 'Search: Madden 26 option / pivot / choice routes', url: 'https://www.youtube.com/results?search_query=madden+26+option+pivot+choice+routes', source: 'YouTube search' },
@@ -98,8 +94,6 @@ const RAW_RESOURCES = [
   { lane: 'defense', tags: ['runfit', 'spill', 'front'], label: 'Search: Madden 26 spill and box fits', url: 'https://www.youtube.com/results?search_query=madden+26+spill+box+fits', source: 'YouTube search' },
   { lane: 'defense', tags: ['contain', 'spy', 'mobileqb'], label: 'Search: Madden 26 QB spy mobile QB', url: 'https://www.youtube.com/results?search_query=madden+26+qb+spy+mobile+qb', source: 'YouTube search' },
   { lane: 'defense', tags: ['general', 'reddit', 'defense'], label: 'Community: Madden defense discussion', url: 'https://www.reddit.com/search/?q=madden%2026%20defense%20scheme', source: 'Reddit search' },
-  { lane: 'defense', tags: ['general', 'titleupdate', 'coverage'], label: 'Resource: Madden 26 title update coverage notes', url: 'https://www.mut.gg/news/title-update-august-28th-madden-nfl-26/', source: 'MUT.GG' },
-  { lane: 'defense', tags: ['general', 'titleupdate', 'xfactor'], label: 'Resource: Madden 26 February gameplay notes', url: 'https://www.mut.gg/news/madden-nfl-26-title-update-february-4th/', source: 'MUT.GG' },
   { lane: 'defense', tags: ['howto', 'beginner', 'coverage'], label: 'How-To: Madden 26 defense basics', url: 'https://www.youtube.com/results?search_query=madden+26+defense+basics', source: 'YouTube search' },
   { lane: 'defense', tags: ['howto', 'beginner', 'user'], label: 'How-To: Madden 26 user defense basics', url: 'https://www.youtube.com/results?search_query=madden+26+user+defense+basics', source: 'YouTube search' },
   { lane: 'defense', tags: ['howto', 'beginner', 'runfit'], label: 'How-To: Madden 26 run defense basics', url: 'https://www.youtube.com/results?search_query=madden+26+run+defense+basics', source: 'YouTube search' },
@@ -117,8 +111,6 @@ const RAW_RESOURCES = [
   { lane: 'tendency', tags: ['balanced', 'user', 'defense'], label: 'Search: Madden 26 user defense tips', url: 'https://www.youtube.com/results?search_query=madden+26+user+defense+tips', source: 'YouTube search' },
   { lane: 'tendency', tags: ['pass-heavy', 'quickgame', 'reddit'], label: 'Community: Madden quick-game defense discussion', url: 'https://www.reddit.com/search/?q=madden%2026%20quick%20game%20defense', source: 'Reddit search' },
   { lane: 'tendency', tags: ['pressure', 'sim', 'reddit'], label: 'Community: Madden sim pressure discussion', url: 'https://www.reddit.com/search/?q=madden%2026%20sim%20pressure', source: 'Reddit search' },
-  { lane: 'tendency', tags: ['pass-heavy', 'cover3', 'read'], label: 'Resource: how to beat Cover 3 in Madden', url: 'https://www.mut.gg/news/how-to-beat-cover-3-in-madden-25/', source: 'MUT.GG' },
-  { lane: 'tendency', tags: ['pressure', 'midblitz', 'counter'], label: 'Resource: how to beat Mid Blitz in Madden 26', url: 'https://www.mut.gg/news/how-to-beat-mid-blitz-in-madden-26/', source: 'MUT.GG' },
   { lane: 'tendency', tags: ['balanced', 'formation', 'read'], label: 'Resource: Madden 26 offensive playbook hub', url: 'https://www.madden-school.com/playbooks/balanced/offense/', source: 'Madden School' },
   { lane: 'tendency', tags: ['pass-heavy', 'trips', 'quickgame'], label: 'Search: Madden 26 defend trips formations', url: 'https://www.youtube.com/results?search_query=madden+26+defend+trips+formations', source: 'YouTube search' },
   { lane: 'tendency', tags: ['pass-heavy', 'bunch', 'quickgame'], label: 'Search: Madden 26 defend bunch formations', url: 'https://www.youtube.com/results?search_query=madden+26+defend+bunch+formations', source: 'YouTube search' },
@@ -139,8 +131,6 @@ const EXTRA_DIRECT_RESOURCES = [
   { lane: 'offense', tags: ['howto', 'intermediate', 'coverage', 'read'], label: 'Resource: reading the defense before the snap', url: 'https://www.madden-school.com/reading-the-defense/', source: 'Madden School' },
   { lane: 'offense', tags: ['balanced', 'formation', 'scheme', 'howto'], label: 'Resource: Balanced offense playbook hub', url: 'https://www.madden-school.com/playbooks/balanced/offense/', source: 'Madden School' },
   { lane: 'offense', tags: ['trips', 'bunch', 'formation', 'scheme'], label: 'Resource: Shotgun Mix offense playbook hub', url: 'https://www.madden-school.com/playbooks/shotgun-mix/offense/', source: 'Madden School' },
-  { lane: 'offense', tags: ['pressure', 'blitz', 'howto', 'counter'], label: 'Resource: beat Mid Blitz in Madden 26', url: 'https://www.mut.gg/news/how-to-beat-mid-blitz-in-madden-26/', source: 'MUT.GG' },
-  { lane: 'offense', tags: ['zone', 'cover3', 'howto', 'outside'], label: 'Resource: beat Cover 3 in Madden', url: 'https://www.mut.gg/news/how-to-beat-cover-3-in-madden-25/', source: 'MUT.GG' },
   { lane: 'offense', tags: ['howto', 'beginner', 'scheme', 'general'], label: 'Resource: Madden 26 offensive tips collection', url: 'https://www.madden-school.com/category/madden-26-offensive-tips/', source: 'Madden School' },
 
   { lane: 'defense', tags: ['general', 'defense', 'howto', 'beginner'], label: 'Resource: Madden 26 tips and tricks hub', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub', source: 'EA' },
@@ -155,8 +145,6 @@ const EXTRA_DIRECT_RESOURCES = [
   { lane: 'tendency', tags: ['pass-heavy', 'shells', 'shell', 'rotation', 'coverage', 'customzones', 'routecommit', 'quickgame', 'howto'], label: 'Resource: coverage shells and late rotation', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
   { lane: 'tendency', tags: ['pressure', 'showblitz', 'counter', 'howto'], label: 'Resource: Show Blitz and changing the picture', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-show-blitz', source: 'EA' },
   { lane: 'tendency', tags: ['scramble', 'qb', 'contain', 'counter'], label: 'Resource: stop quarterback scrambles', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-stop-quarterback', source: 'EA' },
-  { lane: 'tendency', tags: ['pressure', 'midblitz', 'counter', 'howto'], label: 'Resource: beat Mid Blitz in Madden 26', url: 'https://www.mut.gg/news/how-to-beat-mid-blitz-in-madden-26/', source: 'MUT.GG' },
-  { lane: 'tendency', tags: ['cover3', 'read', 'counter', 'howto'], label: 'Resource: beat Cover 3 in Madden', url: 'https://www.mut.gg/news/how-to-beat-cover-3-in-madden-25/', source: 'MUT.GG' },
 ];
 
 const MATCHUP_DIRECT_RESOURCES = [
@@ -185,9 +173,6 @@ const MATCHUP_DIRECT_RESOURCES = [
   { lane: 'offense', tags: ['trio', 'te', 'middle', 'reads', 'counter'], label: 'Resource: Gun Trio TE In quick-read passing concept', url: 'https://www.madden-school.com/free-madden-25-tips-gun-trio-te/', source: 'Madden School' },
   { lane: 'offense', tags: ['trips', 'smash', 'man', 'zone', 'counter'], label: 'Resource: Pistol Trips Smash route stress concept', url: 'https://www.madden-school.com/one-hardest-routes-stop-madden-25/', source: 'Madden School' },
   { lane: 'offense', tags: ['xfactor', 'superstar', 'deepball', 'scramble', 'ballcarrier'], label: 'Resource: top 3 offensive X-Factors', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-3-offensive-x-factors', source: 'EA' },
-  { lane: 'offense', tags: ['abilities', 'xfactor', 'deepball', 'singlecoverage', 'aggressive'], label: 'Ability guide: Double Me X-Factor', url: 'https://www.mut.gg/abilities/double-me-xf/', source: 'MUT.GG' },
-  { lane: 'offense', tags: ['abilities', 'xfactor', 'scramble', 'mobileqb', 'brokenplay'], label: 'Ability guide: Run & Gun X-Factor', url: 'https://www.mut.gg/abilities/run-gun-xf/', source: 'MUT.GG' },
-  { lane: 'offense', tags: ['abilities', 'xfactor', 'ballcarrier', 'space', 'yac'], label: 'Ability guide: Phenom X-Factor', url: 'https://www.mut.gg/abilities/phenom-xf/', source: 'MUT.GG' },
   { lane: 'offense', tags: ['trips', 'bunch', 'tight', 'formations', 'matchup'], label: 'Resource: best offensive playbooks in Madden 26', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-best-offensive-playbooks', source: 'EA' },
   { lane: 'offense', tags: ['pressure', 'cover2', 'cover3', 'cover4', 'slotfade'], label: 'Resource: top 5 offensive tips', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-5-offensive-tips', source: 'EA' },
   { lane: 'offense', tags: ['general', 'offense', 'scheme', 'formations', 'matchup'], label: 'Resource: Madden 26 offense tips hub', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/beginner-tips-hub/offense-tips-hub', source: 'EA' },
@@ -201,10 +186,6 @@ const MATCHUP_DIRECT_RESOURCES = [
   { lane: 'defense', tags: ['pressure', 'passrush', 'blocksteer', 'shed'], label: 'Resource: block steer for pass rush wins', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-block-steer', source: 'EA' },
   { lane: 'defense', tags: ['runfit', 'tackle', 'space', 'openfield', 'finish'], label: 'Resource: tackling and open-field finish', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-tackle', source: 'EA' },
   { lane: 'defense', tags: ['xfactor', 'superstar', 'passrush', 'coverage', 'hybrid'], label: 'Resource: top 3 defensive X-Factors', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-3-defensive-x-factors', source: 'EA' },
-  { lane: 'defense', tags: ['abilities', 'xfactor', 'coverage', 'man', 'zone'], label: 'Ability guide: Universal Coverage X-Factor', url: 'https://www.mut.gg/abilities/universal-coverage-xf/', source: 'MUT.GG' },
-  { lane: 'defense', tags: ['abilities', 'zone', 'middle', 'ko', 'slot'], label: 'Ability guide: Mid Zone KO', url: 'https://www.mut.gg/abilities/s6-mid-zone-ko/', source: 'MUT.GG' },
-  { lane: 'defense', tags: ['abilities', 'zone', 'deep', 'inside', 'ko'], label: 'Ability guide: Deep In Zone KO', url: 'https://www.mut.gg/abilities/deep-in-zone-ko/', source: 'MUT.GG' },
-  { lane: 'defense', tags: ['abilities', 'press', 'chuck', 'fatigue', 'slot'], label: 'Ability guide: Chuck Out', url: 'https://www.mut.gg/abilities/chuck-out/', source: 'MUT.GG' },
   { lane: 'defense', tags: ['playbook', 'mug', 'quarters', 'palms', 'pressure'], label: 'Resource: top 5 defensive playbooks', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-5-defensive-playbooks', source: 'EA' },
   { lane: 'defense', tags: ['runfit', 'pressure', 'coverage', 'matchup', 'counter'], label: 'Resource: top 5 defensive tips', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-5-defensive-tips', source: 'EA' },
   { lane: 'defense', tags: ['general', 'defense', 'scheme', 'matchup', 'formations'], label: 'Resource: Madden 26 defense tips hub', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/beginner-tips-hub/defense-tips-hub', source: 'EA' },
@@ -244,9 +225,6 @@ const MATCHUP_DIRECT_RESOURCES = [
   { lane: 'tendency', tags: ['pass-heavy', 'match', 'quarters', 'palms', 'counter'], label: 'Resource: attacking match coverage in Madden 26', url: 'https://www.madden-school.com/match-coverage/', source: 'Madden School' },
   { lane: 'tendency', tags: ['pass-heavy', 'deepball', 'singlecoverage', 'xfactor'], label: 'Resource: top 3 offensive X-Factors', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-3-offensive-x-factors', source: 'EA' },
   { lane: 'tendency', tags: ['pressure', 'coverage', 'hybrid', 'xfactor'], label: 'Resource: top 3 defensive X-Factors', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-3-defensive-x-factors', source: 'EA' },
-  { lane: 'tendency', tags: ['pass-heavy', 'press', 'ko', 'man', 'zone'], label: 'Ability guide: Universal Coverage X-Factor', url: 'https://www.mut.gg/abilities/universal-coverage-xf/', source: 'MUT.GG' },
-  { lane: 'tendency', tags: ['pass-heavy', 'middle', 'slot', 'ko', 'counter'], label: 'Ability guide: Mid Zone KO', url: 'https://www.mut.gg/abilities/s6-mid-zone-ko/', source: 'MUT.GG' },
-  { lane: 'tendency', tags: ['pass-heavy', 'deep', 'inside', 'ko', 'counter'], label: 'Ability guide: Deep In Zone KO', url: 'https://www.mut.gg/abilities/deep-in-zone-ko/', source: 'MUT.GG' },
   { lane: 'tendency', tags: ['balanced', 'formations', 'bunch', 'trips', 'overview'], label: 'Resource: best offensive playbooks in Madden 26', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-best-offensive-playbooks', source: 'EA' },
   { lane: 'tendency', tags: ['pass-heavy', 'pressure', 'quickgame', 'coverage', 'shell', 'customzones', 'routecommit', 'disguise', 'counter'], label: 'Resource: coverage shells, custom zones, and route commit', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
   { lane: 'tendency', tags: ['pressure', 'mug', 'showblitz', 'counter', 'disguise'], label: 'Resource: how to show blitz', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-show-blitz', source: 'EA' },
@@ -320,6 +298,7 @@ const RESOURCES = [...RAW_RESOURCES, ...EXTRA_DIRECT_RESOURCES, ...MATCHUP_DIREC
   return !url.includes('youtube.com/results')
     && !url.includes('reddit.com/search')
     && !source.includes('search')
+    && !source.includes('mut.gg')
     && !isResourceLandingPage(resource);
 }).filter((resource, index, list) => {
   const key = `${resource?.lane || 'unknown'}|${normalizeResourceUrl(resource?.url)}`;
