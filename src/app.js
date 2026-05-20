@@ -108,12 +108,13 @@ const client = new Client({
 });
 client.commands = new Collection();
 client.interactionHandlers = [];
+const availabilityRefreshTimers = new Map();
 
 function memberHasCoachRole(member) {
   return [...(member?.roles?.cache?.values?.() || [])].some((role) => / coach$/i.test(role?.name || ''));
 }
 
-async function refreshAvailabilityAfterCoachChange(client, guildId, reason = 'coach_change') {
+async function runAvailabilityRefresh(client, guildId, reason = 'coach_change') {
   if (!guildId) return;
   try {
     const leagueId = resolveLeagueIdWithConfig(guildId);
@@ -137,6 +138,29 @@ async function refreshAvailabilityAfterCoachChange(client, guildId, reason = 'co
   } catch (error) {
     console.warn('[fairsim_board] coach-change refresh skipped', guildId, error?.message || error);
   }
+}
+
+function refreshAvailabilityAfterCoachChange(client, guildId, reason = 'coach_change') {
+  if (!guildId) return;
+  const existing = availabilityRefreshTimers.get(String(guildId));
+  if (existing) clearTimeout(existing);
+  const timer = setTimeout(() => {
+    availabilityRefreshTimers.delete(String(guildId));
+    runAvailabilityRefresh(client, guildId, reason).catch((error) => {
+      console.warn('[available-teams] debounced coach-change refresh failed', {
+        guildId,
+        reason,
+        error: error?.message || error,
+      });
+    });
+  }, 2500);
+  availabilityRefreshTimers.set(String(guildId), timer);
+}
+
+function removedCoachRoles(oldMember, newMember) {
+  const newRoleIds = new Set(newMember?.roles?.cache?.keys?.() || []);
+  return [...(oldMember?.roles?.cache?.values?.() || [])]
+    .filter((role) => / coach$/i.test(role?.name || '') && !newRoleIds.has(role.id));
 }
 
 await startOptionalService({
@@ -498,7 +522,7 @@ client.on('guildMemberRemove', async (member) => {
   } catch (error) {
     console.warn('[coach-assignments] member leave cleanup failed', member.guild?.id, member.id, error?.message || error);
   }
-  await refreshAvailabilityAfterCoachChange(client, member.guild?.id, 'member_left');
+  refreshAvailabilityAfterCoachChange(client, member.guild?.id, 'member_left');
 });
 
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
@@ -511,7 +535,23 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
 
   if (!roleSetChanged || (!oldHadCoachRole && !newHasCoachRole)) return;
 
-  if (oldHadCoachRole && !newHasCoachRole) {
+  const removedRoles = removedCoachRoles(oldMember, newMember);
+  if (removedRoles.length) {
+    for (const role of removedRoles) {
+      try {
+        removeCoachAssignment({
+          guildId: newMember.guild?.id,
+          userId: newMember.id,
+          teamName: String(role.name || '').replace(/ coach$/i, '').trim(),
+          roleId: role.id,
+        });
+      } catch (error) {
+        console.warn('[coach-assignments] removed coach role cleanup failed', newMember.guild?.id, newMember.id, role.id, error?.message || error);
+      }
+    }
+  }
+
+  if (oldHadCoachRole && !newHasCoachRole && !removedRoles.length) {
     try {
       removeCoachAssignment({
         guildId: newMember.guild?.id,
@@ -522,7 +562,7 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
     }
   }
 
-  await refreshAvailabilityAfterCoachChange(client, newMember.guild?.id, 'member_roles_changed');
+  refreshAvailabilityAfterCoachChange(client, newMember.guild?.id, 'member_roles_changed');
 });
 
 client.on('messageCreate', async (message) => {
