@@ -87,6 +87,10 @@ const viaCodeFor = (teamName = '') => {
   return teamName.slice(0, 3).toUpperCase();
 };
 const DEFAULT_START_FIRST_ROUND_OVERRIDES = [
+  { from: 'Falcons', to: 'Los Angeles Rams', via: 'ATL', year: 2025 },
+  { from: 'Packers', to: 'Dallas Cowboys', via: 'GB', year: 2025 },
+  { from: 'Colts', to: 'New York Jets', via: 'IND', year: 2025 },
+  { from: 'Jaguars', to: 'Cleveland Browns', via: 'JAX', year: 2025 },
   { from: 'Falcons', to: 'Los Angeles Rams', via: 'ATL', year: 2026 },
   { from: 'Packers', to: 'Dallas Cowboys', via: 'GB', year: 2026 },
   { from: 'Colts', to: 'New York Jets', via: 'IND', year: 2026 },
