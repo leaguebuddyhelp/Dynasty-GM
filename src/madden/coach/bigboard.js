@@ -7,7 +7,20 @@ export const featureKey = 'scouting_draft';
 
 export const data = new SlashCommandBuilder()
   .setName('bigboard')
-  .setDescription(coachCommandDescription('bigboard'));
+  .setDescription(coachCommandDescription('bigboard'))
+  .addStringOption(o =>
+    o.setName('draftclass')
+      .setDescription('Temporary class override for testing')
+      .setRequired(false)
+      .addChoices(
+        { name: 'Auto / current season', value: 'auto' },
+        { name: 'CUS01', value: 'cus_01' },
+        { name: 'CUS02', value: 'cus_02' },
+        { name: 'CUS03', value: 'cus_03' },
+        { name: 'CUS04', value: 'cus_04' },
+        { name: 'CUS05', value: 'cus_05' },
+      )
+  );
 
 export async function execute(interaction) {
   if (!interaction.deferred && !interaction.replied) {
@@ -24,8 +37,9 @@ export async function execute(interaction) {
   }
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
-    const classId = classIdForSnapshot(snapshot);
-    const { embeds, baseId } = buildPages(snapshot, classId, leagueId);
+    const selectedClass = interaction.options.getString('draftclass');
+    const classId = selectedClass && selectedClass !== 'auto' ? selectedClass : classIdForSnapshot(snapshot);
+    const { embeds, baseId } = buildPages(snapshot, classId, leagueId, { manualClassOverride: selectedClass && selectedClass !== 'auto' });
 
     const components = [];
     if (embeds.length > 1) {

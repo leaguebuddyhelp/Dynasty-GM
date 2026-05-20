@@ -47,9 +47,15 @@ function chunk(arr, size) {
   return chunks;
 }
 
-export function buildPages(snapshot, classIdOverride = null, leagueId = null) {
+function displayClassId(classId) {
+  return String(classId || '').replace('_', '').toUpperCase();
+}
+
+export function buildPages(snapshot, classIdOverride = null, leagueId = null, options = {}) {
   const classId = classIdOverride || classIdForSnapshot(snapshot);
-  const classLock = formatMaddenDraftClassLock(snapshot);
+  const classLock = options.manualClassOverride
+    ? `Manual class override -> ${displayClassId(classId)} • Auto lock: ${formatMaddenDraftClassLock(snapshot)}`
+    : formatMaddenDraftClassLock(snapshot);
   const draftData = loadDraftClass(classId);
   if (!draftData) throw new Error(`Draft class ${classId} not found`);
 
@@ -57,7 +63,7 @@ export function buildPages(snapshot, classIdOverride = null, leagueId = null) {
   const lines = prospects.map((p, idx) => `${idx + 1}. ${p.position || ''} ${p.name || 'Unknown'} - ${p.school || 'N/A'}`);
   const pages = chunk(lines, 32);
   const embeds = pages.map((page, idx) => new EmbedBuilder()
-    .setTitle(`Madden Big Board — ${classId.toUpperCase()} (Page ${idx + 1}/${pages.length})`)
+    .setTitle(`Madden Big Board — ${displayClassId(classId)} (Page ${idx + 1}/${pages.length})`)
     .setDescription(page.join('\n'))
     .setColor(0x00b0f4)
     .setFooter({ text: classLock })

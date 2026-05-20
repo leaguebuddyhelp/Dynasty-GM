@@ -1424,7 +1424,20 @@ function premiumPositionValue(group) {
 
 export const data = new SlashCommandBuilder()
   .setName('mockdraft')
-  .setDescription(coachCommandDescription('mockdraft'));
+  .setDescription(coachCommandDescription('mockdraft'))
+  .addStringOption(o =>
+    o.setName('draftclass')
+      .setDescription('Temporary class override for testing')
+      .setRequired(false)
+      .addChoices(
+        { name: 'Auto / current season', value: 'auto' },
+        { name: 'CUS01', value: 'cus_01' },
+        { name: 'CUS02', value: 'cus_02' },
+        { name: 'CUS03', value: 'cus_03' },
+        { name: 'CUS04', value: 'cus_04' },
+        { name: 'CUS05', value: 'cus_05' },
+      )
+  );
 
 export const deferOnDispatch = { flags: 64 };
 
@@ -1461,8 +1474,13 @@ export async function execute(interaction) {
   const needProfiles = deriveTeamNeedsDetailed(league);
   const needs = Object.fromEntries(Object.entries(needProfiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
   // Use robust draft class file lookup
-  const classId = getMaddenDraftClassId(league);
-  const classLock = formatMaddenDraftClassLock(league);
+  const selectedClass = interaction.options.getString('draftclass');
+  const manualClassOverride = selectedClass && selectedClass !== 'auto';
+  const classId = manualClassOverride ? selectedClass : getMaddenDraftClassId(league);
+  const displayClassId = String(classId || '').replace('_', '').toUpperCase();
+  const classLock = manualClassOverride
+    ? `Manual class override -> ${displayClassId} • Auto lock: ${formatMaddenDraftClassLock(league)}`
+    : formatMaddenDraftClassLock(league);
   const prospects = loadDraftClass(classId) || [];
   if (!prospects.length) {
     const payload = { content: `The draft board is not loaded yet. (classId: ${classId})` };
@@ -1682,7 +1700,7 @@ export async function execute(interaction) {
 
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('madden_mockdraft_live|create')
+      .setCustomId(`madden_mockdraft_live|create|${manualClassOverride ? classId : 'auto'}`)
       .setLabel('Start Live Mock Draft')
       .setStyle(ButtonStyle.Primary),
   );

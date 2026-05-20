@@ -1575,11 +1575,15 @@ export async function syncMockDraftSessionMessage(client, session) {
   await message.edit(payload).catch(() => null);
 }
 
-export function createMockDraftSession({ guildId, channelId, hostId }) {
-  return createMockDraftSessionWithRoom({ guildId, channelId, hostId, roomType: 'private_inline', originalChannelId: channelId });
+export function createMockDraftSession({ guildId, channelId, hostId, classIdOverride = null }) {
+  return createMockDraftSessionWithRoom({ guildId, channelId, hostId, roomType: 'private_inline', originalChannelId: channelId, classIdOverride });
 }
 
-export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roomType = 'private_inline', originalChannelId = channelId }) {
+function displayClassId(classId) {
+  return String(classId || '').replace('_', '').toUpperCase();
+}
+
+export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roomType = 'private_inline', originalChannelId = channelId, classIdOverride = null }) {
   const leagueId = requireLeagueIdForGuild(guildId);
   const league = leagueId ? loadLeagueSnapshot(leagueId) : null;
   if (!league) throw new Error('League snapshot is not ready.');
@@ -1596,8 +1600,11 @@ export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roo
   const officialOrder = inRegularSeason ? null : loadOfficialDraftOrderOverride(league, draftYear);
   const rawOrder = officialOrder || draftOrder(league);
   const order = applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId })), draftYear).slice(0, 32);
-  const classId = getMaddenDraftClassId(league);
-  const classLock = formatMaddenDraftClassLock(league);
+  const manualClassOverride = Boolean(classIdOverride);
+  const classId = manualClassOverride ? classIdOverride : getMaddenDraftClassId(league);
+  const classLock = manualClassOverride
+    ? `Manual class override -> ${displayClassId(classId)} • Auto lock: ${formatMaddenDraftClassLock(league)}`
+    : formatMaddenDraftClassLock(league);
   const prospects = (loadDraftClass(classId, { command: 'mockdraft_live', guildId, userId: hostId }) || []).map(trimProspect);
   if (!prospects.length) throw new Error('Draft class is not loaded.');
   const teamNeeds = deriveTeamNeeds(league);
@@ -1624,6 +1631,7 @@ export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roo
     updatedAt: Date.now(),
     draftYear,
     classId,
+    manualClassOverride,
     classLock,
     roomType,
     status: 'lobby',

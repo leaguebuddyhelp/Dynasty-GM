@@ -694,6 +694,7 @@ async function handleButton(interaction) {
 
   if (action === 'create') {
     await interaction.deferReply({ flags: 64 });
+    const classOverride = sessionId && sessionId !== 'auto' ? sessionId : null;
     const scoutingHubChannelId = resolveScoutingHubChannelId(interaction.guildId);
     const scoutingHub = scoutingHubChannelId
       ? interaction.guild.channels.cache.get(scoutingHubChannelId)
@@ -704,7 +705,7 @@ async function handleButton(interaction) {
       return;
     }
 
-    const existing = findActiveMockDraftSession(interaction.guildId, scoutingHubChannelId);
+    const existing = classOverride ? null : findActiveMockDraftSession(interaction.guildId, scoutingHubChannelId);
     let usableExisting = existing;
     if (usableExisting) {
       const existingChannel = await interaction.client.channels.fetch(usableExisting.channelId).catch(() => null);
@@ -764,6 +765,7 @@ async function handleButton(interaction) {
       originalChannelId: scoutingHubChannelId,
       hostId: interaction.user.id,
       roomType: 'private',
+      classIdOverride: classOverride,
     });
     setMockDraftParticipantTeams(session.id, interaction.user.id, coachTeamsForMember(interaction.member));
     await room.members.add(interaction.user.id).catch(() => null);
