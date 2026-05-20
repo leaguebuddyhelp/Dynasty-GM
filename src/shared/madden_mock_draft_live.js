@@ -12,6 +12,7 @@ import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from './madden_draft_class.js';
+import { ensureStableMockAvpStore } from './madden_avp_simulator.js';
 import {
   applyPickTrades,
   draftOrder,
@@ -1599,6 +1600,19 @@ export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roo
   const classLock = formatMaddenDraftClassLock(league);
   const prospects = (loadDraftClass(classId, { command: 'mockdraft_live', guildId, userId: hostId }) || []).map(trimProspect);
   if (!prospects.length) throw new Error('Draft class is not loaded.');
+  const teamNeeds = deriveTeamNeeds(league);
+  const teamStrengths = extractTeamStrengths(league);
+  ensureStableMockAvpStore({
+    guildId,
+    leagueId,
+    classId,
+    draftYear,
+    order,
+    prospects,
+    teamNeeds,
+    teamStrengths,
+    helpers: { prospectGroup, findNeedsForTeam, premiumPositionValue, strengthVerdict },
+  });
 
   const session = {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -1617,8 +1631,8 @@ export function createMockDraftSessionWithRoom({ guildId, channelId, hostId, roo
     variantSeed: `${hostId}|${Date.now()}|${Math.random().toString(36).slice(2, 8)}`,
     order,
     availableProspects: prospects,
-    teamNeeds: deriveTeamNeeds(league),
-    teamStrengths: extractTeamStrengths(league),
+    teamNeeds,
+    teamStrengths,
     picks: [],
     currentPickIndex: 0,
     pickOwners: {},
