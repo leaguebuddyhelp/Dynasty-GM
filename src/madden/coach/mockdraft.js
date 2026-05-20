@@ -1,28 +1,13 @@
-// Robust draft class file lookup (matches scout.js/bigboard.js)
-function findClassFile(classId) {
-  if (!fs.existsSync(DRAFT_CLASS_DIR)) return null;
-  const patterns = [
-    classId.toLowerCase(),
-    classId.replace('_', '').toLowerCase(),
-    classId.replace('_', '').toUpperCase(),
-  ];
-  const files = fs.readdirSync(DRAFT_CLASS_DIR).filter(f => {
-    const low = f.toLowerCase();
-    return patterns.some(p => low.includes(p)) && low.endsWith('.json');
-  });
-  if (files.length) return path.join(DRAFT_CLASS_DIR, files[0]);
-  const allJson = fs.readdirSync(DRAFT_CLASS_DIR).filter(f => f.toLowerCase().endsWith('.json'));
-  return allJson.length ? path.join(DRAFT_CLASS_DIR, allJson[0]) : null;
-}
-
+// Robust draft class file lookup. Missing overrides must fail instead of falling back to CUS01.
 function loadDraftClass(classId, context = {}) {
-  const file = findClassFile(classId);
+  const normalizedClassId = normalizeMaddenDraftClassId(classId);
+  const file = findMaddenDraftClassFile(normalizedClassId);
   const logInfo = {
     event: 'draft_class_lookup',
     command: context.command || 'mockdraft',
     guildId: context.guildId || null,
     userId: context.userId || null,
-    classId,
+    classId: normalizedClassId,
     resolvedFile: file,
     timestamp: new Date().toISOString(),
   };
@@ -32,8 +17,7 @@ function loadDraftClass(classId, context = {}) {
     return null;
   }
   try {
-    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
-    const data = Array.isArray(raw) ? raw : Object.values(raw || {});
+    const data = loadMaddenDraftClassArray(normalizedClassId);
     logInfo.success = true;
     console.log('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][SUCCESS]', JSON.stringify(logInfo));
     return data;
@@ -52,13 +36,13 @@ import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
-import { getDataFilePath, getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
+import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
+import { displayMaddenDraftClassId, findMaddenDraftClassFile, getMaddenDraftClassChoices, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 export const featureKey = 'scouting_draft';
 
 let currentCalendarYear = 2025;
-const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
 const DEFAULT_FIRST_MADDEN_DRAFT_YEARS = new Set([2025, 2026]);
 const DEFAULT_FIRST_MADDEN_DRAFT_ORIGINAL_ORDER = [
@@ -1452,11 +1436,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(false)
       .addChoices(
         { name: 'Auto / current season', value: 'auto' },
-        { name: 'CUS01', value: 'cus_01' },
-        { name: 'CUS02', value: 'cus_02' },
-        { name: 'CUS03', value: 'cus_03' },
-        { name: 'CUS04', value: 'cus_04' },
-        { name: 'CUS05', value: 'cus_05' },
+        ...getMaddenDraftClassChoices(),
       )
   );
 
@@ -1497,8 +1477,8 @@ export async function execute(interaction) {
   // Use robust draft class file lookup
   const selectedClass = interaction.options.getString('draftclass');
   const manualClassOverride = selectedClass && selectedClass !== 'auto';
-  const classId = manualClassOverride ? selectedClass : getMaddenDraftClassId(league);
-  const displayClassId = String(classId || '').replace('_', '').toUpperCase();
+  const classId = manualClassOverride ? normalizeMaddenDraftClassId(selectedClass) : getMaddenDraftClassId(league);
+  const displayClassId = displayMaddenDraftClassId(classId);
   const classLock = manualClassOverride
     ? `Manual class override -> ${displayClassId} • Auto lock: ${formatMaddenDraftClassLock(league)}`
     : formatMaddenDraftClassLock(league);

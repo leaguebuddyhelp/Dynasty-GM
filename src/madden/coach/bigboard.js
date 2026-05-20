@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { classIdForSnapshot, buildPages } from '../../../madden/helpers/bigboard_helpers.js';
+import { getMaddenDraftClassChoices, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 
 export const featureKey = 'scouting_draft';
@@ -14,11 +15,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(false)
       .addChoices(
         { name: 'Auto / current season', value: 'auto' },
-        { name: 'CUS01', value: 'cus_01' },
-        { name: 'CUS02', value: 'cus_02' },
-        { name: 'CUS03', value: 'cus_03' },
-        { name: 'CUS04', value: 'cus_04' },
-        { name: 'CUS05', value: 'cus_05' },
+        ...getMaddenDraftClassChoices(),
       )
   );
 
@@ -38,7 +35,7 @@ export async function execute(interaction) {
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
     const selectedClass = interaction.options.getString('draftclass');
-    const classId = selectedClass && selectedClass !== 'auto' ? selectedClass : classIdForSnapshot(snapshot);
+    const classId = selectedClass && selectedClass !== 'auto' ? normalizeMaddenDraftClassId(selectedClass) : classIdForSnapshot(snapshot);
     const { embeds, baseId } = buildPages(snapshot, classId, leagueId, { manualClassOverride: selectedClass && selectedClass !== 'auto' });
 
     const components = [];

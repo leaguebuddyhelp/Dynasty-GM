@@ -1,0 +1,88 @@
+import fs from 'fs';
+import path from 'path';
+import { getDataFilePath } from '../leaguebuddy/paths.js';
+
+function unique(values = []) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+export function normalizeMaddenDraftClassId(value = '') {
+  const text = String(value || '').trim().toLowerCase();
+  const direct = text.match(/cus[_\s-]?(\d{1,2})/i);
+  if (direct) return `cus_${String(Number(direct[1])).padStart(2, '0')}`;
+  const digits = text.match(/^(\d{1,2})$/);
+  if (digits) return `cus_${String(Number(digits[1])).padStart(2, '0')}`;
+  return text.replace(/[^a-z0-9]/g, '') || null;
+}
+
+export function displayMaddenDraftClassId(value = '') {
+  const normalized = normalizeMaddenDraftClassId(value);
+  return String(normalized || '').replace('_', '').toUpperCase();
+}
+
+function draftClassDirs() {
+  return unique([
+    getDataFilePath(path.join('draft_classes', 'madden')),
+    path.join(process.cwd(), 'data', 'draft_classes', 'madden'),
+    path.join(process.cwd(), 'bundled_data', 'draft_classes', 'madden'),
+  ]);
+}
+
+function classIdFromFile(fileName = '') {
+  const match = String(fileName || '').match(/CUS[_\s-]?(\d{1,2})/i);
+  if (!match) return null;
+  return `cus_${String(Number(match[1])).padStart(2, '0')}`;
+}
+
+export function listMaddenDraftClassFiles() {
+  const byClass = new Map();
+  for (const dir of draftClassDirs()) {
+    let files = [];
+    try {
+      if (!fs.existsSync(dir)) continue;
+      files = fs.readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const file of files) {
+      if (!/big board\.json$/i.test(file)) continue;
+      const classId = classIdFromFile(file);
+      if (!classId || byClass.has(classId)) continue;
+      byClass.set(classId, {
+        classId,
+        display: displayMaddenDraftClassId(classId),
+        file: path.join(dir, file),
+      });
+    }
+  }
+  return [...byClass.values()].sort((a, b) => a.classId.localeCompare(b.classId));
+}
+
+export function getMaddenDraftClassChoices() {
+  return listMaddenDraftClassFiles()
+    .slice(0, 24)
+    .map((entry) => ({ name: entry.display, value: entry.classId }));
+}
+
+export function findMaddenDraftClassFile(classId) {
+  const normalized = normalizeMaddenDraftClassId(classId);
+  if (!normalized) return null;
+  const hit = listMaddenDraftClassFiles().find((entry) => entry.classId === normalized);
+  return hit?.file || null;
+}
+
+export function loadMaddenDraftClassRaw(classId) {
+  const file = findMaddenDraftClassFile(classId);
+  if (!file) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+export function loadMaddenDraftClassArray(classId) {
+  const raw = loadMaddenDraftClassRaw(classId);
+  if (!raw) return null;
+  return Array.isArray(raw) ? raw : Object.values(raw || {});
+}
