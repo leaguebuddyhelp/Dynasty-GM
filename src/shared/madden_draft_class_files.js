@@ -34,7 +34,13 @@ function classIdFromFile(fileName = '') {
   return `cus_${String(Number(match[1])).padStart(2, '0')}`;
 }
 
-export function listMaddenDraftClassFiles() {
+function fileKindPattern(kind = 'bigboard') {
+  const normalized = String(kind || 'bigboard').toLowerCase();
+  if (normalized === 'recruiting') return /recruiting\.json$/i;
+  return /big board\.json$/i;
+}
+
+export function listMaddenDraftClassFiles(kind = 'bigboard') {
   const byClass = new Map();
   for (const dir of draftClassDirs()) {
     let files = [];
@@ -45,7 +51,7 @@ export function listMaddenDraftClassFiles() {
       continue;
     }
     for (const file of files) {
-      if (!/big board\.json$/i.test(file)) continue;
+      if (!fileKindPattern(kind).test(file)) continue;
       const classId = classIdFromFile(file);
       if (!classId || byClass.has(classId)) continue;
       byClass.set(classId, {
@@ -58,21 +64,21 @@ export function listMaddenDraftClassFiles() {
   return [...byClass.values()].sort((a, b) => a.classId.localeCompare(b.classId));
 }
 
-export function getMaddenDraftClassChoices() {
-  return listMaddenDraftClassFiles()
+export function getMaddenDraftClassChoices(kind = 'bigboard') {
+  return listMaddenDraftClassFiles(kind)
     .slice(0, 24)
     .map((entry) => ({ name: entry.display, value: entry.classId }));
 }
 
-export function findMaddenDraftClassFile(classId) {
+export function findMaddenDraftClassFile(classId, kind = 'bigboard') {
   const normalized = normalizeMaddenDraftClassId(classId);
   if (!normalized) return null;
-  const hit = listMaddenDraftClassFiles().find((entry) => entry.classId === normalized);
+  const hit = listMaddenDraftClassFiles(kind).find((entry) => entry.classId === normalized);
   return hit?.file || null;
 }
 
-export function loadMaddenDraftClassRaw(classId) {
-  const file = findMaddenDraftClassFile(classId);
+export function loadMaddenDraftClassRaw(classId, kind = 'bigboard') {
+  const file = findMaddenDraftClassFile(classId, kind);
   if (!file) return null;
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -81,8 +87,8 @@ export function loadMaddenDraftClassRaw(classId) {
   }
 }
 
-export function loadMaddenDraftClassArray(classId) {
-  const raw = loadMaddenDraftClassRaw(classId);
+export function loadMaddenDraftClassArray(classId, kind = 'bigboard') {
+  const raw = loadMaddenDraftClassRaw(classId, kind);
   if (!raw) return null;
   return Array.isArray(raw) ? raw : Object.values(raw || {});
 }

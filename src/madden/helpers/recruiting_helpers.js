@@ -1,26 +1,13 @@
-import fs from 'fs';
-import path from 'path';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
-import { getDataFilePath } from '../../leaguebuddy/paths.js';
-
-const RECRUITING_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
+import { displayMaddenDraftClassId, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 const PAGE_SIZE = 10;
 
-const safeLoadRecruiting = (snapshotOrLeague = null) => {
+const safeLoadRecruiting = (snapshotOrLeague = null, classIdOverride = null) => {
   try {
-    const currentClassId = getMaddenDraftClassId(snapshotOrLeague);
-    // Accept any file with the class number (with or without underscore, any case) and 'recruiting' in the name
-    const classNum = currentClassId.replace('cus_', '').replace('CUS_', '').replace('_', '').replace(/^0+/, '');
-    const files = fs.readdirSync(RECRUITING_DIR).filter(f => {
-      const low = f.toLowerCase();
-      return low.includes(classNum) && low.includes('recruiting');
-    }).sort();
-    const file = files[0];
-    if (!file) return null;
-    const raw = fs.readFileSync(path.join(RECRUITING_DIR, file), 'utf-8');
-    const data = JSON.parse(raw);
-    const recruits = Object.values(data || {}).filter(Boolean);
+    const currentClassId = normalizeMaddenDraftClassId(classIdOverride || getMaddenDraftClassId(snapshotOrLeague));
+    const recruits = (loadMaddenDraftClassArray(currentClassId, 'recruiting') || []).filter(Boolean);
+    if (!recruits.length) return null;
     return recruits.sort((a, b) => {
       const aRank = Number(a.national_rank ?? a['#'] ?? 9999);
       const bRank = Number(b.national_rank ?? b['#'] ?? 9999);
@@ -42,7 +29,7 @@ const chunk = (arr, size) => {
   return out;
 };
 
-const buildRecruitingEmbed = (pageIndex, recruits) => {
+const buildRecruitingEmbed = (pageIndex, recruits, options = {}) => {
   const pages = chunk(recruits, PAGE_SIZE);
   const safeIndex = Math.min(Math.max(pageIndex, 0), pages.length - 1);
   const page = pages[safeIndex] || [];
@@ -61,21 +48,25 @@ const buildRecruitingEmbed = (pageIndex, recruits) => {
     return `${rank}. ${pos} ${name} - ${school} (${starStr})\n${detailParts.join(' | ')}`;
   });
 
+  const classId = normalizeMaddenDraftClassId(options.classId || '');
+  const classLabel = classId ? displayMaddenDraftClassId(classId) : 'Auto';
+  const titleSuffix = classId ? ` — ${classLabel}` : '';
+
   const embed = new EmbedBuilder()
-    .setTitle('2026 Top 50 ESPN High School Recruits')
+    .setTitle(`Top 50 ESPN High School Recruits${titleSuffix}`)
     .setDescription(lines.join('\n\n') || 'No recruiting data found.')
-    .setFooter({ text: `Page ${safeIndex + 1}/${pages.length}` })
+    .setFooter({ text: options.manualClassOverride ? `Page ${safeIndex + 1}/${pages.length} • Manual class override -> ${classLabel}` : `Page ${safeIndex + 1}/${pages.length}` })
     .setColor(0x8a2be2);
 
   const pageNumber = safeIndex + 1;
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`madden_recruiting_page_${pageNumber - 1}`)
+      .setCustomId(`madden_recruiting_page_${pageNumber - 1}_${classId || 'auto'}`)
       .setStyle(ButtonStyle.Secondary)
       .setLabel('Prev')
       .setDisabled(safeIndex <= 0),
     new ButtonBuilder()
-      .setCustomId(`madden_recruiting_page_${pageNumber + 1}`)
+      .setCustomId(`madden_recruiting_page_${pageNumber + 1}_${classId || 'auto'}`)
       .setStyle(ButtonStyle.Primary)
       .setLabel('Next')
       .setDisabled(safeIndex >= pages.length - 1)
