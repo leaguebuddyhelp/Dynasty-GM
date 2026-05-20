@@ -992,7 +992,7 @@ function formatTeamEmoji(teamName, emojiMap) {
 }
 
 // --- Team needs heuristics ---
-function deriveTeamNeedsDetailed(league) {
+export function deriveTeamNeedsDetailed(league) {
   const rosters = league.rosters?.teams || {};
   const teamInfo = league.teams?.leagueTeamInfoList || [];
   const teamInfoById = Object.fromEntries(teamInfo.map(t => [Number(t.teamId), t]));
@@ -1020,32 +1020,21 @@ function deriveTeamNeedsDetailed(league) {
   // No more QB_FORCE_LIST or QB_LOCKED_LIST; all teams use dynamic QB need logic
 
   const needsByTeam = {};
-  const baseByGroup = {
-    QB: [82],               // keep QB special logic below; base used lightly
-    OT: [84, 80],
-    IOL: [82, 78, 74],
-    EDGE: [85, 80],
-    DT: [83, 78],
-    LB: [82, 78],
-    CB: [86, 82, 78],
-    S: [83, 78],
-    WR: [86, 82, 78],
-    TE: [80],
-    RB: [80],
-  };
-  const depthTarget = {
-    QB: 2,
-    RB: 3,
-    WR: 5,
-    CB: 5,
-    TE: 3,
-    OT: 4,
-    IOL: 5,
-    EDGE: 4,
-    DT: 4,
-    LB: 4,
-    S: 4,
-    OTHER: 0,
+  // Need math is based on real football personnel, not one-player buckets:
+  // 11 offense has 5 OL, 2-3 WR, TE and RB; modern nickel expects 3 CBs,
+  // 2 safeties, 2 edge players, and usually 2 playable interior DL.
+  const groupProfiles = {
+    QB: { bases: [82], starters: 1, playable: 76, room: 2 },
+    RB: { bases: [80], starters: 1, playable: 74, room: 3 },
+    WR: { bases: [86, 82, 76], starters: 3, playable: 74, room: 5 },
+    TE: { bases: [80], starters: 1, playable: 73, room: 3 },
+    OT: { bases: [84, 80], starters: 2, playable: 76, room: 4 },
+    IOL: { bases: [82, 78, 74], starters: 3, playable: 73, room: 5 },
+    EDGE: { bases: [85, 80], starters: 2, playable: 76, room: 4 },
+    DT: { bases: [82, 78], starters: 2, playable: 75, room: 4 },
+    LB: { bases: [82, 76], starters: 2, playable: 74, room: 4 },
+    CB: { bases: [86, 81, 76], starters: 3, playable: 74, room: 5 },
+    S: { bases: [83, 78], starters: 2, playable: 74, room: 4 },
   };
   const positionGroup = (pos = '') => {
     const p = pos.toUpperCase();
@@ -1081,7 +1070,8 @@ function deriveTeamNeedsDetailed(league) {
     const groupStats = {};
     const topCache = {}; // store top metrics per group for later need suppression
     const getTop = (group, n = 2) => {
-      if (topCache[group]) return topCache[group];
+      const cacheKey = String(group) + ':' + String(n);
+      if (topCache[cacheKey]) return topCache[cacheKey];
       const arr = (byGroup[group] || []).map(p => ({
         ovr: getMetricOvr(p),
         age: getAge(p),
@@ -1089,7 +1079,7 @@ function deriveTeamNeedsDetailed(league) {
         yearsLeft: getYearsLeft(p),
       }));
       const top = arr.sort((a, b) => b.ovr - a.ovr).slice(0, n);
-      topCache[group] = top;
+      topCache[cacheKey] = top;
       return top;
     };
     const allGroups = ['QB', 'OT', 'IOL', 'EDGE', 'DT', 'LB', 'CB', 'S', 'WR', 'TE', 'RB'];
@@ -1181,7 +1171,8 @@ function deriveTeamNeedsDetailed(league) {
       const top = getTop(group, 5);
       const top1 = top[0] || { ovr: 0, age: 99 };
       const top2 = top[1] || { ovr: 0, age: 99 };
-      const bases = baseByGroup[group] || [];
+      const profile = groupProfiles[group] || { bases: [], starters: 0, playable: 72, room: 0 };
+      const bases = profile.bases || [];
       let score = 0;
 
       // Slot-based baselines (starters)
@@ -1194,8 +1185,17 @@ function deriveTeamNeedsDetailed(league) {
         }
       });
 
-      // Depth pressure toward target room size
-      const depthGoal = depthTarget[group] ?? 0;
+      // Starter-slot and room-depth pressure. A team can have bodies but still lack
+      // enough playable starters for the packages it actually lives in.
+      const starterGoal = profile.starters || 0;
+      const playableMin = profile.playable || 72;
+      const playableStarterCount = starterGoal
+        ? top.slice(0, starterGoal).filter((slot) => Number(slot?.ovr || 0) >= playableMin).length
+        : 0;
+      if (starterGoal && playableStarterCount < starterGoal) {
+        score += (starterGoal - playableStarterCount) * 14;
+      }
+      const depthGoal = profile.room || 0;
       if (depthGoal && (stat.count || 0) < depthGoal) {
         score += (depthGoal - (stat.count || 0)) * 6;
       }
@@ -1246,20 +1246,21 @@ function deriveTeamNeedsDetailed(league) {
         if ((stat.count || 0) < 2) score += 6;
       }
 
-      // DT depth expectations
+      // DT expectations: most fronts need two interior bodies on the field, and
+      // even 3-4 teams rotate enough sub packages that one quality DT/NT is not settled.
       if (group === 'DT') {
         const depth = stat.count || 0;
-        const startersAvg = (top1.ovr + top2.ovr) / (top1.ovr && top2.ovr ? 2 : 1);
-        // prioritize starter quality first
-        if (startersAvg >= 82) score -= 16;
-        else if (startersAvg >= 78) score -= 8;
-        else if (startersAvg < 75) score += 20;
-        // slight baseline push so DT needs still surface
-        score += 8;
-        // depth: expect 3 DTs active, 4 is great
-        if (depth < 2) score += 26;
-        else if (depth === 2) score += 12;
-        else if (depth === 3) score += 6;
+        const twoPlayable = top1.ovr >= 77 && top2.ovr >= 75;
+        const startersAvg = top2.ovr ? (top1.ovr + top2.ovr) / 2 : top1.ovr;
+        if (top1.ovr >= 88 && top2.ovr >= 80) score -= 18;
+        else if (startersAvg >= 82 && depth >= 3) score -= 10;
+        else if (twoPlayable && depth >= 3) score -= 3;
+        else if (!top2.ovr) score += 36;
+        else if (!twoPlayable) score += 24;
+        if (depth < 2) score += 34;
+        else if (depth === 2) score += 16;
+        else if (depth === 3) score += 7;
+        if (top1.ovr >= 86 && top2.ovr < 75) score += 12;
         const paR = paRank[tid];
         if (paR && paR <= 10) score += 8;
         else if (paR && paR >= 24) score -= 6;
@@ -1307,32 +1308,52 @@ function deriveTeamNeedsDetailed(league) {
         if (youngDuo) score -= 300;
         else if (youngStar) score -= 180;
       }
-      if (group === 'WR' || group === 'CB' || group === 'EDGE') {
+      if (group === 'WR' || group === 'CB') {
+        const thirdCovered = top[2]?.ovr >= 74 && (stat.count || 0) >= 3;
+        if (youngDuo && thirdCovered) score -= 220;
+        else if (youngStar && top2.ovr >= 76 && thirdCovered) score -= 140;
+      }
+      if (group === 'EDGE') {
         if (youngDuo) score -= 220;
         else if (youngStar) score -= 140;
       }
-      if (group === 'DT' || group === 'LB' || group === 'S' || group === 'TE') {
+      if (group === 'DT') {
+        const dtCovered = top1.ovr >= 86 && top2.ovr >= 77 && (stat.count || 0) >= 3;
+        if (youngDuo) score -= 140;
+        else if (youngStar && dtCovered) score -= 90;
+      }
+      if (group === 'LB' || group === 'S' || group === 'TE') {
         if (youngDuo) score -= 160;
         else if (youngStar) score -= 110;
       }
       if (group === 'RB') {
         if (top1.ovr >= 82 && top1.age <= 27) score -= 200;
+        else if (top1.ovr >= 80 && (stat.count || 0) >= 1) score -= 35;
       }
       if (group === 'TE') {
         if (establishedYoungStarter) score -= 260;
         else if (stableStarter) score -= 180;
+        else if (top1.ovr >= 80 && (stat.count || 0) >= 1) score -= 28;
       }
       if (group === 'RB') {
         if (establishedYoungStarter) score -= 180;
       }
-      if (group === 'WR' || group === 'CB' || group === 'S') {
+      if (group === 'WR' || group === 'CB') {
+        const thirdCovered = top[2]?.ovr >= 74 && (stat.count || 0) >= 3;
+        if (establishedPrimeStarter && top2.ovr >= 74 && thirdCovered) score -= 90;
+      }
+      if (group === 'S') {
         if (establishedPrimeStarter && top2.ovr >= 74) score -= 90;
       }
-      if (group === 'LB' || group === 'DT') {
-        if (establishedPrimeStarter && top2.ovr >= 72) score -= 70;
+      if (group === 'DT') {
+        if (establishedPrimeStarter && top2.ovr >= 77 && (stat.count || 0) >= 3) score -= 55;
+      }
+      if (group === 'LB') {
+        if (top1.ovr >= 80 && top2.ovr >= 76) score -= 22;
+        if (establishedPrimeStarter && top2.ovr >= 72) score -= 45;
       }
 
-      // Depth-aware bump for CB/WR (carry ~5, start 3)
+      // Depth-aware bump for CB/WR: nickel/11-personnel make the third starter real.
       if (group === 'CB' || group === 'WR') {
         const depth = stat.count || 0;
         const starts = 3, room = 5;
