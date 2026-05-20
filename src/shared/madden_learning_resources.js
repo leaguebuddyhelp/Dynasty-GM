@@ -59,7 +59,7 @@ const RAW_RESOURCES = [
   { lane: 'defense', tags: ['slot', 'quarters', 'palms'], label: 'Film Room: Cover 4 Quarters / Palms', url: 'https://youtu.be/40nxauy81B0', source: 'Huddle.gg / YouTube' },
   { lane: 'defense', tags: ['coverage', 'cover3', 'midpoint'], label: 'Film Room: safety midpoint / Cover 3 spacing', url: 'https://youtu.be/YRUoAeBCVw0', source: 'Huddle.gg / YouTube' },
   { lane: 'defense', tags: ['runfit', 'front', 'disguise'], label: 'Film Room: Base Align and disguise rules', url: 'https://youtu.be/8fZqSZHQfyk', source: 'Madden School / YouTube' },
-  { lane: 'defense', tags: ['shell', 'coverage', 'rotation'], label: 'Resource: coverage shells and late rotation', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
+  { lane: 'defense', tags: ['coverage', 'shell', 'rotation', 'customzones', 'routecommit', 'quickgame', 'hooks', 'flats', 'slot'], label: 'Resource: coverage shells and late rotation', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
   { lane: 'defense', tags: ['pressure', 'showblitz', 'mug'], label: 'Resource: how to Show Blitz', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-show-blitz', source: 'EA' },
   { lane: 'defense', tags: ['contain', 'scramble', 'qb'], label: 'Resource: how to stop quarterback scrambles', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-stop-quarterback', source: 'EA' },
   { lane: 'defense', tags: ['pressure', 'stunt', 'front'], label: 'Resource: how to use stunts', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-stunt', source: 'EA' },
@@ -144,7 +144,7 @@ const EXTRA_DIRECT_RESOURCES = [
   { lane: 'offense', tags: ['howto', 'beginner', 'scheme', 'general'], label: 'Resource: Madden 26 offensive tips collection', url: 'https://www.madden-school.com/category/madden-26-offensive-tips/', source: 'Madden School' },
 
   { lane: 'defense', tags: ['general', 'defense', 'howto', 'beginner'], label: 'Resource: Madden 26 tips and tricks hub', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub', source: 'EA' },
-  { lane: 'defense', tags: ['coverage', 'shell', 'rotation', 'howto'], label: 'Resource: coverage shells and late rotation', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
+  { lane: 'defense', tags: ['coverage', 'shell', 'rotation', 'customzones', 'routecommit', 'quickgame', 'hooks', 'flats', 'slot', 'howto'], label: 'Resource: coverage shells and late rotation', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
   { lane: 'defense', tags: ['pressure', 'showblitz', 'disguise', 'howto'], label: 'Resource: Show Blitz and pre-snap picture', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-show-blitz', source: 'EA' },
   { lane: 'defense', tags: ['contain', 'scramble', 'mobileqb', 'howto'], label: 'Resource: stop quarterback scrambles', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-stop-quarterback', source: 'EA' },
   { lane: 'defense', tags: ['pressure', 'front', 'stunt', 'howto'], label: 'Resource: use stunts to change the rush picture', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-stunt', source: 'EA' },
@@ -152,7 +152,7 @@ const EXTRA_DIRECT_RESOURCES = [
   { lane: 'defense', tags: ['playbook', 'scheme', 'general', 'intermediate'], label: 'Resource: top 5 defensive playbooks', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-5-defensive-playbooks', source: 'EA' },
 
   { lane: 'tendency', tags: ['balanced', 'read', 'howto', 'intermediate'], label: 'Resource: reading the defense', url: 'https://www.madden-school.com/reading-the-defense/', source: 'Madden School' },
-  { lane: 'tendency', tags: ['shells', 'rotation', 'pass-heavy', 'howto'], label: 'Resource: coverage shells and late rotation', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
+  { lane: 'tendency', tags: ['pass-heavy', 'shells', 'shell', 'rotation', 'coverage', 'customzones', 'routecommit', 'quickgame', 'howto'], label: 'Resource: coverage shells and late rotation', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
   { lane: 'tendency', tags: ['pressure', 'showblitz', 'counter', 'howto'], label: 'Resource: Show Blitz and changing the picture', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-show-blitz', source: 'EA' },
   { lane: 'tendency', tags: ['scramble', 'qb', 'contain', 'counter'], label: 'Resource: stop quarterback scrambles', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-stop-quarterback', source: 'EA' },
   { lane: 'tendency', tags: ['pressure', 'midblitz', 'counter', 'howto'], label: 'Resource: beat Mid Blitz in Madden 26', url: 'https://www.mut.gg/news/how-to-beat-mid-blitz-in-madden-26/', source: 'MUT.GG' },
@@ -195,7 +195,7 @@ const MATCHUP_DIRECT_RESOURCES = [
 
   { lane: 'defense', tags: ['coverage', 'hands', 'intercept', 'swat', 'ballskills'], label: 'Resource: intercept and swat timing', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-intercept-the-ball', source: 'EA' },
   { lane: 'defense', tags: ['coverage', 'user', 'switchstick', 'fieldcoverage'], label: 'Resource: Switch Stick for full-field coverage', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-switch-stick', source: 'EA' },
-  { lane: 'defense', tags: ['coverage', 'shell', 'customzones', 'routecommit', 'disguise'], label: 'Resource: coverage shells, custom zones, and route commit', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
+  { lane: 'defense', tags: ['coverage', 'shell', 'customzones', 'routecommit', 'disguise', 'quickgame', 'hooks', 'flats', 'slot'], label: 'Resource: coverage shells, custom zones, and route commit', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
   { lane: 'defense', tags: ['pressure', 'showblitz', 'disguise', 'mug'], label: 'Resource: how to show blitz', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-show-blitz', source: 'EA' },
   { lane: 'defense', tags: ['pressure', 'stunt', 'front', 'fourman'], label: 'Resource: how to use stunts', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-stunt', source: 'EA' },
   { lane: 'defense', tags: ['pressure', 'passrush', 'blocksteer', 'shed'], label: 'Resource: block steer for pass rush wins', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-block-steer', source: 'EA' },
@@ -211,6 +211,16 @@ const MATCHUP_DIRECT_RESOURCES = [
   { lane: 'defense', tags: ['runfit', 'pressure', 'coverage', 'general'], label: 'Resource: top 5 defense tips', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-top-5-defensive-tips', source: 'EA' },
   { lane: 'defense', tags: ['coverage', 'balancing', 'gameplay', 'deepdive'], label: 'Resource: gameplay deep dive and coverage tuning', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/news/madden-26-gridiron-notes-gameplay-deep-dive', source: 'EA' },
   { lane: 'defense', tags: ['runfit', 'counter', 'shotgun', 'box', 'front'], label: 'Resource: stopping Shotgun HB Counter from a 5-2 front', url: 'https://www.madden-school.com/stopping-shotgun-hb-counter-plays-madden-25/', source: 'Madden School' },
+
+  { lane: 'offense', tags: ['pressure', 'protection', 'passblock', 'slide', 'fieldvision', 'advanced'], label: 'Resource: gameplay deep dive on pass protection and field vision', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/news/madden-26-gridiron-notes-gameplay-deep-dive', source: 'EA' },
+  { lane: 'offense', tags: ['howto', 'controls', 'passing', 'mechanics', 'read'], label: 'Resource: Madden 26 controls reference', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/controls-hub', source: 'EA' },
+  { lane: 'offense', tags: ['howto', 'fundamentals', 'passing', 'hotroute', 'strategy'], label: 'Resource: EA guide to improving in Madden 26', url: 'https://help.ea.com/en/articles/madden-nfl/madden-improve/', source: 'EA Help' },
+  { lane: 'offense', tags: ['playsheet', 'westcoast', 'quickgame', 'empty', 'runnshoot', 'franchise'], label: 'Resource: franchise playsheets and offensive identities', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/news/madden-26-gridiron-notes-franchise-deep-dive', source: 'EA' },
+
+  { lane: 'defense', tags: ['coverage', 'customzones', 'routecommit', 'shell', 'advanced', 'coachdna'], label: 'Resource: gameplay deep dive on custom zones and defensive control', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/news/madden-26-gridiron-notes-gameplay-deep-dive', source: 'EA' },
+  { lane: 'defense', tags: ['howto', 'controls', 'coverage', 'user', 'tackle', 'mechanics'], label: 'Resource: Madden 26 defensive controls reference', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/controls-hub', source: 'EA' },
+  { lane: 'defense', tags: ['howto', 'fundamentals', 'tackle', 'coverage', 'strategy'], label: 'Resource: EA guide to improving in Madden 26', url: 'https://help.ea.com/en/articles/madden-nfl/madden-improve/', source: 'EA Help' },
+  { lane: 'defense', tags: ['playsheet', 'pressure', 'front', 'coachdna', 'franchise'], label: 'Resource: franchise playsheets and defensive identities', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/news/madden-26-gridiron-notes-franchise-deep-dive', source: 'EA' },
 
   { lane: 'tendency', tags: ['pressure', 'audible', 'counter', 'adjustment', 'customstem'], label: 'Resource: audibles and hot routes vs pressure looks', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-hot-route-and-audible', source: 'EA' },
   { lane: 'tendency', tags: ['pass-heavy', 'timing', 'throw', 'read', 'coverage'], label: 'Resource: passing mechanics vs tight windows', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-pass-the-ball', source: 'EA' },
@@ -238,7 +248,7 @@ const MATCHUP_DIRECT_RESOURCES = [
   { lane: 'tendency', tags: ['pass-heavy', 'middle', 'slot', 'ko', 'counter'], label: 'Ability guide: Mid Zone KO', url: 'https://www.mut.gg/abilities/s6-mid-zone-ko/', source: 'MUT.GG' },
   { lane: 'tendency', tags: ['pass-heavy', 'deep', 'inside', 'ko', 'counter'], label: 'Ability guide: Deep In Zone KO', url: 'https://www.mut.gg/abilities/deep-in-zone-ko/', source: 'MUT.GG' },
   { lane: 'tendency', tags: ['balanced', 'formations', 'bunch', 'trips', 'overview'], label: 'Resource: best offensive playbooks in Madden 26', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-best-offensive-playbooks', source: 'EA' },
-  { lane: 'tendency', tags: ['pressure', 'shell', 'routecommit', 'disguise', 'counter'], label: 'Resource: coverage shells, custom zones, and route commit', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
+  { lane: 'tendency', tags: ['pass-heavy', 'pressure', 'quickgame', 'coverage', 'shell', 'customzones', 'routecommit', 'disguise', 'counter'], label: 'Resource: coverage shells, custom zones, and route commit', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-coverage-shells', source: 'EA' },
   { lane: 'tendency', tags: ['pressure', 'mug', 'showblitz', 'counter', 'disguise'], label: 'Resource: how to show blitz', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-show-blitz', source: 'EA' },
   { lane: 'tendency', tags: ['pressure', 'stunt', 'fourman', 'front', 'counter'], label: 'Resource: how to use stunts', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-use-stunt', source: 'EA' },
   { lane: 'tendency', tags: ['pressure', 'passrush', 'shed', 'counter'], label: 'Resource: block steer to finish pressure', url: 'https://www.ea.com/games/madden-nfl/madden-nfl-26/tips-and-tricks-hub/m26-how-to-block-steer', source: 'EA' },
@@ -310,7 +320,6 @@ const RESOURCES = [...RAW_RESOURCES, ...EXTRA_DIRECT_RESOURCES, ...MATCHUP_DIREC
   return !url.includes('youtube.com/results')
     && !url.includes('reddit.com/search')
     && !source.includes('search')
-    && !source.includes('mut.gg')
     && !isResourceLandingPage(resource);
 }).filter((resource, index, list) => {
   const key = `${resource?.lane || 'unknown'}|${normalizeResourceUrl(resource?.url)}`;
@@ -346,9 +355,13 @@ function offensiveStruggleTags(ownStats = {}, oppStats = {}) {
   const compPct = passAtt > 0 ? (comps / passAtt) * 100 : 0;
   const rushYpg = Number(ownStats?.games || 0) > 0 ? Number(ownStats?.rush?.yds || 0) / Number(ownStats.games) : 0;
   const oppSacks = Number(oppStats?.games || 0) > 0 ? Number(oppStats?.def?.sacks || 0) / Number(oppStats.games) : 0;
-  if (sacksTaken >= 10 || oppSacks >= 2.5) tags.push('pressure', 'protection', 'howto');
-  if (compPct > 0 && compPct < 63) tags.push('read', 'coverage', 'howto', 'beginner');
-  if (rushYpg > 0 && rushYpg < 70) tags.push('run', 'box', 'howto');
+  const passRate = passAtt / Math.max(1, passAtt + Number(ownStats?.rush?.att || 0));
+  const ypa = passAtt > 0 ? Number(ownStats?.pass?.yds || 0) / passAtt : 0;
+  if (sacksTaken >= 10 || oppSacks >= 2.5) tags.push('pressure', 'protection', 'passblock', 'slide', 'howto');
+  if (compPct > 0 && compPct < 63) tags.push('read', 'coverage', 'quickgame', 'underneath', 'howto', 'beginner');
+  if (passRate >= 0.62 && ypa <= 7.0) tags.push('quickgame', 'timing', 'spacing', 'hotroute');
+  if (passRate >= 0.62 && ypa >= 8.2) tags.push('vertical', 'deepball', 'catchpoint', 'outside');
+  if (rushYpg > 0 && rushYpg < 70) tags.push('run', 'box', 'insidezone', 'widezone', 'howto');
   return tags;
 }
 
@@ -357,10 +370,15 @@ function defensiveStruggleTags(ownStats = {}, oppStats = {}) {
   const games = Math.max(1, Number(ownStats?.games || 0));
   const passAllowed = Number(ownStats?.def?.passYdsAllowed || 0) / games;
   const rushAllowed = Number(ownStats?.def?.rushYdsAllowed || 0) / games;
-  const oppPassRate = Number(oppStats?.pass?.att || 0) / Math.max(1, Number(oppStats?.pass?.att || 0) + Number(oppStats?.rush?.att || 0));
-  if (passAllowed >= 230 || oppPassRate >= 0.62) tags.push('coverage', 'shell', 'howto', 'beginner');
-  if (rushAllowed >= 115) tags.push('runfit', 'front', 'howto');
-  if (Number(ownStats?.def?.sacks || 0) / games < 1.5) tags.push('pressure', 'passrush', 'howto');
+  const oppPassAtt = Number(oppStats?.pass?.att || 0);
+  const oppRushAtt = Number(oppStats?.rush?.att || 0);
+  const oppPassRate = oppPassAtt / Math.max(1, oppPassAtt + oppRushAtt);
+  const oppYpa = oppPassAtt > 0 ? Number(oppStats?.pass?.yds || 0) / oppPassAtt : 0;
+  if (passAllowed >= 230 || oppPassRate >= 0.62) tags.push('coverage', 'shell', 'customzones', 'howto', 'beginner');
+  if (oppPassRate >= 0.62 && oppYpa <= 7.0) tags.push('quickgame', 'hooks', 'flats', 'routecommit');
+  if (oppPassRate >= 0.62 && oppYpa >= 8.2) tags.push('vertical', 'deep', 'outside', 'switchstick');
+  if (rushAllowed >= 115 || oppRushAtt > oppPassAtt * 1.15) tags.push('runfit', 'front', 'alley', 'tackle', 'howto');
+  if (Number(ownStats?.def?.sacks || 0) / games < 1.5) tags.push('pressure', 'passrush', 'stunt', 'blocksteer', 'howto');
   return tags;
 }
 
@@ -369,9 +387,14 @@ function tendencyStruggleTags(ownStats = {}, oppStats = {}) {
   const games = Math.max(1, Number(ownStats?.games || 0));
   const passAllowed = Number(ownStats?.def?.passYdsAllowed || 0) / games;
   const rushAllowed = Number(ownStats?.def?.rushYdsAllowed || 0) / games;
-  if (passAllowed >= 230) tags.push('read', 'counter', 'howto');
-  if (rushAllowed >= 115) tags.push('fit', 'counter', 'howto');
-  if (Number(oppStats?.pass?.sacksTaken || 0) <= games) tags.push('disguise');
+  const oppPassAtt = Number(oppStats?.pass?.att || 0);
+  const oppRushAtt = Number(oppStats?.rush?.att || 0);
+  const oppPassRate = oppPassAtt / Math.max(1, oppPassAtt + oppRushAtt);
+  if (passAllowed >= 230) tags.push('read', 'counter', 'coverage', 'customzones', 'howto');
+  if (rushAllowed >= 115) tags.push('fit', 'counter', 'runfit', 'tackle', 'howto');
+  if (oppPassRate >= 0.65) tags.push('pass-heavy', 'quickgame', 'shell', 'routecommit');
+  if (oppRushAtt > oppPassAtt * 1.2) tags.push('run-heavy', 'front', 'alley', 'space');
+  if (Number(oppStats?.pass?.sacksTaken || 0) <= games) tags.push('disguise', 'showblitz');
   return tags;
 }
 
@@ -432,7 +455,9 @@ function selectResource(lane, preferredTags = [], seedKey = '', options = {}) {
       return b.specificity - a.specificity;
     });
   const topScore = scored[0]?.score ?? 0;
-  const threshold = Math.max(0, topScore - (topScore >= 3 ? 1 : 0));
+  // Matchup resources should stay tight: if we have a strong tag hit, do not
+  // randomly drift to a broader article that only almost matches the problem.
+  const threshold = topScore >= 3 ? topScore : Math.max(0, topScore - 1);
   const pool = scored
     .filter((entry) => entry.score >= threshold)
     .slice(0, Math.min(6, scored.length))
@@ -461,9 +486,21 @@ export function pickOffenseLearningResource(profileTag = 'balanced', fieldProfil
   const tags = [profileTag, ...advancedTags, ...offensiveStruggleTags(ownStats, oppStats)];
   if (fieldProfile?.area) tags.push(fieldProfile.area);
   if (fieldProfile?.label) tags.push(String(fieldProfile.label).toLowerCase());
+  const ownGames = Math.max(1, Number(ownStats?.games || 0));
+  const oppGames = Math.max(1, Number(oppStats?.games || 0));
+  const ownPassAtt = Number(ownStats?.pass?.att || 0);
+  const ownRushAtt = Number(ownStats?.rush?.att || 0);
+  const ownPassRate = ownPassAtt / Math.max(1, ownPassAtt + ownRushAtt);
+  const ownYpa = ownPassAtt > 0 ? Number(ownStats?.pass?.yds || 0) / ownPassAtt : 0;
   const oppSacks = Number(oppStats?.def?.sacks || 0);
   const ownSacksTaken = Number(ownStats?.pass?.sacksTaken || 0);
-  if (oppSacks >= 10 || ownSacksTaken >= 10) tags.push('pressure');
+  const oppPassAllowed = Number(oppStats?.def?.passYdsAllowed || 0) / oppGames;
+  const oppRushAllowed = Number(oppStats?.def?.rushYdsAllowed || 0) / oppGames;
+  if (oppSacks >= 10 || ownSacksTaken >= 10) tags.push('pressure', 'protection', 'passblock', 'slide');
+  if (ownPassRate >= 0.62 && ownYpa <= 7.0) tags.push('quickgame', 'timing', 'spacing');
+  if (ownPassRate >= 0.62 && ownYpa >= 8.2) tags.push('vertical', 'deepball', 'catchpoint');
+  if (oppPassAllowed >= 230) tags.push('vertical', 'coverage', 'outside');
+  if (oppRushAllowed >= 115) tags.push('ground', 'run-heavy', 'box', 'ballcarrier');
   if (fieldProfile?.area === 'slot') tags.push('inside', 'separator');
   if (fieldProfile?.area === 'outside') tags.push('outside', 'boundary');
   if (fieldProfile?.area === 'box') tags.push('box', 'rb');
@@ -484,13 +521,17 @@ export function pickDefenseLearningResource(profileTag = 'balanced', defensiveMi
   // Add inferred opponent pass-style tags so we can pick more specific learning links (quick game vs shot plays).
   // This is intentionally light-weight: we only use stats already provided to this function.
   const oppGames = Math.max(1, Number(oppStats?.games || 0));
+  const ownGames = Math.max(1, Number(ownStats?.games || 0));
   const oppPassYpg = Number(oppStats?.pass?.yds || 0) / oppGames;
   const oppPassAtt = Number(oppStats?.pass?.att || 0) / oppGames;
   const oppComp = Number(oppStats?.pass?.comp || 0) / oppGames;
   const oppYpa = oppPassAtt > 0 ? (oppPassYpg / oppPassAtt) : 0;
   const oppCompPct = oppPassAtt > 0 ? ((oppComp / oppPassAtt) * 100) : 0;
-  if (oppYpa >= 8.8) tags.push('vertical', 'deep');
-  if (oppCompPct >= 67 && oppYpa <= 7.2) tags.push('quickgame', 'timing');
+  const oppRushYpg = Number(oppStats?.rush?.yds || 0) / oppGames;
+  const ownRushAllowed = Number(ownStats?.def?.rushYdsAllowed || 0) / ownGames;
+  if (oppYpa >= 8.8) tags.push('vertical', 'deep', 'outside');
+  if (oppCompPct >= 67 && oppYpa <= 7.2) tags.push('quickgame', 'timing', 'hooks', 'flats');
+  if (oppRushYpg >= 115 || ownRushAllowed >= 115) tags.push('runfit', 'front', 'alley', 'tackle');
   if (defensiveMismatch?.type === 'protection') tags.push('pressure', 'sim', 'showblitz');
   if (defensiveMismatch?.type === 'scramble') tags.push('contain', 'mobileqb', 'scramble');
   if (defensiveMismatch?.type === 'coverage') tags.push('switchstick', 'coverage', 'user');
