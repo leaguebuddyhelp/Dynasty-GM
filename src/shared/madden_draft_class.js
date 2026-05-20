@@ -27,7 +27,7 @@ export function getMaddenDraftClassNumber(snapshotOrLeague = null) {
 
   const calendarYear = getMaddenSeasonCalendarYear(snapshotOrLeague);
   if (calendarYear && calendarYear >= 2025) {
-    return Math.max(1, calendarYear - 2024);
+    return Math.max(1, calendarYear - 2025);
   }
 
   return 1;
