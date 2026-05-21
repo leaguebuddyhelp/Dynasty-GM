@@ -10,13 +10,13 @@ import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser }
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getLeagueBuddyBrandAsset } from '../../shared/madden_assets.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
-import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
+import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
+import { findMaddenDraftClassFile, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 export const featureKey = 'scouting_draft';
 
 const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
-const DRAFT_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
 const POINTS_PER_WEEK = 60; // regular & postseason
 const COST_PER_REVEAL = 10;
@@ -110,38 +110,30 @@ function classIdForSnapshot(snapshot) {
   return getMaddenDraftClassId(snapshot);
 }
 
-function findClassFile(classId) {
-  if (!fs.existsSync(DRAFT_DIR)) return null;
-  const files = fs.readdirSync(DRAFT_DIR).filter(f => f.toLowerCase().includes(classId.toLowerCase()) && f.toLowerCase().endsWith('.json'));
-  if (files.length) return path.join(DRAFT_DIR, files[0]);
-  // Fallback: pick first json
-  const allJson = fs.readdirSync(DRAFT_DIR).filter(f => f.toLowerCase().endsWith('.json'));
-  return allJson.length ? path.join(DRAFT_DIR, allJson[0]) : null;
-}
-
 function loadDraftClass(classId, context = {}) {
-  const file = findClassFile(classId);
+  const normalizedClassId = normalizeMaddenDraftClassId(classId);
+  const file = findMaddenDraftClassFile(normalizedClassId);
   const logInfo = {
     event: 'draft_class_lookup',
     command: context.command || 'scout',
     guildId: context.guildId || null,
     userId: context.userId || null,
-    classId,
+    classId: normalizedClassId,
     resolvedFile: file,
     timestamp: new Date().toISOString(),
   };
   if (!file) {
     logInfo.error = 'Draft class file not found';
     console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
-    return { data: null, resolvedId: classId };
+    return { data: null, resolvedId: normalizedClassId };
   }
   try {
-    const data = safeReadJSON(file, null);
+    const data = loadMaddenDraftClassRaw(normalizedClassId);
     const resolvedId = (() => {
       const base = path.basename(file).toLowerCase();
       const match = base.match(/cus[_ -]?(\d+)/);
       if (match) return `cus_${String(match[1]).padStart(2, '0')}`;
-      return classId;
+      return normalizedClassId;
     })();
     logInfo.success = true;
     logInfo.resolvedId = resolvedId;
@@ -150,7 +142,7 @@ function loadDraftClass(classId, context = {}) {
   } catch (e) {
     logInfo.error = e && e.message;
     console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
-    return { data: null, resolvedId: classId };
+    return { data: null, resolvedId: normalizedClassId };
   }
 }
 
@@ -273,7 +265,7 @@ export async function execute(interaction) {
   const { data: draftData, resolvedId: resolvedClassId } = loadDraftClass(classId);
   const classKey = resolvedClassId || classId;
   if (!draftData) {
-    const payload = { content: `Draft class ${classKey} not found. Add a JSON under data/draft_classes/madden.` };
+    const payload = { content: `Draft class ${classKey} not found. Add the current Big Board JSON under bundled_data/draft_classes/madden.` };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;

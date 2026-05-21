@@ -10,17 +10,16 @@ import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/l
 import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
-import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
+import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
+import { loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 // Plan gating (LEAGUEbuddy packsEnabled / plan enforcement)
 export const featureKey = 'scouting_draft';
 
 const ROLE_MAP_PATH = getMaddenDataFilePath('madden_role_ids.json');
-const SCOUT_PATH = getMaddenDataFilePath('scout_points.json');
 const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
 const DRAFT_PRIMER_HISTORY_PATH = getMaddenDataFilePath('draft_primer_history.json');
-const DRAFT_CLASS_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const POS_ALIAS = { EDGE: 'REDG', REDGE: 'REDG', LEDGE: 'LEDG' };
 const POSITION_NEEDS = {
     // Offense
@@ -768,14 +767,8 @@ function qbDepthStatus(teamName, league) {
 }
 
 function loadDraftClass(classId) {
-    const dir = DRAFT_CLASS_DIR;
-    if (!fs.existsSync(dir)) return [];
-    const files = fs.readdirSync(dir)
-        .filter(f => f.toLowerCase().includes(String(classId || '').toLowerCase()) && f.toLowerCase().includes('big board') && f.endsWith('.json'))
-        .sort();
-    if (!files.length) return [];
-    const data = JSON.parse(fs.readFileSync(path.join(dir, files[0]), 'utf8'));
-    return Object.values(data).filter(p => p && p.name);
+    const normalizedClassId = normalizeMaddenDraftClassId(classId);
+    return (loadMaddenDraftClassArray(normalizedClassId) || []).filter(p => p && p.name);
 }
 
 function seededRand(teamName, round, max) {

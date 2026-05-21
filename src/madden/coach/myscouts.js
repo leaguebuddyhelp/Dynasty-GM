@@ -7,15 +7,15 @@ import { deriveTeamNeeds } from './mockdraft.js';
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
-import { getDataFilePath, getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
+import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
+import { findMaddenDraftClassFile, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 export const featureKey = 'scouting_draft';
 
 const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
-const DRAFT_DIR = getDataFilePath(path.join('draft_classes', 'madden'));
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
 const POINTS_PER_WEEK = 60;
 const REVEAL_ORDER = ['arch', 'ovr', 'dev'];
@@ -186,7 +186,7 @@ function normalizeSuggestedScoutStore(value) {
   return [];
 }
 
-function getSuggestedScoutCandidates(member, userId, userData, classKey, weekKey, snapshot, draftData, playersByClass, perkEnabled = false) {
+function getSuggestedScoutCandidates(member, userId, guildId, userData, classKey, weekKey, snapshot, draftData, playersByClass, perkEnabled = false) {
   if (!perkEnabled) return [];
   userData.suggestedScout = userData.suggestedScout || {};
   userData.suggestedScout[classKey] = userData.suggestedScout[classKey] || {};
@@ -253,30 +253,15 @@ function getSuggestedScoutCandidates(member, userId, userData, classKey, weekKey
   return picks;
 }
 
-function findClassFile(classId) {
-  if (!fs.existsSync(DRAFT_DIR)) return null;
-  const patterns = [
-    classId.toLowerCase(),
-    classId.replace('_', '').toLowerCase(),
-    classId.replace('_', '').toUpperCase(),
-  ];
-  const files = fs.readdirSync(DRAFT_DIR).filter(f => {
-    const low = f.toLowerCase();
-    return patterns.some(p => low.includes(p)) && low.endsWith('.json');
-  });
-  if (files.length) return path.join(DRAFT_DIR, files[0]);
-  const allJson = fs.readdirSync(DRAFT_DIR).filter(f => f.toLowerCase().endsWith('.json'));
-  return allJson.length ? path.join(DRAFT_DIR, allJson[0]) : null;
-}
-
 function loadDraftClass(classId, context = {}) {
-  const file = findClassFile(classId);
+  const normalizedClassId = normalizeMaddenDraftClassId(classId);
+  const file = findMaddenDraftClassFile(normalizedClassId);
   const logInfo = {
     event: 'draft_class_lookup',
     command: context.command || 'myscouts',
     guildId: context.guildId || null,
     userId: context.userId || null,
-    classId,
+    classId: normalizedClassId,
     resolvedFile: file,
     timestamp: new Date().toISOString(),
   };
@@ -286,7 +271,7 @@ function loadDraftClass(classId, context = {}) {
     return null;
   }
   try {
-    const data = safeReadJSON(file, null);
+    const data = loadMaddenDraftClassRaw(normalizedClassId);
     logInfo.success = true;
     console.log('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][SUCCESS]', JSON.stringify(logInfo));
     return data;
@@ -440,7 +425,7 @@ function buildPagesForUser(userId, guildId, member = null) {
   // Load draft data using new loadDraftClass
   const draftData = loadDraftClass(currentClassId);
   if (!draftData) {
-    return { error: `Draft class ${currentClassId} not found. Add a JSON under data/draft_classes/madden.` };
+    return { error: `Draft class ${currentClassId} not found. Add the current Big Board JSON under bundled_data/draft_classes/madden.` };
   }
 
   let playersByClass = userData.players[currentClassId] || userData.players[currentNorm];
@@ -486,6 +471,7 @@ function buildPagesForUser(userId, guildId, member = null) {
   getSuggestedScoutCandidates(
     member,
     userId,
+    guildId,
     userData,
     resolvedClassKey,
     weekKey,
@@ -543,7 +529,7 @@ function buildPagesForUser(userId, guildId, member = null) {
   classPages.forEach((lines, idx) => {
     const suggestedText = perkState?.perks?.scoutRecommendation
       ? '**Scout Recommendation:** Active in `/draftprimer`. Open that command for the 7-name recommendation board, then come back here to spend scout points.'
-      : '**Scout Recommendation:** Buy it in Franchise Hub, then use `/draftprimer` to unlock the board-aware 7-name scout lane.';
+      : '**Scout Recommendation:** Use `/draftprimer` for board-aware scout context, then come back here to spend scout points.';
     const fullyScouted = entries.filter(([, unlocked]) => Array.isArray(unlocked) && unlocked.length >= REVEAL_ORDER.length).length;
     const bonusLine = isOffseason ? '' : `\n**Weekly Bonus:** +${seasonBonus} (cap ${allowance}/${MAX_WEEKLY_POINTS})`;
     const selectedText = boardUi.activeName ? `\n**Selected:** ${boardUi.activeName}` : '';

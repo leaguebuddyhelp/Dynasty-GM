@@ -16,9 +16,7 @@ function normalize(str = '') {
 }
 
 function currentClassIdForSnapshot(snapshot = {}) {
-    const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-    const calendarYear = seasonInfo?.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear;
-    return getMaddenDraftClassId({ calendarYear });
+    return getMaddenDraftClassId(snapshot);
 }
 
 function normalizeDraftPlayers(draftData) {
