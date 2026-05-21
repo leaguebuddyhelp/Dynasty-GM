@@ -4,6 +4,7 @@ import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 
 const SCOUT_PATH = getMaddenDataFilePath('scout_points.json');
+const SCOUT_STORE_RESET_VERSION = 'madden26-renumbered-cus01-cus02-2026-05-20';
 
 function safeReadJSON(file, fallback) {
   try {
@@ -71,7 +72,9 @@ function migrateLegacyIntoSeason(rootUser = {}, seasonKey) {
 }
 
 export function loadScoutStore() {
-  return safeReadJSON(SCOUT_PATH, {});
+  const store = safeReadJSON(SCOUT_PATH, {});
+  if (store?.__resetVersion === SCOUT_STORE_RESET_VERSION) return store;
+  return { __resetVersion: SCOUT_STORE_RESET_VERSION };
 }
 
 export function saveScoutStore(store) {
