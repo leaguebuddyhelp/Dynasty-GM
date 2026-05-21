@@ -38,7 +38,7 @@ import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
-import { displayMaddenDraftClassId, findMaddenDraftClassFile, getMaddenDraftClassChoices, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { findMaddenDraftClassFile, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -1429,16 +1429,7 @@ function premiumPositionValue(group) {
 
 export const data = new SlashCommandBuilder()
   .setName('mockdraft')
-  .setDescription(coachCommandDescription('mockdraft'))
-  .addStringOption(o =>
-    o.setName('draftclass')
-      .setDescription('Temporary class override for testing')
-      .setRequired(false)
-      .addChoices(
-        { name: 'Auto / current season', value: 'auto' },
-        ...getMaddenDraftClassChoices(),
-      )
-  );
+  .setDescription(coachCommandDescription('mockdraft'));
 
 export const deferOnDispatch = { flags: 64 };
 
@@ -1475,13 +1466,8 @@ export async function execute(interaction) {
   const needProfiles = deriveTeamNeedsDetailed(league);
   const needs = Object.fromEntries(Object.entries(needProfiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
   // Use robust draft class file lookup
-  const selectedClass = interaction.options.getString('draftclass');
-  const manualClassOverride = selectedClass && selectedClass !== 'auto';
-  const classId = manualClassOverride ? normalizeMaddenDraftClassId(selectedClass) : getMaddenDraftClassId(league);
-  const displayClassId = displayMaddenDraftClassId(classId);
-  const classLock = manualClassOverride
-    ? `Manual class override -> ${displayClassId} • Auto lock: ${formatMaddenDraftClassLock(league)}`
-    : formatMaddenDraftClassLock(league);
+  const classId = getMaddenDraftClassId(league);
+  const classLock = formatMaddenDraftClassLock(league);
   const prospects = loadDraftClass(classId) || [];
   if (!prospects.length) {
     const payload = { content: `The draft board is not loaded yet. (classId: ${classId})` };
@@ -1701,7 +1687,7 @@ export async function execute(interaction) {
 
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`madden_mockdraft_live|create|${manualClassOverride ? classId : 'auto'}`)
+      .setCustomId('madden_mockdraft_live|create|auto')
       .setLabel('Start Live Mock Draft')
       .setStyle(ButtonStyle.Primary),
   );
