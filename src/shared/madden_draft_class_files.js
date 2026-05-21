@@ -28,6 +28,28 @@ function draftClassDirs() {
   ]);
 }
 
+function jsonFilesInDir(dir) {
+  const out = [];
+  const walk = (current) => {
+    let entries = [];
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.json')) {
+        out.push(fullPath);
+      }
+    }
+  };
+  walk(dir);
+  return out.sort((a, b) => a.localeCompare(b));
+}
+
 function classIdFromFile(fileName = '') {
   const match = String(fileName || '').match(/CUS[_\s-]?(\d{1,2})/i);
   if (!match) return null;
@@ -43,21 +65,16 @@ function fileKindPattern(kind = 'bigboard') {
 export function listMaddenDraftClassFiles(kind = 'bigboard') {
   const byClass = new Map();
   for (const dir of draftClassDirs()) {
-    let files = [];
-    try {
-      if (!fs.existsSync(dir)) continue;
-      files = fs.readdirSync(dir);
-    } catch {
-      continue;
-    }
-    for (const file of files) {
-      if (!fileKindPattern(kind).test(file)) continue;
-      const classId = classIdFromFile(file);
+    if (!fs.existsSync(dir)) continue;
+    for (const filePath of jsonFilesInDir(dir)) {
+      const fileName = path.basename(filePath);
+      if (!fileKindPattern(kind).test(fileName)) continue;
+      const classId = classIdFromFile(fileName);
       if (!classId || byClass.has(classId)) continue;
       byClass.set(classId, {
         classId,
         display: displayMaddenDraftClassId(classId),
-        file: path.join(dir, file),
+        file: filePath,
       });
     }
   }
