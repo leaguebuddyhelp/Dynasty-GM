@@ -8,7 +8,7 @@ import { buildLiveDraftContext, getSeasonPhaseContext } from './draft_live_data.
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
-import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
+import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
 import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
@@ -793,7 +793,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
     const teamName = getCoachTeam(interaction.member, interaction.guildId, interaction.user.id);
     if (!teamName) {
-        await interaction.reply({ content: 'You are not mapped to a Madden team. Contact a commissioner.', flags: 64 });
+        await interaction.reply({ content: coachErrorBlurb('noTeam', 'You are not mapped to a Madden team. Contact a commissioner.', { userId: interaction.user.id }), flags: 64 });
         return;
     }
     // Avoid Discord "Unknown interaction" by deferring immediately (ephemeral via flags)
@@ -809,7 +809,7 @@ export async function execute(interaction) {
     try {
         leagueId = requireLeagueIdForGuild(interaction.guildId);
     } catch (error) {
-        const message = error?.message || 'No league is mapped to this server yet. Run `/setup` and press Open Setup Dashboard.';
+        const message = error?.message || coachErrorBlurb('noLeague', 'No league is mapped to this server yet. Run `/setup` and press Open Setup Dashboard.', { guildId: interaction.guildId });
         if (interaction.deferred || interaction.replied) await interaction.editReply({ content: message, embeds: [], components: [] });
         else await interaction.reply({ content: message, flags: 64 });
         return;

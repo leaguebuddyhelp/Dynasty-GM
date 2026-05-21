@@ -7,7 +7,7 @@ import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { loadRoleMapForGuild } from '../staff/staffUtils.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
-import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
+import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getLeagueBuddyBrandAsset } from '../../shared/madden_assets.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
@@ -236,7 +236,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    const payload = { content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' };
+    const payload = { content: coachErrorBlurb('noLeague', 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.', { guildId: interaction.guildId }) };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;
@@ -254,7 +254,7 @@ export async function execute(interaction) {
   const isOffseason = offSeasonStage > 0 || seasonWeekType === 3 || seasonWeekType === 8 || seasonTitle.includes('offseason') || draftInactive;
   const scoutingOpen = (isRegularSeason && currentWeek >= 1) || isPostseason || isOffseason;
   if (!scoutingOpen) {
-    const payload = { content: 'Scouting opens after the Week 1 regular-season update and stays open through playoffs and offseason.' };
+    const payload = { content: coachErrorBlurb('scoutingClosed', 'Scouting opens after the Week 1 regular-season update and stays open through playoffs and offseason.', { userId: interaction.user.id }) };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;
@@ -265,7 +265,7 @@ export async function execute(interaction) {
   const { data: draftData, resolvedId: resolvedClassId } = loadDraftClass(classId);
   const classKey = resolvedClassId || classId;
   if (!draftData) {
-    const payload = { content: `Draft class ${classKey} not found. Add the current Big Board JSON under bundled_data/draft_classes/madden.` };
+    const payload = { content: `${coachErrorBlurb('draftClassMissing', 'Draft class file missing.', { guildId: interaction.guildId })} (classId: ${classKey})` };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;
@@ -276,7 +276,7 @@ export async function execute(interaction) {
   const normPos = normalizePos(position);
   const players = Object.values(draftData).filter(p => normalizePos(p.position) === normPos && (!nameFilter || p.name?.toLowerCase().includes(nameFilter)));
   if (!players.length) {
-    const payload = { content: `No players found for ${position}${nameFilter ? ` matching "${nameFilter}"` : ''}.` };
+    const payload = { content: `${coachErrorBlurb('noPlayers', 'No players found for that filter.', { userId: interaction.user.id })}${position ? ` (${position}${nameFilter ? ` / ${nameFilter}` : ''})` : ''}` };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;
@@ -316,7 +316,7 @@ export async function execute(interaction) {
   const unlocked = userData.players[classKey]?.[player.name] || [];
   const nextCat = nextCategory(unlocked);
   if (!nextCat) {
-    const payload = { content: 'All info already unlocked for this player.' };
+    const payload = { content: coachErrorBlurb('alreadyScouted', 'All info already unlocked for this player.', { userId: interaction.user.id }) };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;
@@ -327,7 +327,7 @@ export async function execute(interaction) {
     ? (isFocusPosition ? FOCUS_PACK_FOCUS_COST : FOCUS_PACK_BASE_COST)
     : COST_PER_REVEAL;
   if (pointsLeft < cost) {
-    const payload = { content: `Not enough points. You have ${pointsLeft} left this week and this scout costs ${cost}.` };
+    const payload = { content: `${coachErrorBlurb('noScoutPoints', 'Not enough scout points.', { userId: interaction.user.id })} You have ${pointsLeft}; this costs ${cost}.` };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;

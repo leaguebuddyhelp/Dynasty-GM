@@ -17,7 +17,7 @@ export async function execute(interaction) {
   const classId = getMaddenDraftClassId(snapshot);
   const recruits = safeLoadRecruiting(snapshot, classId);
   if (!recruits || !recruits.length) {
-    await interaction.reply({ content: coachErrorBlurb('noRecruiting', 'No recruiting data found.'), ephemeral: true });
+    await interaction.reply({ content: coachErrorBlurb('noRecruiting', 'No recruiting data found.', { guildId: interaction.guildId }), ephemeral: true });
     return;
   }
 

@@ -6,7 +6,7 @@ import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/mad
 import { deriveTeamNeeds } from './mockdraft.js';
 import { loadScoutStore, saveScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/league_recognition.js';
-import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
+import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
@@ -443,7 +443,7 @@ function buildPagesForUser(userId, guildId, member = null) {
   userData.players[currentNorm] = userData.players[currentNorm] || userData.players[resolvedClassKey] || {};
   saveScoutData(scoutData);
   if (!playersByClass || !Object.keys(playersByClass).length) {
-    return { error: 'You have not scouted any players yet for the current class.' };
+    return { error: coachErrorBlurb('noScouts', 'You have not scouted any players yet for the current class.', { userId }) };
   }
 
   // Build/ensure ordering list for this class
@@ -513,7 +513,7 @@ function buildPagesForUser(userId, guildId, member = null) {
     };
   }).filter(Boolean);
 
-  if (!items.length) return { error: 'You have not scouted any players yet for the current class.' };
+  if (!items.length) return { error: coachErrorBlurb('noScouts', 'You have not scouted any players yet for the current class.', { userId }) };
 
   // Chunk by count (10 per page) to keep navigation consistent
   const PAGE_SIZE = 32;
@@ -544,7 +544,7 @@ function buildPagesForUser(userId, guildId, member = null) {
     });
   });
 
-  if (!pages.length) return { error: 'You have not scouted any players yet.' };
+  if (!pages.length) return { error: coachErrorBlurb('noScouts', 'You have not scouted any players yet.', { userId }) };
   scoutData[userId] = userData;
   saveScoutData(scoutData);
 

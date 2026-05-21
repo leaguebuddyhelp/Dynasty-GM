@@ -1470,7 +1470,7 @@ export async function execute(interaction) {
   const classLock = formatMaddenDraftClassLock(league);
   const prospects = loadDraftClass(classId) || [];
   if (!prospects.length) {
-    const payload = { content: `The draft board is not loaded yet. (classId: ${classId})` };
+    const payload = { content: `${coachErrorBlurb('draftBoardMissing', 'The draft board is not loaded yet.', { guildId: interaction.guildId })} (classId: ${classId})` };
     await interaction.editReply(payload);
     return;
   }

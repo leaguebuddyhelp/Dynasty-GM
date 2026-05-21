@@ -41,7 +41,7 @@ export async function execute(interaction) {
   } catch (err) {
     console.error('[madden-bigboard] failed:', err);
     try {
-      await interaction.editReply({ content: 'Failed to load big board.' });
+      await interaction.editReply({ content: coachErrorBlurb('bigBoardFailed', 'Failed to load big board.', { guildId: interaction.guildId }) });
     } catch (_) { }
   }
 }
