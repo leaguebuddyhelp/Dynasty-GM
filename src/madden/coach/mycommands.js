@@ -67,6 +67,7 @@ const staffSections = [
   ]],
   ["Staff Ops", [
     ["/activitycheck", "Post an activity check."],
+    ["/points", "Award Activity, Impact, or Legacy points."],
     ["/create-threads", "Create game threads."],
     ["/delete-threads", "Delete generated game threads."],
     ["/weeklyupdate", "Post the weekly league update."],

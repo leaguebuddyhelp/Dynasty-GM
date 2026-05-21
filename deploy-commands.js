@@ -44,6 +44,7 @@ const BETA_MADDEN_COMMANDS = new Set([
   'promo',
   'availableteams',
   'activitycheck',
+  'points',
   'create-threads',
   'delete-threads',
   'weeklyupdate',
