@@ -20,11 +20,14 @@ export function displayMaddenDraftClassId(value = '') {
   return String(normalized || '').replace('_', '').toUpperCase();
 }
 
-function draftClassDirs() {
+function bundledDraftClassDir() {
+  return path.join(process.cwd(), 'bundled_data', 'draft_classes', 'madden');
+}
+
+function dataDraftClassDirs() {
   return unique([
     getDataFilePath(path.join('draft_classes', 'madden')),
     path.join(process.cwd(), 'data', 'draft_classes', 'madden'),
-    path.join(process.cwd(), 'bundled_data', 'draft_classes', 'madden'),
   ]);
 }
 
@@ -64,7 +67,13 @@ function fileKindPattern(kind = 'bigboard') {
 
 export function listMaddenDraftClassFiles(kind = 'bigboard') {
   const byClass = new Map();
-  for (const dir of draftClassDirs()) {
+  const bundledDir = bundledDraftClassDir();
+  const bundledFiles = fs.existsSync(bundledDir)
+    ? jsonFilesInDir(bundledDir).filter((filePath) => fileKindPattern(kind).test(path.basename(filePath)))
+    : [];
+  const dirs = bundledFiles.length ? [bundledDir] : dataDraftClassDirs();
+
+  for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue;
     for (const filePath of jsonFilesInDir(dir)) {
       const fileName = path.basename(filePath);
