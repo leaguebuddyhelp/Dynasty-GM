@@ -10,6 +10,7 @@ import { getRecognitionPerkState, inferRecognitionContext } from '../../shared/l
 import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from './scout_store.js';
 import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
 import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js';
+import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 import { loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
@@ -209,8 +210,11 @@ function getMetricOvr(p) {
     return p.playerBestOvr ?? p.teamSchemeOvr ?? p.overallRating ?? p.playerSchemeOvr ?? 0;
 }
 
-function getCoachTeam(member) {
-    // Determine a coach's team from their Discord roles using the Madden role map.
+function getCoachTeam(member, guildId = null, userId = null) {
+    const assignedTeam = getUserTeam(guildId || member?.guild?.id, userId || member?.id);
+    if (assignedTeam) return assignedTeam;
+
+    // Fallback for older servers that only have coach roles mapped.
     if (!member) return null;
     let roleMap = {};
     try {
@@ -787,7 +791,7 @@ export const data = new SlashCommandBuilder()
     .setDMPermission(false);
 
 export async function execute(interaction) {
-    const teamName = getCoachTeam(interaction.member);
+    const teamName = getCoachTeam(interaction.member, interaction.guildId, interaction.user.id);
     if (!teamName) {
         await interaction.reply({ content: 'You are not mapped to a Madden team. Contact a commissioner.', flags: 64 });
         return;
