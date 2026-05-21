@@ -137,10 +137,11 @@ function buildAvpPreview({ avp, earliestPickNum, limit = 5, needs = [] }) {
 }
 
 function hasStaffRole(member, roleMap) {
-  return STAFF_ROLES.some(r => {
-    const id = roleMap[r];
-    return id && member.roles.cache.has(id);
-  });
+  const roleIds = STAFF_ROLES.map((name) => roleMap?.[name]).filter(Boolean);
+  if (roleIds.length && member?.roles?.cache) {
+    return roleIds.some((id) => member.roles.cache.has(String(id)));
+  }
+  return member?.roles?.cache?.some((role) => STAFF_ROLES.includes(role.name)) ?? false;
 }
 
 function formatTeamName(team) {
@@ -240,15 +241,8 @@ async function execute(interaction) {
     const teams = snapshot?.teams?.leagueTeamInfoList || [];
     const standings = snapshot?.standings?.teamStandingInfoList || [];
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-    const isOffseason = (seasonInfo.seasonWeekType === 8) ||
-      (seasonInfo.seasonTitle || '').toLowerCase().includes('offseason') ||
-      (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && seasonInfo.seasonWeekType !== 1);
-    const debug = process.env.MOCK_DEBUG === 'true';
-    const pickMap = buildPickMap(snapshot);
-    const recordMap = buildRecordMap(snapshot);
-    const avp = loadAvp();
-    const needsByTeam = deriveTeamNeeds(snapshot);
-    const availability = await buildMaddenTeamAvailability({
+        const recordMap = buildRecordMap(snapshot);
+        const availability = await buildMaddenTeamAvailability({
       guild: interaction.guild,
       guildId: interaction.guildId,
       teams,
@@ -263,44 +257,10 @@ async function execute(interaction) {
     for (const t of teams) {
       const availabilityRow = availabilityByTeam.get(normalizeKey(formatTeamName(t)));
       if (availabilityRow?.assigned) continue;
-      if (isOffseason) {
-        const nameFormatted = formatTeamName(t);
-        const prefix = teamEmoji(t);
-        const keys = [
-          normalizeKey(nameFormatted),
-          normalizeKey((nameFormatted.split(/\s+/).pop()) || ''),
-          normalizeKey(t.nickName || ''),
-          normalizeKey((t.nickName || '').split(/\s+/).pop() || ''),
-        ].filter(Boolean);
-        const seen = new Set();
-        let merged = [];
-        for (const k of keys) {
-          if (seen.has(k)) continue;
-          seen.add(k);
-          const arr = pickMap.get(k);
-          if (arr && arr.length) merged = merged.concat(arr);
-        }
-        if (debug) console.log('[availableteams cmd] team', nameFormatted, 'keys', keys, 'picks', merged);
-        const deduped = uniqPicks(merged).sort((a, b) => a.num - b.num);
-        const pickText = deduped && deduped.length
-          ? deduped.map(p => p.via ? `${p.num} (via ${p.via})` : `${p.num}`).join(', ')
-          : 'none';
-        const earliestPickNum = deduped?.length ? Math.min(...deduped.map((p) => Number(p.num || 999)).filter((n) => Number.isFinite(n))) : null;
-        const needsProfile = needsByTeam?.[normalizeKey(nameFormatted)] || needsByTeam?.[normalizeKey((nameFormatted.split(/\s+/).pop()) || '')] || null;
-        const needs = Array.isArray(needsProfile) ? needsProfile : [];
-        const needsText = needs.length ? `Needs: ${needs.slice(0, 3).join(', ')}` : null;
-        const avpPreview = earliestPickNum ? buildAvpPreview({ avp, earliestPickNum, needs }) : null;
-        const extra = [
-          needsText,
-          avpPreview ? `Targets: ${avpPreview}` : null,
-        ].filter(Boolean).join(' | ');
-        lines.push(`${prefix}${nameFormatted} — Picks: ${pickText}${extra ? `\n↳ ${extra}` : ''}`);
-      } else {
-        const prefix = teamEmoji(t);
-        const rec = recordMap.get(Number(t?.teamId));
-        const recText = rec ? ` (${formatRecord(rec)})` : '';
-        lines.push(`${prefix}${formatTeamName(t)}${recText} — Open`);
-      }
+      const prefix = teamEmoji(t);
+      const rec = recordMap.get(Number(t?.teamId));
+      const recText = rec ? formatRecord(rec) : '0-0';
+      lines.push(`${prefix}${formatTeamName(t)} - ${recText}`);
     }
 
     const embed = new EmbedBuilder()
