@@ -55,18 +55,18 @@ const buildRecruitingEmbed = (pageIndex, recruits, options = {}) => {
   const embed = new EmbedBuilder()
     .setTitle(`Top 50 ESPN High School Recruits${titleSuffix}`)
     .setDescription(lines.join('\n\n') || 'No recruiting data found.')
-    .setFooter({ text: options.manualClassOverride ? `Page ${safeIndex + 1}/${pages.length} • Manual class override -> ${classLabel}` : `Page ${safeIndex + 1}/${pages.length}` })
+    .setFooter({ text: `Page ${safeIndex + 1}/${pages.length}` })
     .setColor(0x8a2be2);
 
   const pageNumber = safeIndex + 1;
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`madden_recruiting_page_${pageNumber - 1}_${classId || 'auto'}`)
+      .setCustomId(`madden_recruiting_page_${pageNumber - 1}`)
       .setStyle(ButtonStyle.Secondary)
       .setLabel('Prev')
       .setDisabled(safeIndex <= 0),
     new ButtonBuilder()
-      .setCustomId(`madden_recruiting_page_${pageNumber + 1}_${classId || 'auto'}`)
+      .setCustomId(`madden_recruiting_page_${pageNumber + 1}`)
       .setStyle(ButtonStyle.Primary)
       .setLabel('Next')
       .setDisabled(safeIndex >= pages.length - 1)
