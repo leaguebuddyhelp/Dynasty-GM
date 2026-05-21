@@ -63,6 +63,7 @@ const staffSections = [
     ["/member assign", "Assign a coach without the DM."],
     ["/member remove", "Remove coach assignment and access."],
     ["/promo", "Post the promo and open-team list."],
+    ["/availableteams", "Quickly list unclaimed teams."],
   ]],
   ["Staff Ops", [
     ["/activitycheck", "Post an activity check."],
