@@ -16,6 +16,14 @@ export const featureKey = 'trades_basic';
 
 const BLOCK_FILE = getMaddenDataFilePath('trade_block.json');
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
+export const MADDEN_ROSTER_POSITIONS = [
+  'QB', 'HB', 'FB', 'WR', 'TE',
+  'LT', 'LG', 'C', 'RG', 'RT', 'LS',
+  'LEDGE', 'REDGE', 'DT', 'SAM', 'MIKE', 'WILL',
+  'CB', 'FS', 'SS',
+  'K', 'P',
+];
+
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
 }
@@ -65,7 +73,7 @@ function normalizeTeamKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function normalizePosition(position) {
+export function normalizePosition(position) {
   const rawValue = String(position ?? '').trim();
   const raw = rawValue.toUpperCase().replace(/[^A-Z0-9]/g, '');
   const aliases = {
@@ -78,7 +86,7 @@ function normalizePosition(position) {
   return aliases[raw] || raw;
 }
 
-function playerPosition(player) {
+export function playerPosition(player) {
   return normalizePosition(
     player?.position ||
     player?.pos ||
@@ -93,7 +101,7 @@ function playerPosition(player) {
   );
 }
 
-function playerMatchesPosition(player, positionFilter) {
+export function playerMatchesPosition(player, positionFilter) {
   if (!positionFilter) return true;
   const selected = normalizePosition(positionFilter);
   const actual = playerPosition(player);
@@ -336,28 +344,7 @@ const data = new SlashCommandBuilder()
       .setRequired(true)
       .addChoices(
         { name: 'All positions', value: 'ALL' },
-        { name: 'QB', value: 'QB' },
-        { name: 'HB', value: 'HB' },
-        { name: 'FB', value: 'FB' },
-        { name: 'WR', value: 'WR' },
-        { name: 'TE', value: 'TE' },
-        { name: 'LT', value: 'LT' },
-        { name: 'LG', value: 'LG' },
-        { name: 'C', value: 'C' },
-        { name: 'RG', value: 'RG' },
-        { name: 'RT', value: 'RT' },
-        { name: 'LS', value: 'LS' },
-        { name: 'LEDGE', value: 'LEDGE' },
-        { name: 'REDGE', value: 'REDGE' },
-        { name: 'DT', value: 'DT' },
-        { name: 'SAM', value: 'SAM' },
-        { name: 'MIKE', value: 'MIKE' },
-        { name: 'WILL', value: 'WILL' },
-        { name: 'CB', value: 'CB' },
-        { name: 'FS', value: 'FS' },
-        { name: 'SS', value: 'SS' },
-        { name: 'K', value: 'K' },
-        { name: 'P', value: 'P' }
+        ...MADDEN_ROSTER_POSITIONS.map((position) => ({ name: position, value: position }))
       )
   )
   .addStringOption(o =>
