@@ -66,39 +66,14 @@ function normalizeTeamKey(name) {
 }
 
 function normalizePosition(position) {
-  const positionIdMap = {
-    0: 'QB',
-    1: 'HB',
-    2: 'FB',
-    3: 'WR',
-    4: 'TE',
-    5: 'LT',
-    6: 'LG',
-    7: 'C',
-    8: 'RG',
-    9: 'RT',
-    10: 'LE',
-    11: 'RE',
-    12: 'DT',
-    13: 'LOLB',
-    14: 'MLB',
-    15: 'ROLB',
-    16: 'CB',
-    17: 'FS',
-    18: 'SS',
-    19: 'K',
-    20: 'P',
-  };
   const rawValue = String(position ?? '').trim();
-  if (/^\d+$/.test(rawValue) && positionIdMap[Number(rawValue)]) return positionIdMap[Number(rawValue)];
   const raw = rawValue.toUpperCase().replace(/[^A-Z0-9]/g, '');
   const aliases = {
     RB: 'HB',
-    EDG: 'EDGE',
-    LEDGE: 'LEDG',
-    REDGE: 'REDG',
-    OLB: 'LB',
-    ILB: 'LB',
+    EDG: 'REDGE',
+    EDGE: 'REDGE',
+    LEDG: 'LEDGE',
+    REDG: 'REDGE',
   };
   return aliases[raw] || raw;
 }
@@ -125,9 +100,6 @@ function playerMatchesPosition(player, positionFilter) {
   if (!actual) return false;
   if (selected === actual) return true;
   if (selected === 'HB') return actual === 'RB';
-  if (selected === 'LEDG') return actual === 'LE' || actual === 'LDE' || actual === 'LEDGE';
-  if (selected === 'REDG') return actual === 'RE' || actual === 'RDE' || actual === 'REDGE';
-  if (['SAM', 'MIKE', 'WILL'].includes(selected)) return ['LOLB', 'ROLB', 'MLB', 'LB', selected].includes(actual);
   return false;
 }
 
@@ -374,8 +346,9 @@ const data = new SlashCommandBuilder()
         { name: 'C', value: 'C' },
         { name: 'RG', value: 'RG' },
         { name: 'RT', value: 'RT' },
-        { name: 'LEDG', value: 'LEDG' },
-        { name: 'REDG', value: 'REDG' },
+        { name: 'LS', value: 'LS' },
+        { name: 'LEDGE', value: 'LEDGE' },
+        { name: 'REDGE', value: 'REDGE' },
         { name: 'DT', value: 'DT' },
         { name: 'SAM', value: 'SAM' },
         { name: 'MIKE', value: 'MIKE' },
@@ -447,6 +420,11 @@ async function autocomplete(interaction) {
     clearTimeout(timeout);
     await interaction.respond([]);
   } catch (e) {
+    console.warn('[tradeblock][autocomplete] failed', {
+      guildId: interaction.guildId,
+      userId: interaction.user?.id,
+      message: e?.message || String(e),
+    });
     if (!responded) {
       responded = true;
       clearTimeout(timeout);
