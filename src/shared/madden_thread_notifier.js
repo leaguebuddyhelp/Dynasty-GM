@@ -12,7 +12,9 @@ const STATE_FILE = getMaddenDataFilePath('thread_reminders.json');
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 const TWELVE_HOURS = 12 * 60 * 60 * 1000;
 const SIX_HOURS = 6 * 60 * 60 * 1000;
-const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+const MID_SIM_CHECK_HOURS = 12;
+const MID_SIM_CHECK_MS = MID_SIM_CHECK_HOURS * 60 * 60 * 1000;
+const STALE_METADATA_RETIRE_MS = 24 * 60 * 60 * 1000;
 const ONE_HOUR = 60 * 60 * 1000;
 
 function normalizeName(value = '') {
@@ -407,7 +409,7 @@ function buildTailoredReminder(threadInfo, participation, now = Date.now()) {
       return {
         key: 'cpu_outcome_needed',
         mention: buildCoachMention(threadInfo),
-        content: `${buildCoachMention(threadInfo)} ${cpuContext} If it was a CPU game, log it with the CPU button. If it was played, make sure the correct outcome button is used before deadline.`,
+        content: `${buildCoachMention(threadInfo)} ${cpuContext} If it was a CPU game, log it with the CPU button. If it was played, make sure the correct outcome button is used before the 24-hour sim deadline.`,
       };
     }
     return null;
@@ -424,7 +426,7 @@ function buildTailoredReminder(threadInfo, participation, now = Date.now()) {
     return {
       key: 'both_silent',
       mention: buildCoachMention(threadInfo),
-      content: `${buildCoachMention(threadInfo)} No movement yet in this thread. ${awayTeam} and ${homeTeam} both need to get on the board, lock a time, and keep the thread clean before the deadline gets tight.`,
+      content: `${buildCoachMention(threadInfo)} No movement yet in this thread. ${awayTeam} and ${homeTeam} both need to get on the board, lock a time, and keep the thread clean before the 24-hour sim deadline gets tight.`,
     };
   }
 
@@ -439,7 +441,7 @@ function buildTailoredReminder(threadInfo, participation, now = Date.now()) {
         : participation.conversationState === 'waiting_on_reply'
           ? ` The thread already reads like ${activeTeam} are waiting on an answer.`
           : participation.conversationState === 'scheduled_next_day'
-            ? ` The thread reads like tomorrow is already the working plan, so the main thing now is making sure ${silentTeam} confirms cleanly and the game gets closed before sim.`
+            ? ` The thread reads like a later time is already the working plan, so the main thing now is making sure ${silentTeam} confirms cleanly and the game gets closed before the 24-hour sim.`
             : participation.conversationState === 'one_side_carrying'
               ? ` The thread reads like ${activeTeam} are doing the scheduling work and still need a clear answer back.`
               : '';
@@ -457,7 +459,7 @@ function buildTailoredReminder(threadInfo, participation, now = Date.now()) {
         : participation.conversationState === 'locked_time'
           ? ' The thread reads like both sides already have a real time on the table, so this is just a reminder to finish it and close the thread cleanly.'
           : participation.conversationState === 'scheduled_next_day'
-            ? ' The thread reads like both sides already pushed this to tomorrow, so this is just a gentle nudge to get it played and closed before sim.'
+            ? ' The thread reads like both sides already pushed this to a later time, so this is just a gentle nudge to get it played and closed before the 24-hour sim.'
             : participation.conversationState === 'time_proposed'
               ? ' A time looks like it has already been proposed, so the next step is either play it or lock the reschedule cleanly.'
               : participation.conversationState === 'reschedule'
@@ -478,7 +480,7 @@ function buildTailoredReminder(threadInfo, participation, now = Date.now()) {
     return {
       key: 'scheduled_next_day_followthrough',
       mention: buildCoachMention(threadInfo),
-      content: `${buildCoachMention(threadInfo)} This thread reads like both sides already have tomorrow lined up. Make sure the game gets played before sim, keep any time updates in here, and press the right outcome button as soon as it is done.`,
+      content: `${buildCoachMention(threadInfo)} This thread reads like both sides already have a time lined up. Make sure the game gets played before the 24-hour sim, keep any time updates in here, and press the right outcome button as soon as it is done.`,
     };
   }
 
@@ -759,7 +761,7 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
           (trackedInfo.awayCoachStatus === 'coach' && (!Array.isArray(trackedInfo.awayRoleIds) || trackedInfo.awayRoleIds.length === 0)) ||
           (trackedInfo.homeCoachStatus === 'coach' && (!Array.isArray(trackedInfo.homeRoleIds) || trackedInfo.homeRoleIds.length === 0))
         ));
-      if (missingMatchupMetadata && now - Number(trackedInfo.created || info.created || now) >= TWENTY_FOUR_HOURS) {
+      if (missingMatchupMetadata && now - Number(trackedInfo.created || info.created || now) >= STALE_METADATA_RETIRE_MS) {
         retirePendingThread(threadId, 'ignored', 'Missing matchup metadata');
         logNotifierDecision({ enabled: debugDecisions, threadId, info: trackedInfo, decision: 'skip', reason: 'missing_matchup_metadata' });
         continue;
@@ -807,7 +809,7 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
         } catch { }
         logNotifierDecision({ enabled: debugDecisions, threadId, info: trackedInfo, participation, decision: 'sent', reason: 'game_complete_prompt' });
       }
-      if (!trackedInfo.warnedTwentyFourAt && sinceCreated >= TWENTY_FOUR_HOURS) {
+      if (!trackedInfo.warnedTwentyFourAt && sinceCreated >= MID_SIM_CHECK_MS) {
         const strikesEnabled = strikeSystemEnabled(thread.guildId);
         const shouldUseStrikePicture =
           strikesEnabled &&
@@ -820,11 +822,11 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
           await thread.send({
             content: coachMention || '',
             embeds: [{
-              title: '24-Hour Game Check',
+              title: `${MID_SIM_CHECK_HOURS}-Hour Game Check`,
               description: [
-                'This matchup is still unresolved after 24 hours.',
+                `This matchup is still unresolved at the ${MID_SIM_CHECK_HOURS}-hour check-in for a 24-hour sim.`,
                 '',
-                'If this is a CPU game, log it with the CPU button. If it was played, use the correct outcome button so the thread is closed before deadline.',
+                'If this is a CPU game, log it with the CPU button. If it was played, use the correct outcome button so the thread is closed before the sim deadline.',
               ].join('\n'),
               color: 0x5865F2,
               timestamp: new Date().toISOString(),
@@ -853,7 +855,7 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
           await thread.send({
             content: coachMention || '',
             embeds: [{
-              title: '24-Hour Strike Picture',
+              title: `${MID_SIM_CHECK_HOURS}-Hour Strike Picture`,
               description: [
                 silentSide,
                 '',
@@ -861,7 +863,7 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
                 '',
                 projected.lines.join('\n') || 'No determined strikes right now.',
                 '',
-                'This is the current strike picture. The thread still needs communication and a recorded outcome before deadline.',
+                'This is the current strike picture. The thread still needs communication and a recorded outcome before the 24-hour sim deadline.',
               ].join('\n'),
               color: 0xFEE75C,
               fields: [
@@ -892,22 +894,22 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
                 : (trackedInfo.homeRoleIds || []);
           runReminderSideEffects([
             () => sendCoachReceipt(thread.guild, silentRoleIds, {
-              title: '24-Hour Strike Picture',
-              description: `${trackedInfo.awayTeam || 'Away'} vs ${trackedInfo.homeTeam || 'Home'} has reached the 24-hour mark with no outcome recorded.`,
+              title: `${MID_SIM_CHECK_HOURS}-Hour Strike Picture`,
+              description: `${trackedInfo.awayTeam || 'Away'} vs ${trackedInfo.homeTeam || 'Home'} has reached the ${MID_SIM_CHECK_HOURS}-hour check-in with no outcome recorded.`,
               fields: [
                 { name: 'Current Picture', value: projected.lines.join('\n') || 'No determined strikes right now.' },
-                { name: 'What This Means', value: 'You need to communicate in the thread and make sure one outcome button is used before deadline.' },
+                { name: 'What This Means', value: 'You need to communicate in the thread and make sure one outcome button is used before the 24-hour sim deadline.' },
                 { name: 'Thread', value: `<#${threadId}>` },
               ],
             }),
-            () => postLeagueStaffOpsSnapshot(client, thread.guildId, '24-hour participation risk'),
+            () => postLeagueStaffOpsSnapshot(client, thread.guildId, `${MID_SIM_CHECK_HOURS}-hour participation risk`),
           ]);
           logNotifierDecision({ enabled: debugDecisions, threadId, info: trackedInfo, participation, decision: 'sent', reason: '24h_strike_picture' });
         } else {
           const coachMention = buildCoachMention(trackedInfo);
           const contextLine =
             participation.conversationState === 'scheduled_next_day'
-              ? ' The thread reads like both sides already have tomorrow in mind, so this is just a gentle check to make sure it gets done before sim.'
+              ? ' The thread reads like both sides already have a later time in mind, so this is just a gentle check to make sure it gets done before the 24-hour sim.'
               : participation.conversationState === 'reschedule'
                 ? ' The thread reads like a reschedule is in progress, so make sure the final time stays clear in the thread.'
                 : participation.conversationState === 'game_complete_signal'
@@ -916,11 +918,11 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
           await thread.send({
             content: coachMention || '',
             embeds: [{
-              title: '24-Hour Game Check',
+              title: `${MID_SIM_CHECK_HOURS}-Hour Game Check`,
               description: [
-                'This thread has communication in it, but the game is still unresolved after 24 hours.',
+                `This thread has communication in it, but the game is still unresolved at the ${MID_SIM_CHECK_HOURS}-hour check-in.`,
                 '',
-                `If the game is already done, press the correct outcome button. If it is not, lock the time in here and keep the thread moving before the deadline gets tight.${contextLine}`,
+                `If the game is already done, press the correct outcome button. If it is not, lock the time in here and keep the thread moving before the 24-hour sim deadline gets tight.${contextLine}`,
               ].join('\n'),
               color: 0x5865F2,
               fields: [

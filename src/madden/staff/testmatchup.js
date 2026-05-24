@@ -8,6 +8,7 @@ import { getFullTeamName } from '../../shared/madden_team_names.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const COMMISH_ROLE_IDS = ['1460399404241522759', '1460399405436768431'];
+const GAME_THREAD_DEADLINE_HOURS = 24;
 
 function loadRoleMap() {
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
@@ -86,7 +87,7 @@ export async function execute(interaction) {
   }
   const mentionText = [...mentions, ...COMMISH_ROLE_IDS.map(id => `<@&${id}>`)].filter(Boolean).join(' ') || null;
 
-  const deadline = Math.floor((Date.now() + 48 * 3600 * 1000) / 1000);
+  const deadline = Math.floor((Date.now() + GAME_THREAD_DEADLINE_HOURS * 3600 * 1000) / 1000);
   const embed = {
     title: brandTitle('LEAGUEbuddy Matchup (TEST)'),
     description: [
@@ -96,7 +97,7 @@ export async function execute(interaction) {
       `🏳️ Opponent Win (Forfeit) — press the button with your opponent’s team name when they were ready and your side couldn’t play, or if you need to forfeit early; your side gets 1 strike.`,
       `🤖 CPU — for CPU matchups; no strikes, just stops reminders.`,
       `🚫 Apply Strike — staff-only; applies a strike to the chosen team when the thread evidence supports it.`,
-      `Deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
+      `${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
     ].join('\n'),
     color: 0x00b0f4,
     timestamp: new Date().toISOString(),

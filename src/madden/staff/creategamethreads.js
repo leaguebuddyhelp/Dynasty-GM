@@ -15,6 +15,7 @@ import { hasStaffRole as hasGuildStaffRole, loadRoleMapForGuild } from './staffU
 export const featureKey = 'threads';
 const PLAYOFF_RESULTS_FILE = path.join(process.cwd(), 'data', 'madden', 'playoff_results.json');
 const STAFF_ROLE_NAMES = ['LB Commish', 'LB Co-Commish'];
+const GAME_THREAD_DEADLINE_HOURS = 24;
 const PRESEASON_WEEK_CHOICES = [
   { name: 'Preseason Week 1', value: 1 },
   { name: 'Preseason Week 2', value: 2 },
@@ -931,7 +932,7 @@ async function execute(interaction) {
     const hasSportsbook = sportsbookAccess.ok;
     // Stats removed per request; keep flow lean and focused on buttons/strike instructions.
     let created = 0;
-    const deadline = Math.floor((Date.now() + 48 * 3600 * 1000) / 1000);
+    const deadline = Math.floor((Date.now() + GAME_THREAD_DEADLINE_HOURS * 3600 * 1000) / 1000);
     for (const game of gamesFinal) {
       const name = buildThreadName(game, teams, weekLabel);
       try {
@@ -974,7 +975,7 @@ async function execute(interaction) {
           title: brandTitle('LEAGUEbuddy Matchup'),
           description: !hasRecognition
             ? [
-                `Schedule and play your game in this thread. One outcome button must be used before the advance deadline.`,
+                `Schedule and play your game in this thread. One outcome button must be used before the ${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline.`,
                 ``,
                 `🏁 Game Completed`,
                 `Both coaches press this after the game is finished. When one side presses first, the other side will be prompted to confirm.`,
@@ -988,10 +989,10 @@ async function execute(interaction) {
                 `🤖 CPU`,
                 `Use this only for a CPU matchup.`,
                 ``,
-                `Deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
+                `${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
               ].join('\n')
             : [
-                `Schedule and play your game in this thread. One outcome button must be used before the advance deadline.`,
+                `Schedule and play your game in this thread. One outcome button must be used before the ${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline.`,
                 ``,
                 `🏁 Game Completed`,
                 `Both coaches press this after the game is finished. When one side presses first, the other side will be prompted to confirm.`,
@@ -1007,7 +1008,7 @@ async function execute(interaction) {
                 ``,
                 `🚫 Apply Strike`,
                 `Staff only. Used when the bot's thread evidence supports applying the strike manually.`,
-                `Deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
+                `${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
               ].join('\n'),
           color: 0x00b0f4,
           timestamp: new Date().toISOString(),
@@ -1097,7 +1098,7 @@ async function execute(interaction) {
             : null;
           const baseDescription = [
             `${created} matchup ${created === 1 ? 'thread is' : 'threads are'} live for ${roundLabel}.`,
-            `Deadline to play: <t:${deadline}:F> (<t:${deadline}:R>).`,
+            `${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline: <t:${deadline}:F> (<t:${deadline}:R>).`,
           ];
           const embed = {
             title: brandTitle(`${roundLabel} Threads Created`),

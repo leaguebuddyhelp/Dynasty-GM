@@ -238,7 +238,7 @@ function weakestAreas(metrics) {
   const areas = [
     { label: 'Coverage', score: metrics.coverage.score, note: `${metrics.coverage.assignedTeams}/32 teams staffed` },
     { label: 'Engagement', score: metrics.engagement.score, note: `${metrics.engagement.trackedCoaches} coaches tracked this week` },
-    { label: 'Execution', score: metrics.execution.score, note: `${metrics.execution.warnedTwentyFour}/${Math.max(1, metrics.execution.activeWeekPendingCount)} active-week games hit 24h pressure` },
+    { label: 'Execution', score: metrics.execution.score, note: `${metrics.execution.warnedTwentyFour}/${Math.max(1, metrics.execution.activeWeekPendingCount)} active-week games hit the 12h check-in` },
     { label: 'Ops', score: metrics.ops.score, note: `${metrics.ops.recapFailures} recap failures • ${metrics.ops.staleIgnored} stale reminder rows` },
   ];
   return areas.sort((a, b) => a.score - b.score).slice(0, 3);
@@ -250,7 +250,7 @@ function fixTargets(metrics) {
   if ((metrics.engagement.checklistCounts.strategy || 0) < Math.ceil(Math.max(1, metrics.engagement.trackedCoaches) * 0.35)) lines.push('Drive strategy usage earlier in the week so prep is not all thread-only activity.');
   if ((metrics.engagement.checklistCounts.frontOffice || 0) < Math.ceil(Math.max(1, metrics.engagement.trackedCoaches) * 0.35)) lines.push('Push more front-office touchpoints so the ecosystem is broader than game-thread check-ins.');
   if ((metrics.engagement.checklistCounts.gameCompletedOnTime || 0) === 0) lines.push('Treat on-time finish rate as a priority KPI; right now the ecosystem is not converting activity into clean closes.');
-  if (metrics.execution.activeWeekPendingCount && metrics.execution.warnedTwentyFour >= Math.ceil(metrics.execution.activeWeekPendingCount * 0.75)) lines.push('Get scheduling locked earlier. Too many current-week games are already living in the 24-hour window.');
+  if (metrics.execution.activeWeekPendingCount && metrics.execution.warnedTwentyFour >= Math.ceil(metrics.execution.activeWeekPendingCount * 0.75)) lines.push('Get scheduling locked earlier. Too many current-week games are reaching the 12-hour check-in without a clean close.');
   if (metrics.ops.staleIgnored >= 20) lines.push('Clean stale reminder records so health and reminder tools are reading a cleaner live pool.');
   if (metrics.ops.recapFailures > 0) lines.push('Stabilize weekly recap queue failures so staff does not burn time on repair work.');
   return lines.slice(0, 4);
@@ -395,7 +395,7 @@ export async function execute(interaction) {
           `${coverage.assignedTeams}/32 teams staffed\n`
           + `${engagement.trackedCoaches}/${coachBase} coached teams touched LEAGUEbuddy in Week ${engagement.liveWeekNumber || execution.liveWeekNumber || '?'}\n`
           + `${execution.activeWeekPendingCount} Week ${execution.liveWeekNumber || Math.max(0, execution.activeWeekIndex) + 1} games still open\n`
-          + `${execution.activeWeekPendingCount ? `${execution.warnedTwentyFour}/${execution.activeWeekPendingCount} hit the 24h pressure window` : 'No current open-game pressure right now'}`,
+          + `${execution.activeWeekPendingCount ? `${execution.warnedTwentyFour}/${execution.activeWeekPendingCount} hit the 12h check-in` : 'No current open-game pressure right now'}`,
         inline: true,
       },
       {
