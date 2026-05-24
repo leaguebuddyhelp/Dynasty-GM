@@ -58,13 +58,20 @@ function normalizeName(name) {
 }
 
 function getOptionString(interaction, name) {
-  const direct = interaction.options.getString(name);
-  if (direct !== null && direct !== undefined) return direct;
-  const stack = Array.isArray(interaction.options?.data) ? [...interaction.options.data] : [];
+  const stack = [
+    ...(Array.isArray(interaction.options?.data) ? interaction.options.data : []),
+    ...(Array.isArray(interaction.options?._hoistedOptions) ? interaction.options._hoistedOptions : []),
+  ];
   while (stack.length) {
     const item = stack.shift();
     if (item?.name === name && item.value !== undefined && item.value !== null) return String(item.value);
     if (Array.isArray(item?.options)) stack.push(...item.options);
+  }
+  try {
+    const direct = interaction.options.getString(name);
+    if (direct !== null && direct !== undefined) return direct;
+  } catch {
+    // Autocomplete interactions can omit sibling options from getString while retaining raw option data.
   }
   return null;
 }
@@ -384,6 +391,20 @@ async function autocomplete(interaction) {
     const block = getGuildTradeBlock(blockStore, interaction.guildId);
 
     if (focused.name === 'player') {
+      if (!positionChoice) {
+        console.warn('[tradeblock][autocomplete] missing position option', {
+          guildId: interaction.guildId,
+          userId: interaction.user?.id,
+          optionNames: [
+            ...(Array.isArray(interaction.options?.data) ? interaction.options.data : []),
+            ...(Array.isArray(interaction.options?._hoistedOptions) ? interaction.options._hoistedOptions : []),
+          ].map((option) => option?.name).filter(Boolean),
+        });
+        responded = true;
+        clearTimeout(timeout);
+        await interaction.respond([]);
+        return;
+      }
       if (action === 'remove') {
         const existing = block[teamId] || [];
         const filtered = existing.filter(p => playerMatchesPosition(p, positionFilter));
