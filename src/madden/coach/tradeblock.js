@@ -72,9 +72,78 @@ function computeTradeValue(player) {
 
 
 
-function getRoster(snapshot, teamId) {
-  const roster = snapshot?.rosters?.teams?.[teamId] || snapshot?.rosters?.teams?.[String(teamId)] || {};
-  return roster?.rosterInfoList || roster?.rosterPlayerInfoList || [];
+function rosterListFromBucket(bucket) {
+  if (!bucket) return [];
+  if (Array.isArray(bucket)) return bucket;
+  if (Array.isArray(bucket.rosterInfoList)) return bucket.rosterInfoList;
+  if (Array.isArray(bucket.rosterPlayerInfoList)) return bucket.rosterPlayerInfoList;
+  if (Array.isArray(bucket.players)) return bucket.players;
+  return [];
+}
+
+function getRoster(snapshot, teamIdOrName) {
+  const rosters = snapshot?.rosters?.teams || {};
+  const teams = snapshot?.teams?.leagueTeamInfoList || [];
+  const teamObj = typeof teamIdOrName === 'object'
+    ? teamIdOrName
+    : findTeam(snapshot, teamIdOrName) || teams.find((team) =>
+        String(team.teamId ?? '') === String(teamIdOrName ?? '') ||
+        String(team.teamIndex ?? '') === String(teamIdOrName ?? '')
+      );
+  const matchIds = new Set([
+    String(teamIdOrName ?? ''),
+    String(teamObj?.teamId ?? ''),
+    String(teamObj?.teamIndex ?? ''),
+    teamObj?.displayName,
+    teamObj?.nickName,
+    teamObj?.teamName,
+    teamObj?.abbrName,
+    teamObj?.cityName,
+    getFullTeamName(teamObj, ''),
+  ].filter(Boolean).map((value) => normalizeTeamKey(value)));
+
+  const directKeys = [
+    String(teamObj?.teamId ?? ''),
+    String(teamObj?.teamIndex ?? ''),
+    String(teamIdOrName ?? ''),
+  ].filter(Boolean);
+  for (const key of directKeys) {
+    const direct = rosterListFromBucket(rosters[key]);
+    if (direct.length) return direct;
+  }
+
+  for (const [key, bucket] of Object.entries(rosters)) {
+    const bucketTeam = teams.find((team) =>
+      String(team.teamId ?? '') === String(bucket?.teamId ?? '') ||
+      String(team.teamIndex ?? '') === String(bucket?.teamIndex ?? '') ||
+      String(team.teamId ?? '') === String(key) ||
+      String(team.teamIndex ?? '') === String(key)
+    );
+    const bucketIds = [
+      key,
+      bucket?.teamId,
+      bucket?.teamIndex,
+      bucketTeam?.displayName,
+      bucketTeam?.nickName,
+      bucketTeam?.teamName,
+      bucketTeam?.abbrName,
+      bucketTeam?.cityName,
+      getFullTeamName(bucketTeam, ''),
+    ].filter(Boolean).map((value) => normalizeTeamKey(value));
+    if (bucketIds.some((id) => matchIds.has(id))) {
+      const list = rosterListFromBucket(bucket);
+      if (list.length) return list;
+    }
+  }
+
+  const targetTeamId = String(teamObj?.teamId ?? teamIdOrName ?? '');
+  if (targetTeamId) {
+    const allPlayers = Object.values(rosters).flatMap(rosterListFromBucket);
+    const filtered = allPlayers.filter((player) => String(player?.teamId ?? '') === targetTeamId);
+    if (filtered.length) return filtered;
+  }
+
+  return [];
 }
 
 function getTeamCandidates(team = {}) {
