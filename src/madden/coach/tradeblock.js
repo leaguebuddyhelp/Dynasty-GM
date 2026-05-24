@@ -66,7 +66,32 @@ function normalizeTeamKey(name) {
 }
 
 function normalizePosition(position) {
-  const raw = String(position || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const positionIdMap = {
+    0: 'QB',
+    1: 'HB',
+    2: 'FB',
+    3: 'WR',
+    4: 'TE',
+    5: 'LT',
+    6: 'LG',
+    7: 'C',
+    8: 'RG',
+    9: 'RT',
+    10: 'LE',
+    11: 'RE',
+    12: 'DT',
+    13: 'LOLB',
+    14: 'MLB',
+    15: 'ROLB',
+    16: 'CB',
+    17: 'FS',
+    18: 'SS',
+    19: 'K',
+    20: 'P',
+  };
+  const rawValue = String(position ?? '').trim();
+  if (/^\d+$/.test(rawValue) && positionIdMap[Number(rawValue)]) return positionIdMap[Number(rawValue)];
+  const raw = rawValue.toUpperCase().replace(/[^A-Z0-9]/g, '');
   const aliases = {
     RB: 'HB',
     EDG: 'EDGE',
@@ -81,9 +106,14 @@ function normalizePosition(position) {
 function playerPosition(player) {
   return normalizePosition(
     player?.position ||
+    player?.pos ||
+    player?.positionId ||
+    player?.posId ||
+    player?.positionCode ||
     player?.displayPos ||
     player?.defaultPosition ||
     player?.positionName ||
+    player?.posName ||
     player?.playerPosition
   );
 }
