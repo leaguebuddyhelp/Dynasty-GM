@@ -23,6 +23,7 @@ export const MADDEN_ROSTER_POSITIONS = [
   'CB', 'FS', 'SS',
   'K', 'P',
 ];
+const EDGE_POSITIONS = new Set(['LEDGE', 'REDGE', 'EDGE', 'EDG', 'LEDG', 'REDG']);
 
 function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return {}; }
@@ -85,8 +86,6 @@ export function normalizePosition(position) {
   const raw = rawValue.toUpperCase().replace(/[^A-Z0-9]/g, '');
   const aliases = {
     RB: 'HB',
-    EDG: 'REDGE',
-    EDGE: 'REDGE',
     LEDG: 'LEDGE',
     REDG: 'REDGE',
   };
@@ -114,6 +113,7 @@ export function playerMatchesPosition(player, positionFilter) {
   const actual = playerPosition(player);
   if (!actual) return false;
   if (selected === actual) return true;
+  if (EDGE_POSITIONS.has(selected)) return EDGE_POSITIONS.has(actual);
   if (selected === 'HB') return actual === 'RB';
   return false;
 }
