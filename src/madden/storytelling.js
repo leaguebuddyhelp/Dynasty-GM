@@ -1418,12 +1418,18 @@ function pickOwnerFromAsset(asset, fallbackTeam = '') {
 }
 
 function buildProjectedPickMap(ctx) {
-  const order = draftOrder(ctx.league);
+  const seasonYear = getUpcomingDraftYear(ctx.league);
+  const guildId = ctx?.guild?.id || ctx?.guildId || null;
+  const rawOrder = draftOrder(ctx.league);
+  const order = applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId })), seasonYear);
   const projected = new Map();
   order.forEach((slot, idx) => {
-    const team = ctx.teams.get(Number(slot?.id));
-    if (!team) return;
-    projected.set(normalizeName(team), idx + 1);
+    const pickNum = Number(slot?.pickNum || slot?.pickNumber || idx + 1);
+    const ownerNames = [
+      slot?.originalName,
+      ctx.teams.get(Number(slot?.id)),
+    ].filter(Boolean);
+    ownerNames.forEach((team) => projected.set(normalizeName(team), pickNum));
   });
   return projected;
 }
@@ -2184,16 +2190,17 @@ function buildMockDraftSignals(ctx, limit = 3) {
   if (!draftPlayers.length) return [];
   const seasonYear = getUpcomingDraftYear(ctx.league);
   const seasonContext = ctx?.seasonContext || {};
-  const order = applyPickTrades(draftOrder(ctx.league), seasonYear).slice(0, Math.max(limit * 2, 8));
+  const guildId = ctx?.guild?.id || ctx?.guildId || null;
+  const order = applyPickTrades(draftOrder(ctx.league).map((pick) => ({ ...pick, guildId })), seasonYear).slice(0, Math.max(limit * 2, 8));
   const signals = [];
   for (const pick of order) {
-    const team = String(pick.team || '').replace(/\(via.*$/i, '').trim();
+    const team = String(pick.name || pick.team || '').replace(/\(via.*$/i, '').trim();
     if (!team) continue;
     const needKey = normalizeName(team);
     const primaryNeed = (ctx.needs[needKey] || ['BPA'])[0];
     const prospect = chooseProspectForNeed(primaryNeed, draftPlayers);
     if (!prospect) continue;
-    const pickLabel = pick.pickNum ? `No. ${pick.pickNum}` : `Round ${pick.round}`;
+    const pickLabel = pick.pickNum ? `No. ${pick.pickNum}` : `Round ${pick.round || 1}`;
     const needLabel = formatNeedLabel(primaryNeed).toLowerCase();
     const needReason = buildNeedReason(primaryNeed);
     const teamSeed = `${team}:${pickLabel}:${prospect.name}:${primaryNeed}`;

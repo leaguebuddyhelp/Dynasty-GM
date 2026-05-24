@@ -547,10 +547,10 @@ function countTeamTrades(activeTrades, teamName) {
   };
 }
 
-function countTeamPicks(league, teamName) {
+function countTeamPicks(league, teamName, guildId = null) {
   const year = getUpcomingDraftYear(league);
-  const order = applyPickTrades(draftOrder(league), year);
-  const picks = order.filter((pick) => normalizeName(pick.team) === normalizeName(teamName));
+  const order = applyPickTrades(draftOrder(league).map((pick) => ({ ...pick, guildId })), year);
+  const picks = order.filter((pick) => normalizeName(pick.name || pick.team || pick.nick) === normalizeName(teamName));
   const firsts = picks.filter((pick) => Number(pick.round) === 1).length;
   return { year, total: picks.length, firsts };
 }
@@ -962,7 +962,7 @@ export function buildFranchiseProfile(ctx, teamName, options = {}) {
   const usageYoung = usageDevelopmentCandidates(roster, ctx.live, teamId, 2);
   const cuts = cutCandidates(roster, 3);
   const shops = shopCandidates(roster, teamNeeds, 3);
-  const pickInfo = countTeamPicks(ctx.league, teamName);
+  const pickInfo = countTeamPicks(ctx.league, teamName, ctx?.guild?.id || null);
   const tradeInfo = countTeamTrades(ctx.activeTrades, teamName);
   const tradeTargets = findTradeTargets(ctx.league, teamId, teamNeeds, 3);
   const scoutFocus = scoutingIdentitySignal(ctx.scoutLog, teamName, classId, seasonYear);

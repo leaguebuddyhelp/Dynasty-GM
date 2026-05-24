@@ -560,6 +560,11 @@ function recentPickLines(session, limit = 6) {
   });
 }
 
+function pickNumberForSlot(slot, index = 0) {
+  const num = Number(slot?.pickNum ?? slot?.pickNumber ?? slot?.slot ?? index + 1);
+  return Number.isFinite(num) && num > 0 ? num : index + 1;
+}
+
 export function buildMockDraftPickEmbed(session, pick) {
   if (!session || !pick) {
     return new EmbedBuilder()
@@ -602,8 +607,9 @@ export function buildMockDraftOnClockEmbed(session) {
   const onClockUserId = session.pickOwners?.[String(pickIndex)] || null;
   const emojiMap = loadTeamEmojis();
   const emoji = slot ? formatTeamEmoji(slot.name, emojiMap) : '';
+  const pickNumber = pickNumberForSlot(slot, pickIndex);
   return new EmbedBuilder()
-    .setTitle(`On The Clock • Pick ${pickIndex + 1}`)
+    .setTitle(`On The Clock • Pick ${pickNumber}`)
     .setColor(0xf39c12)
     .setDescription(
       slot
@@ -618,8 +624,9 @@ function buildLiveEmbed(session) {
   const onClockUserId = slot ? session.pickOwners?.[String(pickIndex)] : null;
   const emojiMap = loadTeamEmojis();
   const currentTeamEmoji = slot ? formatTeamEmoji(slot.name, emojiMap) : '';
+  const currentPickNumber = pickNumberForSlot(slot, pickIndex);
   const embed = new EmbedBuilder()
-    .setTitle(`Live Mock Draft • Pick ${Math.min(pickIndex + 1, session.order.length)}/${session.order.length}`)
+    .setTitle(`Live Mock Draft • Pick ${Math.min(currentPickNumber, session.order.length)}/${session.order.length}`)
     .setColor(session.status === 'done' ? 0x2ecc71 : session.status === 'cancelled' ? 0x7f8c8d : 0xf39c12);
 
   if (session.status === 'done' || session.status === 'cancelled' || !slot) {
@@ -637,7 +644,7 @@ function buildLiveEmbed(session) {
     ? session.order.findIndex((pick, idx) => idx >= pickIndex && session.pickOwners?.[String(idx)])
     : -1;
   const nextControlledText = nextControlledSlotIndex >= 0
-    ? `${nextControlledSlotIndex + 1}. ${session.order[nextControlledSlotIndex].name}`
+    ? `${pickNumberForSlot(session.order[nextControlledSlotIndex], nextControlledSlotIndex)}. ${session.order[nextControlledSlotIndex].name}`
     : 'No coach-controlled first-round picks remain. The rest will auto-sim.';
 
   embed.addFields(
@@ -780,7 +787,7 @@ function autoPickProspect(session) {
   const needs = findNeedsForTeam(slot.name, session.teamNeeds || {}, slot.nick);
   const needSet = new Set((needs || []).slice(0, 4));
   const avpStore = loadAvpStore();
-  const pickNumber = Number(session.currentPickIndex || 0) + 1;
+  const pickNumber = pickNumberForSlot(slot, Number(session.currentPickIndex || 0));
   const scoredCandidates = [];
   for (let idx = 0; idx < session.availableProspects.length; idx += 1) {
     if (idx > 26) break;
@@ -815,13 +822,13 @@ function autoPickProspect(session) {
       score += luxuryPenalty + (eliteRoom ? 10 : 0);
     }
     if (['RB', 'TE'].includes(group) && idx < 12 && overall < 84 && !needSet.has(group)) score += 20;
-    score += seededRand(session.variantSeed || session.id, `${slot.name}|${session.currentPickIndex}|${prospect.name}`, 8);
+    score += seededRand(session.variantSeed || session.id, `${slot.name}|${pickNumber}|${prospect.name}`, 8);
     scoredCandidates.push({ index: idx, score, prospect });
   }
   const chosen = chooseVariantCandidate(
     scoredCandidates,
     session.variantSeed || session.id,
-    `${slot.name}|pick_${session.currentPickIndex + 1}`,
+    `${slot.name}|pick_${pickNumber}`,
   );
   return chosen?.prospect || session.availableProspects[0] || null;
 }
@@ -1254,7 +1261,7 @@ function evaluatePickGrade(session, slot, prospect) {
   const group = prospectGroup(prospect);
   const needsCtx = buildNeedsContext(session, slot, group);
   const { needs, needRank, isOffNeed } = needsCtx;
-  const boardExpectation = Number(session.currentPickIndex || 0) + 1;
+  const boardExpectation = pickNumberForSlot(slot, Number(session.currentPickIndex || 0));
   const boardRank = Number(prospect.rank || boardExpectation);
   const boardDelta = boardRank - boardExpectation;
   const avp = avpForProspect(session, prospect);
@@ -1497,7 +1504,7 @@ export function applyPick(session, userId, prospect, options = {}) {
   const review = isCpuPick ? null : evaluatePickGrade(session, slot, prospect);
   session.availableProspects = session.availableProspects.filter((item) => item.id !== prospect.id);
   const pick = {
-    pickNumber: currentPickIndex + 1,
+    pickNumber: pickNumberForSlot(slot, currentPickIndex),
     teamName: slot.name,
     teamNick: slot.nick,
     via: slot.via || null,
@@ -1528,9 +1535,10 @@ export function listUserAssignedSlots(session, userId) {
   for (let idx = 0; idx < session.order.length; idx += 1) {
     if (session.pickOwners?.[String(idx)] !== userId) continue;
     const slot = session.order[idx];
-    const made = session.picks.find((pick) => pick.pickNumber === idx + 1);
+    const pickNumber = pickNumberForSlot(slot, idx);
+    const made = session.picks.find((pick) => pick.pickNumber === pickNumber);
     items.push({
-      pickNumber: idx + 1,
+      pickNumber,
       teamName: slot.name,
       status: made ? `${made.prospectName} (${made.position})` : 'Still open',
     });

@@ -363,7 +363,7 @@ function buildWarRoomIntel({
     const nearbyPickTeams = ownPickWindow.length
         ? tradedOrder
             .map((pick, idx) => {
-                const slot = idx + 1;
+                const slot = Number(pick.pickNum || pick.pickNumber || idx + 1);
                 const pickTeam = getFullTeamName(pick, pick.name || pick.nick || 'Team');
                 const needs = resolveTeamNeeds(pickTeam, league, needsByTeam).slice(0, 2);
                 const normTeam = normalizeName(pickTeam);
@@ -1014,10 +1014,10 @@ export async function execute(interaction) {
     // Derive pick slots (after trades) for realism
     const draftYear = getUpcomingDraftYear(league);
     const rawOrder = draftOrder(league);
-    const tradedOrder = applyPickTrades(rawOrder, draftYear);
+    const tradedOrder = applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId: interaction.guildId })), draftYear);
     const teamNorm = normalizeName(teamName);
     const roundOneOwnedSlots = tradedOrder
-        .map((p, i) => ({ slot: i + 1, norm: normalizeName(p.name || p.nick || ''), via: p.via }))
+        .map((p, i) => ({ slot: Number(p.pickNum || p.pickNumber || i + 1), norm: normalizeName(p.name || p.nick || ''), via: p.via }))
         .filter(p => p.norm === teamNorm);
     const naturalRoundOneSlot = Math.max(1, rawOrder.findIndex((p) => normalizeName(p.name || p.nick || '') === teamNorm) + 1 || 16);
     const firstRoundSlot = roundOneOwnedSlots.length ? Math.min(...roundOneOwnedSlots.map(p => p.slot)) : null;

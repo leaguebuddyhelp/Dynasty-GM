@@ -823,11 +823,23 @@ function applyPickTrades(order, seasonYear = currentCalendarYear) {
     });
   });
 
-  return originalOrder.map(pick => {
+  return originalOrder.map((pick, idx) => {
+    const pickNum = Number(pick.pickNum ?? pick.pickNumber ?? pick.slot ?? idx + 1);
+    const basePick = {
+      ...pick,
+      pickNum,
+      pickNumber: pickNum,
+      round: Number(pick.round || 1),
+      team: pick.name || pick.team || pick.nick || '',
+      originalName: pick.originalName || pick.name || pick.team || pick.nick || '',
+      originalNick: pick.originalNick || pick.nick || null,
+    };
     const codeKey = normalizeTeamKey(pick.originalOwnerCode || '');
     const nameKey = normalizeTeamKey(pick.name || pick.nick || '');
     const o = map.get(codeKey) || map.get(nameKey);
-    return o ? { ...pick, name: o.owner, nick: o.nick || pick.nick, via: o.via } : pick;
+    return o
+      ? { ...basePick, name: o.owner, team: o.owner, nick: o.nick || pick.nick, via: o.via }
+      : basePick;
   });
 }
 
@@ -1488,6 +1500,7 @@ export async function execute(interaction) {
   for (const team of order) {
     const teamNameNorm = normalizeName(team.name || '');
     const teamKeyNorm = teamKey(team.name, team.nick);
+    const currentPickNumber = Number(team.pickNum || team.pickNumber || pickNumber);
     const remainingPicksForTeam = order.slice(pickNumber).filter(t => teamKey(t.name, t.nick) === teamKeyNorm).length;
     const teamProfile = resolveTeamNeedProfileMock(team.name || '', needProfiles, team.nick);
     let teamNeeds = teamProfile?.needs || resolveTeamNeedsMock(team.name || '', needs, team.nick);
@@ -1518,10 +1531,10 @@ export async function execute(interaction) {
     // Candidate pool within board window and needs
     const bpaOnly = teamNeeds.length === 1 && teamNeeds[0] === 'BPA';
     const boardWindow =
-      pickNumber <= 5 ? 15 :
-        pickNumber <= 10 ? 18 :
-          pickNumber <= 16 ? 22 :
-            pickNumber <= 24 ? 28 :
+      currentPickNumber <= 5 ? 15 :
+        currentPickNumber <= 10 ? 18 :
+          currentPickNumber <= 16 ? 22 :
+            currentPickNumber <= 24 ? 28 :
               32;
 
     const candidateIndices = [];
@@ -1535,18 +1548,18 @@ export async function execute(interaction) {
       const g = prospectGroup(p);
       const tempOv = Number(p.overall ?? p.ovr ?? p.rating ?? p.OVR ?? 0);
       if (g === 'QB' && !hasQBNeed) continue;
-      if (g === 'QB' && qbTop5Count >= 2 && pickNumber <= 5) continue;
+      if (g === 'QB' && qbTop5Count >= 2 && currentPickNumber <= 5) continue;
       const severity = needSeverity(g);
       const isTopNeed = teamNeeds.slice(0, 3).includes(g);
       const eliteTalent = i < 6 || tempOv >= 84;
       const inPrimaryWindow = i < boardWindow;
       if (!inPrimaryWindow && !(isTopNeed && severity >= 65) && !(g === 'QB' && qbTopNeed && severity >= 75) && !eliteTalent) continue;
-      if (pickNumber <= 12 && !inPrimaryWindow && !eliteTalent) continue;
-      if (pickNumber <= 10 && ['RB', 'TE'].includes(g) && severity < 85 && tempOv < 82) continue;
+      if (currentPickNumber <= 12 && !inPrimaryWindow && !eliteTalent) continue;
+      if (currentPickNumber <= 10 && ['RB', 'TE'].includes(g) && severity < 85 && tempOv < 82) continue;
       if (g !== 'QB' && pickedGroups.has(g) && openSlots) continue;
       candidateIndices.push(i);
     }
-    if (qbTopNeed && firstQBIndex !== -1 && pickNumber <= 10 && !candidateIndices.includes(firstQBIndex)) {
+    if (qbTopNeed && firstQBIndex !== -1 && currentPickNumber <= 10 && !candidateIndices.includes(firstQBIndex)) {
       candidateIndices.push(firstQBIndex);
     }
     if (!hasQBNeed) {
@@ -1568,7 +1581,7 @@ export async function execute(interaction) {
       const needRankBonus = needRank === 0 ? 22 : needRank === 1 ? 16 : needRank === 2 ? 10 : needRank >= 0 ? 4 : 0;
       const premiumBonus = premiumPositionValue(g) * 2.5;
       const boardValue = i * 6;
-      const slideValue = Math.max(0, pickNumber - (i + 1)) * 8;
+      const slideValue = Math.max(0, currentPickNumber - (i + 1)) * 8;
       let score = boardValue - slideValue - needRankBonus - (severity * 0.7) - premiumBonus;
 
       if (effectiveNeeds?.has(g)) score -= 18;
@@ -1578,15 +1591,15 @@ export async function execute(interaction) {
       if (remainingPicksForTeam > 0 && effectiveNeeds?.size > 1 && teamNeeds[0] === g) score -= 8;
       if (remainingPicksForTeam > 0 && effectiveNeeds?.size > 1 && !effectiveNeeds.has(g)) score += 12;
 
-      if (pickNumber <= 12 && ['RB', 'TE'].includes(g)) {
+      if (currentPickNumber <= 12 && ['RB', 'TE'].includes(g)) {
         score += overallVal >= 84 && severity >= 90 ? 8 : 38;
       }
-      if (pickNumber <= 8 && g === 'IOL' && severity < 85) score += 16;
-      if (pickNumber <= 8 && g === 'LB' && severity < 82) score += 12;
+      if (currentPickNumber <= 8 && g === 'IOL' && severity < 85) score += 16;
+      if (currentPickNumber <= 8 && g === 'LB' && severity < 82) score += 12;
 
       if (g === 'QB') {
         if (qbTopNeed) score -= 34;
-        else score += pickNumber <= 12 ? 18 : 8;
+        else score += currentPickNumber <= 12 ? 18 : 8;
         if (!hasQBNeed) score += 1000;
       }
 
@@ -1617,11 +1630,11 @@ export async function execute(interaction) {
       return { idx, ovr };
     })();
     const qbOverrideOvrReq = 83;
-    if (qbTopNeed && hasQBNeed && pickNumber <= 8 && qbEliteCandidate.ovr >= qbOverrideOvrReq && qbEliteCandidate.idx !== undefined) {
+    if (qbTopNeed && hasQBNeed && currentPickNumber <= 8 && qbEliteCandidate.ovr >= qbOverrideOvrReq && qbEliteCandidate.idx !== undefined) {
       bestIdx = qbEliteCandidate.idx;
       bestScore = -999;
     }
-    if (!(qbTopNeed && hasQBNeed && pickNumber <= 8 && qbEliteCandidate.ovr >= qbOverrideOvrReq && qbEliteCandidate.idx !== undefined)) {
+    if (!(qbTopNeed && hasQBNeed && currentPickNumber <= 8 && qbEliteCandidate.ovr >= qbOverrideOvrReq && qbEliteCandidate.idx !== undefined)) {
       const chosenCandidate = [...scoredCandidates].sort((a, b) => a.score - b.score || a.index - b.index)[0] || null;
       if (chosenCandidate) {
         bestIdx = chosenCandidate.index;
@@ -1648,7 +1661,7 @@ export async function execute(interaction) {
         chosen = available.splice(bestQBIndexAny, 1)[0];
       }
     }
-    if (chosen && pickNumber <= 5 && prospectGroup(chosen) === 'QB') {
+    if (chosen && currentPickNumber <= 5 && prospectGroup(chosen) === 'QB') {
       qbTop5Count += 1;
     }
     // Need-rescue: if we picked outside unmet needs and a need candidate is close, swap
@@ -1673,7 +1686,7 @@ export async function execute(interaction) {
     const pos = chosen?.position || chosen?.position_1 || '';
     const school = chosen?.school || chosen?.College || chosen?.college || 'N/A';
     const via = team.via ? ` (via ${team.via})` : '';
-    const line = `${picks.length + 1}. ${emoji ? emoji + ' ' : ''}${team.name}${via} — ${pos || 'POS'} ${chosen?.name || 'TBD'} — ${school}`;
+    const line = `${currentPickNumber}. ${emoji ? emoji + ' ' : ''}${team.name}${via} — ${pos || 'POS'} ${chosen?.name || 'TBD'} — ${school}`;
     picks.push(line);
     pickNumber += 1;
 
