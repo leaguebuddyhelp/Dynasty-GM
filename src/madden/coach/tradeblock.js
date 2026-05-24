@@ -49,8 +49,56 @@ function normalizeName(name) {
   return String(name).trim().toLowerCase();
 }
 
+function getOptionString(interaction, name) {
+  const direct = interaction.options.getString(name);
+  if (direct !== null && direct !== undefined) return direct;
+  const stack = Array.isArray(interaction.options?.data) ? [...interaction.options.data] : [];
+  while (stack.length) {
+    const item = stack.shift();
+    if (item?.name === name && item.value !== undefined && item.value !== null) return String(item.value);
+    if (Array.isArray(item?.options)) stack.push(...item.options);
+  }
+  return null;
+}
+
 function normalizeTeamKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function normalizePosition(position) {
+  const raw = String(position || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const aliases = {
+    RB: 'HB',
+    EDG: 'EDGE',
+    LEDGE: 'LEDG',
+    REDGE: 'REDG',
+    OLB: 'LB',
+    ILB: 'LB',
+  };
+  return aliases[raw] || raw;
+}
+
+function playerPosition(player) {
+  return normalizePosition(
+    player?.position ||
+    player?.displayPos ||
+    player?.defaultPosition ||
+    player?.positionName ||
+    player?.playerPosition
+  );
+}
+
+function playerMatchesPosition(player, positionFilter) {
+  if (!positionFilter) return true;
+  const selected = normalizePosition(positionFilter);
+  const actual = playerPosition(player);
+  if (!actual) return false;
+  if (selected === actual) return true;
+  if (selected === 'HB') return actual === 'RB';
+  if (selected === 'LEDG') return actual === 'LE' || actual === 'LDE' || actual === 'LEDGE';
+  if (selected === 'REDG') return actual === 'RE' || actual === 'RDE' || actual === 'REDGE';
+  if (['SAM', 'MIKE', 'WILL'].includes(selected)) return ['LOLB', 'ROLB', 'MLB', 'LB', selected].includes(actual);
+  return false;
 }
 
 function formatHeight(heightInches) {
@@ -242,7 +290,7 @@ async function announce(client, roleMap, channelMap, teamName, cleanLabelText, d
 
 function getPositions(snapshot, teamId) {
   const roster = getRoster(snapshot, teamId);
-  const set = new Set(roster.map(p => p.position).filter(Boolean));
+  const set = new Set(roster.map(p => playerPosition(p)).filter(Boolean));
   return Array.from(set).sort();
 }
 
@@ -338,8 +386,8 @@ async function autocomplete(interaction) {
     const teamObj = findTeam(snapshot, userTeamName);
     if (!teamObj) throw new Error('no team');
     const teamId = teamObj.teamId;
-    const action = interaction.options.getString('action');
-    const positionChoice = interaction.options.getString('position');
+    const action = getOptionString(interaction, 'action');
+    const positionChoice = getOptionString(interaction, 'position');
     const positionFilter = positionChoice === 'ALL' ? null : positionChoice;
     const roster = getRoster(snapshot, teamId);
     const blockStore = loadTradeBlockStore();
@@ -348,7 +396,7 @@ async function autocomplete(interaction) {
     if (focused.name === 'player') {
       if (action === 'remove') {
         const existing = block[teamId] || [];
-        const filtered = existing.filter(p => !positionFilter || p.position === positionFilter);
+        const filtered = existing.filter(p => playerMatchesPosition(p, positionFilter));
         const list = filtered.map(p => p.name).filter(n => !focused.value || n.toLowerCase().includes(focused.value.toLowerCase()));
         responded = true;
         clearTimeout(timeout);
@@ -356,7 +404,7 @@ async function autocomplete(interaction) {
         return;
       }
       const list = roster
-        .filter(p => !positionFilter || p.position === positionFilter)
+        .filter(p => playerMatchesPosition(p, positionFilter))
         .map(p => playerLabel(p))
         .filter(n => !focused.value || n.toLowerCase().includes(focused.value.toLowerCase()));
       responded = true;
@@ -380,10 +428,10 @@ async function autocomplete(interaction) {
 async function execute(interaction) {
   await interaction.deferReply({ ephemeral: true });
   try {
-    const action = interaction.options.getString('action');
-    const positionChoice = interaction.options.getString('position');
+    const action = getOptionString(interaction, 'action');
+    const positionChoice = getOptionString(interaction, 'position');
     const positionFilter = positionChoice === 'ALL' ? null : positionChoice;
-    const playerName = interaction.options.getString('player');
+    const playerName = getOptionString(interaction, 'player');
     const leagueId = requireLeagueIdForGuild(interaction.guildId);
     const snapshot = loadLeagueSnapshot(leagueId);
     const channelMap = loadChannelMap(interaction.guildId);
@@ -426,7 +474,7 @@ async function execute(interaction) {
 
     if (action === 'add') {
       const player = findPlayer(
-        roster.filter(p => !positionFilter || p.position === positionFilter),
+        roster.filter(p => playerMatchesPosition(p, positionFilter)),
         playerName
       );
       if (!player) {
@@ -441,17 +489,18 @@ async function execute(interaction) {
       block[teamId].push({
         rosterId: player.rosterId,
         name: playerLabel(player),
-        position: player.position,
+        position: playerPosition(player) || player.position,
         ovr: player.playerBestOvr || player.teamSchemeOvr || player.playerSchemeOvr || '',
         age: player.age || '',
         dev: formatDev(player.devTrait),
         messageId: null,
       });
       saveTradeBlockStore(blockStore);
-      await interaction.editReply({ content: `${playerLabel(player)} (${player.position}) added to your trade block.` });
+      const position = playerPosition(player) || player.position || 'N/A';
+      await interaction.editReply({ content: `${playerLabel(player)} (${position}) added to your trade block.` });
       const teamName = (snapshot.teams?.leagueTeamInfoList || []).find(t => t.teamId === teamId)?.displayName || 'Team';
       // Build a rich description for the post while keeping the modal label clean
-      const cleanLabel = `${playerLabel(player)} (${player.position})`;
+      const cleanLabel = `${playerLabel(player)} (${position})`;
       const height = formatHeight(player.heightInches ?? player.height);
       const weight = player.weight ?? player.weightLbs ?? null;
       const dev = formatDev(player.devTrait);
@@ -467,7 +516,7 @@ async function execute(interaction) {
         tradeValue ? `Trade Value: ${tradeValue}` : null,
       ].filter(Boolean);
       const detailText = detailParts.join('\n');
-      const msgInfo = await announce(interaction.client, roleMap, channelMap, teamName, cleanLabel, detailText, player.position || 'N/A', player.rosterId);
+      const msgInfo = await announce(interaction.client, roleMap, channelMap, teamName, cleanLabel, detailText, position, player.rosterId);
       if (msgInfo?.messageId) {
         block[teamId][block[teamId].length - 1].messageId = msgInfo.messageId;
         block[teamId][block[teamId].length - 1].threadId = msgInfo.threadId || null;
