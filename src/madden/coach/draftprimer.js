@@ -396,12 +396,20 @@ function buildWarRoomIntel({
     const topTraffic = [...seasonPositionCounts.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
-        .map(([pos, count]) => `${formatNeedLabel(mapPositionToNeed({ position: pos }))} ${count}`);
+        .map(([pos, count]) => ({
+            need: mapPositionToNeed({ position: pos }),
+            label: formatNeedLabel(mapPositionToNeed({ position: pos })),
+            count,
+        }));
 
     const recentHeat = [...positionCounts.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, 2)
-        .map(([pos, count]) => `${formatNeedLabel(mapPositionToNeed({ position: pos }))} ${count}`);
+        .map(([pos, count]) => ({
+            need: mapPositionToNeed({ position: pos }),
+            label: formatNeedLabel(mapPositionToNeed({ position: pos })),
+            count,
+        }));
 
     const boardTraffic = topBoardEntries
         .map((entry) => {
@@ -530,54 +538,82 @@ function buildWarRoomIntel({
         .sort((a, b) => b.heatScore - a.heatScore)
         .slice(0, 4);
 
+    const lookText = (count) => `${count} scout look${Number(count) === 1 ? '' : 's'}`;
+    const laneText = (need) => `the ${formatNeedLabel(need).toLowerCase()} lane`;
+    const teamsTrackingPlayer = (playerName) => rivalProfiles
+        .filter((profile) => profile.topPlayers.some(([name]) => normalizeName(name) === normalizeName(playerName)))
+        .map((profile) => profile.team)
+        .slice(0, 3);
+    const naturalList = (items = []) => {
+        const clean = items.filter(Boolean);
+        if (clean.length <= 1) return clean[0] || '';
+        if (clean.length === 2) return `${clean[0]} and ${clean[1]}`;
+        return `${clean.slice(0, -1).join(', ')}, and ${clean[clean.length - 1]}`;
+    };
+
     const lines = [];
     if (perkState?.perks?.draftWarRoomIntel) {
         if (topTraffic.length) {
-            lines.push(`Traffic: ${topTraffic.join(' | ')}${recentHeat.length ? `; recent ${recentHeat.join(' | ')}` : ''}.`);
+            const top = topTraffic[0];
+            const supporting = topTraffic.slice(1).map((entry) => `${entry.label} (${lookText(entry.count)})`);
+            const recent = recentHeat.length
+                ? ` Recent heat is still on ${naturalList(recentHeat.map((entry) => `${entry.label} (${lookText(entry.count)})`))}.`
+                : '';
+            lines.push(`League-wide, coaches are spending the most scouting capital on ${laneText(top.need)} (${lookText(top.count)})${supporting.length ? `, with ${naturalList(supporting)} close behind` : ''}.${recent}`);
         } else {
             const boardLanes = boardTraffic
                 .slice(0, 3)
                 .filter((entry) => entry.positionCount > 0)
-                .map((entry) => `${formatNeedLabel(mapPositionToNeed({ position: entry.pos }))} ${entry.positionCount}`);
+                .map((entry) => `${laneText(mapPositionToNeed({ position: entry.pos }))} (${lookText(entry.positionCount)})`);
             const boardNames = boardTraffic
                 .filter((entry) => entry.count > 0)
                 .slice(0, 2)
-                .map((entry) => `${entry.name} (${entry.count})`);
+                .map((entry) => `${entry.name} (${lookText(entry.count)})`);
             if (boardLanes.length || boardNames.length) {
-                lines.push(`Traffic: ${[...boardLanes, ...boardNames].join(' | ')}.`);
+                lines.push(`The class traffic is pointing at ${naturalList([...boardLanes, ...boardNames])}.`);
             } else if (topBoardEntries.length) {
                 const roundPressure = topBoardEntries
                     .slice(0, 3)
                     .map((entry) => entry?.target)
                     .filter(Boolean)
                     .map((target) => `${target.name} R${projectedRoundForProspect(target)}`);
-                lines.push(`Traffic: quiet so far; board pressure starts at ${roundPressure.join(' | ')}.`);
+                lines.push(`Scout traffic is quiet so far, so your board pressure starts with ${naturalList(roundPressure)}.`);
             } else {
-                lines.push('Traffic: light class-wide; treat early board pressure as unsettled.');
+                lines.push('Scout traffic is light across the class, so treat the early board pressure as unsettled.');
             }
         }
         if (contestedNames.length) {
-            lines.push(`Names getting looks: ${contestedNames.map((entry) => `${entry.name} x${entry.count}`).join(' | ')}.`);
+            const contested = contestedNames.map((entry) => {
+                const teams = teamsTrackingPlayer(entry.name);
+                return teams.length
+                    ? `${entry.name} is showing up on ${naturalList(teams)} boards`
+                    : `${entry.name} has ${lookText(entry.count)}`;
+            });
+            lines.push(`Prospect heat: ${naturalList(contested)}.`);
         } else if (boardTraffic.length) {
             const projectedCrowd = boardTraffic
                 .slice(0, 2)
                 .filter((entry) => entry.positionCount > 0 || entry.count > 0)
-                .map((entry) => `${entry.name} (${formatNeedLabel(mapPositionToNeed({ position: entry.pos }))}${entry.count > 0 ? ` x${entry.count}` : ` ${entry.positionCount}`})`);
+                .map((entry) => `${entry.name} is tied to ${laneText(mapPositionToNeed({ position: entry.pos }))}${entry.count > 0 ? ` with ${lookText(entry.count)}` : ` with ${lookText(entry.positionCount)}`}`);
             if (projectedCrowd.length) {
-                lines.push(`Pressure names: ${projectedCrowd.join(' | ')}.`);
+                lines.push(`Prospect heat: ${naturalList(projectedCrowd)}.`);
             }
         }
         if (nearbyPickTeams.length) {
-            lines.push(`Window: ${nearbyPickTeams.slice(0, 3).map((entry) => `#${entry.slot} ${entry.pickTeam} ${entry.needs.map((need) => formatNeedLabel(need)).join('/') || 'BPA'}`).join(' | ')}.`);
+            lines.push(`Around your picks, ${nearbyPickTeams.slice(0, 3).map((entry) => `${entry.pickTeam} at #${entry.slot} is likely looking at ${naturalList(entry.needs.map((need) => formatNeedLabel(need))) || 'best player available'}`).join('; ')}.`);
         }
         if (rivalProfiles.length) {
-            lines.push(`Rivals: ${rivalProfiles.slice(0, 3).map((profile) => {
+            const rivalLines = rivalProfiles.slice(0, 3).map((profile) => {
                 const lane = profile.topNeeds.length
-                    ? profile.topNeeds.slice(0, 2).map(([need, count]) => `${formatNeedLabel(need)} ${count}`).join('/')
-                    : 'BPA';
-                const pickText = profile.pickThreat ? ` #${profile.pickThreat.slot}` : '';
-                return `${profile.team}${pickText}: ${lane}`;
-            }).join(' | ')}.`);
+                    ? naturalList(profile.topNeeds.slice(0, 2).map(([need, count]) => `${laneText(need)} (${lookText(count)})`))
+                    : 'best player available';
+                const names = profile.topPlayers.length
+                    ? ` Names tied to them: ${naturalList(profile.topPlayers.slice(0, 2).map(([name]) => name))}.`
+                    : '';
+                const pickText = profile.pickThreat ? ` near your range at #${profile.pickThreat.slot}` : '';
+                return `${profile.team}${pickText} is investing in ${lane}.${names}`;
+            });
+            lines.push(rivalLines.join(' '));
         }
         if (divisionPeers.length) {
             const hotDivision = divisionPeers
