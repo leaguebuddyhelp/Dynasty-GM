@@ -153,27 +153,25 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
 
   // Limit player buckets to top 25 to avoid extra pages; keep single row per category
   const rows = buckets
-    .map(bucket => bucket.items.slice(0, 25))
-    .filter(arr => arr.length)
-    .map((opts, idx) => new ActionRowBuilder().addComponents(
+    .map(bucket => ({ ...bucket, items: bucket.items.slice(0, 25) }))
+    .filter(bucket => bucket.items.length)
+    .map((bucket) => new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
-        .setCustomId(`trade_builder_select_assets|${side}|${draftId}|${buckets[idx].key}|0`)
-        .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} ${buckets[idx].label}`)
+        .setCustomId(`trade_builder_select_assets|${side}|${draftId}|${bucket.key}|0`)
+        .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} ${bucket.label}`)
         .setMinValues(1)
-        .setMaxValues(Math.min(5, opts.length))
-        .addOptions(opts)
+        .setMaxValues(Math.min(5, bucket.items.length))
+        .addOptions(bucket.items)
     ));
 
-  const pickYearOptions = [draftBaseYear, draftBaseYear + 1, draftBaseYear + 2];
-  const combinedPickOptions = [];
-
-  pickYearOptions.forEach((pickYear) => {
+  const buildPickOptionsForYear = (pickYear) => {
+    const options = [];
     const firstRoundLabels = getFirstRoundPickLabelsForTeam(teamName, pickYear, allTeams, guildId);
     firstRoundLabels.forEach(label => {
       const parsed = parsePickValue(label, draftBaseYear, {
         currentYearExactAllowed: pickContext.currentYearExactAllowed,
       });
-      combinedPickOptions.push({
+      options.push({
         label,
         value: `pick:${label}`,
         description: `Val ${Number(parsed?.value || 0).toFixed(1)}`.slice(0, 100),
@@ -184,24 +182,44 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
       const parsed = parsePickValue(roundLabel, draftBaseYear, {
         currentYearExactAllowed: pickContext.currentYearExactAllowed,
       });
-      combinedPickOptions.push({
+      options.push({
         label: roundLabel,
         value: `pick:${roundLabel}`,
         description: `Val ${Number(parsed?.value || 0).toFixed(1)}`.slice(0, 100),
       });
     });
-  });
+    return options;
+  };
 
-  rows.push(
-    new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId(`trade_builder_select_assets|${side}|${draftId}|picks|0`)
-        .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} draft picks (2027-2029)`)
-        .setMinValues(1)
-        .setMaxValues(Math.min(5, combinedPickOptions.length))
-        .addOptions(combinedPickOptions.slice(0, 25))
-    )
-  );
+  const currentPickOptions = buildPickOptionsForYear(draftBaseYear);
+  const futurePickOptions = [draftBaseYear + 1, draftBaseYear + 2]
+    .flatMap((pickYear) => buildPickOptionsForYear(pickYear));
+
+  if (currentPickOptions.length) {
+    rows.push(
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(`trade_builder_select_assets|${side}|${draftId}|current_picks|0`)
+          .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} current ${draftBaseYear} picks`)
+          .setMinValues(1)
+          .setMaxValues(Math.min(5, currentPickOptions.length))
+          .addOptions(currentPickOptions.slice(0, 25))
+      )
+    );
+  }
+
+  if (futurePickOptions.length) {
+    rows.push(
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(`trade_builder_select_assets|${side}|${draftId}|future_picks|0`)
+          .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} future ${draftBaseYear + 1}-${draftBaseYear + 2} picks`)
+          .setMinValues(1)
+          .setMaxValues(Math.min(5, futurePickOptions.length))
+          .addOptions(futurePickOptions.slice(0, 25))
+      )
+    );
+  }
 
   return rows.slice(0, 5);
 }
@@ -268,11 +286,8 @@ async function refreshBuilder(interaction, draft, snapshot) {
 
   // Madden/NFL only
   const valueMap = buildValueMap(snapshot);
-  const seasonYear = snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear
-    || snapshot?.info?.calendarYear
-    || new Date().getFullYear();
-  const baseYear = Math.max(2027, seasonYear);
   const pickContext = getMaddenPickContext(snapshot);
+  const baseYear = Math.max(2027, pickContext.draftBaseYear);
   const summary = summarizeAssets(draft, valueMap, baseYear, {
     currentYearExactAllowed: pickContext.currentYearExactAllowed,
   });
@@ -357,10 +372,8 @@ export async function execute(interaction) {
     }
     if (!leagueId) return;
     const snapshot = loadLeagueSnapshot(leagueId);
-    const draftYearBase = Math.max(
-      2027,
-      snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear()
-    );
+    const pickContext = getMaddenPickContext(snapshot);
+    const draftYearBase = Math.max(2027, pickContext.draftBaseYear);
     const roster = rosterForTeam(snapshot, side === 'yours' ? draft.yourTeamId : draft.otherTeamId);
     const rosterMap = new Map(roster.map(p => [String(p.rosterId), p]));
     const sel = interaction.values || [];
@@ -393,7 +406,7 @@ export async function execute(interaction) {
           : rawValue;
         if (assetsArr.find(a => a.type === 'pick' && a.raw === raw)) return;
         const parsed = parsePickValue(raw, draftYearBase, {
-          currentYearExactAllowed: getMaddenPickContext(snapshot).currentYearExactAllowed,
+          currentYearExactAllowed: pickContext.currentYearExactAllowed,
         });
         assetsArr.push({
           type: 'pick',
