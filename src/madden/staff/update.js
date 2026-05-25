@@ -70,7 +70,11 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
     ?? snap?.stage
     ?? Stage.SEASON,
   );
-  const offSeasonStage = Number(summary.offSeasonStage ?? seasonInfo.offSeasonStage ?? 0) || 0;
+  const summaryOffSeasonStage = Number(summary.offSeasonStage ?? 0) || 0;
+  const seasonOffSeasonStage = Number(seasonInfo.offSeasonStage ?? 0) || 0;
+  const offSeasonStage = summaryOffSeasonStage > 0 ? summaryOffSeasonStage : seasonOffSeasonStage;
+  const seasonTitle = String(seasonInfo.seasonTitle || '').toLowerCase();
+  const titleLooksOffseason = seasonTitle.includes('offseason');
   const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && rawStage !== Stage.SEASON;
   const currentWeekIndex = rawWeek > 0 ? rawWeek - 1 : null;
   const weeklyStatsEntries = Array.isArray(snap?.weeklyStats) ? snap.weeklyStats : [];
@@ -153,11 +157,20 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
     inferredPreseasonFromSchedule;
 
   let kind = 'regular';
-  if (explicitRegularSeason) {
+  const explicitOffseason = offSeasonStage > 0 || rawStage === 3 || rawStage === 8 || titleLooksOffseason || draftInactive;
+  const regularSeasonDefinitelyCurrent =
+    rawStage === Stage.SEASON &&
+    currentRegularEvidence &&
+    !titleLooksOffseason &&
+    !draftInactive;
+
+  if (explicitOffseason && !regularSeasonDefinitelyCurrent) {
+    kind = 'offseason';
+  } else if (explicitRegularSeason) {
     kind = 'regular';
   } else if (explicitPreseason) {
     kind = 'preseason';
-  } else if (offSeasonStage > 0 || rawStage === 3 || rawStage === 8 || draftInactive) {
+  } else if (explicitOffseason) {
     kind = 'offseason';
   } else if (rawWeek <= 0) {
     kind = 'preseason';
@@ -1128,7 +1141,6 @@ async function execute(interaction) {
       summary = {
         currentWeek: Number(refresh?.summary?.week || 0) || null,
         stage: undefined,
-        offSeasonStage: 0,
         missingWeeks: [],
       };
     } else {
@@ -1698,10 +1710,10 @@ async function execute(interaction) {
     const weekLabel = (stage, wk, offSeasonStage = 0, seasonWeekType = stage) => {
       const st = seasonWeekType !== undefined ? seasonWeekType : stage;
       const weekIndex = Math.max(0, Number(wk ?? 0));
+      if (offSeasonStage > 0 || st === 3 || st === 8) return `Offseason Stage ${offSeasonStage || 1}`;
       if (st === Stage.PRESEASON && weekIndex <= 3) return `Preseason Week ${weekIndex + 1}`;
       if (st === Stage.SEASON && weekIndex <= 17) return `Regular Season Week ${weekIndex + 1}`;
       if (st === 2 || weekIndex >= 18) return getMessageForWeek(weekIndex + 1, 2, 0);
-      if (offSeasonStage > 0) return `Offseason Stage ${offSeasonStage}`;
       return getMessageForWeek(weekIndex + 1, st, offSeasonStage);
     };
     const displayWeekLabel = (stage, currentWeek, offSeasonStage = 0, seasonWeekType = stage) => {
@@ -1711,13 +1723,13 @@ async function execute(interaction) {
       return weekLabel(st !== undefined ? st : 1, wkIdx, offSeasonStage, st);
     };
     let missingField = deduped.length
-      ? deduped.map(w => `${weekLabel(w.stage, w.weekIndex, summary.offSeasonStage !== undefined ? summary.offSeasonStage : 0)} (players: ${w.playerCount})${w.runs && w.runs > 1 ? ` x${w.runs}` : ''}`).join('\n')
+      ? deduped.map(w => `${weekLabel(w.stage, w.weekIndex, phase.offSeasonStage || 0)} (players: ${w.playerCount})${w.runs && w.runs > 1 ? ` x${w.runs}` : ''}`).join('\n')
       : 'None';
     if (inOffseason && deduped.length === 0) {
       missingField = 'Offseason – no weekly player stats expected';
     }
 
-    const offStageShown = inOffseason ? (summary.offSeasonStage !== undefined ? summary.offSeasonStage : (seasonInfo.offSeasonStage !== undefined ? seasonInfo.offSeasonStage : 0)) : 0;
+    const offStageShown = inOffseason ? (phase.offSeasonStage || 1) : 0;
     const pulledWeekLabel = explicitPhaseWeekLabel(phase, currentWeekValue);
     const dataWeekLabel = effectiveCurrentWeekUsed
       ? displayWeekLabel(
