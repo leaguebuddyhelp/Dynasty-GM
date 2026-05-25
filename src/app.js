@@ -277,7 +277,6 @@ client.on('interactionCreate', async interaction => {
         const COMMAND_FEATURE_MAP = {
           // scouting/draft tools
           draftprimer: 'scouting_draft',
-          draftgrades: 'scouting_draft',
           draftexport: 'scouting_draft',
           // league recognition system
           recognition: 'recognition',

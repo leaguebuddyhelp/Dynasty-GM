@@ -1578,8 +1578,14 @@ async function execute(interaction) {
         ? '[madden-weeklyupdate] player changes/injuries skipped: backfill mode only updates requested week outputs'
         : '[madden-weeklyupdate] bye week between Conference and Super Bowl: skipping player changes/injuries/awards');
     }
-    // Draft grades auto-post (after draft recap)
-    // Skip automatic draft grades; post only manually if needed
+    // Draft grades auto-post once rookies are present in the offseason draft export.
+    if (!backfillOnlyAwards) {
+      try {
+        await maybePostDraftGrades(interaction.client, leagueId, interaction.guildId);
+      } catch (e) {
+        console.warn('[madden-weeklyupdate] draft grades auto-post skipped:', e?.message || e);
+      }
+    }
     const guildTier = String(loadGuildMaddenConfig(interaction.guildId)?.license?.tier || 'free').toLowerCase();
     const top100Included = guildTier === 'standard' || guildTier === 'premium';
     const yearlyAwardsIncluded = guildTier === 'standard' || guildTier === 'premium';

@@ -47,6 +47,13 @@ function resolveTeamNeedsForDraftGrades(teamName, needsByTeam = {}) {
   return hit?.[1] || ['BPA'];
 }
 
+function countDraftedRookies(snapshot) {
+  return Object.values(snapshot?.rosters?.teams || {})
+    .flatMap((team) => team?.rosterInfoList || [])
+    .filter((player) => Number(player?.yearsPro ?? 1) === 0)
+    .length;
+}
+
 export function computeDraftGrades(snapshot) {
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
   const rosters = snapshot?.rosters?.teams || {};
@@ -146,8 +153,9 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
     const isOffseason = (seasonInfo.offSeasonStage || 0) > 0;
     const isPreseason = seasonInfo.seasonWeekType === 0 || (seasonInfo.seasonWeekType === undefined && (seasonInfo.seasonWeek || 0) >= 1 && (seasonInfo.preseasonWeekCount || 0) > 0);
-    // Gate: only in offseason (draft/draft recap), never in preseason or regular season
+    // Gate: only in offseason after the draft export has rookies on rosters.
     if (!isOffseason || isPreseason) return;
+    if (countDraftedRookies(snapshot) < 32) return;
 
     const channelMap = loadMaddenChannelMap(guildId);
     const roleMap = (getGuildRoleMap(guildId) && Object.keys(getGuildRoleMap(guildId)).length)
@@ -161,8 +169,8 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     const seasonKey = `year_${seasonYear}`;
     state[leagueId] = state[leagueId] || {};
     const lastPosted = state[leagueId]?.[seasonKey] || state[leagueId];
-    if (lastPosted && lastPosted.fetchedAt === snapshot.fetchedAt) {
-      return; // already posted for this snapshot
+    if (lastPosted?.posted || lastPosted?.fetchedAt) {
+      return; // already posted for this draft year
     }
 
     const grades = computeDraftGrades(snapshot);
@@ -175,7 +183,12 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
       const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
       const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
       await channel.send({ content: coachTag ?? undefined, embeds: [embed] });
-      state[leagueId][seasonKey] = { fetchedAt: snapshot.fetchedAt, seasonYear };
+      state[leagueId][seasonKey] = {
+        posted: true,
+        fetchedAt: snapshot.fetchedAt,
+        seasonYear,
+        postedAt: new Date().toISOString(),
+      };
       fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
       fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
     }
