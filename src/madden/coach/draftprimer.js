@@ -13,7 +13,13 @@ import { getCoachAssignmentMap } from '../../shared/madden_coach_assignments.js'
 import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
-import { loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import {
+    displayMaddenDraftClassId,
+    findMaddenDraftClassFile,
+    listMaddenDraftClassFiles,
+    loadMaddenDraftClassArray,
+    normalizeMaddenDraftClassId,
+} from '../../shared/madden_draft_class_files.js';
 
 // Plan gating (LEAGUEbuddy packsEnabled / plan enforcement)
 export const featureKey = 'scouting_draft';
@@ -457,57 +463,50 @@ function buildWarRoomIntel({
     const lines = [];
     if (perkState?.perks?.draftWarRoomIntel) {
         if (topTraffic.length) {
-            lines.push(`Season scout traffic around this class: ${topTraffic.join(' • ')}.`);
-            if (recentHeat.length) {
-                lines.push(`Recent heat: ${recentHeat.join(' • ')} over the last few weeks.`);
-            }
+            lines.push(`Traffic: ${topTraffic.join(' | ')}${recentHeat.length ? `; recent ${recentHeat.join(' | ')}` : ''}.`);
         } else {
             const boardLanes = boardTraffic
                 .slice(0, 3)
                 .filter((entry) => entry.positionCount > 0)
-                .map((entry) => `${formatNeedLabel(mapPositionToNeed({ position: entry.pos }))} lane ${entry.positionCount}`);
+                .map((entry) => `${formatNeedLabel(mapPositionToNeed({ position: entry.pos }))} ${entry.positionCount}`);
             const boardNames = boardTraffic
                 .filter((entry) => entry.count > 0)
                 .slice(0, 2)
                 .map((entry) => `${entry.name} (${entry.count})`);
             if (boardLanes.length || boardNames.length) {
-                lines.push(`Season-long scout pressure still points at ${[...boardLanes, ...boardNames].join(' • ')}.`);
+                lines.push(`Traffic: ${[...boardLanes, ...boardNames].join(' | ')}.`);
             } else if (topBoardEntries.length) {
                 const roundPressure = topBoardEntries
                     .slice(0, 3)
                     .map((entry) => entry?.target)
                     .filter(Boolean)
                     .map((target) => `${target.name} R${projectedRoundForProspect(target)}`);
-                lines.push(`Season-long scout traffic is not crowded yet, but your board pressure is still live around ${roundPressure.join(' • ')}.`);
+                lines.push(`Traffic: quiet so far; board pressure starts at ${roundPressure.join(' | ')}.`);
             } else {
-                lines.push('Season-long league traffic is still light, but every lane has activity: early board pressure is already forming around your current top targets.');
+                lines.push('Traffic: light class-wide; treat early board pressure as unsettled.');
             }
         }
         if (contestedNames.length) {
-            lines.push(`Most contested names around your board this season: ${contestedNames.map((entry) => `${entry.name} (${entry.count})`).join(' • ')}.`);
+            lines.push(`Names getting looks: ${contestedNames.map((entry) => `${entry.name} x${entry.count}`).join(' | ')}.`);
         } else if (boardTraffic.length) {
             const projectedCrowd = boardTraffic
                 .slice(0, 2)
                 .filter((entry) => entry.positionCount > 0 || entry.count > 0)
-                .map((entry) => `${entry.name} (${formatNeedLabel(mapPositionToNeed({ position: entry.pos }))}${entry.count > 0 ? ` ${entry.count}` : ` lane ${entry.positionCount}`})`);
+                .map((entry) => `${entry.name} (${formatNeedLabel(mapPositionToNeed({ position: entry.pos }))}${entry.count > 0 ? ` x${entry.count}` : ` ${entry.positionCount}`})`);
             if (projectedCrowd.length) {
-                lines.push(`Board pressure indicators: ${projectedCrowd.join(' • ')}.`);
+                lines.push(`Pressure names: ${projectedCrowd.join(' | ')}.`);
             }
         }
         if (nearbyPickTeams.length) {
-            lines.push(`Pick-window teams: ${nearbyPickTeams.slice(0, 3).map((entry) => `#${entry.slot} ${entry.pickTeam} (${entry.needs.map((need) => formatNeedLabel(need)).join('/') || 'BPA'}${entry.scoutCount > 0 ? `, ${entry.scoutCount} looks` : ''})`).join(' | ')}.`);
+            lines.push(`Window: ${nearbyPickTeams.slice(0, 3).map((entry) => `#${entry.slot} ${entry.pickTeam} ${entry.needs.map((need) => formatNeedLabel(need)).join('/') || 'BPA'}`).join(' | ')}.`);
         }
         if (rivalProfiles.length) {
-            lines.push(`Rival scout boards: ${rivalProfiles.map((profile) => {
+            lines.push(`Rivals: ${rivalProfiles.slice(0, 3).map((profile) => {
                 const lane = profile.topNeeds.length
-                    ? profile.topNeeds.map(([need, count]) => `${formatNeedLabel(need)} ${count}`).join('/')
+                    ? profile.topNeeds.slice(0, 2).map(([need, count]) => `${formatNeedLabel(need)} ${count}`).join('/')
                     : 'BPA';
-                const playerText = profile.topPlayers.length
-                    ? `; names ${profile.topPlayers.map(([name, count]) => `${name}${count > 1 ? ` x${count}` : ''}`).join(', ')}`
-                    : '';
-                const scoutText = profile.topScout ? `; lead ${String(profile.topScout[0]).replace(/#\d+$/, '')}` : '';
-                const pickText = profile.pickThreat ? `; owns #${profile.pickThreat.slot}` : '';
-                return `${profile.team}: ${lane}${pickText}${playerText}${scoutText}`;
+                const pickText = profile.pickThreat ? ` #${profile.pickThreat.slot}` : '';
+                return `${profile.team}${pickText}: ${lane}`;
             }).join(' | ')}.`);
         }
         if (divisionPeers.length) {
@@ -517,7 +516,7 @@ function buildWarRoomIntel({
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 2);
             if (hotDivision.length) {
-                lines.push(`Division read: ${hotDivision.map((entry) => `${entry.peer} has ${entry.count} season looks in this class`).join(' | ')}.`);
+                lines.push(`Division: ${hotDivision.map((entry) => `${entry.peer} ${entry.count} looks`).join(' | ')}.`);
             }
         }
         const topTarget = topBoardEntries[0]?.target || null;
@@ -528,11 +527,11 @@ function buildWarRoomIntel({
             const latestSlot = Math.max(...ownPickWindow);
             const directWindowThreats = nearbyPickTeams.filter((entry) => entry.needs.includes(targetNeed));
             if (targetRank < earliestSlot && directWindowThreats.length >= 2) {
-                lines.push(`Trade-up window: ${formatNeedLabel(targetNeed)} traffic is live ahead of your slot. If ${topTarget.name} is the priority, start shopping a move before the board gets inside #${Math.max(1, earliestSlot - 4)}.`);
+                lines.push(`Move: ${formatNeedLabel(targetNeed)} traffic sits ahead of you; if ${topTarget.name} is the guy, shop before #${Math.max(1, earliestSlot - 4)}.`);
             } else if (targetRank > latestSlot + 8 && directWindowThreats.length <= 1) {
-                lines.push(`Trade-down window: your top lane is tracking later than your current slot. If the tier holds, sliding back should stay clean without losing the board.`);
+                lines.push('Move: top lane tracks later than your slot; trade-down is live if the tier holds.');
             } else {
-                lines.push(`Hold window: ${topTarget.name} still tracks close enough to your range that you can stay patient unless this lane heats up on draft day.`);
+                lines.push(`Move: hold unless the ${formatNeedLabel(targetNeed).toLowerCase()} lane heats up.`);
             }
         }
     }
@@ -548,18 +547,18 @@ function buildWarRoomIntel({
         const strongestRound = roundSummaries.slice().sort((a, b) => (b.premiumCount - a.premiumCount) || (b.devCount - a.devCount))[0];
         const bestDevRound = roundSummaries.slice().sort((a, b) => b.devCount - a.devCount)[0];
         if (strongestRound) {
-            lines.push(`Class shape: Round ${strongestRound.round} is carrying the best premium-position weight right now.`);
+            lines.push(`Class shape: R${strongestRound.round} has the best premium-position weight.`);
         }
         if (bestDevRound && bestDevRound.devCount > 0) {
-            lines.push(`Dev concentration: Round ${bestDevRound.round} currently shows ${bestDevRound.devCount} non-normal dev fits in the class file.`);
+            lines.push(`Dev pocket: R${bestDevRound.round} shows ${bestDevRound.devCount} non-normal fits.`);
         }
         if (['late_regular', 'postseason', 'offseason'].includes(String(seasonContext?.phase || '')) && topBoardEntries.length) {
             const pressureNeed = topBoardEntries[0]?.need || mapNeed(topBoardEntries[0]?.target || {});
-            lines.push(`Late-board note: do not count on ${formatNeedLabel(pressureNeed).toLowerCase()} depth surviving cleanly through your full range once the board tightens. Keep a same-tier pivot ready.`);
+            lines.push(`Board note: keep a same-tier ${formatNeedLabel(pressureNeed).toLowerCase()} pivot ready.`);
         }
     }
 
-    return lines.length ? joinLimitedLines(lines.slice(0, perkState?.perks?.classTrendIntel ? 7 : 6), 1024) : null;
+    return lines.length ? joinLimitedLines(lines.slice(0, perkState?.perks?.classTrendIntel ? 5 : 4), 720) : null;
 }
 
 function buildDraftPrimerAccessNote({ perkState, seasonContext }) {
@@ -643,8 +642,18 @@ function saveDraftPrimerWeek(history, { leagueId, userId, seasonKey, weekKey, te
     writeJSON(DRAFT_PRIMER_HISTORY_PATH, history);
 }
 
-function classIdForLeague(league) {
-    return getMaddenDraftClassId(league);
+function resolveDraftPrimerClass(league) {
+    const autoClassId = normalizeMaddenDraftClassId(getMaddenDraftClassId(league));
+    const availableClasses = listMaddenDraftClassFiles('bigboard');
+    const latestClassId = availableClasses[availableClasses.length - 1]?.classId || autoClassId;
+    const resolvedClassId = autoClassId === 'cus_01' && latestClassId && latestClassId !== autoClassId
+        ? latestClassId
+        : autoClassId;
+    const autoLock = formatMaddenDraftClassLock(league);
+    const classLock = resolvedClassId === autoClassId
+        ? autoLock
+        : `Current class ${displayMaddenDraftClassId(resolvedClassId)} • auto lock was ${displayMaddenDraftClassId(autoClassId)}`;
+    return { classId: resolvedClassId, classLock, autoClassId };
 }
 
 function scoutStatusForProspect(userScout = {}, classKey, weekKey, playerName) {
@@ -850,9 +859,33 @@ function qbDepthStatus(teamName, league) {
     return { wantDepthQB, starterOvr, backupOvr, qbCount: count };
 }
 
-function loadDraftClass(classId) {
+function loadDraftClass(classId, context = {}) {
     const normalizedClassId = normalizeMaddenDraftClassId(classId);
-    return (loadMaddenDraftClassArray(normalizedClassId) || []).filter(p => p && p.name);
+    const file = findMaddenDraftClassFile(normalizedClassId);
+    const logInfo = {
+        event: 'draft_class_lookup',
+        command: context.command || 'draftprimer',
+        guildId: context.guildId || null,
+        userId: context.userId || null,
+        classId: normalizedClassId,
+        resolvedFile: file,
+        timestamp: new Date().toISOString(),
+    };
+    if (!file) {
+        logInfo.error = 'Draft class file not found';
+        console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
+        return [];
+    }
+    try {
+        const data = (loadMaddenDraftClassArray(normalizedClassId) || []).filter(p => p && p.name);
+        logInfo.success = true;
+        console.log('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][SUCCESS]', JSON.stringify(logInfo));
+        return data;
+    } catch (error) {
+        logInfo.error = error?.message || String(error);
+        console.error('[LEAGUEBUDDY][DRAFT_CLASS_LOOKUP][ERROR]', JSON.stringify(logInfo));
+        return [];
+    }
 }
 
 function seededRand(teamName, round, max) {
@@ -922,8 +955,7 @@ export async function execute(interaction) {
 
     const live = buildLiveDraftContext(league);
     const seasonContext = live.seasonContext || getSeasonPhaseContext(league, 0);
-    const classKey = classIdForLeague(league);
-    const classLock = formatMaddenDraftClassLock(league);
+    const { classId: classKey, classLock } = resolveDraftPrimerClass(league);
     const scoutData = loadScoutStore();
     const scoutLog = loadScoutLog();
     const recognitionContext = inferRecognitionContext('madden', interaction.guildId);
@@ -1026,7 +1058,11 @@ export async function execute(interaction) {
         // Clamp needs to top 5 after adjustments
         needs = needs.slice(0, 5);
     }
-    const draftClass = loadDraftClass(classKey)
+    const draftClass = loadDraftClass(classKey, {
+        command: 'draftprimer',
+        guildId: interaction.guildId,
+        userId: interaction.user.id,
+    })
         .sort((a, b) => (a.RNK ?? a.rank ?? a.order ?? 9999) - (b.RNK ?? b.rank ?? b.order ?? 9999))
         .map((p, i) => ({ ...p, __idx: i }));
     // Precompute QB prospects with projected round to diversify QB suggestions
@@ -2262,16 +2298,15 @@ export async function execute(interaction) {
         const archetype = canShowScoutDetail ? formatShortArchetype(intel.targetNeed, target) : '';
         const projectedPick = canShowScoutDetail ? projectedPickForProspect(target) : null;
         const headerBits = [
-            `${idx + 1}. ${target.name}`,
+            `${idx + 1}. ${target.name} (${target.position || target.position_1 || formatNeedLabel(intel.targetNeed)})`,
             school,
-            `R${intel.targetRound}`,
-            `#${intel.targetRank}`,
+            `R${intel.targetRound} #${intel.targetRank}`,
         ];
         if (projectedPick && projectedPick !== intel.targetRank) headerBits.push(`proj ${projectedPick}`);
         if (ovr) headerBits.push(ovr);
         if (dev) headerBits.push(dev);
         if (archetype) headerBits.push(archetype);
-        const header = `${headerBits.join(' | ')}:`;
+        const header = headerBits.join(' | ');
         const competitionTeams = intel.directCompetition
             .slice(0, 2)
             .map((pick) => pick.pickTeam)
@@ -2281,59 +2316,48 @@ export async function execute(interaction) {
             .filter((other) => other?.target?.name && other.target.name !== target.name && (other.need || mapNeed(other.target)) === intel.targetNeed)
             .map((other) => other.target.name)
             .slice(0, 2);
-        const fallbackLine = fallbackNames.length >= 2
-            ? seededText(`fallback:${teamName}:${target.name}:2`, [
-                `Keep ${fallbackNames[0]} or ${fallbackNames[1]} ready as your next ${needLabel} call.`,
-                `If this lane gets picked clean, pivot to ${fallbackNames[0]} or ${fallbackNames[1]}.`,
-                `Do not let this tier leave you empty-handed; ${fallbackNames[0]} or ${fallbackNames[1]} should stay on deck.`,
-            ])
-            : fallbackNames.length === 1
-                ? seededText(`fallback:${teamName}:${target.name}:1`, [
-                    `Keep ${fallbackNames[0]} ready as your next ${needLabel} call.`,
-                    `If this name goes early, pivot straight to ${fallbackNames[0]}.`,
-                    `${fallbackNames[0]} should stay on deck as the clean fallback.`,
-                ])
-                : seededText(`fallback:${teamName}:${target.name}:0`, [
-                    `Have another ${needLabel} from the same tier ready as your fallback.`,
-                    `Keep a same-tier ${needLabel} behind him so this lane does not stall out.`,
-                    `Do not leave this tier with only one answer; keep another ${needLabel} ready.`,
-                ]);
-        const scoutLead = scout.isFullyScouted
-            ? 'Scouting: full report already unlocked.'
+        const scoutTag = scout.isFullyScouted
+            ? 'full scout'
             : scout.isPartiallyScouted
-                ? `Scouting: ${scout.unlockCount}/3 layers unlocked on your board.`
+                ? `${scout.unlockCount}/3 scout`
                 : scout.isSuggestedScout
-                    ? 'Scouting: this still needs a real pass, but it matches your current scout queue.'
+                    ? 'queued scout'
                     : scout.hasBoardHistory
-                        ? 'Scouting: he is on your board, but you do not have a real report yet.'
-                        : 'Scouting: no unlocked report yet.';
-        const capitalLine = intel.roundOwnedSlots?.length >= 2
-            ? `You control picks #${intel.roundOwnedSlots.join(' and #')} in this range.`
+                        ? 'on board'
+                        : 'unscouted';
+        const capitalTag = intel.roundOwnedSlots?.length >= 2
+            ? `picks #${intel.roundOwnedSlots.join('/#')}`
             : intel.earliestSlot != null
-                ? `Your next realistic slot is #${intel.earliestSlot}.`
+                ? `next #${intel.earliestSlot}`
                 : '';
+        const marketTag = competitionTeams
+            ? `${intel.pressure}: ${competitionTeams}`
+            : `${intel.pressure} lane`;
+        const fallbackTag = fallbackNames.length
+            ? `fallback ${fallbackNames.join('/')}`
+            : `keep same-tier ${needLabel}`;
         if (intel.fitsEarliestSlot && intel.premiumRange) {
-            return `${header} ${scoutLead} ${capitalLine} This is premium-board value for you, so there is no reason to wait for the teens if he is your preferred ${needLabel}.`;
+            return `${header} — ${scoutTag}; ${capitalTag}; premium value, do not wait if he is the ${needLabel}.`;
         }
         if (intel.fitsOwnedWindow && intel.roundOwnedSlots?.length >= 2) {
-            return `${header} ${scoutLead} ${capitalLine} He sits comfortably inside your current board window, so this is more about which of your picks you want to spend than whether he can reach you. ${fallbackLine}`;
+            return `${header} — ${scoutTag}; ${capitalTag}; in range, choose the pick and keep ${fallbackTag}.`;
         }
         if (intel.reachVsSlot && intel.pressure === 'hot') {
-            return `${header} ${scoutLead} This is a contested ${needLabel} lane, and ${competitionTeams || 'teams ahead of you'} could clear it out early. Treat him as a trade-up conversation, not a safe faller.`;
+            return `${header} — ${scoutTag}; ${marketTag}; trade-up name, not a safe faller.`;
         }
         if (intel.reachVsSlot) {
-            return `${header} ${scoutLead} The talent probably lands ahead of your natural slot, so keep him in the swing tier without building the whole plan around him falling.`;
+            return `${header} — ${scoutTag}; likely ahead of your slot; keep as a swing target.`;
         }
         if (intel.pressure === 'hot') {
-            return `${header} ${scoutLead} League interest looks heavy, and ${competitionTeams || 'multiple teams'} could take him before your next slot. ${fallbackLine}`;
+            return `${header} — ${scoutTag}; ${marketTag}; ${fallbackTag}.`;
         }
         if (intel.pressure === 'warm') {
-            return `${header} ${scoutLead} The market should stay active, but not frantic. ${capitalLine} He fits your board window if the tier holds. ${fallbackLine}`;
+            return `${header} — ${scoutTag}; ${marketTag}; ${capitalTag || 'watch window'}; ${fallbackTag}.`;
         }
         if (intel.slideToYou) {
-            return `${header} ${scoutLead} This profile should live in your range, so there is no reason to force the board unless the tier starts disappearing faster than expected.`;
+            return `${header} — ${scoutTag}; should reach your range unless the tier runs.`;
         }
-        return `${header} ${scoutLead} ${capitalLine} He is a clean fit for your board shape. ${fallbackLine}`;
+        return `${header} — ${scoutTag}; ${capitalTag || 'board fit'}; ${fallbackTag}.`;
     }).join('\n');
     const planNames = topBoardEntries
         .map((entry) => entry?.target?.name)
@@ -2350,23 +2374,23 @@ export async function execute(interaction) {
                     : 'Offseason board build';
     const capitalShort = roundOneOwnedSlots.length
         ? extraRoundOneSlots.length
-            ? `With picks #${firstRoundSlot} and ${extraRoundOneSlots.map((pick) => `#${pick.slot}`).join(', ')}, lock one premium need and keep the other slot flexible.`
-            : `At pick #${firstRoundSlot}, stay in range and avoid chasing names that will not reach your slot.`
-        : 'Without a first-rounder, build a deeper day-two cluster and stay patient.';
+            ? `Capital: #${firstRoundSlot}, ${extraRoundOneSlots.map((pick) => `#${pick.slot}`).join(', ')}; spend one premium, keep one flexible.`
+            : `Capital: #${firstRoundSlot}; stay in range.`
+        : 'Capital: no R1; build day-two clusters.';
     const fallbackShort = secondaryNeed && secondaryNeed !== primaryNeed
-        ? `Start at ${formatNeedLabel(primaryNeed).toLowerCase()}, with ${formatNeedLabel(secondaryNeed).toLowerCase()} as the fallback lane.`
-        : `Stay anchored on ${formatNeedLabel(primaryNeed).toLowerCase()} and let value guide the next tier.`;
+        ? `Priority: ${formatNeedLabel(primaryNeed)} -> ${formatNeedLabel(secondaryNeed)}.`
+        : `Priority: ${formatNeedLabel(primaryNeed)}.`;
     const namesShort = planNames.length === 2
-        ? `Current names to hold near the top: ${planNames[0]} and ${planNames[1]}.`
+        ? `Names: ${planNames[0]}, ${planNames[1]}.`
         : planNames.length === 1
-            ? `Current top name: ${planNames[0]}.`
+            ? `Name: ${planNames[0]}.`
             : '';
     const inSeasonShort = seasonContext.isInSeason
-        ? `Use the next few weeks to confirm your ${formatNeedLabel(primaryNeed).toLowerCase()} tier before locking the board.`
-        : 'Use this board to finalize tiers and late pivots.';
+        ? `Scout the ${formatNeedLabel(primaryNeed).toLowerCase()} tier next.`
+        : 'Finalize tiers and late pivots.';
     const picks = pickEntries.map((entry) => entry.line);
     const hasDraftIntelPerk = Boolean(perkState?.perks?.draftWarRoomIntel || perkState?.perks?.classTrendIntel || perkState?.perks?.scoutRecommendation);
-    const quickTargets = hasDraftIntelPerk ? picks.slice(0, 7) : picks.slice(0, 3);
+    const quickTargets = hasDraftIntelPerk ? picks.slice(0, 5) : picks.slice(0, 3);
     const quickSnapshot = `${recordStr} record`;
     const quickCapital = roundOneOwnedSlots.length
         ? extraRoundOneSlots.length
@@ -2374,7 +2398,13 @@ export async function execute(interaction) {
             : `1st-round pick: #${firstRoundSlot}.`
         : 'No 1st-round pick.';
     const quickPriority = needsDisplay.slice(0, 3).map((need, idx) => `${idx + 1}. ${formatNeedLabel(need)}`).join(' | ');
-    const draftPlan = [phaseShort, capitalShort, fallbackShort, namesShort, inSeasonShort]
+    const draftPlan = [
+        `${phaseShort}.`,
+        capitalShort,
+        fallbackShort,
+        namesShort,
+        inSeasonShort,
+    ]
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')
@@ -2419,17 +2449,17 @@ export async function execute(interaction) {
     const embed = new EmbedBuilder()
         .setTitle(`${teamEmoji ? teamEmoji + ' ' : ''}${teamName} — Draft Primer`)
         .setDescription(seasonContext.isInSeason
-            ? `Pre-draft board built from your top needs, live season context, and ${draftYear} draft capital. Use it to decide who to scout, where your tiers start, and when you may need a pivot or trade-up.`
-            : `Pre-draft board built from your top needs, class shape, and ${draftYear} draft capital.`)
+            ? `Fast board read from needs, live season context, and ${draftYear} draft capital.`
+            : `Fast board read from needs, class shape, and ${draftYear} draft capital.`)
         .addFields(
             { name: 'Team Snapshot', value: quickSnapshot, inline: false },
             { name: 'Draft Capital', value: safeEmbedFieldValue(quickCapital), inline: false },
             { name: 'Priority Stack', value: safeEmbedFieldValue(quickPriority), inline: false },
             { name: 'Target Board', value: safeEmbedFieldValue(quickTargets.join('\n')), inline: false },
             ...(scoutRecommendationBoard ? [{ name: 'Scout Recommendation Board', value: safeEmbedFieldValue(scoutRecommendationBoard), inline: false }] : []),
-            ...(hasDraftIntelPerk ? [{ name: 'Market Intel', value: safeEmbedFieldValue(marketIntel || 'No market read available from the current board.'), inline: false }] : []),
-            ...(warRoomIntel ? [{ name: 'War Room Intel', value: safeEmbedFieldValue(warRoomIntel), inline: false }] : []),
-            { name: 'Draft Plan', value: safeEmbedFieldValue(hasDraftIntelPerk ? (draftPlan || 'No additional draft plan was available from the current export.') : fallbackShort), inline: false },
+            ...(hasDraftIntelPerk ? [{ name: 'Market Intel', value: safeEmbedFieldValue(marketIntel || 'No market read available from the current board.', 720), inline: false }] : []),
+            ...(warRoomIntel ? [{ name: 'War Room Intel', value: safeEmbedFieldValue(warRoomIntel, 720), inline: false }] : []),
+            { name: 'Draft Plan', value: safeEmbedFieldValue(hasDraftIntelPerk ? (draftPlan || 'No additional draft plan was available from the current export.') : fallbackShort, 600), inline: false },
             ...(primerAccessNote ? [{ name: 'Locked Intel', value: safeEmbedFieldValue(primerAccessNote), inline: false }] : []),
         )
         .setColor(0x00b0f4)
