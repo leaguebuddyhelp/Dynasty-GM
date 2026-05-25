@@ -1,4 +1,4 @@
-import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 
 import connectionService from '../services/export_first_connection_service.js';
 
@@ -21,6 +21,25 @@ export async function execute(interaction) {
   const exportSources = status.exportSources || [];
   const guildTokens = status.guildTokens;
   const syncError = connection?.summary?.lastSyncError ? String(connection.summary.lastSyncError) : '';
+  const reconnectUrl = (() => {
+    try {
+      return connectionService.beginLeagueConnection({
+        guildId: interaction.guildId,
+        guildName: interaction.guild?.name || null,
+        createdByUserId: interaction.user.id,
+      })?.setupUrl || null;
+    } catch {
+      return null;
+    }
+  })();
+  const reconnectComponents = reconnectUrl
+    ? [new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel(connection ? 'Reconnect EA / League' : 'Open Setup Dashboard')
+        .setURL(reconnectUrl),
+    )]
+    : [];
 
   function buildSyncNextStep(errorText) {
     if (!errorText) {
@@ -52,6 +71,7 @@ export async function execute(interaction) {
             { name: 'Next', value: 'Run `/setup`, press Open Setup Dashboard.', inline: false },
           ),
       ],
+      components: reconnectComponents,
     });
     return;
   }
@@ -77,6 +97,7 @@ export async function execute(interaction) {
             inline: false },
         ),
     ],
+    components: reconnectComponents,
   });
 }
 

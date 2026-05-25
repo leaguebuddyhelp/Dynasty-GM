@@ -206,6 +206,11 @@ function buildSetupButtons({ decision, interaction }) {
   const setupComplete = decision?.title === 'Setup Complete';
 
   if (actionKey === 'connect' || setupComplete) {
+    const connectLabel = setupComplete
+      ? 'Reconnect EA / League'
+      : decision?.title === 'Finish League Connection'
+        ? 'Reconnect EA'
+        : 'Open Setup Dashboard';
     const { setupUrl } = connectionService.beginLeagueConnection({
       guildId: interaction.guildId,
       guildName: interaction.guild?.name || null,
@@ -214,7 +219,7 @@ function buildSetupButtons({ decision, interaction }) {
     buttons.push(
       new ButtonBuilder()
         .setStyle(ButtonStyle.Link)
-        .setLabel(setupComplete ? 'Reconnect League' : 'Open Setup Dashboard')
+        .setLabel(connectLabel)
         .setURL(setupUrl),
     );
   }
@@ -450,8 +455,8 @@ export async function execute(interaction) {
         value: buildCoachLines(),
       },
       {
-        name: 'League Recreated?',
-        value: 'Press **Reconnect League** to reconnect EA and choose the new Madden league.',
+        name: 'EA Login Expired?',
+        value: 'Press **Reconnect EA / League** anytime EA tokens expire. Use the same dashboard flow, reconnect EA, keep or reselect the league, then run `/weeklyupdate` again.',
       },
     );
   } else {

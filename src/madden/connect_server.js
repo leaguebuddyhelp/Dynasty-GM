@@ -1027,6 +1027,13 @@ function describeSyncError(error) {
       next: 'Wait a moment, then run /sync in Discord.',
     };
   }
+  if (/refresh token|100105/i.test(text)) {
+    return {
+      title: 'EA login expired.',
+      detail: 'EA rejected the saved refresh token, so LEAGUEbuddy needs a fresh EA login before it can sync again.',
+      next: 'Press Reconnect EA on this dashboard, then run /sync or /weeklyupdate in Discord.',
+    };
+  }
   if (text.includes('session expired') || text.includes('Reconnect EA')) {
     return {
       title: 'EA session expired.',

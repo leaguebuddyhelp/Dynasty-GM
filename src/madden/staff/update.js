@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { resolveLeagueIdWithConfig } from '../../../madden/madden_data.js';
@@ -1881,18 +1881,28 @@ async function execute(interaction) {
     const lower = msg.toLowerCase();
     let shortType = 'Unknown';
     let guidance = 'Try again shortly.';
+    let reconnectDashboardUrl = null;
     if (lower.includes('refresh token') || lower.includes('100105')) {
       shortType = 'EA reconnect required';
-      guidance = 'EA rejected the saved refresh token. Run `/setup`, press Open Setup Dashboard, reconnect EA, then rerun `/weeklyupdate`.';
+      guidance = 'EA rejected the saved refresh token. Press Reconnect EA below, finish the dashboard, then rerun `/weeklyupdate`.';
     } else if (lower.includes('no local ea tokens')) {
       shortType = 'Tokens missing';
-      guidance = 'Run `/setup` and reconnect EA, then rerun `/weeklyupdate`.';
+      guidance = 'Press Reconnect EA below, finish the dashboard, then rerun `/weeklyupdate`.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
       shortType = 'Auth/session';
-      guidance = 'The saved EA session looks stale. Return to `/setup` and reconnect EA, then rerun `/weeklyupdate`.';
+      guidance = 'The saved EA session looks stale. Press Reconnect EA below, finish the dashboard, then rerun `/weeklyupdate`.';
     } else if (lower.includes('deleted') || lower.includes('league')) {
       shortType = 'League ID';
-      guidance = 'Reconnect the league from `/setup`, then rerun `/weeklyupdate`.';
+      guidance = 'Press Reconnect EA below, choose the league again if needed, then rerun `/weeklyupdate`.';
+    }
+    if (['EA reconnect required', 'Tokens missing', 'Auth/session', 'League ID'].includes(shortType)) {
+      try {
+        reconnectDashboardUrl = connectionService.beginLeagueConnection({
+          guildId: interaction.guildId,
+          guildName: interaction.guild?.name || null,
+          createdByUserId: interaction.user.id,
+        })?.setupUrl || null;
+      } catch { /* dashboard link is optional */ }
     }
     const shortMsg = shortType;
     const embed = new EmbedBuilder()
@@ -1900,7 +1910,15 @@ async function execute(interaction) {
       .setDescription(shortMsg)
       .addFields({ name: 'Next steps', value: guidance })
       .setColor(0xcc0000);
-    await interaction.editReply({ embeds: [embed] });
+    const components = reconnectDashboardUrl
+      ? [new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Link)
+          .setLabel('Reconnect EA')
+          .setURL(reconnectDashboardUrl),
+      )]
+      : [];
+    await interaction.editReply({ embeds: [embed], components });
   }
 }
 
