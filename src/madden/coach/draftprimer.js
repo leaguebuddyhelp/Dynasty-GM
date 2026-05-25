@@ -35,11 +35,11 @@ const POSITION_NEEDS = {
 };
 
 function normalizeName(name = '') {
-    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 function normalizePositionCode(pos = '') {
-    const code = (pos || '').trim().toUpperCase();
+    const code = String(pos || '').trim().toUpperCase();
     return POS_ALIAS[code] || code;
 }
 
@@ -382,7 +382,10 @@ function buildWarRoomIntel({
     };
     for (const entry of allClassLogs) {
         const scoutTeams = assignmentMap?.userToTeams?.get(String(entry?.userId || '')) || [];
-        for (const scoutTeam of scoutTeams) {
+        for (const scoutTeamEntry of scoutTeams) {
+            const scoutTeam = typeof scoutTeamEntry === 'string'
+                ? scoutTeamEntry
+                : (scoutTeamEntry?.teamName || scoutTeamEntry?.displayName || scoutTeamEntry?.name || '');
             const normTeam = normalizeName(scoutTeam);
             if (!normTeam) continue;
             teamScoutCounts.set(normTeam, (teamScoutCounts.get(normTeam) || 0) + 1);
