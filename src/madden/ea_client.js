@@ -95,6 +95,11 @@ async function refreshToken(token, persistTokenUpdate) {
   });
   const newToken = await res.json();
   if (!res.ok || !newToken.access_token) {
+    const errorCode = String(newToken?.code || newToken?.error || '');
+    const errorDescription = String(newToken?.error_description || '');
+    if (errorCode === '100105' || /refresh_token is invalid/i.test(errorDescription)) {
+      throw new Error('EA refresh token is invalid or expired. Reconnect EA from `/setup`, then run the sync again.');
+    }
     throw new Error(`Error refreshing tokens, response from EA ${JSON.stringify(newToken)}`);
   }
   const newExpiry = new Date(Date.now() + newToken.expires_in * 1000);

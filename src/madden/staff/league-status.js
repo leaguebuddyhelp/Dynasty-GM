@@ -29,6 +29,9 @@ export async function execute(interaction) {
     if (errorText.includes('temporary system error')) {
       return 'EA returned a temporary service error. Wait a moment, then run `/sync` again.';
     }
+    if (/refresh token|100105/i.test(errorText)) {
+      return 'EA rejected the saved refresh token. Reconnect EA from `/setup`, then run `/sync` or `/weeklyupdate` again.';
+    }
     if (errorText.includes('session expired') || errorText.includes('Reconnect EA')) {
       return 'The league is linked, but the EA session expired. Reconnect EA from `/setup`, then run `/sync`.';
     }

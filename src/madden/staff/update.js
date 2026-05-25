@@ -1881,7 +1881,10 @@ async function execute(interaction) {
     const lower = msg.toLowerCase();
     let shortType = 'Unknown';
     let guidance = 'Try again shortly.';
-    if (lower.includes('no local ea tokens')) {
+    if (lower.includes('refresh token') || lower.includes('100105')) {
+      shortType = 'EA reconnect required';
+      guidance = 'EA rejected the saved refresh token. Run `/setup`, press Open Setup Dashboard, reconnect EA, then rerun `/weeklyupdate`.';
+    } else if (lower.includes('no local ea tokens')) {
       shortType = 'Tokens missing';
       guidance = 'Run `/setup` and reconnect EA, then rerun `/weeklyupdate`.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
