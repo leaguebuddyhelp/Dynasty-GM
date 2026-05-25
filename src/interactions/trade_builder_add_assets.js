@@ -170,7 +170,7 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
     const firstRoundLabels = getFirstRoundPickLabelsForTeam(teamName, pickYear, allTeams, guildId);
     firstRoundLabels.forEach(label => {
       const parsed = parsePickValue(label, draftBaseYear, {
-        currentYearExactAllowed: pickContext.currentYearExactAllowed,
+        currentYearExactAllowed: pickContext.currentYearExactAllowed && /\bpick\s+\d+/i.test(label),
       });
       options.push({
         label,
@@ -181,7 +181,7 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
     [2, 3, 4, 5, 6, 7].forEach(round => {
       const roundLabel = `${pickYear} Round ${round}`;
       const parsed = parsePickValue(roundLabel, draftBaseYear, {
-        currentYearExactAllowed: pickContext.currentYearExactAllowed,
+        currentYearExactAllowed: false,
       });
       options.push({
         label: roundLabel,
