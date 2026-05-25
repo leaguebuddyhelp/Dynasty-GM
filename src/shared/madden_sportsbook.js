@@ -41,6 +41,17 @@ const PROTECTED_SPORTSBOOK_USER_IDS = new Set([
   '1076243288056664234',
 ]);
 
+function safeEmbedText(value = '', max = 4096) {
+  const text = String(value || '').trim();
+  if (!text) return '—';
+  const limit = Math.max(128, Math.min(4096, Number(max) || 4096));
+  if (text.length <= limit) return text;
+  let cut = text.lastIndexOf('\n', limit - 12);
+  if (cut < Math.floor(limit * 0.5)) cut = text.lastIndexOf(' ', limit - 12);
+  if (cut <= 0) cut = limit - 12;
+  return `${text.slice(0, cut).trim()}...`;
+}
+
 function safeReadJSON(file, fallback = {}) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -1453,7 +1464,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle(`LB Sportsbook • My Card • ${boardLabel}`)
-      .setDescription(cardLinesForUser(card.bets, card.lines, guildId).join('\n'))
+      .setDescription(safeEmbedText(cardLinesForUser(card.bets, card.lines, guildId).join('\n')))
       .addFields(
         { name: 'Impact To Bet', value: formatImpactValue(card.bankroll.balance || 0), inline: true },
         { name: 'Impact Won', value: formatImpactValue(card.bankroll.profit || 0), inline: true },
@@ -1466,8 +1477,8 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
       embed.addFields({
         name: 'Bet Buyout',
         value: buyoutBets.length
-          ? 'Your buyout perk is live. Use one button below to cash out an open bet for 50% of the stake before kickoff.'
-          : 'Your buyout perk is live, but there is no open bet eligible to cash out right now.',
+          ? 'Your buyout is live. Cash out one nervous open bet for 50% of the stake before kickoff and protect the rest of your Impact bankroll.'
+          : 'Your buyout is live, but there is no eligible open bet right now. Place or keep an open bet before kickoff to use it.',
         inline: false,
       });
     }

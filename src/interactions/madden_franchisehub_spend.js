@@ -17,6 +17,26 @@ const TIER_EMOJIS = RECOGNITION_EMOJIS;
 const PERKS_BY_TIER = getRecognitionPerksByTier();
 const PERK_CATALOG = getRecognitionPerkCatalog();
 
+function safeText(value = '', max = 1024) {
+  const text = String(value || '').replace(/\s+\n/g, '\n').trim();
+  if (!text) return '—';
+  const limit = Math.max(64, Math.min(4096, Number(max) || 1024));
+  if (text.length <= limit) return text;
+  let cut = text.lastIndexOf('\n', limit - 10);
+  if (cut < Math.floor(limit * 0.5)) cut = text.lastIndexOf('. ', limit - 10);
+  if (cut < Math.floor(limit * 0.5)) cut = text.lastIndexOf(' ', limit - 10);
+  if (cut <= 0) cut = limit - 10;
+  return `${text.slice(0, cut).trim()}...`;
+}
+
+function groupedPerkFields(groupedLines = new Map()) {
+  return [...groupedLines.entries()].map(([group, lines]) => ({
+    name: group,
+    value: safeText(lines.join('\n'), 1024),
+    inline: false,
+  })).slice(0, 8);
+}
+
 function tierForPerk(perkKey) {
   return PERK_CATALOG?.[perkKey]?.tier || null;
 }
@@ -141,7 +161,7 @@ function buildSpendPanel({ tier, perkState, weekKey }) {
     rows.push(new ActionRowBuilder().addComponents(...currentButtons));
   }
 
-  const groupedLines = [];
+  const groupedLines = new Map();
   let lastGroup = null;
   for (const perkKey of orderedPerks) {
     const group = perkGroupForTier(tier, perkKey);
@@ -158,10 +178,11 @@ function buildSpendPanel({ tier, perkState, weekKey }) {
             ? `locked for ${perkState?.phaseLabel || 'this phase'} • cost ${perk.cost}`
             : `locked • cost ${perk.cost}`;
     if (group !== lastGroup) {
-      groupedLines.push(`__${group}__`);
       lastGroup = group;
     }
-    groupedLines.push(`${TIER_EMOJIS[tier]} ${perk.label} • ${status} • ${perk.effect}`);
+    const lines = groupedLines.get(group) || [];
+    lines.push(`${TIER_EMOJIS[tier]} **${perk.label}** — ${status}\n${perk.effect}`);
+    groupedLines.set(group, lines);
   }
 
   const embed = new EmbedBuilder()
@@ -174,9 +195,8 @@ function buildSpendPanel({ tier, perkState, weekKey }) {
       '',
       `Active now: ${tierState.active.length ? tierState.active.map((perk) => perk.label).join(', ') : 'none'}`,
       `Used this week: ${tierState.used.length ? tierState.used.map((perk) => perk.label).join(', ') : 'none'}`,
-      '',
-      ...groupedLines,
     ].filter(Boolean).join('\n'))
+    .addFields(...groupedPerkFields(groupedLines))
     .setFooter({ text: 'Spend recognition to activate perks for the current week.' });
 
   return { embeds: [embed], components: rows };
@@ -199,16 +219,16 @@ function buildConfirmPanel({ tier, perk, perkState, weekKey }) {
   const embed = new EmbedBuilder()
     .setColor(0xf1c40f)
     .setTitle(`Confirm Spend — ${perk.label}`)
-    .setDescription([
+    .setDescription(safeText([
       `Week: ${weekKey.replace('_', ' ')}`,
       `Cost: ${perk.cost} ${TIER_EMOJIS[tier]}`,
       `Balance now: ${balance} ${TIER_EMOJIS[tier]}`,
       `Balance after spend: ${Math.max(0, balance - Number(perk.cost || 0))} ${TIER_EMOJIS[tier]}`,
       '',
-      perk.effect,
+      safeText(perk.effect, 700),
       '',
       'Are you sure you want to activate this perk for the current week?',
-    ].join('\n'))
+    ].join('\n'), 4000))
     .setFooter({ text: 'This spend cannot be undone this week.' });
 
   return { embeds: [embed], components: [row] };
@@ -246,8 +266,8 @@ function buildPurchaseReceipt({ interaction, tier, perkKey, perk, weekKey, balan
           { name: 'Cost', value: String(perk.cost), inline: true },
           { name: 'Before', value: String(balanceBefore), inline: true },
           { name: 'After', value: String(balanceAfter), inline: true },
-          { name: 'Use It Here', value: perkUsageLocation(perkKey), inline: false },
-          { name: 'How To Use It', value: perkUsageHint(perkKey), inline: false },
+          { name: 'Use It Here', value: safeText(perkUsageLocation(perkKey), 1024), inline: false },
+          { name: 'How To Use It', value: safeText(perkUsageHint(perkKey), 1024), inline: false },
         ),
     ],
     components: [],

@@ -21,6 +21,18 @@ const POINTS_PER_WEEK = 60;
 const REVEAL_ORDER = ['arch', 'ovr', 'dev'];
 const MAX_WEEKLY_POINTS = 120;
 
+function safeEmbedDescription(value = '', max = 4096) {
+  const text = String(value || '').trim();
+  if (!text) return 'No scout data yet.';
+  const limit = Math.max(256, Math.min(4096, Number(max) || 4096));
+  if (text.length <= limit) return text;
+  let cut = text.lastIndexOf('\n\n', limit - 12);
+  if (cut < Math.floor(limit * 0.5)) cut = text.lastIndexOf('\n', limit - 12);
+  if (cut < Math.floor(limit * 0.5)) cut = text.lastIndexOf(' ', limit - 12);
+  if (cut <= 0) cut = limit - 12;
+  return `${text.slice(0, cut).trim()}...`;
+}
+
 function safeReadJSON(file, fallback) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -516,7 +528,7 @@ function buildPagesForUser(userId, guildId, member = null) {
   if (!items.length) return { error: coachErrorBlurb('noScouts', 'You have not scouted any players yet for the current class.', { userId }) };
 
   // Chunk by count (10 per page) to keep navigation consistent
-  const PAGE_SIZE = 32;
+  const PAGE_SIZE = 10;
   const classPages = [];
   const classNames = [];
   for (let i = 0; i < items.length; i += PAGE_SIZE) {
@@ -528,8 +540,8 @@ function buildPagesForUser(userId, guildId, member = null) {
 
   classPages.forEach((lines, idx) => {
     const suggestedText = perkState?.perks?.scoutRecommendation
-      ? '**Scout Recommendation:** Active in `/draftprimer`. Open that command for the 7-name recommendation board, then come back here to spend scout points.'
-      : '**Scout Recommendation:** Use `/draftprimer` for board-aware scout context, then come back here to spend scout points.';
+      ? '**Scout Recommendation:** Active. `/draftprimer` now gives you a 7-name scout queue with board fit, pick range, and market pressure.'
+      : '**Scout Recommendation:** Buy it in Franchise Hub to turn `/draftprimer` into a scout queue instead of a blind board.';
     const fullyScouted = entries.filter(([, unlocked]) => Array.isArray(unlocked) && unlocked.length >= REVEAL_ORDER.length).length;
     const bonusLine = isOffseason ? '' : `\n**Weekly Bonus:** +${seasonBonus} (cap ${allowance}/${MAX_WEEKLY_POINTS})`;
     const selectedText = boardUi.activeName ? `\n**Selected:** ${boardUi.activeName}` : '';
@@ -537,7 +549,7 @@ function buildPagesForUser(userId, guildId, member = null) {
     pages.push({
       embed: new EmbedBuilder()
         .setTitle(`Your Big Board — ${resolvedClassKey.toUpperCase()}${classPages.length > 1 ? ` (Page ${idx + 1}/${classPages.length})` : ''}`)
-        .setDescription([summary, lines.join('\n\n')].filter(Boolean).join('\n\n'))
+        .setDescription(safeEmbedDescription([summary, lines.join('\n\n')].filter(Boolean).join('\n\n')))
         .setColor(0x1e90ff)
         .setFooter({ text: classLock }),
       players: classNames[idx] || [],

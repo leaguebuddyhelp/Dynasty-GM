@@ -452,9 +452,16 @@ export async function execute(interaction) {
     });
   }
   if (focusPackActive && focusNeeds.length) {
+    const laneText = focusNeeds.map((need) => need === 'IOL' ? 'interior OL' : need).join(' and ');
     embed.addFields({
       name: 'Scouting Focus Pack',
-      value: `Your focus pack is live this week. Every reveal costs ${FOCUS_PACK_BASE_COST} instead of ${COST_PER_REVEAL}, and ${focusNeeds.map((need) => need === 'IOL' ? 'interior OL' : need).join(' and ')} cost ${FOCUS_PACK_FOCUS_COST}. ${isFocusPosition ? `This scout hit the focus discount.` : `This scout used the standard discounted rate.`}`,
+      value: [
+        `Focus lanes: ${laneText}.`,
+        `This reveal cost ${cost} instead of ${COST_PER_REVEAL}.`,
+        isFocusPosition
+          ? 'That is the premium discount lane: keep hammering this position while the perk is live.'
+          : `Still discounted. Use the saved points to finish a ${laneText} report before the week closes.`,
+      ].join('\n'),
       inline: false,
     });
   }
