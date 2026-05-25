@@ -2,6 +2,7 @@ import { ButtonInteraction, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowB
 import fs from 'fs';
 import path from 'path';
 import {
+  findActiveTradeById,
   loadActiveTrades,
   saveActiveTrades,
   loadTradeCounts,
@@ -148,8 +149,10 @@ export async function execute(interaction) {
   }
 
   const tradeId = interaction.customId.replace('mtrade_b_approve_', '').replace('mtrade_b_deny_', '');
-  const trades = loadActiveTrades(interaction.guildId);
-  const trade = trades[tradeId];
+  const resolved = findActiveTradeById(tradeId, interaction.guildId);
+  const guildId = resolved.guildId || resolved.trade?.guildId || interaction.guildId || null;
+  const trades = resolved.trades || loadActiveTrades(guildId);
+  const trade = resolved.trade || trades[tradeId];
   if (!trade) {
     await interaction.editReply({ content: 'Trade not found or already processed.' });
     return;
@@ -161,13 +164,13 @@ export async function execute(interaction) {
   if (trade.expiresAt && Date.now() > trade.expiresAt) {
     trade.status = 'expired';
     trades[tradeId] = trade;
-    saveActiveTrades(interaction.guildId, trades);
+    saveActiveTrades(guildId, trades);
     await interaction.editReply({ content: 'Trade expired (no response within 24h).' });
     return;
   }
 
-  const channelMap = loadChannelMap(interaction.guildId);
-  const roleMap = loadRoleMap(interaction.guildId);
+  const channelMap = loadChannelMap(guildId);
+  const roleMap = loadRoleMap(guildId);
   const committeeRoleId = roleMap['Trade Committee']
     || roleMap['Ghost Legacy Trade Committee']
     || roleMap['Madden Trade Committee']
@@ -175,7 +178,7 @@ export async function execute(interaction) {
     || roleMap['LB Trade Committee']
     || roleMap['LEAGUEbuddy Trade Committee']
     || null;
-  const committeeMention = `<@&${committeeRoleId}> `;
+  const committeeMention = committeeRoleId ? `<@&${committeeRoleId}> ` : '';
   // Only ping Trade Committee for voting; do not tag Ghost Legacy here
   const ghostRoleId = null;
   const ghostMention = '';
@@ -185,7 +188,7 @@ export async function execute(interaction) {
     trade.status = 'denied';
     trade.closedAt = Date.now();
     trades[tradeId] = trade;
-    saveActiveTrades(interaction.guildId, trades);
+    saveActiveTrades(guildId, trades);
     const embed = buildEmbed(trade, tradeId, 'denied', actor);
     // DM proposer only
     if (trade.proposerId) {
@@ -200,7 +203,7 @@ export async function execute(interaction) {
   }
 
   // Enforce trade limit (5 per team per season)
-  const counts = loadTradeCounts(interaction.guildId);
+  const counts = loadTradeCounts(guildId);
   const teamsInTrade = [trade.yourTeam, trade.otherTeam].filter(Boolean);
   if (!hasTradeCapacity(counts, teamsInTrade, 5)) {
     await interaction.editReply({ content: 'Trade blocked: one of the teams has reached the 5-trade limit for this season.' });
@@ -218,7 +221,7 @@ export async function execute(interaction) {
   trade.closedAt = Date.now();
   trade.approvedBy = interaction.user?.id;
   trades[tradeId] = trade;
-  saveActiveTrades(interaction.guildId, trades);
+  saveActiveTrades(guildId, trades);
 
   const embed = buildEmbed(trade, tradeId, 'approved', actor);
   const committeeId = channelMap['Trade Committee'] || channelMap['Pending Trades'] || channelMap['tradeSubmit'] || null;
@@ -264,10 +267,10 @@ export async function execute(interaction) {
   }
   trade.committeeMsgId = committeeMsgId;
   trades[tradeId] = trade;
-  saveActiveTrades(interaction.guildId, trades);
+  saveActiveTrades(guildId, trades);
   appendMaddenStaffLog({
     type: 'trade_committee_submission',
-    guildId: interaction.guildId,
+    guildId,
     tradeId,
     yourTeam: trade.yourTeam,
     otherTeam: trade.otherTeam,
@@ -275,12 +278,12 @@ export async function execute(interaction) {
   });
   await postMaddenStaffDecision(
     interaction.client,
-    interaction.guildId,
+    guildId,
     'Trade Sent To Committee',
     `${trade.yourTeam} vs ${trade.otherTeam} was sent to committee.`,
     [{ name: 'Trade ID', value: tradeId }],
   ).catch(() => null);
-  await postLeagueStaffOpsSnapshot(interaction.client, interaction.guildId, 'trade sent to committee').catch(() => null);
+  await postLeagueStaffOpsSnapshot(interaction.client, guildId, 'trade sent to committee').catch(() => null);
 
   await deletePendingMessage(interaction.client, channelMap, trade);
   // DM proposer that Coach B approved

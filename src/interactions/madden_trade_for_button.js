@@ -6,10 +6,14 @@ import { saveTradeDraft } from '../shared/trade_draft_store.js';
 import { buildButtons } from './trade_builder_add_assets.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
+import { getUserTeam } from '../shared/user_team_lookup.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 
-function loadRoleMap() {
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
 }
 
@@ -47,11 +51,13 @@ function parseTeamAndPlayer(customId) {
 }
 
 function getCoachTeamFromRoles(interaction, snapshot) {
+  const assignedTeam = getUserTeam(interaction.guildId, interaction.user.id);
+  if (assignedTeam) return assignedTeam;
   const member = interaction.member;
   const roles = member?.roles?.cache;
   if (!roles) return null;
   // First, try explicit role map matching
-  const roleMap = loadRoleMap();
+  const roleMap = loadRoleMap(interaction.guildId);
   for (const [name, id] of Object.entries(roleMap)) {
     if (!name.endsWith(' Coach')) continue;
     if (roles.has(id)) {

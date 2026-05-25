@@ -51,6 +51,28 @@ export function loadActiveTrades(guildId = null) {
   return scoped.byGuild?.[resolveScopeKey(guildId)] || {};
 }
 
+export function findActiveTradeById(tradeId, guildId = null) {
+  const scoped = readScopedStore(ACTIVE_TRADES_FILE);
+  const preferredScope = guildId ? resolveScopeKey(guildId) : null;
+  if (preferredScope && scoped.byGuild?.[preferredScope]?.[tradeId]) {
+    return {
+      guildId: preferredScope,
+      trades: scoped.byGuild[preferredScope],
+      trade: scoped.byGuild[preferredScope][tradeId],
+    };
+  }
+  for (const [scopeKey, trades] of Object.entries(scoped.byGuild || {})) {
+    if (trades?.[tradeId]) {
+      return {
+        guildId: scopeKey === GLOBAL_SCOPE_KEY ? null : scopeKey,
+        trades,
+        trade: trades[tradeId],
+      };
+    }
+  }
+  return { guildId: preferredScope || null, trades: preferredScope ? (scoped.byGuild?.[preferredScope] || {}) : {}, trade: null };
+}
+
 export function saveActiveTrades(guildIdOrData, maybeData = undefined) {
   const guildId = maybeData === undefined ? null : guildIdOrData;
   const data = maybeData === undefined ? guildIdOrData : maybeData;

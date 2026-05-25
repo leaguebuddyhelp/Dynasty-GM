@@ -23,11 +23,29 @@ import {
   deleteTradeDraft,
 } from '../shared/trade_draft_store.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
+import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
+import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 
-function loadRoleMap() {
+function loadRoleMap(guildId = null) {
+  const overlay = getGuildRoleMap(guildId);
+  if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
+}
+
+function normalizeTeamLabel(value = '') {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function sameTeamLabel(a = '', b = '') {
+  const left = normalizeTeamLabel(a);
+  const right = normalizeTeamLabel(b);
+  if (!left || !right) return false;
+  return left === right
+    || (left.length >= 4 && right.endsWith(left))
+    || (right.length >= 4 && left.endsWith(right));
 }
 
 function resolveTeamRoleId(teamName, snapshot, roleMap) {
@@ -53,6 +71,36 @@ function resolveTeamRoleId(teamName, snapshot, roleMap) {
     if (candidates.has(base) || base.includes(target) || target.includes(base)) return id;
   }
   return null;
+}
+
+async function resolveCoachMembersForTeam(guild, teamName, snapshot, roleMap) {
+  const membersById = new Map();
+  const addMember = async (userId) => {
+    if (!userId || membersById.has(String(userId))) return;
+    const member = await guild.members.fetch(String(userId)).catch(() => null);
+    if (member) membersById.set(String(member.user.id), member);
+  };
+
+  const assignmentMap = getCoachAssignmentMap({ guildId: guild.id });
+  for (const [teamKey, userIds] of assignmentMap.teamToUserIds.entries()) {
+    if (!sameTeamLabel(teamKey, teamName)) continue;
+    for (const userId of userIds) await addMember(userId);
+  }
+
+  const coachRoleId = resolveTeamRoleId(teamName, snapshot, roleMap);
+  if (coachRoleId) {
+    const role = await guild.roles.fetch(coachRoleId).catch(() => null);
+    if (role) {
+      if (role.members.size === 0) {
+        try { await guild.members.fetch(); } catch { }
+      }
+      role.members.forEach((member) => membersById.set(String(member.user.id), member));
+    } else {
+      await addMember(coachRoleId);
+    }
+  }
+
+  return [...membersById.values()];
 }
 
 function buildDecisionButtons(tradeId, isOtherCoach) {
@@ -127,11 +175,12 @@ export async function execute(interaction) {
       : { content: 'Trade draft expired. Please reopen using Modify and resubmit.' });
     return;
   }
+  const guildId = interaction.guildId || draft.guildId || null;
 
   let leagueId = draft.leagueId || null;
   if (!leagueId) {
     try {
-      leagueId = requireLeagueIdForGuild(interaction.guildId);
+      leagueId = requireLeagueIdForGuild(guildId);
     } catch (error) {
       await interaction.reply(interaction.inGuild()
         ? { content: error?.message || 'No league is mapped to this server yet. Run `/setup` and press Open Setup Dashboard.', flags: 64 }
@@ -152,8 +201,8 @@ export async function execute(interaction) {
     const snapshot = loadLeagueSnapshot(leagueId);
     const pickContext = getMaddenPickContext(snapshot);
     const valueMap = buildValueMap(snapshot);
-    const counts = loadTradeCounts(interaction.guildId);
-    const roleMap = loadRoleMap();
+    const counts = loadTradeCounts(guildId);
+    const roleMap = loadRoleMap(guildId);
 
     const yourTeam = draft.yourTeam || draft.yourTeamName || draft.yourTeamId || draft.yourTeamRaw;
     const otherTeam = draft.otherTeam || draft.otherTeamName || draft.otherTeamId || draft.otherTeamRaw;
@@ -311,7 +360,7 @@ export async function execute(interaction) {
     }
 
     // Store trade
-    const trades = loadActiveTrades(interaction.guildId);
+    const trades = loadActiveTrades(guildId);
     const structuredSendFingerprint = normalizeAssetFingerprint(yourStructAssets, seasonYear);
     const structuredReceiveFingerprint = normalizeAssetFingerprint(theirStructAssets, seasonYear);
     const duplicate = findDuplicateTrade(trades, {
@@ -346,6 +395,7 @@ export async function execute(interaction) {
       createdAt: Date.now(),
       status: 'awaiting_coach_b',
       proposerId: interaction.user.id,
+      guildId,
       expiresAt: Date.now() + 24 * 60 * 60 * 1000,
       seasonYear,
       assetsSentDetails,
@@ -355,36 +405,18 @@ export async function execute(interaction) {
       structuredSendFingerprint,
       structuredReceiveFingerprint,
     };
-    saveActiveTrades(interaction.guildId, trades);
+    saveActiveTrades(guildId, trades);
     deleteTradeDraft(draftId);
 
     // DM other coach (role members or user) with approve/deny buttons
-    const guild = interaction.guild || null;
-    const coachId = resolveTeamRoleId(otherTeam, snapshot, roleMap);
+    const guild = interaction.guild || (guildId ? await interaction.client.guilds.fetch(guildId).catch(() => null) : null);
     const rowCoach = buildDecisionButtons(tradeId, true);
     let dmSent = false;
     let dmTargets = [];
     let dmError = null;
-    if (guild && coachId) {
-      const members = [];
-      // try direct user id
-      const memberById = await guild.members.fetch(coachId).catch(() => null);
-      if (memberById && memberById.user.id !== interaction.user.id) members.push(memberById);
-
-      // try role
-      if (!memberById) {
-        const role = await guild.roles.fetch(coachId).catch(() => null);
-        if (role) {
-          // ensure member cache is warm
-          if (role.members.size === 0) {
-            try { await guild.members.fetch(); } catch { }
-          }
-          role.members.forEach(m => {
-            if (m.user.id !== interaction.user.id) members.push(m);
-          });
-        }
-      }
-
+    if (guild) {
+      const members = (await resolveCoachMembersForTeam(guild, otherTeam, snapshot, roleMap))
+        .filter((member) => member.user.id !== interaction.user.id);
       for (const m of members) {
         try {
           await m.user.send({ content: `Trade proposal: ${yourTeam} ↔ ${otherTeam}`, embeds: [embed], components: [rowCoach] });
@@ -392,6 +424,20 @@ export async function execute(interaction) {
           dmTargets.push(m.user.tag);
         } catch (e) {
           dmError = e;
+        }
+      }
+      if (!dmSent) {
+        const channelMap = loadMaddenChannelMap(guildId);
+        const fallbackChannelId = channelMap['Trade Committee'] || channelMap['Pending Trades'] || channelMap.Trades || channelMap.tradeSubmit || null;
+        const fallbackChannel = fallbackChannelId
+          ? await interaction.client.channels.fetch(fallbackChannelId).catch(() => null)
+          : null;
+        if (fallbackChannel?.isTextBased?.()) {
+          await fallbackChannel.send({
+            content: `Trade ${tradeId} needs manual coach approval: I could not DM/find the ${otherTeam} coach. Proposer: <@${interaction.user.id}>.`,
+            embeds: [embed],
+            allowedMentions: { users: [String(interaction.user.id)], parse: [] },
+          }).catch(() => null);
         }
       }
     }
@@ -404,7 +450,7 @@ export async function execute(interaction) {
 
     const dmNote = dmSent
       ? ` DM sent to: ${dmTargets.join(', ')}`
-      : ' DM failed to send to the other coach. Please notify them manually or check team-to-role mapping.';
+      : ` DM failed to send to the other coach${dmError ? ` (${dmError.message || 'DM blocked'})` : ' (coach not found)'}. Please notify them manually or check /member assignments.`;
 
     await interaction.editReply({
       content: `Trade recorded as ${tradeId}. Sent for approval.${dmNote}`,
