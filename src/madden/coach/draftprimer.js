@@ -26,6 +26,40 @@ const ROLE_MAP_PATH = getMaddenDataFilePath('madden_role_ids.json');
 const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
 const DRAFT_PRIMER_HISTORY_PATH = getMaddenDataFilePath('draft_primer_history.json');
 const POS_ALIAS = { EDGE: 'REDG', REDGE: 'REDG', LEDGE: 'LEDG' };
+const TEAM_LABEL_ALIASES = new Map(Object.entries({
+    ari: 'arizonacardinals',
+    atl: 'atlantafalcons',
+    bal: 'baltimoreravens',
+    buf: 'buffalobills',
+    car: 'carolinapanthers',
+    chi: 'chicagobears',
+    cin: 'cincinnatibengals',
+    cle: 'clevelandbrowns',
+    dal: 'dallascowboys',
+    den: 'denverbroncos',
+    det: 'detroitlions',
+    gb: 'greenbaypackers',
+    hou: 'houstontexans',
+    ind: 'indianapoliscolts',
+    jax: 'jacksonvillejaguars',
+    kc: 'kansascitychiefs',
+    lac: 'losangeleschargers',
+    lar: 'losangelesrams',
+    lv: 'lasvegasraiders',
+    mia: 'miamidolphins',
+    min: 'minnesotavikings',
+    ne: 'newenglandpatriots',
+    no: 'neworleanssaints',
+    nyg: 'newyorkgiants',
+    nyj: 'newyorkjets',
+    phi: 'philadelphiaeagles',
+    pit: 'pittsburghsteelers',
+    sea: 'seattleseahawks',
+    sf: 'sanfrancisco49ers',
+    tb: 'tampabaybuccaneers',
+    ten: 'tennesseetitans',
+    wsh: 'washingtoncommanders',
+}));
 const POSITION_NEEDS = {
     // Offense
     QB: 1, HB: 1, FB: 1,
@@ -40,6 +74,44 @@ const POSITION_NEEDS = {
 
 function normalizeName(name = '') {
     return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function teamLabelVariants(value = '') {
+    const normalized = normalizeName(value);
+    if (!normalized) return [];
+    const variants = new Set([normalized]);
+    const alias = TEAM_LABEL_ALIASES.get(normalized);
+    if (alias) variants.add(alias);
+    for (const [abbr, full] of TEAM_LABEL_ALIASES.entries()) {
+        if (normalized === full || normalized.endsWith(full) || full.endsWith(normalized)) {
+            variants.add(abbr);
+            variants.add(full);
+        }
+    }
+    return [...variants];
+}
+
+function sameTeamLabel(a = '', b = '') {
+    const leftVariants = teamLabelVariants(a);
+    const rightVariants = teamLabelVariants(b);
+    if (!leftVariants.length || !rightVariants.length) return false;
+    for (const left of leftVariants) {
+        for (const right of rightVariants) {
+            if (left === right) return true;
+            if (left.length >= 4 && right.endsWith(left)) return true;
+            if (right.length >= 4 && left.endsWith(right)) return true;
+        }
+    }
+    return false;
+}
+
+function pickOwnerMatchesTeam(pick = {}, teamName = '') {
+    return [
+        pick.name,
+        pick.team,
+        pick.owner,
+        pick.nick,
+    ].filter(Boolean).some((value) => sameTeamLabel(value, teamName));
 }
 
 function normalizePositionCode(pos = '') {
@@ -1122,11 +1194,10 @@ export async function execute(interaction) {
     const draftYear = getUpcomingDraftYear(league);
     const rawOrder = draftOrder(league);
     const tradedOrder = applyPickTrades(rawOrder.map((pick) => ({ ...pick, guildId: interaction.guildId })), draftYear);
-    const teamNorm = normalizeName(teamName);
     const roundOneOwnedSlots = tradedOrder
-        .map((p, i) => ({ slot: Number(p.pickNum || p.pickNumber || i + 1), norm: normalizeName(p.name || p.nick || ''), via: p.via }))
-        .filter(p => p.norm === teamNorm);
-    const naturalRoundOneSlot = Math.max(1, rawOrder.findIndex((p) => normalizeName(p.name || p.nick || '') === teamNorm) + 1 || 16);
+        .map((p, i) => ({ slot: Number(p.pickNum || p.pickNumber || i + 1), pick: p, via: p.via }))
+        .filter((entry) => pickOwnerMatchesTeam(entry.pick, teamName));
+    const naturalRoundOneSlot = Math.max(1, rawOrder.findIndex((p) => pickOwnerMatchesTeam(p, teamName)) + 1 || 16);
     const firstRoundSlot = roundOneOwnedSlots.length ? Math.min(...roundOneOwnedSlots.map(p => p.slot)) : null;
     const lastRoundOneSlot = roundOneOwnedSlots.length ? Math.max(...roundOneOwnedSlots.map((p) => p.slot)) : firstRoundSlot;
     const premiumRoundOneWindow = roundOneOwnedSlots.length >= 2 && firstRoundSlot != null && firstRoundSlot <= 5
@@ -1179,14 +1250,17 @@ export async function execute(interaction) {
     const naturalSlotByNorm = new Map(
         rawOrder.map((pick, index) => [normalizeName(pick.name || pick.nick || ''), index + 1]),
     );
+    const naturalSlotForTeam = (name) => {
+        const hit = rawOrder.findIndex((pick) => pickOwnerMatchesTeam(pick, name));
+        return hit >= 0 ? hit + 1 : (naturalSlotByNorm.get(normalizeName(name)) || 16);
+    };
     for (const leagueTeam of allLeagueTeams) {
-        const otherTeamNorm = normalizeName(leagueTeam.teamName);
         const otherNeeds = resolveTeamNeeds(leagueTeam.teamName, league, needsByTeam).slice(0, 3);
         if (!otherNeeds.length) continue;
         const otherRoundOneSlots = tradedOrder
-            .map((pick, index) => ({ slot: index + 1, norm: normalizeName(pick.name || pick.nick || '') }))
-            .filter((pick) => pick.norm === otherTeamNorm);
-        const otherNaturalSlot = Math.max(1, naturalSlotByNorm.get(otherTeamNorm) || 16);
+            .map((pick, index) => ({ slot: Number(pick.pickNum || pick.pickNumber || index + 1), pick }))
+            .filter((pick) => pickOwnerMatchesTeam(pick.pick, leagueTeam.teamName));
+        const otherNaturalSlot = Math.max(1, naturalSlotForTeam(leagueTeam.teamName));
         for (let round = 1; round <= 3; round++) {
             const otherBasePick = round === 1
                 ? (otherRoundOneSlots.length ? Math.min(...otherRoundOneSlots.map((pick) => pick.slot)) : null)
