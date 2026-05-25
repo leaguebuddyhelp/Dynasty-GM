@@ -61,6 +61,28 @@ function formatNeedLabel(need) {
     return labels[need] || need || 'Need';
 }
 
+function safeEmbedFieldValue(value = '', max = 1024) {
+    const text = String(value || '').replace(/\s+\n/g, '\n').trim();
+    if (!text) return 'No current read.';
+    const limit = Math.max(64, Math.min(1024, Number(max) || 1024));
+    if (text.length <= limit) return text;
+    let cut = text.lastIndexOf('\n', limit - 10);
+    if (cut < Math.floor(limit * 0.5)) cut = text.lastIndexOf('. ', limit - 10);
+    if (cut < Math.floor(limit * 0.5)) cut = text.lastIndexOf(' ', limit - 10);
+    if (cut <= 0) cut = limit - 10;
+    return `${text.slice(0, cut).trim()}...`;
+}
+
+function joinLimitedLines(lines = [], max = 1024) {
+    const out = [];
+    for (const line of lines.filter(Boolean)) {
+        const next = [...out, line].join('\n');
+        if (next.length > max) break;
+        out.push(line);
+    }
+    return safeEmbedFieldValue(out.join('\n'), max);
+}
+
 function getProspectArchetype(prospect) {
     const raw = prospect?.archetype_1 || prospect?.archetype1 || prospect?.archetype || prospect?.Archetype || '';
     if (!raw) return '';
@@ -337,6 +359,27 @@ function buildWarRoomIntel({
     const assignmentMap = guildId ? getCoachAssignmentMap({ guildId }) : { userToTeams: new Map() };
     const teamScoutCounts = new Map();
     const teamNeedScoutCounts = new Map();
+    const teamScoutProfiles = new Map();
+    const addProfileLook = (teamLabel, entry, recent = false) => {
+        const normTeam = normalizeName(teamLabel);
+        if (!normTeam) return;
+        const need = mapPositionToNeed({ position: entry?.position || '' });
+        const profile = teamScoutProfiles.get(normTeam) || {
+            team: teamLabel,
+            total: 0,
+            recent: 0,
+            needs: new Map(),
+            players: new Map(),
+            scouts: new Map(),
+        };
+        profile.total += 1;
+        if (recent) profile.recent += 1;
+        if (need) profile.needs.set(need, (profile.needs.get(need) || 0) + 1);
+        if (entry?.player) profile.players.set(entry.player, (profile.players.get(entry.player) || 0) + 1);
+        const scoutName = entry?.username || entry?.userId || '';
+        if (scoutName) profile.scouts.set(scoutName, (profile.scouts.get(scoutName) || 0) + 1);
+        teamScoutProfiles.set(normTeam, profile);
+    };
     for (const entry of allClassLogs) {
         const scoutTeams = assignmentMap?.userToTeams?.get(String(entry?.userId || '')) || [];
         for (const scoutTeam of scoutTeams) {
@@ -346,9 +389,9 @@ function buildWarRoomIntel({
             const need = mapPositionToNeed({ position: entry?.position || '' });
             const key = `${normTeam}:${need}`;
             teamNeedScoutCounts.set(key, (teamNeedScoutCounts.get(key) || 0) + 1);
+            addProfileLook(scoutTeam, entry, recentClassLogs.includes(entry));
         }
     }
-
     const ownTeamInfo = getLeagueTeamInfoByName(league, teamName);
     const ownDivisionKey = getTeamDivisionKey(ownTeamInfo);
     const divisionPeers = (league?.teams?.leagueTeamInfoList || [])
@@ -386,6 +429,27 @@ function buildWarRoomIntel({
             })
             .slice(0, 4)
         : [];
+    const ownNeedSet = new Set((needsByTeam[normalizeName(teamName)] || []).slice(0, 4));
+    const rivalProfiles = [...teamScoutProfiles.values()]
+        .filter((profile) => normalizeName(profile.team) !== normalizeName(teamName))
+        .map((profile) => {
+            const topNeeds = [...profile.needs.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+            const topPlayers = [...profile.players.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+            const topScout = [...profile.scouts.entries()].sort((a, b) => b[1] - a[1])[0] || null;
+            const overlap = topNeeds.filter(([need]) => ownNeedSet.has(need)).reduce((sum, [, count]) => sum + count, 0);
+            const pickThreat = nearbyPickTeams.find((entry) => normalizeName(entry.pickTeam) === normalizeName(profile.team));
+            return {
+                ...profile,
+                topNeeds,
+                topPlayers,
+                topScout,
+                overlap,
+                pickThreat,
+                heatScore: profile.recent * 3 + overlap * 2 + profile.total + (pickThreat ? 8 : 0),
+            };
+        })
+        .sort((a, b) => b.heatScore - a.heatScore)
+        .slice(0, 4);
 
     const lines = [];
     if (perkState?.perks?.draftWarRoomIntel) {
@@ -428,7 +492,20 @@ function buildWarRoomIntel({
             }
         }
         if (nearbyPickTeams.length) {
-            lines.push(`Pick-window teams: ${nearbyPickTeams.map((entry) => `#${entry.slot} ${entry.pickTeam} (${entry.needs.map((need) => formatNeedLabel(need)).join('/') || 'BPA'}${entry.scoutCount > 0 ? ` • ${entry.scoutCount} season looks` : ''})`).join(' • ')}.`);
+            lines.push(`Pick-window teams: ${nearbyPickTeams.slice(0, 3).map((entry) => `#${entry.slot} ${entry.pickTeam} (${entry.needs.map((need) => formatNeedLabel(need)).join('/') || 'BPA'}${entry.scoutCount > 0 ? `, ${entry.scoutCount} looks` : ''})`).join(' | ')}.`);
+        }
+        if (rivalProfiles.length) {
+            lines.push(`Rival scout boards: ${rivalProfiles.map((profile) => {
+                const lane = profile.topNeeds.length
+                    ? profile.topNeeds.map(([need, count]) => `${formatNeedLabel(need)} ${count}`).join('/')
+                    : 'BPA';
+                const playerText = profile.topPlayers.length
+                    ? `; names ${profile.topPlayers.map(([name, count]) => `${name}${count > 1 ? ` x${count}` : ''}`).join(', ')}`
+                    : '';
+                const scoutText = profile.topScout ? `; lead ${String(profile.topScout[0]).replace(/#\d+$/, '')}` : '';
+                const pickText = profile.pickThreat ? `; owns #${profile.pickThreat.slot}` : '';
+                return `${profile.team}: ${lane}${pickText}${playerText}${scoutText}`;
+            }).join(' | ')}.`);
         }
         if (divisionPeers.length) {
             const hotDivision = divisionPeers
@@ -437,7 +514,7 @@ function buildWarRoomIntel({
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 2);
             if (hotDivision.length) {
-                lines.push(`Division read: ${hotDivision.map((entry) => `${entry.peer} has ${entry.count} season looks in this class`).join(' • ')}.`);
+                lines.push(`Division read: ${hotDivision.map((entry) => `${entry.peer} has ${entry.count} season looks in this class`).join(' | ')}.`);
             }
         }
         const topTarget = topBoardEntries[0]?.target || null;
@@ -479,7 +556,7 @@ function buildWarRoomIntel({
         }
     }
 
-    return lines.length ? lines.slice(0, perkState?.perks?.classTrendIntel ? 6 : 5).join('\n') : null;
+    return lines.length ? joinLimitedLines(lines.slice(0, perkState?.perks?.classTrendIntel ? 7 : 6), 1024) : null;
 }
 
 function buildDraftPrimerAccessNote({ perkState, seasonContext }) {
@@ -2343,14 +2420,14 @@ export async function execute(interaction) {
             : `Pre-draft board built from your top needs, class shape, and ${draftYear} draft capital.`)
         .addFields(
             { name: 'Team Snapshot', value: quickSnapshot, inline: false },
-            { name: 'Draft Capital', value: quickCapital, inline: false },
-            { name: 'Priority Stack', value: quickPriority, inline: false },
-            { name: 'Target Board', value: quickTargets.join('\n'), inline: false },
-            ...(scoutRecommendationBoard ? [{ name: 'Scout Recommendation Board', value: scoutRecommendationBoard, inline: false }] : []),
-            ...(hasDraftIntelPerk ? [{ name: 'Market Intel', value: marketIntel || 'No market read available from the current board.', inline: false }] : []),
-            ...(warRoomIntel ? [{ name: 'War Room Intel', value: warRoomIntel, inline: false }] : []),
-            { name: 'Draft Plan', value: hasDraftIntelPerk ? (draftPlan || 'No additional draft plan was available from the current export.') : fallbackShort, inline: false },
-            ...(primerAccessNote ? [{ name: 'Locked Intel', value: primerAccessNote, inline: false }] : []),
+            { name: 'Draft Capital', value: safeEmbedFieldValue(quickCapital), inline: false },
+            { name: 'Priority Stack', value: safeEmbedFieldValue(quickPriority), inline: false },
+            { name: 'Target Board', value: safeEmbedFieldValue(quickTargets.join('\n')), inline: false },
+            ...(scoutRecommendationBoard ? [{ name: 'Scout Recommendation Board', value: safeEmbedFieldValue(scoutRecommendationBoard), inline: false }] : []),
+            ...(hasDraftIntelPerk ? [{ name: 'Market Intel', value: safeEmbedFieldValue(marketIntel || 'No market read available from the current board.'), inline: false }] : []),
+            ...(warRoomIntel ? [{ name: 'War Room Intel', value: safeEmbedFieldValue(warRoomIntel), inline: false }] : []),
+            { name: 'Draft Plan', value: safeEmbedFieldValue(hasDraftIntelPerk ? (draftPlan || 'No additional draft plan was available from the current export.') : fallbackShort), inline: false },
+            ...(primerAccessNote ? [{ name: 'Locked Intel', value: safeEmbedFieldValue(primerAccessNote), inline: false }] : []),
         )
         .setColor(0x00b0f4)
         .setFooter({ text: `${formatPhaseFooter(seasonContext, draftYear)} • ${classLock}` });
