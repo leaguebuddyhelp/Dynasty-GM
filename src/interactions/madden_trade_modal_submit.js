@@ -8,6 +8,7 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
+import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
 
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 const CHANNEL_MAP_FILE = getMaddenDataFilePath('madden_channel_ids.json');
@@ -545,7 +546,7 @@ export async function execute(interaction) {
     const assetsReceived = interaction.fields.getTextInputValue('assetsReceived');
     const notes = interaction.fields.getTextInputValue('notes');
     const pickContext = getMaddenPickContext(snapshot);
-    const draftYearBase = Math.max(2027, pickContext.draftBaseYear);
+    const draftYearBase = getMaddenDraftYear(snapshot);
     const valueMap = buildValueMap(snapshot);
     const pickOptions = { currentYearExactAllowed: pickContext.currentYearExactAllowed };
     const sendVal = parseAssets(assetsSent, valueMap, draftYearBase, pickOptions);

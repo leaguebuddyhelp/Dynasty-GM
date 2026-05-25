@@ -18,6 +18,7 @@ import { getFirstRoundPickLabelsForTeam } from '../madden/pick_overrides_store.j
 import fs from 'fs';
 import path from 'path';
 import { getFullTeamName } from '../shared/madden_team_names.js';
+import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
 
 const MENU_CUSTOM_ID = /^trade_builder_select_assets\|(yours|other)\|/;
 const ADD_CUSTOM_ID = /^trade_builder_add\|(yours|other)\|/;
@@ -119,7 +120,7 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
     seasonTitle.includes('offseason') ||
     (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && !isRegularOrPost);
   const pickContext = getMaddenPickContext(snapshot);
-  const draftBaseYear = Math.max(2027, pickContext.draftBaseYear);
+  const draftBaseYear = getMaddenDraftYear(snapshot);
   const teamMeta = teamLookup(snapshot, teamId);
   const teamName = getFullTeamName(teamMeta, String(teamId || ''));
   const allTeams = (snapshot?.teams?.leagueTeamInfoList || []).map(t =>
@@ -192,7 +193,7 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
   };
 
   const currentPickOptions = buildPickOptionsForYear(draftBaseYear);
-  const futurePickOptions = [draftBaseYear + 1, draftBaseYear + 2]
+  const futurePickOptions = [draftBaseYear + 1, draftBaseYear + 2, draftBaseYear + 3]
     .flatMap((pickYear) => buildPickOptionsForYear(pickYear));
 
   if (currentPickOptions.length) {
@@ -213,7 +214,7 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId(`trade_builder_select_assets|${side}|${draftId}|future_picks|0`)
-          .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} future ${draftBaseYear + 1}-${draftBaseYear + 2} picks`)
+          .setPlaceholder(`Add ${side === 'yours' ? 'your' : 'their'} next ${draftBaseYear + 1}-${draftBaseYear + 3} picks`)
           .setMinValues(1)
           .setMaxValues(Math.min(5, futurePickOptions.length))
           .addOptions(futurePickOptions.slice(0, 25))
@@ -287,7 +288,7 @@ async function refreshBuilder(interaction, draft, snapshot) {
   // Madden/NFL only
   const valueMap = buildValueMap(snapshot);
   const pickContext = getMaddenPickContext(snapshot);
-  const baseYear = Math.max(2027, pickContext.draftBaseYear);
+  const baseYear = getMaddenDraftYear(snapshot);
   const summary = summarizeAssets(draft, valueMap, baseYear, {
     currentYearExactAllowed: pickContext.currentYearExactAllowed,
   });
@@ -373,7 +374,7 @@ export async function execute(interaction) {
     if (!leagueId) return;
     const snapshot = loadLeagueSnapshot(leagueId);
     const pickContext = getMaddenPickContext(snapshot);
-    const draftYearBase = Math.max(2027, pickContext.draftBaseYear);
+    const draftYearBase = getMaddenDraftYear(snapshot);
     const roster = rosterForTeam(snapshot, side === 'yours' ? draft.yourTeamId : draft.otherTeamId);
     const rosterMap = new Map(roster.map(p => [String(p.rosterId), p]));
     const sel = interaction.values || [];
@@ -463,7 +464,7 @@ export async function execute(interaction) {
     }
     const snapshot = loadLeagueSnapshot(leagueId);
     const pickContext = getMaddenPickContext(snapshot);
-    const draftYearBase = Math.max(2027, pickContext.draftBaseYear);
+    const draftYearBase = getMaddenDraftYear(snapshot);
     const rawInput = interaction.fields.getTextInputValue('pickLabel') || '';
     const parsed = parsePickValue(rawInput, draftYearBase, {
       currentYearExactAllowed: pickContext.currentYearExactAllowed,

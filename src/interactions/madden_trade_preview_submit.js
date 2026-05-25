@@ -26,6 +26,7 @@ import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
 
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 
@@ -206,10 +207,7 @@ export async function execute(interaction) {
 
     const yourTeam = draft.yourTeam || draft.yourTeamName || draft.yourTeamId || draft.yourTeamRaw;
     const otherTeam = draft.otherTeam || draft.otherTeamName || draft.otherTeamId || draft.otherTeamRaw;
-    const seasonYear = Math.max(
-      2027,
-      snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || draft.seasonYear || new Date().getFullYear()
-    );
+    const seasonYear = getMaddenDraftYear(snapshot);
     const yourStructAssets = draft.assets?.your || [];
     const theirStructAssets = draft.assets?.other || [];
 
