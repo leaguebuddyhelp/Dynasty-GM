@@ -14,11 +14,12 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_
 import { computePlayerValue, buildValueMap, parsePickValue, getMaddenPickContext } from './madden_trade_modal_submit.js';
 import { getTradeDraft, saveTradeDraft } from '../shared/trade_draft_store.js';
 import { readRoster, normalizeName, resolveTeamNameForRoster } from '../shared/rosterUtils.js';
-import { getFirstRoundPickLabelsForTeam } from '../madden/pick_overrides_store.js';
+import { getFirstRoundPickLabelsForTeam, getFirstRoundPickLabelsFromOrder } from '../madden/pick_overrides_store.js';
 import fs from 'fs';
 import path from 'path';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
+import { applyPickTrades, draftOrder } from '../madden/coach/mockdraft.js';
 
 const MENU_CUSTOM_ID = /^trade_builder_select_assets\|(yours|other)\|/;
 const ADD_CUSTOM_ID = /^trade_builder_add\|(yours|other)\|/;
@@ -126,6 +127,10 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
   const allTeams = (snapshot?.teams?.leagueTeamInfoList || []).map(t =>
     getFullTeamName(t, t.abbrName || 'Team')
   ).filter(Boolean);
+  const mockFirstRoundOrder = applyPickTrades(
+    draftOrder(snapshot).map((pick) => ({ ...pick, guildId })),
+    draftBaseYear,
+  ).slice(0, 32);
 
   const offensePos = new Set(['QB', 'HB', 'RB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT']);
   const defensePos = new Set(['LE', 'RE', 'DL', 'DT', 'EDGE', 'REDGE', 'LEDGE', 'OLB', 'ROLB', 'LOLB', 'MLB', 'MIKE', 'WILL', 'SAM', 'CB', 'FS', 'SS', 'DB']);
@@ -167,7 +172,9 @@ function buildAssetSelectRows(side, draftId, snapshot, teamId, guildId = null) {
 
   const buildPickOptionsForYear = (pickYear) => {
     const options = [];
-    const firstRoundLabels = getFirstRoundPickLabelsForTeam(teamName, pickYear, allTeams, guildId);
+    const firstRoundLabels = pickYear === draftBaseYear
+      ? getFirstRoundPickLabelsFromOrder(teamName, pickYear, mockFirstRoundOrder, guildId)
+      : getFirstRoundPickLabelsForTeam(teamName, pickYear, allTeams, guildId);
     firstRoundLabels.forEach(label => {
       const parsed = parsePickValue(label, draftBaseYear, {
         currentYearExactAllowed: pickContext.currentYearExactAllowed && /\bpick\s+\d+/i.test(label),

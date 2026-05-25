@@ -263,3 +263,33 @@ export function getFirstRoundPickLabelsForTeam(teamName, year, allTeams = [], sc
     return a.localeCompare(b);
   });
 }
+
+export function getFirstRoundPickLabelsFromOrder(teamName, year, order = [], scopeKey = null) {
+  if (!teamName || !year || !Array.isArray(order) || !order.length) {
+    return getFirstRoundPickLabelsForTeam(teamName, year, [], scopeKey);
+  }
+
+  const labels = new Set();
+  order
+    .filter((pick) => Number(pick?.round || 1) === 1)
+    .forEach((pick, index) => {
+      const owner = pick.name || pick.team || pick.nick || '';
+      if (!sameTeam(owner, teamName)) return;
+      const pickNum = Number(pick.pickNum ?? pick.pickNumber ?? pick.slot ?? index + 1);
+      const original = pick.originalName || pick.originalTeam || pick.originalOwner || pick.team || pick.name || '';
+      const via = pick.via || (!sameTeam(original, owner) ? original : null);
+      const base = `${year} Round 1${Number.isFinite(pickNum) && pickNum > 0 ? ` Pick ${pickNum}` : ''}`;
+      labels.add(via ? `${base} via ${via}` : base);
+    });
+
+  if (labels.size) {
+    return [...labels].sort((a, b) => {
+      const aPick = Number((a.match(/\bPick\s+(\d+)/i) || [])[1] || 999);
+      const bPick = Number((b.match(/\bPick\s+(\d+)/i) || [])[1] || 999);
+      if (aPick !== bPick) return aPick - bPick;
+      return a.localeCompare(b);
+    });
+  }
+
+  return getFirstRoundPickLabelsForTeam(teamName, year, [], scopeKey);
+}
