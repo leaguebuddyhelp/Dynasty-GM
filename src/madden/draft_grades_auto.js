@@ -8,6 +8,7 @@ import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
+import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
 
 const STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'draft_exports', 'posted_draft_grades.json');
 
@@ -46,7 +47,7 @@ function resolveTeamNeedsForDraftGrades(teamName, needsByTeam = {}) {
   return hit?.[1] || ['BPA'];
 }
 
-function computeGrades(snapshot) {
+export function computeDraftGrades(snapshot) {
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
   const rosters = snapshot?.rosters?.teams || {};
   const needsByTeam = deriveTeamNeeds(snapshot);
@@ -65,8 +66,8 @@ function computeGrades(snapshot) {
     const rookies = roster.filter(p => Number(p.yearsPro ?? 1) === 0);
     if (!rookies.length) return;
     const teamNeeds = resolveTeamNeedsForDraftGrades(teamName, needsByTeam);
-    const avgOvr = rookies.reduce((s, p) => s + (p.playerBestOvr || 0), 0) / rookies.length;
-    const topOvr = Math.max(...rookies.map(p => p.playerBestOvr || 0));
+    const avgOvr = rookies.reduce((s, p) => s + Number(p.playerBestOvr || 0), 0) / rookies.length;
+    const topOvr = Math.max(...rookies.map(p => Number(p.playerBestOvr || 0)));
     const topThreeAvg = rookies
       .map((p) => Number(p.playerBestOvr || 0))
       .sort((a, b) => b - a)
@@ -117,6 +118,27 @@ function computeGrades(snapshot) {
   return grades;
 }
 
+export function buildDraftGradesEmbed(grades = [], leagueId = null, snapshot = null) {
+  const logo = getLeagueBuddyLogoEmoji();
+  const draftYear = getMaddenDraftYear(snapshot);
+  const lines = grades.map((g, idx) => {
+    const badge =
+      g.grade >= 90 ? 'A' :
+        g.grade >= 82 ? 'B' :
+          g.grade >= 74 ? 'C' :
+            g.grade >= 66 ? 'D' :
+              'F';
+    return `${idx + 1}) ${g.emoji || ''} ${g.teamName} — **${badge} (${g.grade})**`;
+  });
+  const description = lines.join('\n').slice(0, 3900);
+  const embed = new EmbedBuilder()
+    .setTitle(`${logo ? `${logo} ` : ''}${draftYear} Madden Draft Grades`)
+    .setDescription(description || 'No rookie draft data found in the current export.')
+    .setColor(0x8e44ad);
+  if (leagueId) embed.addFields({ name: 'League', value: String(leagueId), inline: true });
+  return embed;
+}
+
 export async function maybePostDraftGrades(client, leagueId, guildId = null) {
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
@@ -143,16 +165,10 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
       return; // already posted for this snapshot
     }
 
-    const grades = computeGrades(snapshot);
+    const grades = computeDraftGrades(snapshot);
     if (!grades.length) return;
 
-    const lines = grades.map((g, idx) => `${idx + 1}) ${g.emoji || ''} ${g.teamName} — **${g.grade}**`);
-    const logo = getLeagueBuddyLogoEmoji();
-    const embed = new EmbedBuilder()
-      .setTitle(`${logo ? `${logo} ` : ''}Madden Draft Grades`)
-      .setDescription(lines.join('\n'))
-      .setColor(0x8e44ad)
-      .addFields({ name: 'League', value: String(leagueId), inline: true });
+    const embed = buildDraftGradesEmbed(grades, leagueId, snapshot);
 
     const channel = await client.channels.fetch(draftChannelId).catch(() => null);
     if (channel && channel.isTextBased()) {

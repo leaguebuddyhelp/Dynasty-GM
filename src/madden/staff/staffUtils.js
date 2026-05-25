@@ -21,7 +21,7 @@ export function loadRoleMap() {
 
 export function loadRoleMapForGuild(guildId) {
   const overlay = guildId ? getGuildRoleMap(guildId) : null;
-  if (overlay) return overlay;
+  if (overlay && Object.keys(overlay).length) return overlay;
   return loadRoleMap();
 }
 

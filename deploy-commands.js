@@ -50,6 +50,8 @@ const BETA_MADDEN_COMMANDS = new Set([
   'weeklyupdate',
   'recruiting',
   'draftclass',
+  'draftgrades',
+  'draftexport',
 ]);
 
 function parseGuildIds() {

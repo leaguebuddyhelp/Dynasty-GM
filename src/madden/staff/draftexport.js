@@ -1,23 +1,11 @@
 import { SlashCommandBuilder } from 'discord.js';
 import path from 'path';
 import fs from 'fs';
-import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const EXPORT_DIR = path.join(process.cwd(), 'data', 'madden', 'draft_exports');
-const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
-
-function loadJson(file, fallback = {}) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
-}
-
-function hasStaffRole(member, roleMap) {
-  return STAFF_ROLES.some(r => {
-    const id = roleMap[r];
-    return id && member.roles.cache.has(id);
-  });
-}
 
 function devLabel(devTrait) {
   switch (Number(devTrait)) {
@@ -29,7 +17,16 @@ function devLabel(devTrait) {
   }
 }
 
-function collectDraft(snapshot) {
+function numberFrom(value, fallback = null) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function playerName(player = {}) {
+  return [player.firstName, player.lastName].map((part) => String(part || '').trim()).filter(Boolean).join(' ').trim();
+}
+
+export function collectDraft(snapshot) {
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
   const rosters = snapshot?.rosters?.teams || {};
   const all = [];
@@ -37,17 +34,19 @@ function collectDraft(snapshot) {
     const roster = rosters[t.teamId]?.rosterInfoList || [];
     const rookies = roster.filter(p => Number(p.yearsPro ?? 1) === 0);
     rookies.forEach(p => {
-      const round = Number.isFinite(p.draftRound) ? Number(p.draftRound) : 99;
-      const pick = Number.isFinite(p.draftPick) ? Number(p.draftPick) : 9999;
-      const pickNumber = (round - 1) * 32 + pick; // approximate ordering
+      const round = numberFrom(p.draftRound ?? p.draftYearRound ?? p.collegeDraftRound, 99);
+      const pick = numberFrom(p.draftPick ?? p.draftSelection ?? p.pickNumber, 9999);
+      const overallPick = numberFrom(p.overallPick ?? p.draftOverallPick ?? p.pickNum, null);
+      const pickNumber = overallPick || ((round - 1) * 32 + pick); // approximate ordering when export only stores round/pick
       all.push({
         teamId: t.teamId,
         teamName: getFullTeamName(t, `Team ${t.teamId}`),
         position: p.position,
+        name: playerName(p),
         firstName: p.firstName,
         lastName: p.lastName,
-        ovr: p.playerBestOvr,
-        devTrait: p.devTrait,
+        ovr: numberFrom(p.playerBestOvr, null),
+        devTrait: numberFrom(p.devTrait, null),
         devLabel: devLabel(p.devTrait),
         draftRound: round,
         draftPick: pick,
@@ -73,7 +72,7 @@ export const data = new SlashCommandBuilder()
 
 async function execute(interaction) {
   await interaction.deferReply({ ephemeral: true });
-  const roleMap = loadJson(ROLE_MAP_FILE);
+  const roleMap = loadRoleMapForGuild(interaction.guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id);
   if (!hasStaffRole(member, roleMap)) {
     await interaction.editReply({ content: 'Only LB Commish/Co-Commish can use this command.' });
