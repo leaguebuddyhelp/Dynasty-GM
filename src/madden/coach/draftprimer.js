@@ -14,9 +14,7 @@ import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 import {
-    displayMaddenDraftClassId,
     findMaddenDraftClassFile,
-    listMaddenDraftClassFiles,
     loadMaddenDraftClassArray,
     normalizeMaddenDraftClassId,
 } from '../../shared/madden_draft_class_files.js';
@@ -643,17 +641,10 @@ function saveDraftPrimerWeek(history, { leagueId, userId, seasonKey, weekKey, te
 }
 
 function resolveDraftPrimerClass(league) {
-    const autoClassId = normalizeMaddenDraftClassId(getMaddenDraftClassId(league));
-    const availableClasses = listMaddenDraftClassFiles('bigboard');
-    const latestClassId = availableClasses[availableClasses.length - 1]?.classId || autoClassId;
-    const resolvedClassId = autoClassId === 'cus_01' && latestClassId && latestClassId !== autoClassId
-        ? latestClassId
-        : autoClassId;
-    const autoLock = formatMaddenDraftClassLock(league);
-    const classLock = resolvedClassId === autoClassId
-        ? autoLock
-        : `Current class ${displayMaddenDraftClassId(resolvedClassId)} • auto lock was ${displayMaddenDraftClassId(autoClassId)}`;
-    return { classId: resolvedClassId, classLock, autoClassId };
+    return {
+        classId: normalizeMaddenDraftClassId(getMaddenDraftClassId(league)),
+        classLock: formatMaddenDraftClassLock(league),
+    };
 }
 
 function scoutStatusForProspect(userScout = {}, classKey, weekKey, playerName) {
