@@ -989,6 +989,9 @@ async function execute(interaction) {
                 `🤖 CPU`,
                 `Use this only for a CPU matchup.`,
                 ``,
+                `📺 Home Stream`,
+                `Home team must stream using \`/streamlink\`.`,
+                ``,
                 `${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
               ].join('\n')
             : [
@@ -1008,6 +1011,10 @@ async function execute(interaction) {
                 ``,
                 `🚫 Apply Strike`,
                 `Staff only. Used when the bot's thread evidence supports applying the strike manually.`,
+                ``,
+                `📺 Home Stream`,
+                `Home team must stream using \`/streamlink\`.`,
+                ``,
                 `${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline: <t:${deadline}:R> (<t:${deadline}:f>)`
               ].join('\n'),
           color: 0x00b0f4,
