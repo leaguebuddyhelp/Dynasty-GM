@@ -11,6 +11,7 @@ import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
 
 const STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'draft_exports', 'posted_draft_grades.json');
+const DRAFT_GRADES_FORMULA_VERSION = 2;
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -181,8 +182,8 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     const seasonKey = `year_${seasonYear}`;
     state[leagueId] = state[leagueId] || {};
     const lastPosted = state[leagueId]?.[seasonKey] || state[leagueId];
-    if (lastPosted?.posted || lastPosted?.fetchedAt) {
-      return; // already posted for this draft year
+    if (lastPosted?.formulaVersion === DRAFT_GRADES_FORMULA_VERSION) {
+      return; // already posted for this draft year with the current formula
     }
 
     const grades = computeDraftGrades(snapshot);
@@ -199,6 +200,7 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
         posted: true,
         fetchedAt: snapshot.fetchedAt,
         seasonYear,
+        formulaVersion: DRAFT_GRADES_FORMULA_VERSION,
         postedAt: new Date().toISOString(),
       };
       fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
