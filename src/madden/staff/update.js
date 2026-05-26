@@ -1341,21 +1341,6 @@ async function execute(interaction) {
       } catch (e) {
         console.warn('[madden-weeklyupdate] stat leaders reset skipped:', e?.message || e);
       }
-      try {
-        await resetStandings(interaction.client, interaction.guildId);
-      } catch (e) {
-        console.warn('[madden-weeklyupdate] standings reset skipped:', e?.message || e);
-      }
-      try {
-        await resetPlayoffPicture(interaction.client, interaction.guildId);
-      } catch (e) {
-        console.warn('[madden-weeklyupdate] playoff picture reset skipped:', e?.message || e);
-      }
-      try {
-        await resetPowerRankings(interaction.client, interaction.guildId);
-      } catch (e) {
-        console.warn('[madden-weeklyupdate] power rankings reset skipped:', e?.message || e);
-      }
     } else if (!backfillOnlyAwards && !inPreseason && !inOffseason) {
       try {
         await updateStatLeaders(interaction.client, leagueId, interaction.guildId);

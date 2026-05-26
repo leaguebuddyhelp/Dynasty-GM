@@ -10,6 +10,7 @@ import { upsertGuildPin } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
 import { formatTeamLabelWithEmoji } from '../shared/madden_visuals.js';
 import { stablePlayerKey } from './player_identity.js';
+import { getMaddenSeasonKey } from '../shared/madden_metadata.js';
 
 const TOP_FILE = path.join(process.cwd(), 'data', 'madden', 'top_players.json');
 const TOP_HISTORY_DIR = path.join(process.cwd(), 'data', 'madden', 'top_players_history');
@@ -1403,6 +1404,33 @@ function loadWeeklyHistory(leagueId) {
   return history;
 }
 
+export function resetTopPlayersSeasonState(leagueId) {
+  const key = String(leagueId || '').trim();
+  if (!key) return false;
+
+  try {
+    fs.rmSync(path.join(TOP_HISTORY_DIR, key), { recursive: true, force: true });
+    fs.rmSync(path.join(TOP_HISTORY_DIR, `${key}.json`), { force: true });
+  } catch (err) {
+    console.warn('[top_players] failed to clear weekly history:', err?.message || err);
+  }
+
+  try {
+    const state = loadJson(TOP_FILE, {});
+    if (state?.[key]) {
+      delete state[key].top100;
+      delete state[key].seasonTop100;
+      delete state[key].top100Display;
+      delete state[key].top100DisplayLabel;
+      saveJson(TOP_FILE, state);
+    }
+  } catch (err) {
+    console.warn('[top_players] failed to clear stored state:', err?.message || err);
+  }
+
+  return true;
+}
+
 function buildSeasonHistoryFromSnapshot(leagueId) {
   let snapshot;
   try {
@@ -1910,6 +1938,22 @@ async function updateTopPlayers(client, leagueId, snapshot, currentWeek, options
   const requestedWeekIdx = Math.max(0, Number(currentWeek) - 1);
   const targetWeekIdx = getLatestReliableRegularSeasonWeekIndex(snapshot, requestedWeekIdx);
   if (targetWeekIdx == null) return;
+  const seasonKey = getMaddenSeasonKey(snapshot);
+  const existingState = loadJson(TOP_FILE, {});
+  const existingLeagueState = existingState?.[leagueId] || {};
+  const previousSeasonKey = String(existingLeagueState.seasonKey || '').trim();
+  const shouldClearForSeason =
+    (previousSeasonKey && previousSeasonKey !== seasonKey) ||
+    (!previousSeasonKey && targetWeekIdx === 0);
+  if (shouldClearForSeason) {
+    resetTopPlayersSeasonState(leagueId);
+    console.log('[updateTopPlayers] reset season state', {
+      leagueId,
+      previousSeasonKey: previousSeasonKey || null,
+      seasonKey,
+      targetWeek: targetWeekIdx + 1,
+    });
+  }
   const weekly = computeWeeklyList(snapshot, targetWeekIdx);
   const list = Array.isArray(weekly) ? weekly : (weekly?.top100 || []);
   const allGraded = Array.isArray(weekly?.allGraded) ? weekly.allGraded : list;
@@ -1922,6 +1966,7 @@ async function updateTopPlayers(client, leagueId, snapshot, currentWeek, options
   // Persist latest list for getTop100Page
   const state = loadJson(TOP_FILE, {});
   state[leagueId] = state[leagueId] || {};
+  state[leagueId].seasonKey = seasonKey;
   state[leagueId].top100 = list;
   // Keep a running season Top 100 from history for end-of-year/season scope
   try {
@@ -1992,10 +2037,12 @@ async function postTop100(client, leagueId, list, channelId, meta = {}) {
     if (!resolvedChannel || !resolvedChannel.isTextBased()) return;
     if (message) {
       await message.edit({ embeds: [embed], components: [row], files });
+      if (!message.pinned) await message.pin().catch(() => null);
       return;
     }
     const sent = await resolvedChannel.send({ embeds: [embed], components: [row], files });
     if (sent?.id) {
+      await sent.pin().catch(() => null);
       if (guildId) upsertGuildPin(guildId, 'top100', sent.id);
       setPinId('top100', sent.id, guildId);
     }
