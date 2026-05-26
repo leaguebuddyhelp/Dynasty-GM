@@ -2,6 +2,8 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import fs from 'fs';
 import {
   canTrade,
+  formatTradeValueThresholdMessage,
+  isTradeWithinValueThreshold,
   loadTradeCounts,
   loadActiveTrades,
   saveActiveTrades,
@@ -341,6 +343,12 @@ export async function execute(interaction) {
 
     const gap = sendVal - recvVal;
     const valueSummary = formatValueSummary(sendVal, recvVal, gap, false);
+    if (!isTradeWithinValueThreshold(gap)) {
+      await interaction.editReply({
+        content: `${formatTradeValueThresholdMessage(gap)} Adjust the assets and resubmit.`,
+      });
+      return;
+    }
 
     const embed = buildTradeEmbed({
       yourTeam,

@@ -1,7 +1,15 @@
 import { ButtonInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { loadActiveTrades, saveActiveTrades, saveTradeCounts, updateTradeCountsEmbed, computeApprovedTradeCounts } from '../shared/madden_trade_utils.js';
+import {
+  loadActiveTrades,
+  saveActiveTrades,
+  saveTradeCounts,
+  updateTradeCountsEmbed,
+  computeApprovedTradeCounts,
+  formatTradeValueThresholdMessage,
+  isTradeWithinValueThreshold,
+} from '../shared/madden_trade_utils.js';
 import { addPickOverridesFromTrade } from '../madden/pick_overrides_store.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
@@ -119,6 +127,20 @@ export async function execute(interaction) {
     const activeTrade = trades[tradeId] || trade;
 
     if (vote === 'approve') {
+      if (!isTradeWithinValueThreshold(activeTrade)) {
+        activeTrade.status = 'denied';
+        activeTrade.closedAt = Date.now();
+        activeTrade.deniedReason = 'value_threshold';
+        trades[tradeId] = activeTrade;
+        saveActiveTrades(interaction.guildId, trades);
+        delete pending[tradeId];
+        writePendingStore(pendingStore);
+        await interaction.update({
+          content: `${formatTradeValueThresholdMessage(activeTrade)} Proof approval blocked and trade denied.`,
+          components: [],
+        });
+        return;
+      }
       activeTrade.status = 'approved';
       activeTrade.closedAt = Date.now();
       try {

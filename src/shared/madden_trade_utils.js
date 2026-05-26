@@ -11,6 +11,7 @@ const TRADE_COUNTS_FILE = getMaddenDataFilePath('trade_counts.json');
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 const TRADE_COUNT_MESSAGE_ID = '1460405214032035891';
 const GLOBAL_SCOPE_KEY = '__legacy_global__';
+export const MADDEN_TRADE_VALUE_THRESHOLD = 50;
 
 function readScopedStore(file) {
   try {
@@ -111,6 +112,29 @@ export function incrementTradeCounts(counts, teams) {
     counts[t] = (counts[t] || 0) + 1;
   });
   return counts;
+}
+
+export function getTradeValueGap(tradeOrGap, recvTotal = undefined) {
+  if (typeof tradeOrGap === 'number' && recvTotal === undefined) return tradeOrGap;
+  if (tradeOrGap && typeof tradeOrGap === 'object') {
+    const explicit = Number(tradeOrGap.valueGap);
+    if (Number.isFinite(explicit)) return explicit;
+    const send = Number(tradeOrGap.sendTotal || 0);
+    const recv = Number(tradeOrGap.recvTotal || 0);
+    return send - recv;
+  }
+  const send = Number(tradeOrGap || 0);
+  const recv = Number(recvTotal || 0);
+  return send - recv;
+}
+
+export function isTradeWithinValueThreshold(tradeOrGap, threshold = MADDEN_TRADE_VALUE_THRESHOLD) {
+  return Math.abs(getTradeValueGap(tradeOrGap)) <= Number(threshold || MADDEN_TRADE_VALUE_THRESHOLD);
+}
+
+export function formatTradeValueThresholdMessage(tradeOrGap, threshold = MADDEN_TRADE_VALUE_THRESHOLD) {
+  const gap = Math.abs(getTradeValueGap(tradeOrGap));
+  return `Trade blocked: value gap is ${gap.toFixed(1)}. Madden trades must be within ${Number(threshold).toFixed(0)} points.`;
 }
 
 export async function updateTradeCountsEmbed(client, channelMap, counts, { guildId = null } = {}) {

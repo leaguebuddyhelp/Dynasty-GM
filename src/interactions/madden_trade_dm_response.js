@@ -7,6 +7,8 @@ import {
   saveActiveTrades,
   loadTradeCounts,
   saveTradeCounts,
+  formatTradeValueThresholdMessage,
+  isTradeWithinValueThreshold,
   incrementTradeCounts,
   updateTradeCountsEmbed,
 } from '../shared/madden_trade_utils.js';
@@ -213,6 +215,23 @@ export async function execute(interaction) {
         await userA.send({ content: 'Your trade was blocked because one of the teams has already made 5 trades this season.' }).catch(() => null);
       } catch { }
     }
+    return;
+  }
+  if (!isTradeWithinValueThreshold(trade)) {
+    trade.status = 'denied';
+    trade.closedAt = Date.now();
+    trade.deniedReason = 'value_threshold';
+    trades[tradeId] = trade;
+    saveActiveTrades(guildId, trades);
+    const blockMessage = formatTradeValueThresholdMessage(trade);
+    if (trade.proposerId) {
+      try {
+        const userA = await interaction.client.users.fetch(trade.proposerId);
+        await userA.send({ content: `${blockMessage} Your deal was not sent to committee.` }).catch(() => null);
+      } catch { }
+    }
+    await deletePendingMessage(interaction.client, channelMap, trade);
+    await interaction.editReply({ content: blockMessage });
     return;
   }
 

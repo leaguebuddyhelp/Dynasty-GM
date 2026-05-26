@@ -4,6 +4,8 @@ import path from 'path';
 import {
   loadActiveTrades,
   saveActiveTrades,
+  formatTradeValueThresholdMessage,
+  isTradeWithinValueThreshold,
 } from '../shared/madden_trade_utils.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
@@ -255,6 +257,34 @@ export async function execute(interaction) {
   votes.deny = (votes.deny || []).filter(id => id !== voterId);
   if (approveVote) votes.approve.push(voterId);
   if (denyVote) votes.deny.push(voterId);
+
+  if (approveVote && !isTradeWithinValueThreshold(trade)) {
+    trade.status = 'denied';
+    trade.closedAt = Date.now();
+    trade.deniedReason = 'value_threshold';
+    trades[tradeId] = trade;
+    saveActiveTrades(interaction.guildId, trades);
+    const embed = EmbedBuilder.from(buildEmbed(trade, tradeId, 'denied'))
+      .setDescription(`Trade ID: ${tradeId}`);
+    const deniedChan = deniedId ? await interaction.client.channels.fetch(deniedId).catch(() => null) : null;
+    if (deniedChan?.isTextBased()) {
+      await deniedChan.send({
+        content: `Trade ID: ${tradeId}`,
+        embeds: [embed],
+        allowedMentions: { parse: [], roles: mentionRoleIds },
+      }).catch(() => null);
+    }
+    await dmProposer(interaction.client, trade.proposerId, embed, `${formatTradeValueThresholdMessage(trade)} Committee approval was blocked.`);
+    appendMaddenStaffLog({
+      type: 'trade_value_threshold_denied',
+      guildId: interaction.guildId,
+      tradeId,
+      yourTeam: trade.yourTeam,
+      otherTeam: trade.otherTeam,
+    });
+    await interaction.editReply({ content: `${formatTradeValueThresholdMessage(trade)} Trade denied automatically.` });
+    return;
+  }
 
   const approveCount = votes.approve.length;
   const denyCount = votes.deny.length;
