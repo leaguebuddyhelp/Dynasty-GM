@@ -11,6 +11,18 @@ const PENDING_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const GLOBAL_SCOPE_KEY = '__legacy_global__';
+const PROD_TRADE_PROOF_CHANNEL_ID = '1508643966244094032';
+const TRADE_PROOF_CHANNEL_KEYS = [
+  'Trade Proof',
+  'Trade Proofs',
+  'Madden Trade Proof',
+  'Madden Proof',
+  'Proof',
+  'Proofs',
+  'Trade Committee',
+  'Pending Trades',
+  'tradeSubmit',
+];
 
 function readPendingStore() {
   try {
@@ -55,6 +67,20 @@ function getStaffRoles(roleMap) {
     .filter(([k]) => /commish/i.test(k) || /ghost legacy$/i.test(k.trim()))
     .map(([, v]) => v)
     .filter(Boolean);
+}
+
+async function fetchTradeProofChannel(client, guildId, channelMap = {}) {
+  const candidateIds = [
+    ...TRADE_PROOF_CHANNEL_KEYS.map((key) => channelMap[key]).filter(Boolean),
+    PROD_TRADE_PROOF_CHANNEL_ID,
+  ];
+  for (const channelId of [...new Set(candidateIds.map(String))]) {
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    if (!channel?.isTextBased?.()) continue;
+    if (guildId && channel.guildId && String(channel.guildId) !== String(guildId)) continue;
+    return channel;
+  }
+  return null;
 }
 
 export const customId = /^(trade_madden_proof\|.+|trade_madden_cancel\|.+|trade_madden_committee\|(approve|deny)\|.+)$/;
@@ -282,22 +308,12 @@ export async function execute(interaction) {
       .setFooter({ text: `Trade ID ${tradeId}` })
       .setColor(0x5865f2);
 
-    const channelMap = loadChannelMap();
-    const committeeChannelId = channelMap['Trade Committee'];
-    if (!committeeChannelId) {
-      console.error('[trade_madden_proof] no Trade Committee channel configured');
-      await interaction.followUp({ content: 'Proof saved, but no Trade Committee channel is configured. Please ping staff.', flags: 64 });
-      return;
-    }
-
-    const committeeChan = await interaction.client.channels.fetch(committeeChannelId).catch((err) => {
-      console.error('[trade_madden_proof] failed to fetch committee channel:', committeeChannelId, err);
-      return null;
-    });
+    const channelMap = loadChannelMap(interaction.guildId);
+    const committeeChan = await fetchTradeProofChannel(interaction.client, interaction.guildId, channelMap);
     const tags = [committeeRole && `<@&${committeeRole}>`].filter(Boolean).join(' ');
     if (!committeeChan?.isTextBased()) {
-      console.error('[trade_madden_proof] committee channel not found or not text-based:', committeeChannelId);
-      await interaction.followUp({ content: 'Proof saved, but I could not access the Trade Committee channel. Please ping staff.', flags: 64 });
+      console.error('[trade_madden_proof] trade proof channel not found or not text-based');
+      await interaction.followUp({ content: 'Proof saved, but I could not access the Trade Proof channel. Please ping staff.', flags: 64 });
       return;
     }
 

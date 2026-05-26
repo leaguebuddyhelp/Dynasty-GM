@@ -13,6 +13,18 @@ const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_chan
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
 const PENDING_PROOFS_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.json');
 const GLOBAL_SCOPE_KEY = '__legacy_global__';
+const PROD_TRADE_PROOF_CHANNEL_ID = '1508643966244094032';
+const TRADE_PROOF_CHANNEL_KEYS = [
+  'Trade Proof',
+  'Trade Proofs',
+  'Madden Trade Proof',
+  'Madden Proof',
+  'Proof',
+  'Proofs',
+  'Trade Committee',
+  'Pending Trades',
+  'tradeSubmit',
+];
 
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
@@ -22,6 +34,20 @@ function loadRoleMap(guildId = null) {
   const overlay = getGuildRoleMap(guildId);
   if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
+}
+
+async function fetchTradeProofChannel(client, guildId, channelMap = {}) {
+  const candidateIds = [
+    ...TRADE_PROOF_CHANNEL_KEYS.map((key) => channelMap[key]).filter(Boolean),
+    PROD_TRADE_PROOF_CHANNEL_ID,
+  ];
+  for (const channelId of [...new Set(candidateIds.map(String))]) {
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    if (!channel?.isTextBased?.()) continue;
+    if (guildId && channel.guildId && String(channel.guildId) !== String(guildId)) continue;
+    return channel;
+  }
+  return null;
 }
 
 function readPendingProofsStore() {
@@ -285,10 +311,7 @@ export async function execute(interaction) {
       .setColor(0x57F287);
 
     try {
-      const proofChannelId = channelMap['Trade Committee'] || channelMap['Pending Trades'] || channelMap['tradeSubmit'] || null;
-      const proofChan = proofChannelId
-        ? await interaction.client.channels.fetch(proofChannelId).catch(() => null)
-        : null;
+      const proofChan = await fetchTradeProofChannel(interaction.client, interaction.guildId, channelMap);
       if (proofChan?.isTextBased()) {
         await proofChan.send({
           content: `${tags} Trade approved by committee. Upload Madden proof below.`,
