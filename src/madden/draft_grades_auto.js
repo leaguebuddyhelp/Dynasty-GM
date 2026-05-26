@@ -164,18 +164,42 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     const snapshot = loadLeagueSnapshot(leagueId);
     if (!snapshot) return;
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-    const isOffseason = (seasonInfo.offSeasonStage || 0) > 0;
-    const isPreseason = seasonInfo.seasonWeekType === 0 || (seasonInfo.seasonWeekType === undefined && (seasonInfo.seasonWeek || 0) >= 1 && (seasonInfo.preseasonWeekCount || 0) > 0);
+    const weekType = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? snapshot?.stage ?? 1);
+    const seasonTitle = String(seasonInfo.seasonTitle || '').toLowerCase();
+    const rookieCount = countDraftedRookies(snapshot);
+    const isOffseason =
+      Number(seasonInfo.offSeasonStage || 0) > 0 ||
+      weekType === 3 ||
+      weekType === 8 ||
+      seasonTitle.includes('offseason') ||
+      (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && weekType !== 1);
+    const isPreseason = weekType === 0 || (seasonInfo.seasonWeekType === undefined && (seasonInfo.seasonWeek || 0) >= 1 && (seasonInfo.preseasonWeekCount || 0) > 0);
     // Gate: only in offseason after the draft export has rookies on rosters.
-    if (!isOffseason || isPreseason) return;
-    if (countDraftedRookies(snapshot) < 32) return;
+    if ((!isOffseason && rookieCount < 224) || isPreseason) {
+      console.warn('[draft-grades-auto] skipped: not in draft recap/offseason window', {
+        leagueId,
+        guildId,
+        weekType,
+        offSeasonStage: seasonInfo.offSeasonStage,
+        seasonTitle: seasonInfo.seasonTitle,
+        rookieCount,
+      });
+      return;
+    }
+    if (rookieCount < 32) {
+      console.warn('[draft-grades-auto] skipped: not enough drafted rookies found', { leagueId, guildId, rookieCount });
+      return;
+    }
 
     const channelMap = loadMaddenChannelMap(guildId);
     const roleMap = (getGuildRoleMap(guildId) && Object.keys(getGuildRoleMap(guildId)).length)
       ? getGuildRoleMap(guildId)
       : loadJson(path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json'));
     const draftChannelId = channelMap['Draft Grades'] || channelMap['Draft grades'] || null;
-    if (!draftChannelId) return;
+    if (!draftChannelId) {
+      console.warn('[draft-grades-auto] skipped: Draft Grades channel is not mapped', { leagueId, guildId });
+      return;
+    }
 
     const state = loadJson(STATE_FILE, {});
     const seasonYear = Number(seasonInfo.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear());
@@ -205,6 +229,8 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
       };
       fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
       fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+    } else {
+      console.warn('[draft-grades-auto] skipped: Draft Grades channel could not be fetched', { leagueId, guildId, draftChannelId });
     }
   } catch (e) {
     console.warn('[draft-grades-auto] skipped:', e?.message || e);
