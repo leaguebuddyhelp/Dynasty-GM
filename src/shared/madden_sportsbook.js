@@ -591,6 +591,98 @@ function buildHeadToHeadContext(snapshot, awayTeamId, homeTeamId, targetWeekNumb
   };
 }
 
+function buildHistoricalSportsbookProfiles({ seasonKey = null, weekNumber = null } = {}) {
+  const store = loadStore();
+  const teamGames = new Map();
+  const h2h = new Map();
+  const currentYear = Number(String(seasonKey || '').replace(/^year_/, '')) || 0;
+  const pushTeamGame = (teamId, game) => {
+    const key = Number(teamId);
+    if (!Number.isFinite(key)) return;
+    const list = teamGames.get(key) || [];
+    list.push(game);
+    teamGames.set(key, list);
+  };
+  const h2hKey = (a, b) => [Number(a), Number(b)].sort((left, right) => left - right).join(':');
+
+  for (const [storeSeasonKey, seasonStore] of Object.entries(store || {})) {
+    if (!seasonStore?.weeks) continue;
+    const storeYear = Number(String(storeSeasonKey || '').replace(/^year_/, '')) || 0;
+    const yearDistance = currentYear && storeYear ? Math.max(0, currentYear - storeYear) : 0;
+    if (yearDistance > 3) continue;
+    for (const [weekKey, weekStore] of Object.entries(seasonStore.weeks || {})) {
+      const storedWeek = Number(String(weekKey || '').replace(/^week_/, '')) || 0;
+      if (storeSeasonKey === seasonKey && weekNumber && storedWeek >= Number(weekNumber)) continue;
+      for (const line of weekStore?.lines || []) {
+        const result = line?.result;
+        if (!result?.played) continue;
+        const awayTeamId = Number(line.awayTeamId);
+        const homeTeamId = Number(line.homeTeamId);
+        const awayScore = Number(result.awayScore);
+        const homeScore = Number(result.homeScore);
+        if (!Number.isFinite(awayTeamId) || !Number.isFinite(homeTeamId) || !Number.isFinite(awayScore) || !Number.isFinite(homeScore)) continue;
+        const recencyWeight = storeSeasonKey === seasonKey
+          ? 1
+          : Math.max(0.35, 0.75 - (yearDistance * 0.15));
+        const playedAt = `${storeSeasonKey}:${weekKey}`;
+        pushTeamGame(awayTeamId, {
+          seasonKey: storeSeasonKey,
+          week: storedWeek,
+          playedAt,
+          pointsFor: awayScore,
+          pointsAgainst: homeScore,
+          margin: awayScore - homeScore,
+          won: awayScore > homeScore,
+          weight: recencyWeight,
+        });
+        pushTeamGame(homeTeamId, {
+          seasonKey: storeSeasonKey,
+          week: storedWeek,
+          playedAt,
+          pointsFor: homeScore,
+          pointsAgainst: awayScore,
+          margin: homeScore - awayScore,
+          won: homeScore > awayScore,
+          weight: recencyWeight,
+        });
+        const key = h2hKey(awayTeamId, homeTeamId);
+        const meetings = h2h.get(key) || [];
+        meetings.push({
+          seasonKey: storeSeasonKey,
+          week: storedWeek,
+          awayTeamId,
+          homeTeamId,
+          awayScore,
+          homeScore,
+          homeMargin: homeScore - awayScore,
+          total: awayScore + homeScore,
+          weight: recencyWeight,
+        });
+        h2h.set(key, meetings);
+      }
+    }
+  }
+
+  const summarize = (games = [], limit = 10) => {
+    const recent = games.slice(-limit);
+    const weightTotal = recent.reduce((sum, game) => sum + Number(game.weight || 1), 0);
+    if (!recent.length || !weightTotal) return null;
+    const weighted = (field) => recent.reduce((sum, game) => sum + (Number(game[field] || 0) * Number(game.weight || 1)), 0) / weightTotal;
+    return {
+      games: recent.length,
+      avgMargin: weighted('margin'),
+      avgPtsFor: weighted('pointsFor'),
+      avgPtsAgainst: weighted('pointsAgainst'),
+      winPct: recent.reduce((sum, game) => sum + (game.won ? Number(game.weight || 1) : 0), 0) / weightTotal,
+    };
+  };
+
+  return {
+    team: new Map([...teamGames.entries()].map(([teamId, games]) => [teamId, summarize(games)])),
+    h2h,
+  };
+}
+
 function divisionGameFlag(snapshot, awayTeamId, homeTeamId) {
   const standings = buildStandingsByTeam(snapshot);
   const awayDivision = String(standings?.[Number(awayTeamId)]?.divisionId || '');
@@ -608,10 +700,14 @@ function spreadToMoneyline(spread) {
   return { favorite: -425, underdog: 325 };
 }
 
-function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1) {
+function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1, options = {}) {
   const strength = buildTeamStrengthMap(snapshot);
   const recentForm = buildRecentFormMap(snapshot);
   const weeklyProfiles = buildTeamWeeklyProfiles(snapshot);
+  const historical = buildHistoricalSportsbookProfiles({
+    seasonKey: options?.seasonKey || null,
+    weekNumber,
+  });
   return games.map((game) => {
     const modeledWeekNumber = Math.max(
       1,
@@ -627,6 +723,13 @@ function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1
     const homeRecent = recentForm[homeTeamId] || { recentWins: 0, recentAvgMargin: 0, recentAvgPtsFor: home.ptsFor, recentAvgPtsAgainst: home.ptsAgainst, blowoutWins: 0, blowoutLosses: 0, games: 0 };
     const awayProfile = weeklyProfiles[awayTeamId] || {};
     const homeProfile = weeklyProfiles[homeTeamId] || {};
+    const awayHistory = historical.team.get(awayTeamId) || null;
+    const homeHistory = historical.team.get(homeTeamId) || null;
+    const currentGames = Math.min(
+      Number(away.wins || 0) + Number(away.losses || 0),
+      Number(home.wins || 0) + Number(home.losses || 0),
+    );
+    const historyWeight = currentGames <= 1 ? 0.42 : currentGames <= 3 ? 0.30 : currentGames <= 6 ? 0.18 : 0.08;
     const awayTendency = tendencyLabelFromProfile(awayProfile);
     const homeTendency = tendencyLabelFromProfile(homeProfile);
     const h2h = buildHeadToHeadContext(snapshot, awayTeamId, homeTeamId, modeledWeekNumber);
@@ -653,10 +756,24 @@ function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1
     const rematchSpreadLean = lastMeeting
       ? clamp(lastMarginForHome * 0.1, -2.5, 2.5)
       : 0;
+    const h2hMeetings = historical.h2h.get([awayTeamId, homeTeamId].sort((a, b) => a - b).join(':')) || [];
+    const historicalH2h = h2hMeetings.length ? h2hMeetings[h2hMeetings.length - 1] : null;
+    const historicalH2hLean = historicalH2h
+      ? clamp(
+        (Number(historicalH2h.homeTeamId) === homeTeamId
+          ? Number(historicalH2h.homeMargin || 0)
+          : -Number(historicalH2h.homeMargin || 0)) * 0.06,
+        -1.5,
+        1.5,
+      )
+      : 0;
+    const historicalEdge = (awayHistory && homeHistory)
+      ? (((homeHistory.avgMargin - awayHistory.avgMargin) * 0.55) + ((homeHistory.winPct - awayHistory.winPct) * 3.5)) * historyWeight
+      : 0;
     const divisionCompression = divisionGame ? -0.6 : 0;
     const repeatFamiliarityCompression = h2h.count >= 1 ? -0.4 : 0;
     const rawSpread = clamp(
-      roundToHalf(((home.score + homeEdge) - away.score) + recentMarginEdge + blowoutEdge + rankEdge + ovrEdge + rematchSpreadLean + divisionCompression + repeatFamiliarityCompression),
+      roundToHalf(((home.score + homeEdge) - away.score) + recentMarginEdge + blowoutEdge + rankEdge + ovrEdge + rematchSpreadLean + historicalH2hLean + historicalEdge + divisionCompression + repeatFamiliarityCompression),
       -16.5,
       16.5,
     );
@@ -676,7 +793,12 @@ function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1
       ((homeProfile.sacks || 0) / Math.max(1, homeProfile.gameCount || 1) > 3 ? -0.7 : 0);
     const awayExpected = ((away.ptsFor * 0.6) + (home.ptsAgainst * 0.4) + (awayRecent.recentAvgPtsFor * 0.35) + (homeRecent.recentAvgPtsAgainst * 0.25)) / 1.6;
     const homeExpected = ((home.ptsFor * 0.6) + (away.ptsAgainst * 0.4) + (homeRecent.recentAvgPtsFor * 0.35) + (awayRecent.recentAvgPtsAgainst * 0.25)) / 1.6;
-    const totalBase = awayExpected + homeExpected;
+    const currentTotalBase = awayExpected + homeExpected;
+    const historicalTotalBase = (awayHistory && homeHistory)
+      ? ((awayHistory.avgPtsFor * 0.55) + (homeHistory.avgPtsAgainst * 0.45)) +
+        ((homeHistory.avgPtsFor * 0.55) + (awayHistory.avgPtsAgainst * 0.45))
+      : currentTotalBase;
+    const totalBase = (currentTotalBase * (1 - (historyWeight * 0.45))) + (historicalTotalBase * (historyWeight * 0.45));
     const recentTotalLean = (((awayRecent.recentAvgPtsFor + awayRecent.recentAvgPtsAgainst) + (homeRecent.recentAvgPtsFor + homeRecent.recentAvgPtsAgainst)) / 2) - totalBase;
     const rankTotalBoost =
       ((33 - away.ptsForRank) * 0.18) +
@@ -724,6 +846,13 @@ function buildLinesForGames(snapshot, games = [], teamsById = {}, weekNumber = 1
       isRematch: h2h.isRematch,
       regularSeasonMeetings: h2h.regularSeasonMeetings,
       postseasonMeetings: h2h.postseasonMeetings,
+      historyModel: {
+        currentGames,
+        historyWeight: Number(historyWeight.toFixed(2)),
+        awayGames: awayHistory?.games || 0,
+        homeGames: homeHistory?.games || 0,
+        historicalH2hCount: h2hMeetings.length,
+      },
       lastMeeting: lastMeeting ? {
         weekIndex: Number(lastMeeting.weekIndex ?? -1),
         stage: Number(lastMeeting.stageIndex ?? lastMeeting.stage ?? 1),
@@ -881,7 +1010,7 @@ export function getSportsbookLineForMatchup({ guildId, awayTeamId, homeTeamId, s
     Number(game.homeTeamId) === targetHome,
   );
   if (!games.length) return null;
-  return buildLinesForGames(context.snapshot, games, context.teamsById, week)[0] || null;
+  return buildLinesForGames(context.snapshot, games, context.teamsById, week, { seasonKey: context.seasonKey })[0] || null;
 }
 
 function marketCountForGame(weekStore, userId, gameId, existingMarket = null) {
@@ -985,7 +1114,7 @@ export async function postSportsbookWeek({ client, guild, seasonKey, weekNumber,
   const seasonStore = ensureSeason(store, seasonKey);
   const weekKey = `week_${weekNumber}`;
   const weekStore = ensureWeek(seasonStore, weekKey);
-  const lines = buildLinesForGames(snapshot, games, teamsById, weekNumber);
+  const lines = buildLinesForGames(snapshot, games, teamsById, weekNumber, { seasonKey });
   const gotw = getRecognitionGameOfWeek({
     guildId: guild?.id,
     league: 'madden',
@@ -1690,6 +1819,29 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
   const weekStore = ensureWeek(seasonStore, `week_${weekNumber}`);
   if (weekStore.settled) return null;
   const gameMap = new Map((games || []).map((game) => [`${weekNumber}:${Number(game.awayTeamId)}:${Number(game.homeTeamId)}`, game]));
+  let lineResultsUpdated = 0;
+  for (const line of weekStore.lines || []) {
+    const game = gameMap.get(line.gameId);
+    if (!game || !hasRealPlayedSignal(game)) continue;
+    const awayScore = Number(game.awayScore || 0);
+    const homeScore = Number(game.homeScore || 0);
+    const favoriteScore = line.favorite === 'away' ? awayScore : homeScore;
+    const underdogScore = line.favorite === 'away' ? homeScore : awayScore;
+    const favoriteMargin = favoriteScore - underdogScore;
+    line.result = {
+      played: true,
+      awayScore,
+      homeScore,
+      totalScore: awayScore + homeScore,
+      winner: awayScore > homeScore ? 'away' : 'home',
+      favoriteMargin,
+      favoriteCovered: favoriteMargin > Number(line.spread || 0),
+      spreadError: Number((favoriteMargin - Number(line.spread || 0)).toFixed(1)),
+      totalError: Number(((awayScore + homeScore) - Number(line.total || 0)).toFixed(1)),
+      settledAt: Date.now(),
+    };
+    lineResultsUpdated += 1;
+  }
   let settled = 0;
   const summary = [];
   for (const bet of weekStore.bets || []) {
@@ -1754,7 +1906,7 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
     }
     summary.push({ userId: String(bet.userId), wager: Number(bet.wager || 0), ...outcome });
   }
-  if (!settled) return null;
+  if (!settled && !lineResultsUpdated) return null;
   weekStore.settled = true;
   weekStore.settledAt = Date.now();
   saveStore(store);
