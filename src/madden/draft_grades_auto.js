@@ -58,7 +58,7 @@ export function computeDraftGrades(snapshot) {
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
   const rosters = snapshot?.rosters?.teams || {};
   const needsByTeam = deriveTeamNeeds(snapshot);
-  const grades = [];
+  const rawGrades = [];
   const devScore = (dev) => {
     switch (Number(dev)) {
       case 3: return 12;
@@ -101,28 +101,40 @@ export function computeDraftGrades(snapshot) {
     const positions = new Set(rookies.map(p => p.position));
     const variety = Math.min(positions.size * 1.5, 8);
     const countBonus = Math.min(rookies.length * 1.2, 8);
-    let score = 56
-      + (avgOvr - 68) * 1.35
-      + (topOvr - 74) * 0.45
-      + (topThreeAvg - 72) * 1.05
-      + devAvg * 1.2
-      + starCount * 2.8
-      + superstarCount * 2.2
-      + xFactorCount * 2.5
-      + premiumCount * 1.1
-      + needFitScore * 1.15
-      + topNeedHits * 1.8
-      + (variety * 1.1)
-      + (countBonus * 0.8);
-    score = Math.max(1, Math.min(100, Math.round(score * 10) / 10));
-    grades.push({
+    const rawScore = 50
+      + (avgOvr - 68) * 0.95
+      + (topOvr - 74) * 0.35
+      + (topThreeAvg - 72) * 0.7
+      + devAvg * 0.65
+      + starCount * 1.15
+      + superstarCount * 1.2
+      + xFactorCount * 1.4
+      + premiumCount * 0.55
+      + needFitScore * 0.45
+      + topNeedHits * 0.8
+      + (variety * 0.55)
+      + (countBonus * 0.4);
+    rawGrades.push({
       teamName,
       emoji: teamEmoji(teamName),
-      grade: score,
+      rawScore,
     });
   });
-  grades.sort((a, b) => b.grade - a.grade);
-  return grades;
+
+  rawGrades.sort((a, b) => b.rawScore - a.rawScore);
+  const count = rawGrades.length;
+  return rawGrades.map((entry, index) => {
+    const percentile = count <= 1 ? 0.75 : 1 - (index / (count - 1));
+    const qualityBump = Math.max(-1.5, Math.min(1.5, (entry.rawScore - 78) * 0.08));
+    const eliteNudge = index === 0 ? 0.6 : index === 1 ? 0.3 : 0;
+    const curved = 64 + percentile * 26.5 + qualityBump + eliteNudge;
+    return {
+      teamName: entry.teamName,
+      emoji: entry.emoji,
+      grade: Math.max(58, Math.min(92.8, Math.round(curved * 10) / 10)),
+      rawScore: Math.round(entry.rawScore * 10) / 10,
+    };
+  });
 }
 
 export function buildDraftGradesEmbed(grades = [], leagueId = null, snapshot = null) {
