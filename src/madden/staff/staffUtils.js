@@ -7,6 +7,10 @@ const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_id
 export const STAFF_ROLE_NAMES = [
   'LB Commish',
   'LB Co-Commish',
+  'LB Co Commish',
+  'LB CoCommissioner',
+  'LB Co-Commissioner',
+  'LB Co Commissioner',
   'Commish',
   'Co-Commish',
   'Co Commish',

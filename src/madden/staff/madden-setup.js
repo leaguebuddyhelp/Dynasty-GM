@@ -218,6 +218,10 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
     const commishId = roleIdFor(roleMap, ['LB Commish', 'Ghost Legacy Commish', 'Commish']);
     const coCommishId = roleIdFor(roleMap, [
         'LB Co-Commish',
+        'LB Co Commish',
+        'LB CoCommissioner',
+        'LB Co-Commissioner',
+        'LB Co Commissioner',
         'Ghost Legacy Co-Commish',
         'Co-Commish',
         'Co Commish',

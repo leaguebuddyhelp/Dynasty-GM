@@ -86,6 +86,10 @@ export async function execute(interaction) {
       cfg.compat.maddenRoleMap.CoCommissioner = role.id;
       cfg.compat.maddenRoleMap['Co-Commissioner'] = role.id;
       cfg.compat.maddenRoleMap['Co Commissioner'] = role.id;
+      cfg.compat.maddenRoleMap['LB Co Commish'] = role.id;
+      cfg.compat.maddenRoleMap.LBCoCommissioner = role.id;
+      cfg.compat.maddenRoleMap['LB Co-Commissioner'] = role.id;
+      cfg.compat.maddenRoleMap['LB Co Commissioner'] = role.id;
     }
   }
 
