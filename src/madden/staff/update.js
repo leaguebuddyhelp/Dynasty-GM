@@ -50,6 +50,16 @@ function getWeekStageValue(entry = null, fallback = Stage.SEASON) {
   return Number.isFinite(Number(raw)) ? Number(raw) : Number(fallback);
 }
 
+function countWeeklyPlayerStats(entry = null) {
+  const buckets = [
+    entry?.passing?.playerPassingStatInfoList,
+    entry?.rushing?.playerRushingStatInfoList,
+    entry?.receiving?.playerReceivingStatInfoList,
+    entry?.defense?.playerDefensiveStatInfoList,
+  ];
+  return buckets.reduce((acc, bucket) => acc + (Array.isArray(bucket) ? bucket.length : 0), 0);
+}
+
 function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOverride = null, derivedWeekFromStats = 0 }) {
   const rawWeek = Number(
     weekOverride && weekOverride > 0
@@ -79,15 +89,7 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
   const currentWeekIndex = rawWeek > 0 ? rawWeek - 1 : null;
   const weeklyStatsEntries = Array.isArray(snap?.weeklyStats) ? snap.weeklyStats : [];
   const scheduleEntries = Array.isArray(snap?.schedule?.schedules) ? snap.schedule.schedules : [];
-  const statCountFor = (entry) => {
-    const buckets = [
-      entry?.passing?.playerPassingStatInfoList,
-      entry?.rushing?.playerRushingStatInfoList,
-      entry?.receiving?.playerReceivingStatInfoList,
-      entry?.defense?.playerDefensiveStatInfoList,
-    ];
-    return buckets.reduce((acc, bucket) => acc + (Array.isArray(bucket) ? bucket.length : 0), 0);
-  };
+  const statCountFor = countWeeklyPlayerStats;
   const preseasonEvidence = currentWeekIndex !== null && weeklyStatsEntries.some((entry) =>
     Number(entry?.weekIndex ?? -1) === currentWeekIndex &&
     Number(entry?.stage ?? entry?.stageIndex ?? -1) === Stage.PRESEASON &&
@@ -112,6 +114,16 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
     Number(entry?.stage ?? entry?.stageIndex ?? -1) === Stage.SEASON &&
     statCountFor(entry) > 0
   );
+  const regularSeasonStatWeeks = weeklyStatsEntries
+    .filter((entry) =>
+      Number(entry?.stage ?? entry?.stageIndex ?? -1) === Stage.SEASON &&
+      statCountFor(entry) > 0
+    )
+    .map((entry) => Number(entry?.weekIndex ?? -1))
+    .filter((weekIndex) => Number.isFinite(weekIndex) && weekIndex >= 0 && weekIndex <= 17);
+  const latestRegularSeasonStatWeek = regularSeasonStatWeeks.length
+    ? Math.max(...regularSeasonStatWeeks)
+    : null;
   const anyRegularSeasonSchedule = scheduleEntries.some((entry) =>
     Number(entry?.stageIndex ?? entry?.stage ?? -1) === Stage.SEASON &&
     Number(entry?.weekIndex ?? entry?.week ?? -1) >= 0 &&
@@ -163,8 +175,22 @@ function resolveWeeklyPhase({ seasonInfo = {}, summary = {}, snap = null, weekOv
     currentRegularEvidence &&
     !titleLooksOffseason &&
     !draftInactive;
+  const regularSeasonExportLooksCurrent =
+    rawWeek > 0 &&
+    rawWeek <= 18 &&
+    latestRegularSeasonStatWeek !== null &&
+    latestRegularSeasonStatWeek <= Math.max(0, rawWeek - 1) &&
+    (
+      latestRegularSeasonStatWeek >= Math.max(0, rawWeek - 2) ||
+      currentRegularEvidence ||
+      regularScheduleEvidence ||
+      anyRegularSeasonSchedule ||
+      weekOverride
+    );
 
-  if (explicitOffseason && !regularSeasonDefinitelyCurrent) {
+  if (regularSeasonExportLooksCurrent) {
+    kind = 'regular';
+  } else if (explicitOffseason && !regularSeasonDefinitelyCurrent) {
     kind = 'offseason';
   } else if (explicitRegularSeason) {
     kind = 'regular';
@@ -1178,15 +1204,7 @@ async function execute(interaction) {
     const stageForWeek = phase.stageForWeek;
     const inOffseason = phase.inOffseason;
     const targetWeekIdx = currentWeekIndex;
-    const countPlayers = (wk) => {
-      const buckets = [
-        wk?.passing?.playerPassingStatInfoList,
-        wk?.rushing?.playerRushingStatInfoList,
-        wk?.receiving?.playerReceivingStatInfoList,
-        wk?.defense?.playerDefensiveStatInfoList,
-      ];
-      return buckets.reduce((acc, b) => acc + (Array.isArray(b) ? b.length : 0), 0);
-    };
+    const countPlayers = countWeeklyPlayerStats;
     const weekEntries = weeklyStatsEntries.filter((entry) => Number(entry?.weekIndex ?? -1) === Number(targetWeekIdx));
     const phaseWeekEntries = weekEntries.filter((entry) => {
       const entryStage = getWeekStageValue(entry);
@@ -1241,6 +1259,11 @@ async function execute(interaction) {
     });
     const usedFallbackWeek = phase.isRegularSeason && Number(effectiveCurrentWeekUsed) !== Number(currentWeekValue);
     const targetWeekMissing = phase.isRegularSeason && deduped.some((entry) => Number(entry.weekIndex) === Number(targetWeekIdx));
+    const usedExpectedCompletedWeekFallback =
+      usedFallbackWeek &&
+      hasWeeklyPlayersEffective &&
+      latestStage1WithStats !== null &&
+      Number(currentWeekValue || 0) === Number(latestStage1WithStats) + 2;
     const recentRegularWeekCounts = weeklyStatsEntries
       .filter((entry) => Number(entry?.stage ?? entry?.stageIndex ?? 0) === 1)
       .filter((entry) => Number(entry?.weekIndex ?? -1) < Number(targetWeekIdx))
@@ -1258,7 +1281,12 @@ async function execute(interaction) {
     const statsPartial =
       phase.isRegularSeason &&
       !backfillOnlyAwards &&
-      (usedFallbackWeek || targetWeekMissing || !hasWeeklyPlayersEffective || lowPlayerCountWeek);
+      (
+        (usedFallbackWeek && !usedExpectedCompletedWeekFallback) ||
+        (targetWeekMissing && !usedExpectedCompletedWeekFallback) ||
+        !hasWeeklyPlayersEffective ||
+        lowPlayerCountWeek
+      );
 
     console.log('[madden-weeklyupdate] week targeting', {
       requestedMode,
@@ -1275,6 +1303,7 @@ async function execute(interaction) {
       hasWeeklyPlayersEffective,
       lowPlayerCountWeek,
       statsPartial,
+      usedExpectedCompletedWeekFallback,
       forceAwardsOnce
     });
     if (!hasWeeklyPlayersEffective && effectiveTargetWeekIdx !== null) {
@@ -1405,6 +1434,9 @@ async function execute(interaction) {
       try {
         const resolvedWeekNumber = safeResolveWeekNumber(snap, effectiveCurrentWeekUsed);
         const weekKey = `week_${Number(resolvedWeekNumber)}`;
+        const gameFilterStage = Number(phase.isRegularSeason
+          ? Stage.SEASON
+          : (seasonInfo.seasonWeekType ?? stageForWeek ?? Stage.SEASON));
         const coachIndex = await buildCoachAssignmentIndex(interaction.guild, roleMap, snap);
         const leagueAwards = safeReadJSON(AWARDS_FILE, {})?.[String(leagueId)] || {};
         const teamAwardTotals = new Map();
@@ -1519,7 +1551,7 @@ async function execute(interaction) {
           seasonKey: getMaddenSeasonKey(snap),
           weekKey,
           games: (weeklyGameLog.games || []).filter((game) =>
-            matchesStageWeek(game, Number(seasonInfo.seasonWeekType ?? Stage.SEASON), Number(effectiveCurrentWeekUsed))),
+            matchesStageWeek(game, gameFilterStage, Number(effectiveCurrentWeekUsed))),
         });
         resolveRecognitionDoubleOrNothing({
           guildId: interaction.guildId,
@@ -1533,7 +1565,7 @@ async function execute(interaction) {
           seasonKey: getMaddenSeasonKey(snap),
           weekNumber: Number(effectiveCurrentWeekUsed),
           games: (weeklyGameLog.games || []).filter((game) =>
-            matchesStageWeek(game, Number(seasonInfo.seasonWeekType ?? Stage.SEASON), Number(effectiveCurrentWeekUsed))),
+            matchesStageWeek(game, gameFilterStage, Number(effectiveCurrentWeekUsed))),
         });
       } catch (e) {
         console.warn('[madden-weeklyupdate] recognition finalize skipped:', e?.message || e);
@@ -1622,6 +1654,9 @@ async function execute(interaction) {
           ? reliableAwardsWeekIndex + 1
           : effectiveCurrentWeekUsed;
       const hasReliableAwardsFallback = statsPartial && reliableAwardsWeekIndex != null;
+      const weeklyAwardsPeriodOpen = phase.isRegularSeason
+        ? true
+        : seasonInfo.isWeeklyAwardsPeriodActive !== false;
 
       const canPostAwards =
         hasWeeklyPlayersEffective &&
@@ -1631,7 +1666,7 @@ async function execute(interaction) {
             // Normal mode: post completed target weeks, or the latest reliable completed week when the current export is partial.
             (!statsPartial || hasReliableAwardsFallback) &&
             // Backfill runs set `backfillOnlyAwards=true`, so don't block awards on that flag.
-            (!inOffseason && !inPreseason && seasonInfo.isWeeklyAwardsPeriodActive !== false && awardsWeekToPost && awardsWeekToPost <= 23)
+            (!inOffseason && !inPreseason && weeklyAwardsPeriodOpen && awardsWeekToPost && awardsWeekToPost <= 23)
           )
         );
       if (canPostAwards && yearlyAwardsIncluded) {
@@ -1709,12 +1744,15 @@ async function execute(interaction) {
 
     const offStageShown = inOffseason ? (phase.offSeasonStage || 1) : 0;
     const pulledWeekLabel = explicitPhaseWeekLabel(phase, currentWeekValue);
+    const displaySeasonWeekType = phase.isRegularSeason
+      ? Stage.SEASON
+      : (seasonInfo.seasonWeekType !== undefined ? seasonInfo.seasonWeekType : (stageForWeek !== undefined ? stageForWeek : summary.stage));
     const dataWeekLabel = effectiveCurrentWeekUsed
       ? displayWeekLabel(
         stageForWeek !== undefined ? stageForWeek : summary.stage,
         effectiveCurrentWeekUsed,
         offStageShown,
-        seasonInfo.seasonWeekType !== undefined ? seasonInfo.seasonWeekType : (stageForWeek !== undefined ? stageForWeek : summary.stage)
+        displaySeasonWeekType
       )
       : pulledWeekLabel;
 
