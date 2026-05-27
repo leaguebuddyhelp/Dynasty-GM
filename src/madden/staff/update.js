@@ -1207,22 +1207,9 @@ async function execute(interaction) {
       : null;
     const hasWeeklyPlayers = phase.isRegularSeason ? !!weekData : targetWeekPlayerCount > 0;
     // Only regular-season weekly update falls back to the last complete stat week.
-    const latestStage1WithStats = (() => {
-      const weeks = weeklyStatsEntries
-        .filter(w => Number(w.stage ?? w.stageIndex ?? 0) === 1)
-        .filter(w => {
-          const buckets = [
-            w?.passing?.playerPassingStatInfoList,
-            w?.rushing?.playerRushingStatInfoList,
-            w?.receiving?.playerReceivingStatInfoList,
-            w?.defense?.playerDefensiveStatInfoList,
-          ];
-          return buckets.some(b => Array.isArray(b) && b.length > 0);
-        })
-        .map(w => Number(w.weekIndex));
-      if (!weeks.length) return null;
-      return Math.max(...weeks);
-    })();
+    const latestStage1WithStats = phase.isRegularSeason
+      ? getLatestReliableRegularSeasonWeekIndex(snap, Number(targetWeekIdx))
+      : null;
     const effectiveTargetWeekIdx = phase.isRegularSeason
       ? (hasWeeklyPlayers ? targetWeekIdx : latestStage1WithStats)
       : targetWeekIdx;
@@ -1291,7 +1278,12 @@ async function execute(interaction) {
       forceAwardsOnce
     });
     if (!hasWeeklyPlayersEffective && effectiveTargetWeekIdx !== null) {
-      console.warn('[madden-weeklyupdate] no stage 1 player stats found for selected week; skipping top players and awards if requested');
+      console.warn('[madden-weeklyupdate] no reliable stage 1 player stats found; skipping top players and awards if requested');
+    } else if (!hasWeeklyPlayers && hasWeeklyPlayersEffective && effectiveTargetWeekIdx !== targetWeekIdx) {
+      console.warn('[madden-weeklyupdate] selected week has no stage 1 player stats; using latest reliable completed week', {
+        requestedWeek: Number(targetWeekIdx) + 1,
+        reliableWeek: Number(effectiveTargetWeekIdx) + 1,
+      });
     }
 
     const inPreseason = phase.inPreseason;
