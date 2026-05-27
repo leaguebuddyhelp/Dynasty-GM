@@ -27,6 +27,31 @@ function normalizedRoleName(name = '') {
 
 const STAFF_ROLE_KEYS = new Set(STAFF_ROLE_NAMES.map(normalizedRoleName));
 
+export function isStaffRoleName(name = '') {
+  return STAFF_ROLE_KEYS.has(normalizedRoleName(name));
+}
+
+function memberRoleIds(member) {
+  if (member?.roles?.cache) {
+    return [...member.roles.cache.keys()].map(String);
+  }
+  if (Array.isArray(member?.roles)) {
+    return member.roles.map(String);
+  }
+  return [];
+}
+
+function memberRoleNames(member) {
+  if (member?.roles?.cache) {
+    return [...member.roles.cache.values()].map((role) => role?.name).filter(Boolean);
+  }
+  return [];
+}
+
+function guildRoleNameForId(member, roleId) {
+  return member?.guild?.roles?.cache?.get?.(String(roleId))?.name || '';
+}
+
 export function loadRoleMap() {
   try {
     return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8'));
@@ -46,12 +71,18 @@ export function hasStaffRole(member, roleMap = null) {
     return true;
   }
   const map = roleMap || loadRoleMapForGuild(member?.guild?.id);
-  const ids = STAFF_ROLE_NAMES.map(name => map[name]).filter(Boolean);
-  if (!member?.roles?.cache) return false;
-  if (ids.some(id => member.roles.cache.has(id))) {
+  const ids = Object.entries(map || {})
+    .filter(([name]) => isStaffRoleName(name))
+    .map(([, id]) => id)
+    .filter(Boolean);
+  const roleIds = memberRoleIds(member);
+  if (ids.some(id => roleIds.includes(String(id)))) {
     return true;
   }
-  return member.roles.cache.some(r => STAFF_ROLE_KEYS.has(normalizedRoleName(r.name)));
+  if (memberRoleNames(member).some(name => isStaffRoleName(name))) {
+    return true;
+  }
+  return roleIds.some((roleId) => isStaffRoleName(guildRoleNameForId(member, roleId)));
 }
 
 export function staffOnlyMessage(action = 'use this command') {

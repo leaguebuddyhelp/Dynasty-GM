@@ -10,11 +10,10 @@ import { postSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 import { hasFeatureAccess } from '../../leaguebuddy/access.js';
-import { hasStaffRole as hasGuildStaffRole, loadRoleMapForGuild } from './staffUtils.js';
+import { hasStaffRole as hasGuildStaffRole, isStaffRoleName, loadRoleMapForGuild } from './staffUtils.js';
 
 export const featureKey = 'threads';
 const PLAYOFF_RESULTS_FILE = path.join(process.cwd(), 'data', 'madden', 'playoff_results.json');
-const STAFF_ROLE_NAMES = ['LB Commish', 'LB Co-Commish'];
 const GAME_THREAD_DEADLINE_HOURS = 24;
 const PRESEASON_WEEK_CHOICES = [
   { name: 'Preseason Week 1', value: 1 },
@@ -121,9 +120,12 @@ async function resolveGuildRoleIds(guild, ids = []) {
 }
 
 async function resolveStaffRoleIds(guild, roleMap = {}) {
-  const configured = STAFF_ROLE_NAMES.map((name) => roleMap?.[name]).filter(Boolean);
+  const configured = Object.entries(roleMap || {})
+    .filter(([name]) => isStaffRoleName(name))
+    .map(([, id]) => id)
+    .filter(Boolean);
   const byName = guild.roles.cache
-    .filter((role) => STAFF_ROLE_NAMES.includes(role.name))
+    .filter((role) => isStaffRoleName(role.name))
     .map((role) => role.id);
   return resolveGuildRoleIds(guild, [...configured, ...byName]);
 }

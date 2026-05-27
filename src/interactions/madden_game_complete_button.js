@@ -2,21 +2,14 @@ import { ButtonInteraction, EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
+import { hasStaffRole, isStaffRoleName } from '../madden/staff/staffUtils.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 
 function loadRoleMap(guildId = null) {
   const overlay = guildId ? getGuildRoleMap(guildId) : null;
   if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
-}
-
-function isStaff(member, roleMap) {
-  return STAFF_ROLES.some(r => {
-    const id = roleMap[r];
-    return id && member.roles.cache.has(id);
-  });
 }
 
 function normalize(name) {
@@ -57,17 +50,23 @@ export async function execute(interaction) {
   const coachRoleIds = allowedCoachRoleIds(thread?.name || '', roleMap);
   const allowedIds = new Set([
     ...coachRoleIds,
-    ...STAFF_ROLES.map(r => roleMap[r]).filter(Boolean),
+    ...Object.entries(roleMap || {})
+      .filter(([name]) => isStaffRoleName(name))
+      .map(([, id]) => id)
+      .filter(Boolean),
   ]);
 
   const member = await interaction.guild.members.fetch(interaction.user.id);
-  const authorized = isStaff(member, roleMap) || member.roles.cache.some(r => allowedIds.has(r.id));
+  const authorized = hasStaffRole(member, roleMap) || member.roles.cache.some(r => allowedIds.has(r.id));
   if (!authorized) {
     await interaction.reply({ content: 'Only the two coaches for this game or LB Commish/Co-Commish can mark it complete.', ephemeral: true });
     return;
   }
 
-  const staffMentions = STAFF_ROLES.map(r => roleMap[r]).filter(Boolean).map(id => `<@&${id}>`).join(' ');
+  const staffMentions = Object.entries(roleMap || {})
+    .filter(([name]) => isStaffRoleName(name))
+    .map(([, id]) => `<@&${id}>`)
+    .join(' ');
   const embed = new EmbedBuilder()
     .setTitle('Game Completed')
     .setDescription(`Marked by: ${interaction.user}`)

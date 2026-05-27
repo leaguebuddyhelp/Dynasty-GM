@@ -10,6 +10,7 @@ import { queueRemovalReview, queueImmediateRemedyReview } from '../shared/madden
 import { sendCoachReceipt } from '../shared/madden_coach_receipts.js';
 import { consumeRecognitionPerk, hasRecognitionPerk, recordRecognitionGameOutcome } from '../shared/league_recognition.js';
 import { getGuildRoleMap, loadGuildMaddenConfig } from '../shared/madden_guild_config.js';
+import { isStaffRoleName } from '../madden/staff/staffUtils.js';
 import {
   STRIKE_LIMIT,
   loadStrikeStore,
@@ -24,7 +25,6 @@ import {
 } from '../shared/madden_strikes.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const STAFF_ROLE_NAMES = ['LB Commish', 'LB Co-Commish'];
 const PENDING_FILE = path.join(process.cwd(), 'data', 'madden', 'pending.json');
 const pendingFair = new Map(); // threadId or threadId:complete -> { away: bool, home: bool }
 
@@ -119,9 +119,12 @@ async function resolveGuildRoleIds(guild, ids = []) {
 }
 
 async function resolveStaffRoleIds(guild, roleMap = {}) {
-  const configured = STAFF_ROLE_NAMES.map((name) => roleMap?.[name]).filter(Boolean);
+  const configured = Object.entries(roleMap || {})
+    .filter(([name]) => isStaffRoleName(name))
+    .map(([, id]) => id)
+    .filter(Boolean);
   const byName = guild.roles.cache
-    .filter((role) => STAFF_ROLE_NAMES.includes(role.name))
+    .filter((role) => isStaffRoleName(role.name))
     .map((role) => role.id);
   return resolveGuildRoleIds(guild, [...configured, ...byName]);
 }
