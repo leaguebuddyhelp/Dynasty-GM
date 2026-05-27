@@ -2,9 +2,8 @@ import { SlashCommandBuilder } from 'discord.js';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { getMaddenSnapshotContext } from '../../shared/madden_metadata.js';
 import { awardRecognitionPoints, getRecognitionUserSummary } from '../../shared/league_recognition.js';
-import { loadRoleMapForGuild } from './staffUtils.js';
+import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 
-const COMMISH_ROLE_NAMES = ['LB Commish', 'LB Co-Commish'];
 const VALID_TIERS = new Set(['activity', 'impact', 'legacy']);
 
 export const data = new SlashCommandBuilder()
@@ -46,14 +45,6 @@ export const data = new SlashCommandBuilder()
 
 export const deferOnDispatch = { flags: 64 };
 
-function hasCommishRole(member, roleMap = {}) {
-  const ids = COMMISH_ROLE_NAMES.map((name) => roleMap?.[name]).filter(Boolean);
-  if (ids.length && member?.roles?.cache) {
-    return ids.some((id) => member.roles.cache.has(id));
-  }
-  return member?.roles?.cache?.some((role) => COMMISH_ROLE_NAMES.includes(role.name)) ?? false;
-}
-
 function balancesFromState(userState = {}) {
   const spent = userState.spent || {};
   return {
@@ -72,7 +63,7 @@ export async function execute(interaction) {
 
   const roleMap = loadRoleMapForGuild(guildId);
   const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => interaction.member);
-  if (!hasCommishRole(member, roleMap)) {
+  if (!hasStaffRole(member, roleMap)) {
     await interaction.editReply({ content: 'Only LB Commish or LB Co-Commish can use `/points`.' });
     return;
   }

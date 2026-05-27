@@ -15,6 +15,8 @@ import {
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
+import { isMaddenCoachForTeam } from '../shared/madden_trade_coach_resolver.js';
+import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
@@ -173,6 +175,18 @@ export async function execute(interaction) {
 
   const channelMap = loadChannelMap(guildId);
   const roleMap = loadRoleMap(guildId);
+  const guild = guildId ? await interaction.client.guilds.fetch(guildId).catch(() => null) : null;
+  const leagueId = guildId ? resolveLeagueIdWithConfig(guildId, 'trade_dm_response.authorize') : null;
+  const snapshot = leagueId ? (() => {
+    try { return loadLeagueSnapshot(leagueId); } catch { return null; }
+  })() : null;
+  const authorizedCoach = guild
+    ? await isMaddenCoachForTeam(guild, interaction.user.id, trade.otherTeam, snapshot, roleMap)
+    : false;
+  if (!authorizedCoach) {
+    await interaction.editReply({ content: `Only the assigned ${trade.otherTeam || 'other team'} coach can approve or deny this trade.` });
+    return;
+  }
   const committeeRoleId = roleMap['Trade Committee']
     || roleMap['Ghost Legacy Trade Committee']
     || roleMap['Madden Trade Committee']

@@ -104,7 +104,7 @@ export async function execute(interaction) {
     let allowed = false;
     try {
       const staffMap = readStaffRoles();
-      const roles = ['Paradise Commish', 'Schedule Tracker']
+      const roles = ['Paradise Commish', 'Paradise Co-Commish', 'Schedule Tracker']
         .map(r => staffMap[r])
         .filter(Boolean);
       allowed = roles.length ? roles.some(rid => interaction.member?.roles?.cache?.has(rid)) : true;

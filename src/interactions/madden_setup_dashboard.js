@@ -1,21 +1,20 @@
-import { PermissionFlagsBits } from 'discord.js';
-
 import { execute as executeSetupDashboard } from '../madden/staff/setup_dashboard.js';
 import { execute as executeSetupChannels } from '../madden/staff/madden-setup.js';
 import { execute as executeSetupPins } from '../madden/staff/setup-pins.js';
 import { execute as executeSetupRoles } from '../madden/staff/setup_roles.js';
+import { ensureStaffInteraction } from '../madden/staff/staffUtils.js';
 
 export const customId = /^madden_setup\|/;
 
 async function ensureCanManageGuild(interaction) {
-  if (!interaction.guildId || !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+  if (!interaction.guildId) {
     await interaction.reply({
-      content: 'Only server managers can use setup controls.',
+      content: 'Setup controls can only be used in a server.',
       flags: 64,
     }).catch(() => null);
     return false;
   }
-  return true;
+  return ensureStaffInteraction(interaction, { action: 'use setup controls' });
 }
 
 export async function execute(interaction) {

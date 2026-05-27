@@ -14,6 +14,8 @@ import { addPickOverridesFromTrade } from '../madden/pick_overrides_store.js';
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
+import { resolveMaddenCoachRoleId } from '../shared/madden_trade_coach_resolver.js';
+import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 
 const PENDING_PATH = path.join(process.cwd(), 'data', 'madden', 'pending_proofs.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
@@ -27,10 +29,16 @@ const TRADE_PROOF_CHANNEL_KEYS = [
   'Madden Proof',
   'Proof',
   'Proofs',
-  'Trade Committee',
-  'Pending Trades',
-  'tradeSubmit',
 ];
+const TRADE_PROOF_CHANNEL_NAMES = new Set([
+  'lbtradeproof',
+  'tradeproof',
+  'tradeproofs',
+  'maddentradeproof',
+  'maddenproof',
+  'proof',
+  'proofs',
+]);
 
 function readPendingStore() {
   try {
@@ -57,14 +65,13 @@ function loadRoleMap(guildId = null) {
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
 }
-function getCoachRole(roleMap, teamName) {
-  if (!teamName) return null;
-  const mascot = teamName.split(' ').pop();
-  const norm = `${mascot}`.toLowerCase().replace(/[^a-z0-9]/g, '') + 'coach';
-  const entry = Object.entries(roleMap || {}).find(([name]) =>
-    name.toLowerCase().replace(/[^a-z0-9]/g, '') === norm
-  );
-  return entry ? entry[1] : null;
+function loadSnapshotForGuild(guildId) {
+  const leagueId = guildId ? resolveLeagueIdWithConfig(guildId, 'trade_madden_proof') : null;
+  if (!leagueId) return null;
+  try { return loadLeagueSnapshot(leagueId); } catch { return null; }
+}
+function getCoachRole(roleMap, teamName, snapshot = null) {
+  return resolveMaddenCoachRoleId(teamName, snapshot, roleMap);
 }
 function getCommitteeRole(roleMap) {
   const entry = Object.entries(roleMap || {}).find(([name]) => /trade committee/i.test(name));
@@ -88,6 +95,14 @@ async function fetchTradeProofChannel(client, guildId, channelMap = {}) {
     if (guildId && channel.guildId && String(channel.guildId) !== String(guildId)) continue;
     return channel;
   }
+  const guild = guildId ? await client.guilds.fetch(guildId).catch(() => null) : null;
+  const channels = guild?.channels ? await guild.channels.fetch().catch(() => null) : null;
+  const namedChannel = channels?.find((channel) => {
+    if (!channel?.isTextBased?.()) return false;
+    const normalizedName = String(channel.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return TRADE_PROOF_CHANNEL_NAMES.has(normalizedName);
+  });
+  if (namedChannel) return namedChannel;
   return null;
 }
 
@@ -97,6 +112,7 @@ export async function execute(interaction) {
   if (!(interaction instanceof ButtonInteraction)) return;
   const [action, sub, maybeId] = interaction.customId.split('|');
   const roleMap = loadRoleMap(interaction.guildId);
+  const snapshot = loadSnapshotForGuild(interaction.guildId);
   const committeeRole = getCommitteeRole(roleMap);
   const staffRoles = getStaffRoles(roleMap);
   const hasRole = (id) => interaction.member?.roles?.cache?.has(id);
@@ -173,8 +189,8 @@ export async function execute(interaction) {
         )
         .setColor(0x57F287)
         .setFooter({ text: `Trade ID ${tradeId}` });
-      const coachA = getCoachRole(roleMap, trade.yourTeam);
-      const coachB = getCoachRole(roleMap, trade.otherTeam);
+      const coachA = getCoachRole(roleMap, trade.yourTeam, snapshot);
+      const coachB = getCoachRole(roleMap, trade.otherTeam, snapshot);
       const tags = [coachA && `<@&${coachA}>`, coachB && `<@&${coachB}>`].filter(Boolean).join(' ');
       if (approvedChan?.isTextBased()) {
         await approvedChan.send({
@@ -225,8 +241,8 @@ export async function execute(interaction) {
       )
       .setColor(0xED4245)
       .setFooter({ text: `Trade ID ${tradeId}` });
-    const coachA = getCoachRole(roleMap, trade.yourTeam);
-    const coachB = getCoachRole(roleMap, trade.otherTeam);
+    const coachA = getCoachRole(roleMap, trade.yourTeam, snapshot);
+    const coachB = getCoachRole(roleMap, trade.otherTeam, snapshot);
     const tags = [coachA && `<@&${coachA}>`, coachB && `<@&${coachB}>`].filter(Boolean).join(' ');
     if (deniedChan?.isTextBased()) {
       await deniedChan.send({
@@ -267,8 +283,8 @@ export async function execute(interaction) {
     return;
   }
   const trade = entry.trade;
-  const coachA = getCoachRole(roleMap, trade.yourTeam);
-  const coachB = getCoachRole(roleMap, trade.otherTeam);
+  const coachA = getCoachRole(roleMap, trade.yourTeam, snapshot);
+  const coachB = getCoachRole(roleMap, trade.otherTeam, snapshot);
   const userRoles = interaction.member?.roles?.cache ? Array.from(interaction.member.roles.cache.keys()) : [];
   const isCoachA = coachA && userRoles.includes(coachA);
   const isCoachB = coachB && userRoles.includes(coachB);
@@ -331,16 +347,16 @@ export async function execute(interaction) {
       .setColor(0x5865f2);
 
     const channelMap = loadChannelMap(interaction.guildId);
-    const committeeChan = await fetchTradeProofChannel(interaction.client, interaction.guildId, channelMap);
+    const proofChan = await fetchTradeProofChannel(interaction.client, interaction.guildId, channelMap);
     const tags = [committeeRole && `<@&${committeeRole}>`].filter(Boolean).join(' ');
-    if (!committeeChan?.isTextBased()) {
+    if (!proofChan?.isTextBased()) {
       console.error('[trade_madden_proof] trade proof channel not found or not text-based');
       await interaction.followUp({ content: 'Proof saved, but I could not access the Trade Proof channel. Please ping staff.', flags: 64 });
       return;
     }
 
     try {
-      await committeeChan.send({
+      await proofChan.send({
         content: `${tags} Madden proof submitted. Review and approve/deny.`,
         embeds: [proofEmbed],
         components: [committeeButtons],
@@ -348,7 +364,7 @@ export async function execute(interaction) {
       });
     } catch (err) {
       console.error('[trade_madden_proof] failed to post proof embed:', err);
-      await interaction.followUp({ content: 'Proof saved, but posting to Trade Committee failed. Please ping staff.', flags: 64 });
+      await interaction.followUp({ content: 'Proof saved, but posting to Trade Proof failed. Please ping staff.', flags: 64 });
       return;
     }
 

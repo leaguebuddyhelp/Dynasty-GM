@@ -18,6 +18,7 @@ import { refreshApplicationEmojiMap } from './shared/application_emojis.js';
 import { removeCoachAssignment } from './shared/madden_coach_assignments.js';
 import { updateAvailableTeamsPin } from './madden/available_teams.js';
 import { resolveLeagueIdWithConfig } from './madden/madden_data.js';
+import { ensureStaffInteraction, hasStaffRole } from './madden/staff/staffUtils.js';
 
 // --- ENVIRONMENT SAFEGUARD: Warn if test guilds are present in production ---
 import path from 'path';
@@ -305,6 +306,11 @@ client.on('interactionCreate', async interaction => {
       // Fail open to avoid breaking production if the gate throws for a corner case.
     }
 
+    if (command.__isMaddenStaffCommand && command.staffCommand !== false) {
+      const allowed = await ensureStaffInteraction(interaction);
+      if (!allowed) return;
+    }
+
     try {
       if (command.deferOnDispatch && !interaction.deferred && !interaction.replied) {
         await interaction.deferReply(command.deferOnDispatch);
@@ -363,6 +369,16 @@ client.on('interactionCreate', async interaction => {
       console.error(`❌ No autocomplete handler found for /${interaction.commandName}`);
       try { await interaction.respond([]); } catch { }
       return;
+    }
+    if (command.__isMaddenStaffCommand && command.staffCommand !== false) {
+      let member = interaction.member || null;
+      if (!member?.roles?.cache && interaction.guild?.members && interaction.user?.id) {
+        member = await interaction.guild.members.fetch(interaction.user.id).catch(() => member);
+      }
+      if (!hasStaffRole(member)) {
+        await interaction.respond([]).catch(() => null);
+        return;
+      }
     }
     try {
       await command.autocomplete(interaction);
@@ -682,9 +698,11 @@ async function loadCommands() {
         try {
           const commandModule = await import(fileURL);
           const cmd = commandModule.default
-            ? { ...commandModule, ...commandModule.default }
-            : commandModule;
+              ? { ...commandModule, ...commandModule.default }
+              : { ...commandModule };
           if (cmd && cmd.data && cmd.execute) {
+            cmd.__isMaddenStaffCommand = parts.length === 2 && parts[0] === 'madden' && parts[1] === 'staff';
+            cmd.__commandPath = filePath;
             client.commands.set(cmd.data.name, cmd);
           }
         } catch (err) {

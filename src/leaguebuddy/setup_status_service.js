@@ -34,6 +34,7 @@ const TRADE_REQUIRED_CHANNEL_KEYS = [
   'Trade Block',
   'Trade Counts',
   'Trade Committee',
+  'Trade Proof',
   'Approved trades',
   'Denied trades',
 ];
@@ -70,6 +71,7 @@ const SETUP_ITEM_LABELS = {
   'LB Co-Commish': 'LB Co-Commish',
   'LEAGUEbuddy Coaches': 'LEAGUEbuddy Coaches', // standardized group role
   'Trade Committee': 'LEAGUEbuddy Trade Committee',
+  'Trade Proof': 'Trade Proof',
   tradeSubmit: 'Submit Trade',
   scoutingHub: 'Scouting Hub',
   'Streaming links': 'Stream Links',

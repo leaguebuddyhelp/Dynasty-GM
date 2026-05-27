@@ -102,6 +102,7 @@ const TRADE_CHANNEL_SPECS = [
     { key: 'Trade Block', name: 'lb-trade-block', type: ChannelType.GuildText },
     { key: 'Trade Counts', name: 'lb-trade-counts', type: ChannelType.GuildText },
     { key: 'Trade Committee', name: 'lb-trade-committee', type: ChannelType.GuildText },
+    { key: 'Trade Proof', name: 'lb-trade-proof', type: ChannelType.GuildText },
     { key: 'Approved trades', name: 'lb-approved-trades', type: ChannelType.GuildText },
     { key: 'Denied trades', name: 'lb-denied-trades', type: ChannelType.GuildText },
 ];
@@ -214,8 +215,16 @@ function roleIdFor(roleMap = {}, aliases = []) {
 export function buildSetupOverwrites(guild, roleMap = {}) {
     const everyoneId = guild.roles.everyone.id;
     const botRoleId = guild.members.me?.roles?.botRole?.id || null;
-    const commishId = roleIdFor(roleMap, ['LB Commish', 'Ghost Legacy Commish']);
-    const coCommishId = roleIdFor(roleMap, ['LB Co-Commish', 'Ghost Legacy Co-Commish']);
+    const commishId = roleIdFor(roleMap, ['LB Commish', 'Ghost Legacy Commish', 'Commish']);
+    const coCommishId = roleIdFor(roleMap, [
+        'LB Co-Commish',
+        'Ghost Legacy Co-Commish',
+        'Co-Commish',
+        'Co Commish',
+        'CoCommissioner',
+        'Co-Commissioner',
+        'Co Commissioner',
+    ]);
     const tradeCommitteeId = roleIdFor(roleMap, [
         'Trade Committee',
         'Ghost Legacy Trade Committee',
@@ -503,6 +512,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
 
             // Trade Committee: only committee and staff
             'Trade Committee': tradeCommitteeOnly,
+            'Trade Proof': publicInteractiveWithCoachAccess,
         },
     };
 }

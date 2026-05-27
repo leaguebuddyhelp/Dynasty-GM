@@ -7,11 +7,13 @@ import { PLANS, SUBSCRIPTION_STATUSES } from '../../leaguebuddy/guild_store.js';
 import { getSetupStatus } from '../../leaguebuddy/setup_status_service.js';
 import { buildPlanUpgradeButtons, isBuyingEnabled } from '../../leaguebuddy/upgrade_ux.js';
 import { getLeagueBuddyLogoEmoji } from '../../shared/application_emojis.js';
+import { hasStaffRole } from '../staff/staffUtils.js';
 
 function isGuildManager(member) {
     if (!member) return false;
     if (member.permissions?.has?.(PermissionFlagsBits.ManageGuild)) return true;
     if (member.permissions?.has?.(PermissionFlagsBits.Administrator)) return true;
+    if (hasStaffRole(member)) return true;
     return false;
 }
 

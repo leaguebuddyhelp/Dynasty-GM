@@ -9,11 +9,11 @@ import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { buildMaddenTeamAvailability } from '../../shared/madden_team_availability.js';
+import { hasStaffRole } from './staffUtils.js';
 
 const AVP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_avp.json');
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const STAFF_ROLES = ['LB Commish', 'LB Co-Commish', 'Ghost Legacy Commish', 'Ghost Legacy Co-Commish'];
 // Specific fallback pin/message id provided by user
 const FALLBACK_PIN_ID = '1469153107207393465';
 
@@ -134,14 +134,6 @@ function buildAvpPreview({ avp, earliestPickNum, limit = 5, needs = [] }) {
     const avpPick = Number(p.avp).toFixed(1);
     return `${needStar}${pos} ${p.name} (AVP ${avpPick})`;
   }).join(' • ');
-}
-
-function hasStaffRole(member, roleMap) {
-  const roleIds = STAFF_ROLES.map((name) => roleMap?.[name]).filter(Boolean);
-  if (roleIds.length && member?.roles?.cache) {
-    return roleIds.some((id) => member.roles.cache.has(String(id)));
-  }
-  return member?.roles?.cache?.some((role) => STAFF_ROLES.includes(role.name)) ?? false;
 }
 
 function formatTeamName(team) {

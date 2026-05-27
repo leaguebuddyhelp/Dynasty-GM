@@ -25,10 +25,10 @@ import {
   deleteTradeDraft,
 } from '../shared/trade_draft_store.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
-import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
+import { resolveMaddenCoachMembersForTeam } from '../shared/madden_trade_coach_resolver.js';
 
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 
@@ -36,74 +36,6 @@ function loadRoleMap(guildId = null) {
   const overlay = getGuildRoleMap(guildId);
   if (overlay && Object.keys(overlay).length) return overlay;
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
-}
-
-function normalizeTeamLabel(value = '') {
-  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function sameTeamLabel(a = '', b = '') {
-  const left = normalizeTeamLabel(a);
-  const right = normalizeTeamLabel(b);
-  if (!left || !right) return false;
-  return left === right
-    || (left.length >= 4 && right.endsWith(left))
-    || (right.length >= 4 && left.endsWith(right));
-}
-
-function resolveTeamRoleId(teamName, snapshot, roleMap) {
-  if (!teamName) return null;
-  const target = teamName.toLowerCase();
-  const teams = snapshot?.teams?.leagueTeamInfoList || [];
-  const team = teams.find(t => {
-    const cands = [
-      t.displayName,
-      t.nickName,
-      t.abbrName,
-      t.cityName,
-    ].map(x => (x || '').toLowerCase());
-    return cands.includes(target) || cands.some(c => c.includes(target) || target.includes(c));
-  });
-  const candidates = new Set([target]);
-  if (team) {
-    [team.displayName, team.nickName, team.abbrName, team.cityName].forEach(v => v && candidates.add(v.toLowerCase()));
-  }
-  for (const [name, id] of Object.entries(roleMap || {})) {
-    if (!name.endsWith(' Coach')) continue;
-    const base = name.replace(/ Coach$/, '').toLowerCase();
-    if (candidates.has(base) || base.includes(target) || target.includes(base)) return id;
-  }
-  return null;
-}
-
-async function resolveCoachMembersForTeam(guild, teamName, snapshot, roleMap) {
-  const membersById = new Map();
-  const addMember = async (userId) => {
-    if (!userId || membersById.has(String(userId))) return;
-    const member = await guild.members.fetch(String(userId)).catch(() => null);
-    if (member) membersById.set(String(member.user.id), member);
-  };
-
-  const assignmentMap = getCoachAssignmentMap({ guildId: guild.id });
-  for (const [teamKey, userIds] of assignmentMap.teamToUserIds.entries()) {
-    if (!sameTeamLabel(teamKey, teamName)) continue;
-    for (const userId of userIds) await addMember(userId);
-  }
-
-  const coachRoleId = resolveTeamRoleId(teamName, snapshot, roleMap);
-  if (coachRoleId) {
-    const role = await guild.roles.fetch(coachRoleId).catch(() => null);
-    if (role) {
-      if (role.members.size === 0) {
-        try { await guild.members.fetch(); } catch { }
-      }
-      role.members.forEach((member) => membersById.set(String(member.user.id), member));
-    } else {
-      await addMember(coachRoleId);
-    }
-  }
-
-  return [...membersById.values()];
 }
 
 function buildDecisionButtons(tradeId, isOtherCoach) {
@@ -421,8 +353,12 @@ export async function execute(interaction) {
     let dmTargets = [];
     let dmError = null;
     if (guild) {
-      const members = (await resolveCoachMembersForTeam(guild, otherTeam, snapshot, roleMap))
+      const members = (await resolveMaddenCoachMembersForTeam(guild, otherTeam, snapshot, roleMap))
         .filter((member) => member.user.id !== interaction.user.id);
+      trades[tradeId].approvalCoachUserIds = members.map((member) => String(member.user.id));
+      trades[tradeId].approvalCoachTags = members.map((member) => member.user.tag || member.user.username || String(member.user.id));
+      trades[tradeId].approvalCoachResolvedAt = Date.now();
+      saveActiveTrades(guildId, trades);
       for (const m of members) {
         try {
           await m.user.send({ content: `Trade proposal: ${yourTeam} ↔ ${otherTeam}`, embeds: [embed], components: [rowCoach] });

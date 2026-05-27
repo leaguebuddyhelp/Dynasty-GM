@@ -10,6 +10,8 @@ import {
 import { appendMaddenStaffLog, postLeagueStaffOpsSnapshot, postMaddenStaffDecision } from '../shared/madden_staff_ops.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
+import { resolveMaddenCoachRoleId } from '../shared/madden_trade_coach_resolver.js';
+import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 
 const CHANNEL_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_channel_ids.json');
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
@@ -23,10 +25,16 @@ const TRADE_PROOF_CHANNEL_KEYS = [
   'Madden Proof',
   'Proof',
   'Proofs',
-  'Trade Committee',
-  'Pending Trades',
-  'tradeSubmit',
 ];
+const TRADE_PROOF_CHANNEL_NAMES = new Set([
+  'lbtradeproof',
+  'tradeproof',
+  'tradeproofs',
+  'maddentradeproof',
+  'maddenproof',
+  'proof',
+  'proofs',
+]);
 
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
@@ -49,6 +57,14 @@ async function fetchTradeProofChannel(client, guildId, channelMap = {}) {
     if (guildId && channel.guildId && String(channel.guildId) !== String(guildId)) continue;
     return channel;
   }
+  const guild = guildId ? await client.guilds.fetch(guildId).catch(() => null) : null;
+  const channels = guild?.channels ? await guild.channels.fetch().catch(() => null) : null;
+  const namedChannel = channels?.find((channel) => {
+    if (!channel?.isTextBased?.()) return false;
+    const normalizedName = String(channel.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return TRADE_PROOF_CHANNEL_NAMES.has(normalizedName);
+  });
+  if (namedChannel) return namedChannel;
   return null;
 }
 
@@ -70,14 +86,14 @@ function getGuildPendingProofs(store, guildId) {
   return store.byGuild[key];
 }
 
-function getCoachRole(roleMap, teamName) {
-  if (!teamName) return null;
-  const mascot = teamName.split(' ').pop();
-  const norm = `${mascot}`.toLowerCase().replace(/[^a-z0-9]/g, '') + 'coach';
-  const entry = Object.entries(roleMap || {}).find(([name]) =>
-    name.toLowerCase().replace(/[^a-z0-9]/g, '') === norm
-  );
-  return entry ? entry[1] : null;
+function loadSnapshotForGuild(guildId) {
+  const leagueId = guildId ? resolveLeagueIdWithConfig(guildId, 'trade_committee_vote') : null;
+  if (!leagueId) return null;
+  try { return loadLeagueSnapshot(leagueId); } catch { return null; }
+}
+
+function getCoachRole(roleMap, teamName, snapshot = null) {
+  return resolveMaddenCoachRoleId(teamName, snapshot, roleMap);
 }
 
 function formatAssetLines(items = []) {
@@ -158,32 +174,13 @@ async function dmProposer(client, userId, embed, statusText) {
   } catch { /* ignore DM failures */ }
 }
 
-function normalizeTeam(s) {
-  return (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function teamRoleMention(teamName, roleMap, snapshot = null) {
+  const id = resolveMaddenCoachRoleId(teamName, snapshot, roleMap);
+  return id ? `<@&${id}>` : '';
 }
 
-function teamRoleMention(teamName, roleMap) {
-  if (!teamName) return '';
-  const target = normalizeTeam(teamName);
-  const mascot = normalizeTeam(teamName.split(/\s+/).pop());
-  for (const [key, val] of Object.entries(roleMap)) {
-    if (!key.endsWith(' Coach')) continue;
-    const base = normalizeTeam(key.replace(/ Coach$/, ''));
-    if (base === target || base === mascot || target.includes(base) || base.includes(target)) return `<@&${val}>`;
-  }
-  return '';
-}
-
-function teamRoleId(teamName, roleMap) {
-  if (!teamName) return null;
-  const target = normalizeTeam(teamName);
-  const mascot = normalizeTeam(teamName.split(/\s+/).pop());
-  for (const [key, val] of Object.entries(roleMap)) {
-    if (!key.endsWith(' Coach')) continue;
-    const base = normalizeTeam(key.replace(/ Coach$/, ''));
-    if (base === target || base === mascot || target.includes(base) || base.includes(target)) return val;
-  }
-  return null;
+function teamRoleId(teamName, roleMap, snapshot = null) {
+  return resolveMaddenCoachRoleId(teamName, snapshot, roleMap);
 }
 
 export const customId = /^mtrade_c_(approve|deny)_/;
@@ -206,6 +203,7 @@ export async function execute(interaction) {
   }
 
   const roleMap = loadRoleMap(interaction.guildId);
+  const snapshot = loadSnapshotForGuild(interaction.guildId);
   const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'] || null;
   const coachRoleMention = coachRoleId ? `<@&${coachRoleId}> ` : '';
   const committeeRoleId = roleMap['Trade Committee']
@@ -217,14 +215,14 @@ export async function execute(interaction) {
     || null;
   // Only tag Ghost Legacy + the two team roles on final approve/deny
   const teamMentions = [
-    teamRoleMention(trade.yourTeam, roleMap),
-    teamRoleMention(trade.otherTeam, roleMap),
+    teamRoleMention(trade.yourTeam, roleMap, snapshot),
+    teamRoleMention(trade.otherTeam, roleMap, snapshot),
   ].filter(Boolean).join(' ');
   const channelMentions = `${coachRoleMention}${teamMentions}`.trim();
   const mentionRoleIds = [
     coachRoleId,
-    teamRoleId(trade.yourTeam, roleMap),
-    teamRoleId(trade.otherTeam, roleMap),
+    teamRoleId(trade.yourTeam, roleMap, snapshot),
+    teamRoleId(trade.otherTeam, roleMap, snapshot),
   ].filter(Boolean).map(String);
 
   const channelMap = loadChannelMap(interaction.guildId);
@@ -324,8 +322,8 @@ export async function execute(interaction) {
     writePendingProofsStore(pendingStore);
 
     const roleMap = loadRoleMap(interaction.guildId);
-    const coachA = getCoachRole(roleMap, trade.yourTeam);
-    const coachB = getCoachRole(roleMap, trade.otherTeam);
+    const coachA = getCoachRole(roleMap, trade.yourTeam, snapshot);
+    const coachB = getCoachRole(roleMap, trade.otherTeam, snapshot);
     const tags = [coachA && `<@&${coachA}>`, coachB && `<@&${coachB}>`].filter(Boolean).join(' ');
 
     const proofEmbed = new EmbedBuilder()

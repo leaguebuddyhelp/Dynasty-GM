@@ -134,6 +134,9 @@ async function loadCommandsForDeployment() {
             console.log(`⏭️  Skipping ${label}/${file} (not in beta command profile)`);
             continue;
           }
+          if (parts.length === 2 && parts[0] === 'madden' && parts[1] === 'staff' && command?.staffCommand !== false) {
+            command.data.setDefaultMemberPermissions(null);
+          }
           commands.push(command.data.toJSON());
           loadedNames.add(commandName);
           console.log(`✅ Loaded ${commandName} (${label}/${file})`);

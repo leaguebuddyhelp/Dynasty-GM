@@ -75,8 +75,18 @@ export async function execute(interaction) {
       cfg.compat.maddenRoleMap['LEAGUEbuddy Coaches'] = role.id;
       cfg.compat.maddenRoleMap['LB Coaches'] = role.id;
     }
-    if (spec.key === 'LB Commish') cfg.compat.maddenRoleMap['Ghost Legacy Commish'] = role.id;
-    if (spec.key === 'LB Co-Commish') cfg.compat.maddenRoleMap['Ghost Legacy Co-Commish'] = role.id;
+    if (spec.key === 'LB Commish') {
+      cfg.compat.maddenRoleMap['Ghost Legacy Commish'] = role.id;
+      cfg.compat.maddenRoleMap.Commish = role.id;
+    }
+    if (spec.key === 'LB Co-Commish') {
+      cfg.compat.maddenRoleMap['Ghost Legacy Co-Commish'] = role.id;
+      cfg.compat.maddenRoleMap['Co-Commish'] = role.id;
+      cfg.compat.maddenRoleMap['Co Commish'] = role.id;
+      cfg.compat.maddenRoleMap.CoCommissioner = role.id;
+      cfg.compat.maddenRoleMap['Co-Commissioner'] = role.id;
+      cfg.compat.maddenRoleMap['Co Commissioner'] = role.id;
+    }
   }
 
   const leagueId = getExplicitLeagueForGuild(guild.id);
