@@ -851,6 +851,184 @@ export async function selectEaLeague({
   }
 }
 
+export async function quickReconnectLeagueByToken(token) {
+  const dashboard = getLeagueConnectionDashboard(token);
+  if (!dashboard.ok) return dashboard;
+
+  const guildId = dashboard.session?.guildId;
+  const connection = dashboard.connection;
+  const savedLeagueId = safeString(
+    connection?.leagueExternalId
+    || connection?.summary?.leagueId
+    || dashboard.session?.selectedLeague?.leagueId,
+  );
+  const savedLeagueName = safeString(
+    connection?.leagueName
+    || connection?.summary?.leagueName
+    || dashboard.session?.selectedLeague?.leagueName,
+  ) || 'Connected League';
+
+  if (!guildId) {
+    return { ok: false, code: 'missing_guild', message: 'This setup session is missing a Discord server.' };
+  }
+  if (!savedLeagueId || !connection) {
+    return { ok: false, code: 'missing_saved_league', message: 'No saved league was found. Use the normal setup flow once, then Quick Reconnect will be available.' };
+  }
+  if (!getGuildEATokens(guildId)) {
+    return { ok: false, code: 'missing_tokens', message: 'No saved EA login was found. Use Open EA Login once, then choose the saved league.' };
+  }
+
+  const previousSummary = connection?.summary || {};
+  const baseSummary = {
+    ...previousSummary,
+    leagueId: savedLeagueId,
+    leagueName: savedLeagueName,
+    eaConnected: true,
+  };
+
+  try {
+    const client = await createEAClientForGuild(guildId);
+    let leagueSummary = baseSummary;
+    let availableLeagues = Array.isArray(dashboard.session?.availableLeagues)
+      ? dashboard.session.availableLeagues
+      : [];
+
+    try {
+      const leagues = await fetchLeaguesWithClient(client);
+      availableLeagues = Array.isArray(leagues) ? leagues : [];
+      const selected = availableLeagues.find((league) => summarizeLeagueRecord(league).leagueId === savedLeagueId);
+      if (selected) leagueSummary = { ...baseSummary, ...summarizeLeagueRecord(selected) };
+    } catch (error) {
+      // A valid saved token can still have a slow league-list response. The sync below is the source of truth.
+      leagueSummary = {
+        ...leagueSummary,
+        leagueFetchWarning: error?.message || 'League list could not be refreshed before reconnect.',
+      };
+    }
+
+    setGuildLeague(guildId, savedLeagueId);
+    connectionRepository.upsertLeagueConnection({
+      guildId,
+      leagueName: leagueSummary.leagueName || savedLeagueName,
+      leagueExternalId: savedLeagueId,
+      sourceType: 'ea_dashboard',
+      status: 'syncing',
+      lastImportJobId: connection.lastImportJobId || null,
+      lastSnapshotId: connection.lastSnapshotId || null,
+      summary: {
+        ...baseSummary,
+        ...leagueSummary,
+        syncStatus: 'running',
+        lastSyncError: null,
+      },
+    });
+    connectionRepository.updateConnectSessionByToken(token, {
+      selectedLeague: {
+        leagueId: savedLeagueId,
+        leagueName: leagueSummary.leagueName || savedLeagueName,
+      },
+      selectedPersona: dashboard.session?.selectedPersona || {
+        personaId: safeString(getGuildEATokens(guildId)?.blazeId),
+        displayName: safeString(getGuildEATokens(guildId)?.personaName),
+        systemConsole: safeString(getGuildEATokens(guildId)?.console),
+        entitlement: safeString(getGuildEATokens(guildId)?.entitlement),
+      },
+      availableLeagues,
+      leagueFetchError: null,
+      syncProgress: {
+        status: 'running',
+        phase: 'Quick reconnect started',
+        detail: 'LEAGUEbuddy is reusing the saved EA account and saved league, then pulling a fresh snapshot.',
+        updatedAt: nowIso(),
+      },
+    });
+
+    void (async () => {
+      try {
+        const initialSync = await performInitialLeagueSync({
+          token,
+          guildId,
+          leagueId: savedLeagueId,
+          leagueSummary,
+        });
+
+        connectionRepository.upsertLeagueConnection({
+          guildId,
+          leagueName: initialSync.summary.leagueName || leagueSummary.leagueName || savedLeagueName,
+          leagueExternalId: savedLeagueId,
+          sourceType: 'ea_dashboard',
+          status: 'connected',
+          lastImportJobId: connection.lastImportJobId || null,
+          lastSnapshotId: initialSync.repositorySnapshot.id,
+          summary: {
+            ...baseSummary,
+            ...initialSync.summary,
+            syncStatus: 'succeeded',
+            lastSyncError: null,
+          },
+        });
+
+        updateSessionSyncProgress(token, {
+          status: 'succeeded',
+          phase: 'Quick reconnect complete',
+          detail: 'League data is refreshed. Return to Discord and run /setup or /weeklyupdate.',
+        });
+      } catch (error) {
+        connectionRepository.upsertLeagueConnection({
+          guildId,
+          leagueName: leagueSummary.leagueName || savedLeagueName,
+          leagueExternalId: savedLeagueId,
+          sourceType: 'ea_dashboard',
+          status: 'sync_error',
+          lastImportJobId: connection.lastImportJobId || null,
+          lastSnapshotId: connection.lastSnapshotId || null,
+          summary: {
+            ...baseSummary,
+            ...leagueSummary,
+            syncStatus: 'failed',
+            lastSyncError: error?.message || 'Quick reconnect sync failed.',
+          },
+        });
+
+        updateSessionSyncProgress(token, {
+          status: 'failed',
+          phase: 'Quick reconnect failed',
+          detail: error?.message || 'The saved league could not be refreshed.',
+        });
+      }
+    })();
+
+    return {
+      ok: true,
+      message: 'Quick reconnect started with the saved EA account and saved league. Stay on this page while it refreshes.',
+      syncing: true,
+    };
+  } catch (error) {
+    const message = error?.message || 'Quick reconnect could not start.';
+    connectionRepository.upsertLeagueConnection({
+      guildId,
+      leagueName: savedLeagueName,
+      leagueExternalId: savedLeagueId,
+      sourceType: connection.sourceType || 'ea_dashboard',
+      status: 'sync_error',
+      lastImportJobId: connection.lastImportJobId || null,
+      lastSnapshotId: connection.lastSnapshotId || null,
+      summary: {
+        ...baseSummary,
+        syncStatus: 'failed',
+        lastSyncError: message,
+      },
+    });
+    return {
+      ok: false,
+      code: 'quick_reconnect_failed',
+      message: /refresh token|session expired|Reconnect EA|100105/i.test(message)
+        ? 'Saved EA login expired. Use Open EA Login once, then press Quick Reconnect again.'
+        : message,
+    };
+  }
+}
+
 export function addLeagueExportSource({
   token,
   label,
@@ -1231,6 +1409,7 @@ export default {
   submitEaRedirectUrl,
   submitEaPersona,
   selectEaLeague,
+  quickReconnectLeagueByToken,
   addLeagueExportSource,
   loadDemoLeague,
   importFromExportSource,

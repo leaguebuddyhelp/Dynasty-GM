@@ -1328,6 +1328,11 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             <strong>League:</strong> ${escapeHtml(activeLeagueName)}
           </div>
           <div class="inline-actions">
+            ${hasLeague && hasEaConnection ? `
+              <form method="POST" action="/madden/connect/quick-reconnect?token=${encodeURIComponent(token)}">
+                <button type="submit">Quick Reconnect Saved League</button>
+              </form>
+            ` : ''}
             <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
               <button type="submit" class="secondary">Reconnect EA / Start Over</button>
             </form>
@@ -1590,6 +1595,11 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             </div>
           ` : ''}
           <div class="inline-actions">
+            ${hasLeague && hasEaConnection ? `
+              <form method="POST" action="/madden/connect/quick-reconnect?token=${encodeURIComponent(token)}">
+                <button type="submit">Quick Reconnect Saved League</button>
+              </form>
+            ` : ''}
             <form method="POST" action="/madden/connect/reset?token=${encodeURIComponent(token)}">
               <button type="submit" class="secondary">Reconnect EA</button>
             </form>
@@ -1810,6 +1820,20 @@ export function startConnectServer() {
       const location = result.ok
         ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('League connected. Return to Discord and run /setup.')}`
         : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message)}`;
+      res.writeHead(302, { location });
+      res.end();
+    },
+  });
+
+  registerHttpRoute({
+    method: 'POST',
+    path: '/madden/connect/quick-reconnect',
+    handler: async (req, res) => {
+      const token = parseToken(req);
+      const result = await connectionService.quickReconnectLeagueByToken(token);
+      const location = result.ok
+        ? `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent('Quick reconnect started with saved info. Stay on this page while the sync finishes.')}`
+        : `/madden/connect?token=${encodeURIComponent(token)}&notice=${encodeURIComponent(result.message || 'Quick reconnect could not start.')}`;
       res.writeHead(302, { location });
       res.end();
     },
