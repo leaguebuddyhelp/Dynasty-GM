@@ -52,17 +52,32 @@ function currentYearSalary(p) {
 
 export function teamLookup(snapshot, teamIdOrName) {
   const teams = snapshot?.teams?.leagueTeamInfoList || [];
-  const target = String(teamIdOrName || '').toLowerCase();
-  return teams.find(t => {
+  const rawTarget = String(teamIdOrName || '');
+  const target = rawTarget.toLowerCase();
+  const compactTarget = normalizeName(rawTarget);
+  const exact = teams.find(t => {
     const ids = [
       String(t.teamId ?? ''),
       String(t.teamIndex ?? ''),
-      (t.displayName || '').toLowerCase(),
-      (t.nickName || '').toLowerCase(),
       (t.abbrName || '').toLowerCase(),
-      (t.cityName || '').toLowerCase(),
+      normalizeName(getFullTeamName(t, '')),
+      normalizeName(t.teamName || ''),
+      normalizeName(t.name || ''),
+      normalizeName(t.displayName || ''),
+      normalizeName(t.nickName || ''),
     ];
-    return ids.includes(target) || ids.some(v => v && target && (v.includes(target) || target.includes(v)));
+    return ids.includes(target) || ids.includes(compactTarget);
+  });
+  if (exact) return exact;
+  return teams.find(t => {
+    const ids = [
+      normalizeName(getFullTeamName(t, '')),
+      normalizeName(t.teamName || ''),
+      normalizeName(t.name || ''),
+      normalizeName(t.displayName || ''),
+      normalizeName(t.nickName || ''),
+    ];
+    return ids.some(v => v && compactTarget && (v.includes(compactTarget) || compactTarget.includes(v)));
   });
 }
 

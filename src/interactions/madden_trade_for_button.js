@@ -111,15 +111,29 @@ export async function execute(interaction) {
   const matchTeam = (name) => {
     const target = norm(name);
     if (!target) return null;
-    // Pass 1: strict match on names or exact abbreviation
+    // Pass 1: strict match on full team names, mascot names, or exact abbreviation.
+    // Do not let shared cities like New York resolve Giants/Jets by city alone.
     const exact = teams.find(t => {
-      const cands = [t.displayName, t.nickName, t.cityName].map(norm);
+      const cands = [
+        getFullTeamName(t, ''),
+        t.teamName,
+        t.name,
+        t.displayName,
+        t.nickName,
+      ].map(norm);
       return cands.includes(target) || norm(t.abbrName) === target;
     });
     if (exact) return exact;
-    // Pass 2: loose contains check (exclude abbreviations to avoid CAR vs Cardinals collisions)
+    // Pass 2: loose contains check only on full name and mascot aliases.
+    // City-only fuzzy matching causes collisions for Giants/Jets and Rams/Chargers.
     return teams.find(t => {
-      const cands = [t.displayName, t.nickName, t.cityName].map(norm);
+      const cands = [
+        getFullTeamName(t, ''),
+        t.teamName,
+        t.name,
+        t.displayName,
+        t.nickName,
+      ].map(norm);
       return cands.some(c => c && (c.includes(target) || target.includes(c)));
     }) || null;
   };
