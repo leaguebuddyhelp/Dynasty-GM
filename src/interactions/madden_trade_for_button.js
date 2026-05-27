@@ -17,7 +17,7 @@ function loadRoleMap(guildId = null) {
   try { return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8')); } catch { return {}; }
 }
 
-export const customId = /^madden_trade_for|^mtrade/;
+export const customId = /^(madden_trade_for(?::|$)|mtrade:)/;
 
 function parseTeamAndPlayer(customId) {
   if (customId.startsWith('mtrade:')) {

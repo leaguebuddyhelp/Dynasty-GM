@@ -333,14 +333,23 @@ async function refreshBuilder(interaction, draft, snapshot) {
 export async function execute(interaction) {
   const draftId = interaction.customId.split('|')[1];
   const draft = getTradeDraft(draftId);
-  const leagueId = draft?.leagueId || resolveLeagueIdWithConfig(interaction.guildId);
+  let leagueId = draft?.leagueId || null;
+  if (!leagueId && interaction.guildId) {
+    leagueId = resolveLeagueIdWithConfig(interaction.guildId);
+  }
   if (RESET_CUSTOM_ID.test(interaction.customId)) {
     const draftId = interaction.customId.split('|')[1];
     const draft = getTradeDraft(draftId);
-    if (!draft) return;
+    if (!draft) {
+      await interaction.reply(buildPrivatePayload(interaction, { content: 'Trade builder expired. Start again.' })).catch(() => null);
+      return;
+    }
     draft.assets = { your: [], other: [] };
     saveTradeDraft(draftId, draft);
-    if (!leagueId) return;
+    if (!leagueId) {
+      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' }));
+      return;
+    }
     const snapshot = loadLeagueSnapshot(leagueId);
     await refreshBuilder(interaction, draft, snapshot);
     return;
@@ -352,7 +361,10 @@ export async function execute(interaction) {
       await interaction.reply(buildPrivatePayload(interaction, { content: 'Select both teams first.' }));
       return;
     }
-    if (!leagueId) return;
+    if (!leagueId) {
+      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' }));
+      return;
+    }
     const snapshot = loadLeagueSnapshot(leagueId);
     const rows = buildAssetSelectRows(
       side === 'yours' ? 'yours' : 'other',
@@ -378,7 +390,10 @@ export async function execute(interaction) {
       await interaction.reply(buildPrivatePayload(interaction, { content: 'Trade builder expired. Start again.' }));
       return;
     }
-    if (!leagueId) return;
+    if (!leagueId) {
+      await interaction.reply(buildPrivatePayload(interaction, { content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' }));
+      return;
+    }
     const snapshot = loadLeagueSnapshot(leagueId);
     const pickContext = getMaddenPickContext(snapshot);
     const draftYearBase = getMaddenDraftYear(snapshot);

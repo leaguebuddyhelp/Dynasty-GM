@@ -100,14 +100,21 @@ function toAssetDetail(label, value) {
 
 export const customId = /^madden_trade_preview_submit\|/;
 
+async function respondSubmitError(interaction, content) {
+  const payload = interaction.inGuild?.() ? { content, flags: 64 } : { content };
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({ content }).catch(() => null);
+    return;
+  }
+  await interaction.reply(payload).catch(() => null);
+}
+
 export async function execute(interaction) {
   if (!interaction.isButton()) return;
   const [, draftId] = interaction.customId.split('|');
   const draft = getTradeDraft(draftId);
   if (!draft) {
-    await interaction.reply(interaction.inGuild()
-      ? { content: 'Trade draft expired. Please reopen using Modify and resubmit.', flags: 64 }
-      : { content: 'Trade draft expired. Please reopen using Modify and resubmit.' });
+    await respondSubmitError(interaction, 'Trade draft expired. Please reopen the Trade Builder and resubmit.');
     return;
   }
   const guildId = interaction.guildId || draft.guildId || null;
@@ -117,16 +124,12 @@ export async function execute(interaction) {
     try {
       leagueId = requireLeagueIdForGuild(guildId);
     } catch (error) {
-      await interaction.reply(interaction.inGuild()
-        ? { content: error?.message || 'No league is mapped to this server yet. Run `/setup` and press Open Setup Dashboard.', flags: 64 }
-        : { content: error?.message || 'No league is mapped to this server yet. Run `/setup` and press Open Setup Dashboard.' });
+      await respondSubmitError(interaction, error?.message || 'No league is mapped to this server yet. Run `/setup` and press Open Setup Dashboard.');
       return;
     }
   }
   if (!canTrade(leagueId)) {
-    await interaction.reply(interaction.inGuild()
-      ? { content: 'Trades are locked starting Week 13. Try again next season.', flags: 64 }
-      : { content: 'Trades are locked starting Week 13. Try again next season.' });
+    await respondSubmitError(interaction, 'Trades are locked starting Week 13. Try again next season.');
     return;
   }
 
@@ -400,8 +403,15 @@ export async function execute(interaction) {
       components: [],
     });
   } catch (err) {
-    console.error('trade submit error', err);
-    await interaction.editReply({ content: `Trade submission failed: ${err?.message || err}` });
+    console.error('[madden_trade_preview_submit] trade submit error', {
+      customId: interaction.customId,
+      draftId,
+      guildId,
+      userId: interaction.user?.id,
+      message: err?.message || String(err),
+      stack: err?.stack || null,
+    });
+    await respondSubmitError(interaction, `Trade submission failed: ${err?.message || err}`);
   }
 }
 
