@@ -286,6 +286,20 @@ function buildPrivatePayload(interaction, payload) {
   return interaction.inGuild() ? { ...payload, flags: 64 } : payload;
 }
 
+function draftIdFromCustomId(customId = '') {
+  const parts = String(customId || '').split('|');
+  if (RESET_CUSTOM_ID.test(customId)) return parts[1] || '';
+  if (
+    ADD_CUSTOM_ID.test(customId)
+    || MENU_CUSTOM_ID.test(customId)
+    || PICK_MANUAL_BTN.test(customId)
+    || PICK_MANUAL_MODAL.test(customId)
+  ) {
+    return parts[2] || '';
+  }
+  return '';
+}
+
 async function refreshBuilder(interaction, draft, snapshot) {
   const doUpdate = async (payload) => {
     if (interaction.deferred || interaction.replied) return interaction.editReply(payload);
@@ -331,7 +345,7 @@ async function refreshBuilder(interaction, draft, snapshot) {
 }
 
 export async function execute(interaction) {
-  const draftId = interaction.customId.split('|')[1];
+  const draftId = draftIdFromCustomId(interaction.customId);
   const draft = getTradeDraft(draftId);
   let leagueId = draft?.leagueId || null;
   if (!leagueId && interaction.guildId) {

@@ -4,6 +4,14 @@ import { PermissionFlagsBits } from 'discord.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
 
 const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+const FALLBACK_STAFF_ROLE_IDS = new Set([
+  '1506384868391522555',
+  '1506384871453626528',
+  ...String(process.env.LB_STAFF_ROLE_IDS || '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean),
+]);
 export const STAFF_ROLE_NAMES = [
   'LB Commish',
   'LB Co-Commish',
@@ -52,6 +60,17 @@ function guildRoleNameForId(member, roleId) {
   return member?.guild?.roles?.cache?.get?.(String(roleId))?.name || '';
 }
 
+function hasPermission(member, permission) {
+  if (member?.permissions?.has?.(permission)) return true;
+  const raw = member?.permissions?.bitfield ?? member?.permissions;
+  if (raw === undefined || raw === null) return false;
+  try {
+    return (BigInt(raw) & BigInt(permission)) === BigInt(permission);
+  } catch {
+    return false;
+  }
+}
+
 export function loadRoleMap() {
   try {
     return JSON.parse(fs.readFileSync(ROLE_MAP_FILE, 'utf8'));
@@ -67,7 +86,7 @@ export function loadRoleMapForGuild(guildId) {
 }
 
 export function hasStaffRole(member, roleMap = null) {
-  if (member?.permissions?.has?.(PermissionFlagsBits.Administrator) || member?.permissions?.has?.(PermissionFlagsBits.ManageGuild)) {
+  if (hasPermission(member, PermissionFlagsBits.Administrator) || hasPermission(member, PermissionFlagsBits.ManageGuild)) {
     return true;
   }
   const map = roleMap || loadRoleMapForGuild(member?.guild?.id);
@@ -76,6 +95,9 @@ export function hasStaffRole(member, roleMap = null) {
     .map(([, id]) => id)
     .filter(Boolean);
   const roleIds = memberRoleIds(member);
+  if (roleIds.some((roleId) => FALLBACK_STAFF_ROLE_IDS.has(String(roleId)))) {
+    return true;
+  }
   if (ids.some(id => roleIds.includes(String(id)))) {
     return true;
   }
