@@ -185,7 +185,13 @@ export function gatherWeeklyStats(snapshot, weekIndex) {
     const mergeList = (key) => {
       const listA = (a[key]?.playerPassingStatInfoList) || (a[key]?.playerRushingStatInfoList) || (a[key]?.playerReceivingStatInfoList) || (a[key]?.playerDefensiveStatInfoList) || (a[key]?.playerKickingStatInfoList) || (a[key]?.playerPuntingStatInfoList) || [];
       const listB = (b[key]?.playerPassingStatInfoList) || (b[key]?.playerRushingStatInfoList) || (b[key]?.playerReceivingStatInfoList) || (b[key]?.playerDefensiveStatInfoList) || (b[key]?.playerKickingStatInfoList) || (b[key]?.playerPuntingStatInfoList) || [];
-      const combined = [...listA, ...listB];
+      const seen = new Set();
+      const combined = [...listA, ...listB].filter((player) => {
+        const id = stablePlayerKey(player) || JSON.stringify(player || {});
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
       if (!combined.length) return b[key] ?? a[key];
       if (b[key]?.playerPassingStatInfoList || a[key]?.playerPassingStatInfoList) return { ...(b[key] || a[key]), playerPassingStatInfoList: combined };
       if (b[key]?.playerRushingStatInfoList || a[key]?.playerRushingStatInfoList) return { ...(b[key] || a[key]), playerRushingStatInfoList: combined };
@@ -217,13 +223,16 @@ export function gatherWeeklyStats(snapshot, weekIndex) {
     return buckets.reduce((acc, b) => acc + (Array.isArray(b) ? b.length : 0), 0);
   };
 
-  // Strict: pick Stage 1 for this week; if missing, return null (no cross-stage/other-week merge)
+  // Strict: use Stage 1 for this week; if the export split buckets across entries, merge them.
   if (matches.length) {
-    const bestStage1 = stageOneCurrent
+    const stageOneWithData = stageOneCurrent
       .map(w => ({ w, c: countPlayers(w) }))
       .filter(({ w }) => hasPlayerData(w))
-      .sort((a, b) => b.c - a.c)[0]?.w;
-    if (bestStage1) return bestStage1;
+      .sort((a, b) => b.c - a.c)
+      .map(({ w }) => w);
+    if (stageOneWithData.length) {
+      return stageOneWithData.reduce((merged, wk) => mergeWeekEntries(merged, wk), null);
+    }
     console.warn('[gatherWeeklyStats] no stage 1 found for week', weekIndex);
   }
 
@@ -617,7 +626,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       }
     });
 
-    const gradedList = loadGradedWeek(leagueId, targetWeekIdx, snapshotMtime);
+    const gradedList = loadGradedWeek(leagueId, awardsWeek, snapshotMtime);
     const offensePositions = new Set(['QB', 'HB', 'RB', 'FB', 'TB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'K', 'P']);
     const defPositions = new Set(['CB', 'FS', 'SS', 'ROLB', 'LOLB', 'MLB', 'LB', 'RE', 'LE', 'DT', 'EDGE', 'EDG', 'LEDGE', 'REDGE', 'LEDG', 'REDG', 'OLB', 'LDE', 'RDE', 'EDGE_R', 'EDGE_L', 'EDGE-R', 'EDGE-L', 'DE']);
     const normalizedGraded = (gradedList || []).map(p => {
@@ -628,10 +637,11 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
         conference = (confMap[p.teamId] || '').toUpperCase() || null;
       }
       const teamName = p.team || p.teamName || teamNames[p.teamId] || p.team || 'Unknown';
-      const rookieFlag =
-        p.isRookie
-        ?? rosterMatch?.isRookie
-        ?? isRookie({ rosterId: p.rosterId, yearsPro: p.yearsPro });
+      const rookieFlag = isRookie({
+        rosterId: p.rosterId,
+        yearsPro: p.yearsPro ?? rosterMatch?.yearsPro,
+        isRookie: p.isRookie ?? rosterMatch?.isRookie,
+      });
       const fullName = p.fullName || p.name || (rosterMatch ? `${rosterMatch.firstName || ''} ${rosterMatch.lastName || ''}`.trim() : 'Unknown');
       return { ...p, position: pos, conference, teamName, isRookie: rookieFlag, fullName };
     });
@@ -640,7 +650,20 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       await replySkip('[awards] skipping: no current-week player data or graded list');
       return;
     }
-    const gradedAwardsAvailable = normalizedGraded.length > 0;
+    const fillMissing = (target = {}, fallback = {}) => {
+      Object.entries(fallback || {}).forEach(([key, value]) => {
+        if (!target[key] && value) target[key] = value;
+      });
+      return target;
+    };
+    const rawWinners = byPlayer.size ? {
+      afc_offense: pickWinner(byPlayer, 'AFC'),
+      nfc_offense: pickWinner(byPlayer, 'NFC'),
+      afc_defense: pickDefWinner(byPlayer, 'AFC'),
+      nfc_defense: pickDefWinner(byPlayer, 'NFC'),
+      rookie_offense: isPlayoffs ? null : pickWinner(new Map(Array.from(byPlayer).filter(([, p]) => isRookie(p))), null),
+      rookie_defense: isPlayoffs ? null : pickDefWinner(new Map(Array.from(byPlayer).filter(([, p]) => isRookie(p))), null),
+    } : {};
     if (normalizedGraded.length) {
       const byConf = (conf, filterFn) => normalizedGraded.filter(p => p.conference === conf && filterFn(p));
       const isOff = (p) => offensePositions.has((p.position || '').toUpperCase());
@@ -654,24 +677,23 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
         rookie_offense: isPlayoffs ? null : pickTop(normalizedGraded.filter(p => p.isRookie && isOff(p))),
         rookie_defense: isPlayoffs ? null : pickTop(normalizedGraded.filter(p => p.isRookie && isDef(p))),
       };
+      fillMissing(winners, rawWinners);
     }
-    if (!gradedAwardsAvailable && (!winners || (!winners.afc_offense && !winners.nfc_offense && !winners.afc_defense && !winners.nfc_defense))) {
-      winners = {
-        afc_offense: pickWinner(byPlayer, 'AFC'),
-        nfc_offense: pickWinner(byPlayer, 'NFC'),
-        afc_defense: pickDefWinner(byPlayer, 'AFC'),
-        nfc_defense: pickDefWinner(byPlayer, 'NFC'),
-        rookie_offense: isPlayoffs ? null : pickWinner(new Map(Array.from(byPlayer).filter(([, p]) => isRookie(p))), null),
-        rookie_defense: isPlayoffs ? null : pickDefWinner(new Map(Array.from(byPlayer).filter(([, p]) => isRookie(p))), null),
-      };
+    if (!winners) winners = {};
+    fillMissing(winners, rawWinners);
+    if (byPlayer.size) {
       // Fallbacks if any category didn't resolve
       const all = Array.from(byPlayer.values());
-      const fallbackOff = (arr) => arr.sort((a, b) => (b.totals?.passYds || b.totals?.rushYds || b.totals?.recYds || 0) - (a.totals?.passYds || a.totals?.rushYds || a.totals?.recYds || 0))[0];
-      const fallbackDef = (arr) => arr.sort((a, b) => (b.totals?.defTotalTackles || 0) - (a.totals?.defTotalTackles || 0))[0];
-      if (!winners.afc_offense) winners.afc_offense = fallbackOff(all);
-      if (!winners.nfc_offense) winners.nfc_offense = fallbackOff(all);
-      if (!winners.afc_defense) winners.afc_defense = fallbackDef(all);
-      if (!winners.nfc_defense) winners.nfc_defense = fallbackDef(all);
+      const fallbackOff = (arr) => arr
+        .filter(hasEligibleOffenseStats)
+        .sort((a, b) => (scoreOffense(b) - scoreOffense(a)))[0];
+      const fallbackDef = (arr) => arr
+        .filter(hasEligibleDefenseStats)
+        .sort((a, b) => (scoreDefense(b) - scoreDefense(a)))[0];
+      if (!winners.afc_offense) winners.afc_offense = fallbackOff(all.filter(p => p.conference === 'AFC')) || fallbackOff(all);
+      if (!winners.nfc_offense) winners.nfc_offense = fallbackOff(all.filter(p => p.conference === 'NFC')) || fallbackOff(all);
+      if (!winners.afc_defense) winners.afc_defense = fallbackDef(all.filter(p => p.conference === 'AFC')) || fallbackDef(all);
+      if (!winners.nfc_defense) winners.nfc_defense = fallbackDef(all.filter(p => p.conference === 'NFC')) || fallbackDef(all);
       if (!winners.rookie_offense && !isPlayoffs) winners.rookie_offense = fallbackOff(all.filter(p => isRookie(p)));
       if (!winners.rookie_defense && !isPlayoffs) winners.rookie_defense = fallbackDef(all.filter(p => isRookie(p)));
 
@@ -787,12 +809,8 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     return { map, idFor };
   })();
 
-  // `gradedAwardsAvailable` is referenced below as the signal that week-grade derived winners are present.
-  // It must be defined in this broader scope (not only inside the earlier normalization block).
-  const gradedAwardsAvailable = !!(winners && (winners.afc_offense || winners.nfc_offense || winners.afc_defense || winners.nfc_defense));
-
-  // Use the graded weekly list only as a fallback when raw weekly stats failed to produce a winner.
-  if (!gradedAwardsAvailable && weeklyTopList.length) {
+  // Use the computed weekly list as a per-category fallback so one missing bucket does not blank the award.
+  if (weeklyTopList.length) {
     if (!winners.afc_offense) winners.afc_offense = pickTopFromGrades('AFC', offensePositionsSet, false) || winners.afc_offense;
     if (!winners.nfc_offense) winners.nfc_offense = pickTopFromGrades('NFC', offensePositionsSet, false) || winners.nfc_offense;
     if (!winners.afc_defense) winners.afc_defense = pickTopFromGrades('AFC', defensePositionsSet, false) || winners.afc_defense;

@@ -1629,16 +1629,17 @@ async function execute(interaction) {
         statsPartial && reliableAwardsWeekIndex != null
           ? reliableAwardsWeekIndex + 1
           : effectiveCurrentWeekUsed;
+      const hasReliableAwardsFallback = statsPartial && reliableAwardsWeekIndex != null;
 
       const canPostAwards =
         hasWeeklyPlayersEffective &&
         (
           forceAwardsOnce ||
           (
-            // Normal mode: only post when the target week is complete.
-            !statsPartial &&
+            // Normal mode: post completed target weeks, or the latest reliable completed week when the current export is partial.
+            (!statsPartial || hasReliableAwardsFallback) &&
             // Backfill runs set `backfillOnlyAwards=true`, so don't block awards on that flag.
-            (!inOffseason && !inPreseason && seasonInfo.isWeeklyAwardsPeriodActive !== false && effectiveCurrentWeekUsed && effectiveCurrentWeekUsed <= 23)
+            (!inOffseason && !inPreseason && seasonInfo.isWeeklyAwardsPeriodActive !== false && awardsWeekToPost && awardsWeekToPost <= 23)
           )
         );
       if (canPostAwards && yearlyAwardsIncluded) {
