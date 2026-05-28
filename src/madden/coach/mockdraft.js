@@ -1125,9 +1125,16 @@ export function deriveTeamNeedsDetailed(league) {
       const age = bestQB?.age ?? 0;
       const isRookieOrSoph = bestYearsPro <= 2;
 
-      // Rookie/sophomore guard: if top QB is young (<=2 years pro) and at least 70 OVR, treat QB as depth-only (avoid 1R QB).
-      if (isRookieOrSoph && bestOvr >= 70) {
-        qbNeed = false; qbSeverity = 25; // depth flag only
+      // Rookie/sophomore guard: only protect a young QB if he already looks playable.
+      // A 70-75 OVR young QB is still a reset need, especially in a QB-rich class.
+      if (isRookieOrSoph && bestOvr >= 76 && yearsLeft >= 2) {
+        qbNeed = false; qbSeverity = bestOvr >= 78 ? 25 : 45; // depth/mid flag only
+      } else if (isRookieOrSoph && bestOvr >= 70 && bestOvr < 76) {
+        qbNeed = true;
+        qbSeverity = 78 + Math.max(0, 75 - bestOvr) * 3;
+        if (secondOvr < 70) qbSeverity += 10;
+        if (yearsLeft <= 1) qbSeverity += 8;
+        qbSeverity = Math.min(100, qbSeverity);
       } else {
 
         // Franchise lockouts (young/prime starters with term)
@@ -1206,7 +1213,7 @@ export function deriveTeamNeedsDetailed(league) {
         const top2 = top[1] || { ovr: 0, age: 99 };
         const topYears = top1 ? (top1.yearsPro ?? top1.yp ?? 99) : 99;
         const topAge = top1 ? (top1.age ?? 99) : 99;
-        const rookieGuard = (topYears <= 2 || topAge <= 24) && topOvr >= 70; // keep rookie/soph (or young) 70+ as depth-only
+        const rookieGuard = (topYears <= 2 || topAge <= 24) && topOvr >= 76; // protect only playable young starters
 
         if (stat.count === 0) {
           score += 200; // no QBs: high urgency
@@ -1221,11 +1228,13 @@ export function deriveTeamNeedsDetailed(league) {
             score -= 200; // strong enough room
           }
         }
-        if (qbNeed) score += 40;
+        if (qbNeed) score += Math.max(40, Math.round(qbSeverity * 0.8));
         if (qbSeverity >= 30 && !qbNeed) score -= 40; // depth-only
+        if (qbNeed && qbSeverity >= 75) score = Math.max(score, 150);
         if (rookieGuard) score -= 200; // rookie/soph 70+ starter guard
-        // Cap QB score to avoid dominating when roster isn't empty
-        if (stat.count > 0 && score > 120) score = 120;
+        // Cap QB score to avoid dominating when the room is merely thin, while still
+        // letting true reset situations surface as the top team need.
+        if (stat.count > 0 && score > (qbNeed ? 175 : 120)) score = qbNeed ? 175 : 120;
       }
 
       // RB rushing performance nudge
@@ -1371,7 +1380,7 @@ export function deriveTeamNeedsDetailed(league) {
     const qbEntry = needScores.find(n => n.group === 'QB');
     if (qbEntry && needs[0] !== 'QB') {
       const topScore = needScores[0].score;
-      if (qbEntry.score >= topScore - 8) {
+      if (qbSeverity >= 75 || qbEntry.score >= topScore - 8) {
         // promote QB to top
         const filtered = needs.filter(n => n !== 'QB');
         filtered.unshift('QB');
@@ -1394,6 +1403,17 @@ export function deriveTeamNeedsDetailed(league) {
     const profile = {
       needs: [...needs],
       scores: scoreMap,
+      qb: {
+        count: qbCount,
+        starterOvr: bestOvr,
+        backupOvr: secondOvr,
+        starterAge: bestQB ? getAge(bestQB) : null,
+        starterYearsPro: bestQB ? getYearsPro(bestQB) : null,
+        starterYearsLeft: bestQB ? getYearsLeft(bestQB) : null,
+        severity: qbSeverity,
+        needy: qbNeed,
+        topNeed: needs[0] === 'QB',
+      },
     };
     aliasKeys.forEach(k => { if (k) needsByTeam[k] = profile; });
   }
