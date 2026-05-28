@@ -1051,6 +1051,41 @@ export function deriveTeamNeedsDetailed(league) {
   const getYearsLeft = (p) => p.contractYearsLeft ?? p.contractLength ?? 0;
   const getYearsPro = (p) => p.yearsPro ?? p.experience ?? p.playerExperience ?? p.playerYearsPro ?? 0;
   const getAge = (p) => p.age ?? p.playerAge ?? 99;
+  const getDevTrait = (p) => Number(p?.devTrait ?? p?.developmentTrait ?? p?.traitDevelopment ?? 0) || 0;
+  const getDraftRound = (p) => {
+    const round = Number(p?.draftRound ?? p?.draftYearRound ?? p?.collegeDraftRound ?? 0);
+    return Number.isFinite(round) && round > 0 ? round : null;
+  };
+  const getDraftPickInRound = (p) => {
+    const pick = Number(p?.draftPick ?? p?.draftSelection ?? p?.pickNumber ?? 0);
+    return Number.isFinite(pick) && pick > 0 ? pick : null;
+  };
+  const getDraftOverallPick = (p) => {
+    const direct = Number(p?.overallPick ?? p?.draftOverallPick ?? p?.pickNum ?? 0);
+    if (Number.isFinite(direct) && direct > 0) return direct;
+    const round = getDraftRound(p);
+    const pick = getDraftPickInRound(p);
+    if (round && pick) return ((round - 1) * 32) + pick;
+    return null;
+  };
+  const hasRecentPremiumQBDraftInvestment = (p) => {
+    if (!p) return false;
+    const yearsPro = Number(getYearsPro(p));
+    const age = Number(getAge(p));
+    const ovr = Number(getMetricOvr(p));
+    const dev = getDevTrait(p);
+    const round = getDraftRound(p);
+    const overallPick = getDraftOverallPick(p);
+    const recent = yearsPro <= 1 || age <= 23 || p?.isRookie === true;
+    const premiumCapital =
+      (overallPick !== null && overallPick <= 64) ||
+      (round !== null && round <= 2);
+    const realPlan =
+      dev >= 1 ||
+      ovr >= 74 ||
+      (ovr >= 72 && overallPick !== null && overallPick <= 40);
+    return recent && premiumCapital && realPlan;
+  };
 
   for (const [tidStr, roster] of Object.entries(rosters)) {
     const tid = Number(tidStr);
@@ -1118,8 +1153,13 @@ export function deriveTeamNeedsDetailed(league) {
     const secondOvr = secondQB ? getMetricOvr(secondQB) : 0;
     const qbCount = qbPlayers.length;
     const bestYearsPro = bestQB ? getYearsPro(bestQB) : 99;
+    const recentPremiumQB = qbPlayers.find((player) => hasRecentPremiumQBDraftInvestment(player)) || null;
     if (qbCount === 0) {
       qbNeed = true; qbSeverity = 100;
+    } else if (recentPremiumQB) {
+      qbNeed = false;
+      const investedOvr = getMetricOvr(recentPremiumQB);
+      qbSeverity = investedOvr >= 75 ? 15 : 25;
     } else {
       const yearsLeft = bestQB ? getYearsLeft(bestQB) : 0;
       const age = bestQB?.age ?? 0;
@@ -1217,6 +1257,8 @@ export function deriveTeamNeedsDetailed(league) {
 
         if (stat.count === 0) {
           score += 200; // no QBs: high urgency
+        } else if (recentPremiumQB) {
+          score -= 260;
         } else {
           if (topOvr < 78) {
             score += 120 + (78 - topOvr) * 2 + Math.max(0, 70 - top2.ovr);
@@ -1413,6 +1455,15 @@ export function deriveTeamNeedsDetailed(league) {
         severity: qbSeverity,
         needy: qbNeed,
         topNeed: needs[0] === 'QB',
+        recentPremiumInvestment: recentPremiumQB ? {
+          name: [recentPremiumQB.firstName, recentPremiumQB.lastName].filter(Boolean).join(' ') || recentPremiumQB.displayName || recentPremiumQB.fullName || null,
+          ovr: getMetricOvr(recentPremiumQB),
+          devTrait: getDevTrait(recentPremiumQB),
+          draftRound: getDraftRound(recentPremiumQB),
+          draftPick: getDraftPickInRound(recentPremiumQB),
+          overallPick: getDraftOverallPick(recentPremiumQB),
+          yearsPro: getYearsPro(recentPremiumQB),
+        } : null,
       },
     };
     aliasKeys.forEach(k => { if (k) needsByTeam[k] = profile; });
