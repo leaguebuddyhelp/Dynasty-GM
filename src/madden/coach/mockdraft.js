@@ -1510,6 +1510,8 @@ function premiumPositionValue(group) {
   return values[group] || 0;
 }
 
+const BLUE_CHIP_OVR = 77;
+
 export const data = new SlashCommandBuilder()
   .setName('mockdraft')
   .setDescription(coachCommandDescription('mockdraft'));
@@ -1613,6 +1615,15 @@ export async function execute(interaction) {
     const bestQBIndexAny = firstQBIndex;
     const effectiveNeeds = unmetNeeds.size ? unmetNeeds : null;
     const openSlots = effectiveNeeds?.size || (teamNeeds.length > 1 && !bpaOnly);
+    const blueChipAvailableInRange = available.some((candidate, idx) => {
+      if (idx >= Math.max(boardWindow, currentPickNumber + 8)) return false;
+      const group = prospectGroup(candidate);
+      if (group === 'QB') return false;
+      const ovr = Number(candidate.overall ?? candidate.ovr ?? candidate.rating ?? candidate.OVR ?? 0);
+      if (ovr < BLUE_CHIP_OVR) return false;
+      if (!effectiveNeeds?.size) return true;
+      return effectiveNeeds.has(group) || teamNeeds.slice(0, 3).includes(group);
+    });
     for (let i = 0; i < available.length; i++) {
       if (i >= boardWindow + 10) break;
       const p = available[i];
@@ -1669,12 +1680,24 @@ export async function execute(interaction) {
       if (currentPickNumber <= 8 && g === 'LB' && severity < 82) score += 12;
 
       if (g === 'QB') {
-        if (qbTopNeed) score -= 34;
+        const boardRank = i + 1;
+        if (qbTopNeed) {
+          score -= overallVal >= BLUE_CHIP_OVR ? 30 : 16;
+        }
         else score += currentPickNumber <= 12 ? 18 : 8;
         if (!hasQBNeed) score += 1000;
+        if (currentPickNumber <= 10 && overallVal < BLUE_CHIP_OVR && blueChipAvailableInRange) {
+          if (boardRank > currentPickNumber + 6) score += 70;
+          else if (boardRank > currentPickNumber + 3) score += 38;
+          else score += 16;
+        }
+        if (currentPickNumber <= 10 && overallVal >= BLUE_CHIP_OVR) {
+          score -= 10;
+        }
       }
 
       if (overallVal >= 80) score -= 22;
+      if (overallVal >= BLUE_CHIP_OVR && g !== 'QB') score -= 12;
       if (overallVal >= 84) score -= 10;
       if (overallVal < 74 && !effectiveNeeds?.has(g)) score += 18;
       if (g === 'DT' && effectiveNeeds?.has('DT') && overallVal < 74) score += 10;
