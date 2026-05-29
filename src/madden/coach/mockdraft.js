@@ -1833,7 +1833,7 @@ export async function execute(interaction) {
 
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('madden_mockdraft_live|create|auto')
+      .setCustomId(`madden_mockdraft_live|create|${manualClassId || 'auto'}`)
       .setLabel('Start Live Mock Draft')
       .setStyle(ButtonStyle.Primary),
   );
