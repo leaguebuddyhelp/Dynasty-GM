@@ -33,6 +33,27 @@ function normalizeName(name = '') {
   return String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function teamAliasCandidates(name = '') {
+  const raw = String(name || '').trim();
+  const normalized = normalizeName(raw);
+  const aliases = {
+    gmen: ['Giants', 'New York Giants'],
+    nyg: ['Giants', 'New York Giants'],
+    jags: ['Jaguars', 'Jacksonville Jaguars'],
+    vikes: ['Vikings', 'Minnesota Vikings'],
+    fins: ['Dolphins', 'Miami Dolphins'],
+    phins: ['Dolphins', 'Miami Dolphins'],
+    bucs: ['Buccaneers', 'Tampa Bay Buccaneers'],
+    buccs: ['Buccaneers', 'Tampa Bay Buccaneers'],
+    pats: ['Patriots', 'New England Patriots'],
+    bolts: ['Chargers', 'Los Angeles Chargers'],
+    pack: ['Packers', 'Green Bay Packers'],
+  };
+  return [raw, ...(aliases[normalized] || [])]
+    .map(normalizeName)
+    .filter(Boolean);
+}
+
 function seededText(seedKey, templates = [], replacements = {}) {
   const seed = [...String(seedKey || '')].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
   let template = templates.length ? templates[Math.abs(seed) % templates.length] : '';
@@ -326,15 +347,15 @@ function buildTeamMaps(league) {
 }
 
 function findTeamIdByName(league, teamName) {
-  const target = normalizeName(teamName);
+  const targets = new Set(teamAliasCandidates(teamName));
   for (const team of league?.teams?.leagueTeamInfoList || []) {
     const full = getFullTeamName(team, `Team ${team.teamId}`);
     const mascot = String(team?.displayName || team?.nickName || '').trim();
     const city = String(team?.cityName || '').trim();
     const abbr = String(team?.abbrName || '').trim();
     const candidates = [full, mascot, city, abbr].map(normalizeName).filter(Boolean);
-    if (candidates.includes(target)) return Number(team.teamId);
-    if (candidates.some((candidate) => candidate.includes(target) || target.includes(candidate))) {
+    if (candidates.some((candidate) => targets.has(candidate))) return Number(team.teamId);
+    if (candidates.some((candidate) => [...targets].some((target) => candidate.includes(target) || target.includes(candidate)))) {
       return Number(team.teamId);
     }
   }
@@ -944,6 +965,7 @@ export function buildFranchiseProfile(ctx, teamName, options = {}) {
   if (!ctx?.league || !teamName) return null;
   const teamId = findTeamIdByName(ctx.league, teamName);
   if (teamId == null) return null;
+  teamName = ctx.teamsById.get(Number(teamId)) || teamName;
   const seasonYear = Number(ctx?.seasonContext?.calendarYear || ctx?.league?.info?.careerHubInfo?.seasonInfo?.calendarYear || new Date().getFullYear());
   const weekNumber = Number(ctx?.seasonContext?.currentWeek || ctx?.league?.currentWeek || 1);
   const classId = getMaddenDraftClassId(ctx.league);

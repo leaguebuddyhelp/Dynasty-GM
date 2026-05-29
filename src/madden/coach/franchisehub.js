@@ -564,7 +564,15 @@ export async function execute(interaction) {
   const ctx = buildFranchiseProfileContext(snapshot, interaction.guild);
   const profile = buildFranchiseProfile(ctx, teamName, { coachUserId: interaction.user.id });
   if (!profile) {
-    await interaction.editReply({ content: 'Could not build your franchise hub from the current league snapshot.' });
+    console.warn('[franchisehub] profile build failed', {
+      guildId: interaction.guildId,
+      userId: interaction.user.id,
+      assignedTeam: teamName,
+      availableTeams: (snapshot?.teams?.leagueTeamInfoList || [])
+        .map((team) => getFullTeamName(team, `Team ${team.teamId}`))
+        .slice(0, 32),
+    });
+    await interaction.editReply({ content: `Could not match your assigned team (${teamName}) to the current league snapshot. Ask staff to refresh your team assignment if this continues.` });
     return;
   }
 
