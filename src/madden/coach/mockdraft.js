@@ -38,16 +38,11 @@ import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
-import { displayMaddenDraftClassId, findMaddenDraftClassFile, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { findMaddenDraftClassFile, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 export const featureKey = 'scouting_draft';
 
 let currentCalendarYear = 2025;
-const TEST_DRAFT_CLASS_CHOICES = [
-  { name: 'CUS01 / 2026 Draft', value: 'cus_01' },
-  { name: 'CUS02 / 2027 Draft', value: 'cus_02' },
-  { name: 'CUS03 / 2028 Draft', value: 'cus_03' },
-];
 const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
 const DEFAULT_FIRST_MADDEN_DRAFT_YEARS = new Set([2025, 2026]);
 const DEFAULT_FIRST_MADDEN_DRAFT_ORIGINAL_ORDER = [
@@ -1522,12 +1517,7 @@ const QB_LATE_FIRST_MAX_OVR = 72;
 
 export const data = new SlashCommandBuilder()
   .setName('mockdraft')
-  .setDescription(coachCommandDescription('mockdraft'))
-  .addStringOption(option => option
-    .setName('draft_class')
-    .setDescription('Testing only: choose which draft class to use.')
-    .setRequired(false)
-    .addChoices(...TEST_DRAFT_CLASS_CHOICES));
+  .setDescription(coachCommandDescription('mockdraft'));
 
 export const deferOnDispatch = { flags: 64 };
 
@@ -1564,13 +1554,8 @@ export async function execute(interaction) {
   const needProfiles = deriveTeamNeedsDetailed(league);
   const needs = Object.fromEntries(Object.entries(needProfiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
   // Use robust draft class file lookup
-  const requestedClassRaw = interaction.options?.getString('draft_class');
-  const manualClassId = requestedClassRaw ? normalizeMaddenDraftClassId(requestedClassRaw) : null;
-  const classId = manualClassId || getMaddenDraftClassId(league);
-  const autoClassLock = formatMaddenDraftClassLock(league);
-  const classLock = manualClassId
-    ? `Manual class override -> ${displayMaddenDraftClassId(classId)} • Auto lock: ${autoClassLock}`
-    : autoClassLock;
+  const classId = getMaddenDraftClassId(league);
+  const classLock = formatMaddenDraftClassLock(league);
   const prospects = loadDraftClass(classId, {
     command: 'mockdraft',
     guildId: interaction.guildId,
@@ -1833,7 +1818,7 @@ export async function execute(interaction) {
 
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`madden_mockdraft_live|create|${manualClassId || 'auto'}`)
+      .setCustomId('madden_mockdraft_live|create|auto')
       .setLabel('Start Live Mock Draft')
       .setStyle(ButtonStyle.Primary),
   );
