@@ -2,12 +2,24 @@ import { SlashCommandBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
 import { classIdForSnapshot, buildPages } from '../../../madden/helpers/bigboard_helpers.js';
 import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
+import { normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 export const featureKey = 'scouting_draft';
 
+const TEST_DRAFT_CLASS_CHOICES = [
+  { name: 'CUS01 / 2026 Draft', value: 'cus_01' },
+  { name: 'CUS02 / 2027 Draft', value: 'cus_02' },
+  { name: 'CUS03 / 2028 Draft', value: 'cus_03' },
+];
+
 export const data = new SlashCommandBuilder()
   .setName('bigboard')
-  .setDescription(coachCommandDescription('bigboard'));
+  .setDescription(coachCommandDescription('bigboard'))
+  .addStringOption(option => option
+    .setName('draft_class')
+    .setDescription('Testing only: choose which draft class to use.')
+    .setRequired(false)
+    .addChoices(...TEST_DRAFT_CLASS_CHOICES));
 
 export async function execute(interaction) {
   if (!interaction.deferred && !interaction.replied) {
@@ -24,8 +36,12 @@ export async function execute(interaction) {
   }
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
-    const classId = classIdForSnapshot(snapshot);
-    const { embeds, baseId } = buildPages(snapshot, classId, leagueId);
+    const requestedClassRaw = interaction.options?.getString('draft_class');
+    const manualClassId = requestedClassRaw ? normalizeMaddenDraftClassId(requestedClassRaw) : null;
+    const classId = manualClassId || classIdForSnapshot(snapshot);
+    const { embeds, baseId } = buildPages(snapshot, classId, leagueId, {
+      manualClassOverride: Boolean(manualClassId),
+    });
 
     const components = [];
     if (embeds.length > 1) {

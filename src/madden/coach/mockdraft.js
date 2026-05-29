@@ -38,11 +38,16 @@ import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
-import { findMaddenDraftClassFile, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { displayMaddenDraftClassId, findMaddenDraftClassFile, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 export const featureKey = 'scouting_draft';
 
 let currentCalendarYear = 2025;
+const TEST_DRAFT_CLASS_CHOICES = [
+  { name: 'CUS01 / 2026 Draft', value: 'cus_01' },
+  { name: 'CUS02 / 2027 Draft', value: 'cus_02' },
+  { name: 'CUS03 / 2028 Draft', value: 'cus_03' },
+];
 const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
 const DEFAULT_FIRST_MADDEN_DRAFT_YEARS = new Set([2025, 2026]);
 const DEFAULT_FIRST_MADDEN_DRAFT_ORIGINAL_ORDER = [
@@ -1510,11 +1515,19 @@ function premiumPositionValue(group) {
   return values[group] || 0;
 }
 
-const BLUE_CHIP_OVR = 77;
+const NON_QB_BLUE_CHIP_OVR = 77;
+const QB_HIGH_FIRST_OVR = 74;
+const QB_LATE_FIRST_MIN_OVR = 70;
+const QB_LATE_FIRST_MAX_OVR = 72;
 
 export const data = new SlashCommandBuilder()
   .setName('mockdraft')
-  .setDescription(coachCommandDescription('mockdraft'));
+  .setDescription(coachCommandDescription('mockdraft'))
+  .addStringOption(option => option
+    .setName('draft_class')
+    .setDescription('Testing only: choose which draft class to use.')
+    .setRequired(false)
+    .addChoices(...TEST_DRAFT_CLASS_CHOICES));
 
 export const deferOnDispatch = { flags: 64 };
 
@@ -1551,9 +1564,18 @@ export async function execute(interaction) {
   const needProfiles = deriveTeamNeedsDetailed(league);
   const needs = Object.fromEntries(Object.entries(needProfiles).map(([key, profile]) => [key, profile?.needs || ['BPA']]));
   // Use robust draft class file lookup
-  const classId = getMaddenDraftClassId(league);
-  const classLock = formatMaddenDraftClassLock(league);
-  const prospects = loadDraftClass(classId) || [];
+  const requestedClassRaw = interaction.options?.getString('draft_class');
+  const manualClassId = requestedClassRaw ? normalizeMaddenDraftClassId(requestedClassRaw) : null;
+  const classId = manualClassId || getMaddenDraftClassId(league);
+  const autoClassLock = formatMaddenDraftClassLock(league);
+  const classLock = manualClassId
+    ? `Manual class override -> ${displayMaddenDraftClassId(classId)} • Auto lock: ${autoClassLock}`
+    : autoClassLock;
+  const prospects = loadDraftClass(classId, {
+    command: 'mockdraft',
+    guildId: interaction.guildId,
+    userId: interaction.user?.id,
+  }) || [];
   if (!prospects.length) {
     const payload = { content: `${coachErrorBlurb('draftBoardMissing', 'The draft board is not loaded yet.', { guildId: interaction.guildId })} (classId: ${classId})` };
     await interaction.editReply(payload);
@@ -1620,7 +1642,7 @@ export async function execute(interaction) {
       const group = prospectGroup(candidate);
       if (group === 'QB') return false;
       const ovr = Number(candidate.overall ?? candidate.ovr ?? candidate.rating ?? candidate.OVR ?? 0);
-      if (ovr < BLUE_CHIP_OVR) return false;
+      if (ovr < NON_QB_BLUE_CHIP_OVR) return false;
       if (!effectiveNeeds?.size) return true;
       return effectiveNeeds.has(group) || teamNeeds.slice(0, 3).includes(group);
     });
@@ -1682,22 +1704,39 @@ export async function execute(interaction) {
       if (g === 'QB') {
         const boardRank = i + 1;
         if (qbTopNeed) {
-          score -= overallVal >= BLUE_CHIP_OVR ? 30 : 16;
+          if (overallVal >= QB_HIGH_FIRST_OVR) score -= 30;
+          else if (overallVal >= QB_LATE_FIRST_MIN_OVR) score -= 12;
+          else score += 14;
         }
         else score += currentPickNumber <= 12 ? 18 : 8;
         if (!hasQBNeed) score += 1000;
-        if (currentPickNumber <= 10 && overallVal < BLUE_CHIP_OVR && blueChipAvailableInRange) {
-          if (boardRank > currentPickNumber + 6) score += 70;
-          else if (boardRank > currentPickNumber + 3) score += 38;
-          else score += 16;
+        if (currentPickNumber <= 10 && overallVal < QB_HIGH_FIRST_OVR && blueChipAvailableInRange) {
+          if (overallVal >= QB_LATE_FIRST_MIN_OVR && overallVal <= QB_LATE_FIRST_MAX_OVR) {
+            if (boardRank > currentPickNumber + 6) score += 86;
+            else if (boardRank > currentPickNumber + 3) score += 56;
+            else score += 28;
+          } else if (overallVal === 73) {
+            if (boardRank > currentPickNumber + 6) score += 42;
+            else if (boardRank > currentPickNumber + 3) score += 22;
+            else score += 8;
+          } else {
+            score += 110;
+          }
         }
-        if (currentPickNumber <= 10 && overallVal >= BLUE_CHIP_OVR) {
+        if (
+          currentPickNumber <= 20 &&
+          overallVal >= QB_LATE_FIRST_MIN_OVR &&
+          overallVal <= QB_LATE_FIRST_MAX_OVR
+        ) {
+          score += currentPickNumber <= 10 ? 34 : 18;
+        }
+        if (currentPickNumber <= 10 && overallVal >= QB_HIGH_FIRST_OVR) {
           score -= 10;
         }
       }
 
       if (overallVal >= 80) score -= 22;
-      if (overallVal >= BLUE_CHIP_OVR && g !== 'QB') score -= 12;
+      if (overallVal >= NON_QB_BLUE_CHIP_OVR && g !== 'QB') score -= 12;
       if (overallVal >= 84) score -= 10;
       if (overallVal < 74 && !effectiveNeeds?.has(g)) score += 18;
       if (g === 'DT' && effectiveNeeds?.has('DT') && overallVal < 74) score += 10;
