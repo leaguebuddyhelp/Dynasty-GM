@@ -47,71 +47,237 @@ function completedRegularGames(snapshot) {
   return (snapshot?.schedule?.schedules || []).filter((game) => {
     const stage = Number(game?.stageIndex ?? game?.stage ?? -1);
     const status = Number(game?.status ?? 0);
-    return stage === 1 && status >= 2;
+    const awayScore = Number(game?.awayScore ?? 0);
+    const homeScore = Number(game?.homeScore ?? 0);
+    return stage === 1 && (status >= 2 || awayScore > 0 || homeScore > 0);
   });
 }
 
-function recentFormMap(snapshot) {
-  const games = completedRegularGames(snapshot);
-  const weeks = [...new Set(games.map((game) => Number(game.weekIndex)).filter((n) => Number.isFinite(n)))].sort((a, b) => b - a).slice(0, 2);
-  const form = new Map();
-  for (const game of games.filter((g) => weeks.includes(Number(g.weekIndex)))) {
+function average(values = []) {
+  const nums = values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+  if (!nums.length) return 0;
+  return nums.reduce((sum, value) => sum + value, 0) / nums.length;
+}
+
+function clamp(value, min, max) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return min;
+  return Math.max(min, Math.min(max, num));
+}
+
+function perGame(total, games) {
+  return Number(total || 0) / Math.max(1, Number(games || 0));
+}
+
+function scheduleMetricsMap(snapshot) {
+  const games = completedRegularGames(snapshot)
+    .sort((a, b) => Number(a.weekIndex ?? 0) - Number(b.weekIndex ?? 0));
+  const metrics = new Map();
+  const ensure = (teamId) => {
+    if (!metrics.has(teamId)) {
+      metrics.set(teamId, {
+        games: 0,
+        wins: 0,
+        losses: 0,
+        margin: 0,
+        pointsFor: 0,
+        pointsAgainst: 0,
+        results: [],
+      });
+    }
+    return metrics.get(teamId);
+  };
+  for (const game of games) {
     const homeTeamId = Number(game.homeTeamId);
     const awayTeamId = Number(game.awayTeamId);
     const homeScore = Number(game.homeScore || 0);
     const awayScore = Number(game.awayScore || 0);
-    const ensure = (teamId) => {
-      if (!form.has(teamId)) form.set(teamId, { wins: 0, losses: 0, margin: 0, pointsFor: 0, pointsAgainst: 0 });
-      return form.get(teamId);
-    };
     const home = ensure(homeTeamId);
     const away = ensure(awayTeamId);
+    home.games += 1;
+    away.games += 1;
     home.pointsFor += homeScore;
     home.pointsAgainst += awayScore;
     away.pointsFor += awayScore;
     away.pointsAgainst += homeScore;
-    home.margin += homeScore - awayScore;
-    away.margin += awayScore - homeScore;
+    const homeMargin = homeScore - awayScore;
+    const awayMargin = awayScore - homeScore;
+    home.margin += homeMargin;
+    away.margin += awayMargin;
     if (homeScore > awayScore) {
       home.wins += 1;
       away.losses += 1;
+      home.results.push({ won: true, margin: homeMargin, pointsFor: homeScore, pointsAgainst: awayScore });
+      away.results.push({ won: false, margin: awayMargin, pointsFor: awayScore, pointsAgainst: homeScore });
     } else if (awayScore > homeScore) {
       away.wins += 1;
       home.losses += 1;
+      away.results.push({ won: true, margin: awayMargin, pointsFor: awayScore, pointsAgainst: homeScore });
+      home.results.push({ won: false, margin: homeMargin, pointsFor: homeScore, pointsAgainst: awayScore });
+    } else {
+      home.results.push({ won: false, margin: homeMargin, pointsFor: homeScore, pointsAgainst: awayScore });
+      away.results.push({ won: false, margin: awayMargin, pointsFor: awayScore, pointsAgainst: homeScore });
     }
   }
-  return form;
+  for (const value of metrics.values()) {
+    const recent = value.results.slice(-3);
+    let streak = 0;
+    for (let i = value.results.length - 1; i >= 0; i -= 1) {
+      if (!value.results[i]?.won) break;
+      streak += 1;
+    }
+    value.avgMargin = perGame(value.margin, value.games);
+    value.avgPointsFor = perGame(value.pointsFor, value.games);
+    value.avgPointsAgainst = perGame(value.pointsAgainst, value.games);
+    value.recentWins = recent.filter((game) => game.won).length;
+    value.recentMargin = average(recent.map((game) => game.margin));
+    value.recentPointsFor = average(recent.map((game) => game.pointsFor));
+    value.recentPointsAgainst = average(recent.map((game) => game.pointsAgainst));
+    value.streak = streak;
+    value.blowoutWins = value.results.filter((game) => game.margin >= 14).length;
+    value.blowoutLosses = value.results.filter((game) => game.margin <= -14).length;
+  }
+  return metrics;
+}
+
+function statMetricsMap(snapshot) {
+  const metrics = new Map();
+  const ensure = (teamId) => {
+    if (!metrics.has(teamId)) {
+      metrics.set(teamId, {
+        statWeeks: new Set(),
+        passYds: 0,
+        passTDs: 0,
+        passInts: 0,
+        passAtt: 0,
+        passComp: 0,
+        rushYds: 0,
+        rushTDs: 0,
+        defSacks: 0,
+        defInts: 0,
+        defTfl: 0,
+        defForcedFumbles: 0,
+      });
+    }
+    return metrics.get(teamId);
+  };
+  for (const week of snapshot?.weeklyStats || []) {
+    if (Number(week?.stage ?? week?.stageIndex ?? -1) !== 1) continue;
+    const weekIndex = Number(week.weekIndex ?? -1);
+    for (const player of week?.passing?.playerPassingStatInfoList || []) {
+      const teamId = Number(player.teamId);
+      if (!Number.isFinite(teamId)) continue;
+      const row = ensure(teamId);
+      row.statWeeks.add(weekIndex);
+      row.passYds += Number(player.passYds || 0);
+      row.passTDs += Number(player.passTDs || 0);
+      row.passInts += Number(player.passInts || 0);
+      row.passAtt += Number(player.passAtt || 0);
+      row.passComp += Number(player.passComp || 0);
+    }
+    for (const player of week?.rushing?.playerRushingStatInfoList || []) {
+      const teamId = Number(player.teamId);
+      if (!Number.isFinite(teamId)) continue;
+      const row = ensure(teamId);
+      row.statWeeks.add(weekIndex);
+      row.rushYds += Number(player.rushYds || 0);
+      row.rushTDs += Number(player.rushTDs || 0);
+    }
+    for (const player of week?.defense?.playerDefensiveStatInfoList || []) {
+      const teamId = Number(player.teamId);
+      if (!Number.isFinite(teamId)) continue;
+      const row = ensure(teamId);
+      row.statWeeks.add(weekIndex);
+      row.defSacks += Number(player.defSacks || 0);
+      row.defInts += Number(player.defInts || 0);
+      row.defTfl += Number(player.defTacklesForLoss || 0);
+      row.defForcedFumbles += Number(player.defForcedFumbles || 0);
+    }
+  }
+  for (const row of metrics.values()) {
+    row.games = Math.max(1, row.statWeeks.size);
+    row.qbTdInt = row.passTDs - row.passInts;
+    row.qbYpa = Number(row.passAtt || 0) > 0 ? row.passYds / row.passAtt : 0;
+    row.qbCompPct = Number(row.passAtt || 0) > 0 ? row.passComp / row.passAtt : 0;
+    row.defSplash = row.defSacks + row.defInts + row.defForcedFumbles + (row.defTfl * 0.4);
+    delete row.statWeeks;
+  }
+  return metrics;
+}
+
+function rankReasonText({ schedule = {}, stats = {}, standing = {} }) {
+  const reasons = [];
+  const avgMargin = Number(schedule.avgMargin || 0);
+  if (Math.abs(avgMargin) >= 0.5) reasons.push(`${avgMargin >= 0 ? '+' : ''}${avgMargin.toFixed(1)} MOV`);
+  if (Number(stats.qbTdInt || 0) !== 0) reasons.push(`QB ${stats.qbTdInt >= 0 ? '+' : ''}${stats.qbTdInt}`);
+  if (Number(stats.defSplash || 0) > 0) reasons.push(`Def ${Number(stats.defSplash).toFixed(1)}`);
+  if (Number(schedule.streak || 0) >= 2) reasons.push(`W${schedule.streak}`);
+  if (Number(schedule.recentWins || 0) >= 2) reasons.push(`${schedule.recentWins}-0/3`);
+  if (!reasons.length && Number(standing.netPts || 0)) reasons.push(`Net ${Number(standing.netPts) >= 0 ? '+' : ''}${Number(standing.netPts)}`);
+  return reasons.slice(0, 3).join(' • ');
 }
 
 function rankTeams(snapshot) {
   const standings = snapshot?.standings?.teamStandingInfoList || [];
   const allZero = standings.every(s => (s.totalWins ?? 0) === 0 && (s.totalLosses ?? 0) === 0 && (s.totalTies ?? 0) === 0);
   if (!standings.length || allZero) return [];
-  const recentForm = recentFormMap(snapshot);
+  const scheduleMetrics = scheduleMetricsMap(snapshot);
+  const statMetrics = statMetricsMap(snapshot);
   const scored = [...standings].map((team) => {
+    const teamId = Number(team.teamId);
     const wins = Number(team.totalWins || 0);
     const losses = Number(team.totalLosses || 0);
-    const gamesPlayed = Math.max(1, wins + losses + Number(team.totalTies || 0));
+    const ties = Number(team.totalTies || 0);
+    const schedule = scheduleMetrics.get(teamId) || {};
+    const stats = statMetrics.get(teamId) || {};
+    const gamesPlayed = Math.max(1, schedule.games || wins + losses + ties);
     const winPct = Number(team.winPct ?? (wins / gamesPlayed) ?? 0);
-    const netPts = Number(team.netPts || 0);
-    const offTotalYds = Number(team.offTotalYds || 0);
-    const ptsFor = Number(team.ptsFor || 0);
-    const ptsAgainst = Number(team.ptsAgainst || 0);
-    const recent = recentForm.get(Number(team.teamId)) || { wins: 0, losses: 0, margin: 0, pointsFor: 0, pointsAgainst: 0 };
+    const netPts = Number(team.netPts || schedule.margin || 0);
+    const offTotalYds = Number(team.offTotalYds || (stats.passYds || 0) + (stats.rushYds || 0));
+    const ptsFor = Number(team.ptsFor || schedule.pointsFor || 0);
+    const ptsAgainst = Number(team.ptsAgainst || schedule.pointsAgainst || 0);
+    const pointsPerGame = schedule.games ? Number(schedule.avgPointsFor || 0) : perGame(ptsFor, gamesPlayed);
+    const pointsAllowedPerGame = schedule.games ? Number(schedule.avgPointsAgainst || 0) : perGame(ptsAgainst, gamesPlayed);
+    const recordScore = clamp((winPct * 28) + (wins * 0.9) - (losses * 0.45), 0, 34);
+    const marginScore = clamp((Number(schedule.avgMargin || 0) * 1.35) + (netPts / Math.max(1, gamesPlayed) * 0.7), -16, 22);
+    const recentScore = clamp((Number(schedule.recentWins || 0) * 4.2) + (Number(schedule.recentMargin || 0) * 0.65) + (Number(schedule.streak || 0) * 1.6), -13, 18);
+    const offenseScore = clamp(((pointsPerGame - 21) * 0.65) + (perGame(offTotalYds, gamesPlayed) - 325) * 0.025, -10, 14);
+    const qbScore = clamp(
+      (Number(stats.qbTdInt || 0) * 1.8) +
+      ((Number(stats.qbYpa || 0) - 7.0) * 3.2) +
+      ((Number(stats.qbCompPct || 0) - 0.62) * 18),
+      -12,
+      16,
+    );
+    const defenseScore = clamp(((21 - pointsAllowedPerGame) * 0.75) + (Number(stats.defSplash || 0) * 0.75) - (Number(schedule.blowoutLosses || 0) * 2.5), -12, 17);
+    const blowoutScore = clamp((Number(schedule.blowoutWins || 0) * 2.2) - (Number(schedule.blowoutLosses || 0) * 2.8), -8, 8);
     const score =
-      (winPct * 100) +
-      (netPts * 0.9) +
-      ((ptsFor - ptsAgainst) * 0.6) +
-      ((offTotalYds / gamesPlayed) * 0.015) +
-      (recent.wins * 6) -
-      (recent.losses * 4) +
-      (recent.margin * 0.35);
-    return { ...team, _powerScore: score };
+      recordScore +
+      marginScore +
+      recentScore +
+      offenseScore +
+      qbScore +
+      defenseScore +
+      blowoutScore;
+    return {
+      ...team,
+      _powerScore: score,
+      _powerMeta: rankReasonText({ schedule, stats, standing: team }),
+      _powerComponents: {
+        recordScore,
+        marginScore,
+        recentScore,
+        offenseScore,
+        qbScore,
+        defenseScore,
+        blowoutScore,
+      },
+    };
   });
   const sorted = scored.sort((a, b) =>
     (b._powerScore ?? 0) - (a._powerScore ?? 0) ||
-    (b.winPct ?? 0) - (a.winPct ?? 0) ||
-    (b.netPts ?? 0) - (a.netPts ?? 0) ||
+    Number(b.netPts ?? 0) - Number(a.netPts ?? 0) ||
+    Number(b.winPct ?? 0) - Number(a.winPct ?? 0) ||
     (b.totalWins ?? 0) - (a.totalWins ?? 0)
   );
   return sorted.slice(0, 10);
@@ -194,7 +360,8 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
         if (diff > 0) move = `(+${diff})`;
         else if (diff < 0) move = `(${diff})`;
       }
-      return `${currentRank}) ${name} — ${rec} ${move}`;
+      const meta = s._powerMeta ? ` • ${s._powerMeta}` : '';
+      return `${currentRank}) ${name} — ${rec} ${move}${meta}`;
     });
     while (lines.length < 10) lines.push(`${lines.length + 1}) N/A`);
     // Save current ranks for next comparison
