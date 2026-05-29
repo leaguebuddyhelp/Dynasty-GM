@@ -13,16 +13,15 @@ import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
 import { findMaddenDraftClassFile, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { getMaddenScoutingPhase, OFFSEASON_SCOUT_POINTS, REGULAR_SCOUT_POINTS } from '../../shared/madden_scouting_phase.js';
 
 export const featureKey = 'scouting_draft';
 
 const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
-const POINTS_PER_WEEK = 60; // regular & postseason
+const POINTS_PER_WEEK = REGULAR_SCOUT_POINTS;
 const COST_PER_REVEAL = 10;
-const OFFSEASON_POINTS = 300; // full offseason pool
-const BONUS_INCREMENT = 10;
-const MAX_WEEKLY_POINTS = 120;
+const OFFSEASON_POINTS = OFFSEASON_SCOUT_POINTS;
 const FOCUS_PACK_BASE_COST = 5;
 const FOCUS_PACK_FOCUS_COST = 4;
 // Preferred position order for autocomplete (canonical names)
@@ -243,18 +242,13 @@ export async function execute(interaction) {
   }
   const snapshot = loadLeagueSnapshot(leagueId);
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-  const calendarYear = seasonInfo.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear;
-  const currentWeek = snapshot?.currentWeek ?? seasonInfo.displayWeek ?? 0;
-  const seasonWeekType = seasonInfo.seasonWeekType ?? snapshot?.stage ?? 0; // 0=pre,1=reg,2=post,3=off,8=off
-  const seasonTitle = (seasonInfo.seasonTitle || '').toLowerCase();
-  const offSeasonStage = Number(seasonInfo.offSeasonStage || 0);
-  const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && seasonWeekType !== 1;
-  const isRegularSeason = seasonWeekType === 1;
-  const isPostseason = seasonWeekType === 2 || seasonTitle.includes('super bowl') || seasonTitle.includes('playoff');
-  const isOffseason = offSeasonStage > 0 || seasonWeekType === 3 || seasonWeekType === 8 || seasonTitle.includes('offseason') || draftInactive;
-  const scoutingOpen = (isRegularSeason && currentWeek >= 1) || isPostseason || isOffseason;
-  if (!scoutingOpen) {
-    const payload = { content: coachErrorBlurb('scoutingClosed', 'Scouting opens after the Week 1 regular-season update and stays open through playoffs and offseason.', { userId: interaction.user.id }) };
+  const scoutingPhase = getMaddenScoutingPhase(snapshot);
+  const calendarYear = scoutingPhase.calendarYear;
+  const currentWeek = scoutingPhase.currentWeek;
+  const seasonWeekType = seasonInfo.seasonWeekType ?? snapshot?.stage ?? 0;
+  const isOffseason = scoutingPhase.kind === 'offseason';
+  if (!scoutingPhase.open) {
+    const payload = { content: coachErrorBlurb('scoutingClosed', 'Scouting is locked in preseason and playoffs. Coaches get 60 points each regular-season week and 300 total in the offseason.', { userId: interaction.user.id }) };
     if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
     else await interaction.reply({ ...payload, flags: 64 });
     return;
@@ -303,16 +297,19 @@ export async function execute(interaction) {
   const userId = interaction.user.id;
   const seasonBonusKey = getScoutSeasonKey(snapshot);
   const userData = getSeasonScoutUser(scoutData, userId, seasonBonusKey);
-  const seasonBonus = Math.max(0, Number(userData.scoutingBonus || 0));
-  const weekKey = isOffseason ? `year_${calendarYear}_offseason_total` : `year_${calendarYear}_week_${currentWeek}`;
+  const weekKey = scoutingPhase.weekKey;
   const defaultPoints = isOffseason
     ? OFFSEASON_POINTS
-    : Math.min(MAX_WEEKLY_POINTS, POINTS_PER_WEEK + seasonBonus);
+    : POINTS_PER_WEEK;
   if (userData.weeklyPoints[weekKey] === undefined) {
     userData.weeklyPoints[weekKey] = defaultPoints;
   }
   let pointsLeft = Number(userData.weeklyPoints[weekKey]);
   if (!Number.isFinite(pointsLeft)) pointsLeft = defaultPoints;
+  if (!isOffseason && pointsLeft > defaultPoints) {
+    pointsLeft = defaultPoints;
+    userData.weeklyPoints[weekKey] = defaultPoints;
+  }
   const unlocked = userData.players[classKey]?.[player.name] || [];
   const nextCat = nextCategory(unlocked);
   if (!nextCat) {
@@ -352,16 +349,6 @@ export async function execute(interaction) {
   if (!userData.order[classKey].includes(player.name)) {
     userData.order[classKey].push(player.name);
   }
-  let awardedBonus = 0;
-  if (!isOffseason && pointsLeft === 0 && !userData.scoutingBonusAwardedWeeks[weekKey] && defaultPoints < MAX_WEEKLY_POINTS) {
-    const nextBonus = Math.min(MAX_WEEKLY_POINTS - POINTS_PER_WEEK, seasonBonus + BONUS_INCREMENT);
-    awardedBonus = Math.max(0, nextBonus - seasonBonus);
-    if (awardedBonus > 0) {
-      userData.scoutingBonus = nextBonus;
-      userData.scoutingBonusAwardedWeeks[weekKey] = true;
-      pointsLeft += awardedBonus;
-    }
-  }
   userData.weeklyPoints[weekKey] = pointsLeft;
   saveScoutStore(scoutData);
   // backend log only
@@ -389,7 +376,7 @@ export async function execute(interaction) {
     pointsLeft,
     pointsSpent: cost,
     weeklyAllowance: defaultPoints,
-    awardedBonus,
+    awardedBonus: 0,
     suggestedScoutHit,
   });
 
@@ -408,7 +395,7 @@ export async function execute(interaction) {
   const embed = new EmbedBuilder()
     .setTitle(`${player.position} ${player.name}${yearLabel}`)
     .setDescription(fields.join('\n') || 'No info unlocked yet.')
-    .setFooter({ text: `Used ${cost} pts. ${pointsLeft} pts left ${isOffseason ? 'this offseason (300 total)' : `this week (${Math.min(MAX_WEEKLY_POINTS, POINTS_PER_WEEK + Number(userData.scoutingBonus || 0))})`}. ${classLock}` })
+    .setFooter({ text: `Used ${cost} pts. ${pointsLeft} pts left ${isOffseason ? 'this offseason (300 total)' : `this week (${POINTS_PER_WEEK})`}. ${classLock}` })
     .setColor(0x1e90ff);
   const metaFields = [];
   const boardPos = player.RNK ?? player.rank ?? player.order ?? player['#'];
@@ -443,13 +430,6 @@ export async function execute(interaction) {
   if (logo) {
     files.push({ attachment: logo.attachment, name: logo.name });
     embed.setImage(`attachment://${logo.name}`);
-  }
-  if (awardedBonus > 0) {
-    embed.addFields({
-      name: 'Scouting Bonus Earned',
-      value: `You used your full weekly scouting pool and unlocked +${awardedBonus} weekly points going forward. New weekly cap: ${Math.min(MAX_WEEKLY_POINTS, POINTS_PER_WEEK + Number(userData.scoutingBonus || 0))}.`,
-      inline: false
-    });
   }
   if (focusPackActive && focusNeeds.length) {
     const laneText = focusNeeds.map((need) => need === 'IOL' ? 'interior OL' : need).join(' and ');

@@ -12,14 +12,14 @@ import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
 import { findMaddenDraftClassFile, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { getMaddenScoutingPhase, OFFSEASON_SCOUT_POINTS, REGULAR_SCOUT_POINTS } from '../../shared/madden_scouting_phase.js';
 
 export const featureKey = 'scouting_draft';
 
 const SCOUT_LOG_PATH = getMaddenDataFilePath('scout_log.json');
 const LOGO_DIR = path.join(process.cwd(), 'college football logos');
-const POINTS_PER_WEEK = 60;
+const POINTS_PER_WEEK = REGULAR_SCOUT_POINTS;
 const REVEAL_ORDER = ['arch', 'ovr', 'dev'];
-const MAX_WEEKLY_POINTS = 120;
 
 function safeEmbedDescription(value = '', max = 4096) {
   const text = String(value || '').trim();
@@ -469,17 +469,19 @@ function buildPagesForUser(userId, guildId, member = null) {
   userData.order[resolvedClassKey] = filteredOrder;
   saveScoutData(scoutData);
 
-  const currentWeek = snapshot?.currentWeek ?? seasonInfo.displayWeek ?? 0;
-  const seasonWeekType = seasonInfo.seasonWeekType ?? snapshot?.stage ?? 0;
-  const seasonTitle = (seasonInfo.seasonTitle || '').toLowerCase();
-  const draftInactive = seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && seasonWeekType !== 1;
-  const isRegularOrPost = seasonWeekType === 1 || seasonWeekType === 2;
-  const isOffseason = seasonWeekType === 3 || seasonWeekType === 8 || seasonTitle.includes('offseason') || draftInactive || !isRegularOrPost;
-  const seasonBonus = Math.max(0, Number(userData.scoutingBonus || 0));
-  const allowance = isOffseason ? 300 : Math.min(MAX_WEEKLY_POINTS, POINTS_PER_WEEK + seasonBonus);
-  const weekKey = isOffseason ? `year_${calendarYear}_offseason_total` : `year_${calendarYear}_week_${currentWeek}`;
+  const scoutingPhase = getMaddenScoutingPhase(snapshot);
+  const isOffseason = scoutingPhase.kind === 'offseason';
+  const isRegularSeason = scoutingPhase.kind === 'regular';
+  const allowance = isOffseason
+    ? OFFSEASON_SCOUT_POINTS
+    : isRegularSeason
+      ? POINTS_PER_WEEK
+      : 0;
+  const weekKey = scoutingPhase.weekKey;
   const remainingRaw = userData.weeklyPoints[weekKey];
-  const remaining = Number.isFinite(remainingRaw) ? Number(remainingRaw) : allowance;
+  const remaining = scoutingPhase.open && Number.isFinite(remainingRaw)
+    ? (isRegularSeason ? Math.min(Number(remainingRaw), allowance) : Number(remainingRaw))
+    : allowance;
   getSuggestedScoutCandidates(
     member,
     userId,
@@ -543,9 +545,11 @@ function buildPagesForUser(userId, guildId, member = null) {
       ? '**Scout Recommendation:** Active. `/draftprimer` now gives you a 7-name scout queue with board fit, pick range, and market pressure.'
       : '**Scout Recommendation:** Buy it in Franchise Hub to turn `/draftprimer` into a scout queue instead of a blind board.';
     const fullyScouted = entries.filter(([, unlocked]) => Array.isArray(unlocked) && unlocked.length >= REVEAL_ORDER.length).length;
-    const bonusLine = isOffseason ? '' : `\n**Weekly Bonus:** +${seasonBonus} (cap ${allowance}/${MAX_WEEKLY_POINTS})`;
+    const pointsText = scoutingPhase.open
+      ? `${remaining}/${allowance}`
+      : `Locked (${scoutingPhase.label})`;
     const selectedText = boardUi.activeName ? `\n**Selected:** ${boardUi.activeName}` : '';
-    const summary = `**Points:** ${remaining}/${allowance}${bonusLine}\n**Fully Scouted:** ${fullyScouted}/${entries.length}${selectedText}\n${suggestedText}`;
+    const summary = `**Points:** ${pointsText}\n**Fully Scouted:** ${fullyScouted}/${entries.length}${selectedText}\n${suggestedText}`;
     pages.push({
       embed: new EmbedBuilder()
         .setTitle(`Your Big Board — ${resolvedClassKey.toUpperCase()}${classPages.length > 1 ? ` (Page ${idx + 1}/${classPages.length})` : ''}`)
