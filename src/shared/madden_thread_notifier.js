@@ -88,6 +88,56 @@ function parseThreadTeams(threadName = '') {
   return { awayTeam, homeTeam };
 }
 
+function shortTeamLabel(name = '') {
+  const cleaned = String(name || '').replace(/\bcoach\b/ig, '').trim();
+  if (!cleaned) return 'Team';
+  const parts = cleaned.split(/\s+/);
+  const mascot = parts[parts.length - 1] || cleaned;
+  return mascot.length > 18 ? `${mascot.slice(0, 16)}...` : mascot;
+}
+
+function buildOutcomeButtonRow(threadId, awayTeam, homeTeam) {
+  const awayEnc = encodeURIComponent(awayTeam || 'Away');
+  const homeEnc = encodeURIComponent(homeTeam || 'Home');
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`madden_game_status_complete|${threadId}|${awayEnc}|${homeEnc}`)
+      .setLabel('Game Completed')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(`madden_game_status_fairsim|${threadId}|${awayEnc}|${homeEnc}`)
+      .setLabel('Fair Sim')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`madden_game_status_homewin|${threadId}|${awayEnc}|${homeEnc}`)
+      .setLabel(`FW ${shortTeamLabel(homeTeam)}`)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`madden_game_status_awaywin|${threadId}|${awayEnc}|${homeEnc}`)
+      .setLabel(`FW ${shortTeamLabel(awayTeam)}`)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`madden_game_status_cpu|${threadId}|${awayEnc}|${homeEnc}`)
+      .setLabel('CPU')
+      .setStyle(ButtonStyle.Secondary),
+  );
+}
+
+function buildDeterminedStrikeComponents(projected, threadId, awayTeam, homeTeam) {
+  if (projected?.strikeAway || projected?.strikeHome) {
+    return [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`madden_apply_determined_strikes|${threadId}`)
+          .setLabel('Apply Determined Strikes')
+          .setStyle(ButtonStyle.Danger),
+      ),
+      buildOutcomeButtonRow(threadId, awayTeam, homeTeam),
+    ];
+  }
+  return [buildOutcomeButtonRow(threadId, awayTeam, homeTeam)];
+}
+
 function parseWeekIndex(threadName = '') {
   const match = String(threadName).match(/\b(?:week|w)\s*\.?\s*(\d+)\b/i);
   if (!match) return null;
@@ -970,7 +1020,9 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
               ...(recommendedLine || guidanceLine ? [''] : []),
               projected.lines.join('\n') || 'No determined strikes.',
               '',
-              'Staff can use the button below to apply the determined strikes.',
+              projected.strikeAway || projected.strikeHome
+                ? 'Staff can use the strike button below, or close the thread with the correct outcome button.'
+                : 'No determined strikes are recommended. Use one of the outcome buttons below to close the thread cleanly.',
             ].join('\n'),
             color: 0xFEE75C,
             fields: [
@@ -979,16 +1031,7 @@ export async function runNotifierCycle(client, { forceImmediate = false, debugDe
             ],
             timestamp: new Date().toISOString(),
           }],
-          components: projected.strikeAway || projected.strikeHome
-            ? [
-              new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                  .setCustomId(`madden_apply_determined_strikes|${threadId}`)
-                  .setLabel('Apply Determined Strikes')
-                  .setStyle(ButtonStyle.Danger),
-              ),
-            ]
-            : [],
+          components: buildDeterminedStrikeComponents(projected, threadId, trackedInfo.awayTeam, trackedInfo.homeTeam),
           allowedMentions: coachAndStaffMention ? { parse: ['roles'] } : { parse: [] },
         }).catch(() => { });
         persistThreadRuntimeState(threadId, { warnedDeadlineAt: now });
