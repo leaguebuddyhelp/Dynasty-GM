@@ -310,6 +310,165 @@ function teamStatLine(stats = {}) {
   };
 }
 
+function formatOneDecimal(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? number.toFixed(1) : '0.0';
+}
+
+function hasFinalScore(game = {}) {
+  const away = Number(game?.awayScore ?? game?.awayTeamScore ?? 0);
+  const home = Number(game?.homeScore ?? game?.homeTeamScore ?? 0);
+  return Number(game?.status ?? 0) >= 2 || away > 0 || home > 0;
+}
+
+function teamScoreFromGame(game = {}, teamId) {
+  const isHome = Number(game?.homeTeamId) === Number(teamId);
+  const pointsFor = Number(isHome ? (game?.homeScore ?? game?.homeTeamScore ?? 0) : (game?.awayScore ?? game?.awayTeamScore ?? 0));
+  const pointsAgainst = Number(isHome ? (game?.awayScore ?? game?.awayTeamScore ?? 0) : (game?.homeScore ?? game?.homeTeamScore ?? 0));
+  return {
+    pointsFor,
+    pointsAgainst,
+    margin: pointsFor - pointsAgainst,
+    won: pointsFor > pointsAgainst,
+    tied: pointsFor === pointsAgainst,
+  };
+}
+
+function teamRecentForm(snapshot, teamId) {
+  const games = (snapshot?.schedule?.schedules || [])
+    .filter((game) => Number(game?.homeTeamId) === Number(teamId) || Number(game?.awayTeamId) === Number(teamId))
+    .filter((game) => Number(game?.stageIndex ?? game?.stage ?? 1) === 1)
+    .filter(hasFinalScore)
+    .map((game) => ({
+      ...teamScoreFromGame(game, teamId),
+      weekIndex: Number(game?.weekIndex ?? -1),
+    }))
+    .sort((a, b) => a.weekIndex - b.weekIndex);
+
+  const recent = games.slice(-3);
+  const currentStreak = games.reduceRight((streak, game, index, list) => {
+    if (streak.done || game.tied) return streak;
+    const result = game.won ? 'W' : 'L';
+    if (!streak.type) return { type: result, count: 1, done: false };
+    if (streak.type === result) return { ...streak, count: streak.count + 1 };
+    return { ...streak, done: true };
+  }, { type: null, count: 0, done: false });
+
+  const pointsFor = games.reduce((sum, game) => sum + game.pointsFor, 0);
+  const pointsAgainst = games.reduce((sum, game) => sum + game.pointsAgainst, 0);
+  return {
+    games: games.length,
+    pointsFor,
+    pointsAgainst,
+    avgMargin: average(pointsFor - pointsAgainst, games.length),
+    recentMargin: average(recent.reduce((sum, game) => sum + game.margin, 0), recent.length),
+    recentGames: recent.length,
+    recentWins: recent.filter((game) => game.won).length,
+    streak: currentStreak.type ? `${currentStreak.type}${currentStreak.count}` : 'N/A',
+    lastGame: games.at(-1) || null,
+  };
+}
+
+function teamQuickLine(team, standing, stats, form) {
+  const line = teamStatLine(stats);
+  const record = formatRecord(standing);
+  const margin = form?.games ? `${Number(form.avgMargin || 0) >= 0 ? '+' : ''}${formatOneDecimal(form.avgMargin)} MOV` : 'MOV N/A';
+  const offense = line.passYpg >= line.rushYpg
+    ? `${formatOneDecimal(line.passYpg)} pass YPG`
+    : `${formatOneDecimal(line.rushYpg)} rush YPG`;
+  const pressure = line.sacksPerGame > 0 ? `${formatOneDecimal(line.sacksPerGame)} sacks/gm` : null;
+  return `${formatTeamLabelWithEmoji(team.fullName)} ${record} • ${margin} • ${form?.streak || 'N/A'} • ${offense}${pressure ? ` • ${pressure}` : ''}`;
+}
+
+function statBackedPlayerLine(player = {}) {
+  const pos = String(player?.position || '').toUpperCase();
+  const name = formatPlayerName(player);
+  const ovr = playerOvr(player);
+  if (pos === 'QB') {
+    const passAtt = Number(player?.passAtt || player?.pass?.att || 0);
+    const passComp = Number(player?.passComp || player?.pass?.comp || 0);
+    const passYds = Number(player?.passYds || player?.pass?.yds || 0);
+    const passTD = Number(player?.passTDs || player?.pass?.td || 0);
+    const ints = Number(player?.passInts || player?.pass?.int || 0);
+    const compPct = passAtt > 0 ? `${formatOneDecimal((passComp / passAtt) * 100)}%` : '0.0%';
+    return `${name} (${pos}): ${passYds} yds, ${passTD}-${ints}, ${compPct}`;
+  }
+  if (['HB', 'RB', 'FB'].includes(pos)) {
+    const rushYds = Number(player?.rushYds || player?.rush?.yds || 0);
+    const rushTD = Number(player?.rushTDs || player?.rush?.td || 0);
+    const recYds = Number(player?.recYds || player?.rec?.yds || 0);
+    if (rushYds || rushTD || recYds) return `${name} (${pos}): ${rushYds} rush yds, ${recYds} rec yds, ${rushTD} TD`;
+  }
+  if (['WR', 'TE'].includes(pos)) {
+    const recYds = Number(player?.recYds || player?.rec?.yds || 0);
+    const recTD = Number(player?.recTDs || player?.rec?.td || 0);
+    if (recYds || recTD) return `${name} (${pos}): ${recYds} rec yds, ${recTD} TD`;
+  }
+  const sacks = Number(player?.sacks || player?.def?.sacks || 0);
+  const ints = Number(player?.interceptions || player?.def?.ints || 0);
+  const tackles = Number(player?.def?.tackles || player?.tackles || 0);
+  if (sacks || ints || tackles) return `${name} (${pos}): ${sacks} sacks, ${ints} INT, ${tackles} tackles`;
+  return `${name} (${pos}${ovr ? `, ${ovr} OVR` : ''})`;
+}
+
+function buildPlayersField({
+  ownPlayers,
+  oppPlayers,
+  ownRookies,
+  oppRookies,
+  seed,
+}) {
+  const ownQb = findTeamQuarterback(ownPlayers);
+  const oppQb = findTeamQuarterback(oppPlayers);
+  const ownStar = findBestNonQuarterback(ownPlayers) || topImpactPlayers(ownPlayers, 1)[0];
+  const oppStar = findBestNonQuarterback(oppPlayers) || topImpactPlayers(oppPlayers, 1)[0];
+  const rookie = pickVariant(seed + 9, [ownRookies[0], oppRookies[0]].filter(Boolean));
+  return [ownQb, oppQb, ownStar, oppStar, rookie]
+    .filter(Boolean)
+    .filter((player, index, list) => list.findIndex((entry) => normalizeName(formatPlayerName(entry)) === normalizeName(formatPlayerName(player))) === index)
+    .slice(0, 4)
+    .map((player) => `• ${statBackedPlayerLine(player)}`)
+    .join('\n') || '• No player stat leaders found in the current export yet.';
+}
+
+function buildQuickRead({
+  snapshot,
+  ownTeam,
+  oppTeam,
+  ownStanding,
+  oppStanding,
+  ownStats,
+  oppStats,
+  ownForm,
+  oppForm,
+  seed,
+  bettingLine,
+}) {
+  const ownLine = teamStatLine(ownStats);
+  const oppLine = teamStatLine(oppStats);
+  const stakes = buildStakesLine(snapshot, ownTeam, oppTeam, ownStanding, oppStanding, seed);
+  const leverageOptions = [
+    ownLine.sacksAllowedPerGame >= 2.2 || oppLine.sacksPerGame >= 2.2
+      ? `Protection is the first tell: ${ownTeam.fullName} allow ${formatOneDecimal(ownLine.sacksAllowedPerGame)} sacks/gm, ${oppTeam.fullName} create ${formatOneDecimal(oppLine.sacksPerGame)}.`
+      : null,
+    ownLine.compPct && oppLine.compPct
+      ? `QB rhythm is the clean watch point: ${ownTeam.fullName} are at ${formatOneDecimal(ownLine.compPct)}%, ${oppTeam.fullName} at ${formatOneDecimal(oppLine.compPct)}%.`
+      : null,
+    ownForm?.games && oppForm?.games
+      ? `Recent form is split ${ownForm.recentWins}-${Math.max(0, ownForm.recentGames - ownForm.recentWins)} vs ${oppForm.recentWins}-${Math.max(0, oppForm.recentGames - oppForm.recentWins)} over the latest completed games.`
+      : null,
+    bettingLine?.total
+      ? `The book has this at O/U ${formatOneDecimal(bettingLine.total)}, so one early stop can change the whole script.`
+      : null,
+  ].filter(Boolean);
+
+  return [
+    teamQuickLine(ownTeam, ownStanding, ownStats, ownForm),
+    teamQuickLine(oppTeam, oppStanding, oppStats, oppForm),
+    pickVariant(seed + 31, leverageOptions) || stakes,
+  ].join('\n');
+}
+
 function rosterForTeam(snapshot, teamId) {
   return snapshot?.rosters?.teams?.[String(teamId)]?.rosterInfoList || [];
 }
@@ -924,7 +1083,9 @@ export async function execute(interaction) {
       userId: opponentCoachUser.id,
     })
     : 0;
-  const seed = hashSeed(meta?.seasonKey, meta?.weekKey, ownTeam.fullName, opponentTeam.fullName);
+  const note = interaction.options.getString('note');
+  const link = interaction.options.getString('link');
+  const seed = hashSeed(meta?.seasonKey, meta?.weekKey, ownTeam.fullName, opponentTeam.fullName, interaction.id, note, link);
   const ownLegacyInPlay = getLegacyOpportunityForTeam({ snapshot, teamId: ownTeam.teamId });
   const oppLegacyInPlay = getLegacyOpportunityForTeam({ snapshot, teamId: opponentTeam.teamId });
   const isHome = matchup ? Number(matchup.homeTeamId) === Number(ownTeam.teamId) : false;
@@ -945,60 +1106,28 @@ export async function execute(interaction) {
     })
     : null;
 
-  const whyWatch = buildWhyWatch({
-    snapshot,
-    ownTeam,
-    oppTeam: opponentTeam,
-    ownStats,
-    oppStats,
-    ownStanding,
-    oppStanding,
-    seed,
-  });
-  const gameOutlook = buildGameOutlook({
-    ownTeam,
-    oppTeam: opponentTeam,
-    ownStanding,
-    oppStanding,
-    ownStats,
-    oppStats,
-    seed,
-  });
-  const matchupLever = buildMatchupLever({
-    ownTeam,
-    oppTeam: opponentTeam,
-    ownPlayers,
-    oppPlayers,
-    ownStats,
-    oppStats,
-    ownRookies,
-    oppRookies,
-    seed,
-  });
-  const watchList = buildPlayersToWatch({ ownPlayers, oppPlayers, ownRookies, oppRookies });
-  const gameBrief = buildGameBrief({
+  const ownForm = teamRecentForm(snapshot, ownTeam.teamId);
+  const oppForm = teamRecentForm(snapshot, opponentTeam.teamId);
+  const quickRead = buildQuickRead({
     snapshot,
     ownTeam,
     oppTeam: opponentTeam,
     ownStanding,
     oppStanding,
-    ownTeamId: ownTeam.teamId,
-    oppTeamId: opponentTeam.teamId,
+    ownStats,
+    oppStats,
+    ownForm,
+    oppForm,
     seed,
-    whyWatch,
-    gameOutlook,
-    matchupLever,
-    watchList,
     bettingLine,
   });
+  const playersField = buildPlayersField({ ownPlayers, oppPlayers, ownRookies, oppRookies, seed });
   const phaseHook = buildPhaseHook(snapshot, ownStanding, oppStanding, seed);
-  const note = interaction.options.getString('note');
-  const link = interaction.options.getString('link');
 
   const titleVariants = [
-    `${weekLabel(snapshot)} Stream Spotlight`,
-    `${weekLabel(snapshot)} Watch Window`,
-    `${weekLabel(snapshot)} Live Matchup`,
+    `${weekLabel(snapshot)} Stream`,
+    `${weekLabel(snapshot)} Watch`,
+    `${weekLabel(snapshot)} Live`,
   ];
 
   const embed = new EmbedBuilder()
@@ -1012,8 +1141,13 @@ export async function execute(interaction) {
         inline: false,
       },
       {
-        name: 'Game Brief',
-        value: gameBrief || 'This matchup has enough live context behind it to be worth keeping on in the background.',
+        name: 'Quick Read',
+        value: quickRead || 'This matchup has enough live context behind it to be worth keeping on in the background.',
+        inline: false,
+      },
+      {
+        name: 'Players',
+        value: playersField,
         inline: false,
       },
       ...(bettingLine ? [{
@@ -1022,7 +1156,7 @@ export async function execute(interaction) {
         inline: false,
       }] : []),
       {
-        name: 'Coach Legacy Picture',
+        name: 'Legacy',
         value: formatLegacyOutlook(
           formatLegacySummaryLine(ownTeam.fullName, ownCoachUser, ownPerkState?.balances || {}, ownStreamTotal, ownLegacyInPlay),
           formatLegacySummaryLine(opponentTeam.fullName, opponentCoachUser, oppPerkState?.balances || {}, oppStreamTotal, oppLegacyInPlay),
