@@ -1801,7 +1801,7 @@ export async function execute(interaction) {
     if (chosenGroup) pickedGroups.add(chosenGroup);
 
     const emoji = formatTeamEmoji(team.name, emojis);
-    const pos = formatMaddenProspectIdentity(chosen, chosen?.position || chosen?.position_1 || 'POS');
+    const pos = String(chosen?.position || chosen?.position_1 || 'POS').toUpperCase().trim();
     const school = chosen?.school || chosen?.College || chosen?.college || 'N/A';
     const via = team.via ? ` (via ${team.via})` : '';
     const line = `${currentPickNumber}. ${emoji ? emoji + ' ' : ''}${team.name}${via} — ${pos || 'POS'} ${chosen?.name || 'TBD'} — ${school}`;
