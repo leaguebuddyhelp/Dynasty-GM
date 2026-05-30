@@ -25,6 +25,11 @@ export const RECOGNITION_ECONOMY = {
     },
     impact: {
       gameOfWeekWin: 4,
+      weeklyAward: 1,
+      closeGame: 1,
+      shootout: 1,
+      statementWin: 1,
+      upsetWin: 2,
     },
   },
   perks: {
@@ -275,6 +280,27 @@ export function awardRecognitionPoints({ guildId, league, seasonKey, userId, tie
   awardTier(userState, tier, amount, reason || 'Recognition award', weekKey);
   saveStore(store);
   return userState;
+}
+
+export function awardRecognitionOnce({ guildId, league, seasonKey, userId, tier = 'impact', amount = 0, reason = '', weekKey = null, awardKey = '' }) {
+  if (!guildId || !league || !seasonKey || !userId || !amount || !awardKey) return null;
+  const store = loadStore();
+  const seasonRoot = ensureRoot(store, String(guildId), league, seasonKey);
+  const userState = ensureUser(seasonRoot, String(userId));
+  const weekState = weekKey ? ensureWeek(userState, weekKey) : null;
+  const key = `custom:${String(awardKey)}`;
+  if (weekState) {
+    weekState.awards = weekState.awards || {};
+    if (weekState.awards[key]) return { userState, applied: false };
+    weekState.awards[key] = true;
+  } else {
+    userState.awards = userState.awards || {};
+    if (userState.awards[key]) return { userState, applied: false };
+    userState.awards[key] = true;
+  }
+  awardTier(userState, tier, amount, reason || 'Recognition award', weekKey);
+  saveStore(store);
+  return { userState, applied: true };
 }
 
 function checklistCount(weekState) {
@@ -999,6 +1025,10 @@ export function getRecognitionWeeklyOpportunity({ guildId, league, seasonKey, we
   if (inGotw && !weekState?.awards?.gotwWin) {
     impactReasons.push(`+${POINTS.impact.gameOfWeekWin} Game of the Week win`);
   }
+  impactReasons.push(`+${POINTS.impact.weeklyAward} per weekly award, up to +2`);
+  impactReasons.push(`+${POINTS.impact.closeGame} close game bonus for a 3-point finish`);
+  impactReasons.push(`+${POINTS.impact.shootout} shootout bonus for 70+ combined points`);
+  impactReasons.push(`+${POINTS.impact.statementWin} statement win or +${POINTS.impact.upsetWin} upset win`);
 
   return {
     activity: {

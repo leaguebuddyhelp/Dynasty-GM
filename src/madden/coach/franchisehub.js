@@ -124,7 +124,7 @@ function recognitionTimingSummary(recognition = {}) {
     'Instant:',
     '- strategy, stream, front office, thread reply, finish on time',
     'Weekly update:',
-    `- streaks, featured bonuses, Legacy, sportsbook wins, Double or Nothing ${weekLabel}`,
+    `- streaks, weekly awards, close/shootout games, statement/upset wins, Legacy, sportsbook wins, Double or Nothing ${weekLabel}`,
   ].join('\n');
 }
 
@@ -333,9 +333,9 @@ function recognitionSummaryLines(guildId, userId, snapshot = null, teamName = nu
     phaseLine: perkState?.phaseLabel ? `Season phase: ${perkState.phaseLabel}` : null,
     checklist: weeklyChecklistSummary(weekState),
     earn: [
-      `${RECOGNITION_EMOJIS.activity} Activity = show up`,
-      `${RECOGNITION_EMOJIS.impact} Impact = make plays`,
-      `${RECOGNITION_EMOJIS.legacy} Legacy = build history`,
+      `${RECOGNITION_EMOJIS.activity} Activity = show up: strategy, stream, scouting/front-office tools, thread replies, on-time finishes`,
+      `${RECOGNITION_EMOJIS.impact} Impact = make plays: Game of the Week, weekly awards, good games, upset/statement wins, sportsbook wins`,
+      `${RECOGNITION_EMOJIS.legacy} Legacy = build history: playoff position, division leads, strong seasons, award volume, big season swings`,
     ].join('\n'),
     weeklyEarn,
     perks: activePerks.length

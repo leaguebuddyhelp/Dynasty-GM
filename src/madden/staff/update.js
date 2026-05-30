@@ -22,7 +22,7 @@ import { buildStoryContext, buildWeeklyRecapData } from '../storytelling.js';
 import { queueMaddenContentReview } from '../../shared/madden_content_review_queue.js';
 import { brandText, brandTitle } from '../../shared/madden_branding.js';
 import { appendMaddenStaffLog } from '../../shared/madden_staff_ops.js';
-import { finalizeRecognitionWeek, getRecognitionGameOfWeek, RECOGNITION_ECONOMY, resolveRecognitionDoubleOrNothing, resolveRecognitionGameOfWeek, resolveRecognitionWeeklyLegacy, setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
+import { awardRecognitionOnce, finalizeRecognitionWeek, getRecognitionGameOfWeek, RECOGNITION_ECONOMY, resolveRecognitionDoubleOrNothing, resolveRecognitionGameOfWeek, resolveRecognitionWeeklyLegacy, setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
 import { settleSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getCoachAssignmentMap, setCoachAssignment } from '../../shared/madden_coach_assignments.js';
@@ -1448,6 +1448,98 @@ async function execute(interaction) {
             const userIds = coachIndex.resolveByTeam(award.teamId, award.teamName || award.team);
             for (const userId of userIds) {
               teamAwardTotals.set(String(userId), (teamAwardTotals.get(String(userId)) || 0) + 1);
+            }
+          }
+        }
+        const currentWeekAwardsByUser = new Map();
+        for (const award of Object.values(leagueAwards?.[String(resolvedWeekNumber)] || {})) {
+          if (!award) continue;
+          const userIds = coachIndex.resolveByTeam(award.teamId, award.teamName || award.team);
+          for (const userId of userIds) {
+            currentWeekAwardsByUser.set(String(userId), (currentWeekAwardsByUser.get(String(userId)) || 0) + 1);
+          }
+        }
+        for (const [userId, count] of currentWeekAwardsByUser.entries()) {
+          const amount = Math.min(2, Number(count || 0) * Number(RECOGNITION_ECONOMY.points.impact.weeklyAward || 0));
+          if (amount <= 0) continue;
+          awardRecognitionOnce({
+            guildId: interaction.guildId,
+            league: 'madden',
+            seasonKey: recognitionSeasonKey,
+            weekKey,
+            userId,
+            tier: 'impact',
+            amount,
+            awardKey: `weekly_awards:${weekKey}`,
+            reason: `Weekly award recognition (${count} award${Number(count) === 1 ? '' : 's'})`,
+          });
+        }
+        const currentWeekGames = (weeklyGameLog.games || []).filter((game) =>
+          matchesStageWeek(game, gameFilterStage, Number(effectiveCurrentWeekUsed)) && game?.played === true);
+        const standingsByTeamId = new Map((snap?.standings?.teamStandingInfoList || []).map((standing) => [Number(standing?.teamId), standing]));
+        for (const game of currentWeekGames) {
+          const awayScore = Number(game.awayScore || 0);
+          const homeScore = Number(game.homeScore || 0);
+          if (awayScore === homeScore) continue;
+          const awayUserIds = coachIndex.resolveByTeam(game.awayTeamId, game.awayTeam);
+          const homeUserIds = coachIndex.resolveByTeam(game.homeTeamId, game.homeTeam);
+          const allUserIds = [...new Set([...awayUserIds, ...homeUserIds].map(String))];
+          const margin = Math.abs(awayScore - homeScore);
+          const total = awayScore + homeScore;
+          const winnerIsAway = awayScore > homeScore;
+          const winnerTeamId = Number(winnerIsAway ? game.awayTeamId : game.homeTeamId);
+          const loserTeamId = Number(winnerIsAway ? game.homeTeamId : game.awayTeamId);
+          const winnerUserIds = winnerIsAway ? awayUserIds : homeUserIds;
+          const winnerStanding = standingsByTeamId.get(winnerTeamId) || {};
+          const loserStanding = standingsByTeamId.get(loserTeamId) || {};
+          const scheduleKey = game.scheduleId || `${Number(game.weekIndex) + 1}:${game.awayTeamId}:${game.homeTeamId}`;
+          if (margin <= 3) {
+            for (const userId of allUserIds) {
+              awardRecognitionOnce({
+                guildId: interaction.guildId,
+                league: 'madden',
+                seasonKey: recognitionSeasonKey,
+                weekKey,
+                userId,
+                tier: 'impact',
+                amount: RECOGNITION_ECONOMY.points.impact.closeGame,
+                awardKey: `close_game:${scheduleKey}`,
+                reason: 'Good game bonus: one-score finish',
+              });
+            }
+          }
+          if (total >= 70) {
+            for (const userId of allUserIds) {
+              awardRecognitionOnce({
+                guildId: interaction.guildId,
+                league: 'madden',
+                seasonKey: recognitionSeasonKey,
+                weekKey,
+                userId,
+                tier: 'impact',
+                amount: RECOGNITION_ECONOMY.points.impact.shootout,
+                awardKey: `shootout:${scheduleKey}`,
+                reason: 'Good game bonus: shootout',
+              });
+            }
+          }
+          const winnerWins = Number(winnerStanding?.totalWins || 0);
+          const loserWins = Number(loserStanding?.totalWins || 0);
+          const upset = loserWins >= winnerWins + 2;
+          const statement = !upset && margin >= 21;
+          if (upset || statement) {
+            for (const userId of winnerUserIds) {
+              awardRecognitionOnce({
+                guildId: interaction.guildId,
+                league: 'madden',
+                seasonKey: recognitionSeasonKey,
+                weekKey,
+                userId,
+                tier: 'impact',
+                amount: upset ? RECOGNITION_ECONOMY.points.impact.upsetWin : RECOGNITION_ECONOMY.points.impact.statementWin,
+                awardKey: `${upset ? 'upset_win' : 'statement_win'}:${scheduleKey}`,
+                reason: upset ? 'Impact bonus: upset win' : 'Impact bonus: statement win',
+              });
             }
           }
         }
