@@ -22,7 +22,7 @@ import { buildStoryContext, buildWeeklyRecapData } from '../storytelling.js';
 import { queueMaddenContentReview } from '../../shared/madden_content_review_queue.js';
 import { brandText, brandTitle } from '../../shared/madden_branding.js';
 import { appendMaddenStaffLog } from '../../shared/madden_staff_ops.js';
-import { awardRecognitionOnce, finalizeRecognitionWeek, getRecognitionGameOfWeek, RECOGNITION_ECONOMY, resolveRecognitionDoubleOrNothing, resolveRecognitionGameOfWeek, resolveRecognitionWeeklyLegacy, setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
+import { applyRecognitionBackfill, awardRecognitionOnce, finalizeRecognitionWeek, getRecognitionGameOfWeek, RECOGNITION_ECONOMY, resolveRecognitionDoubleOrNothing, resolveRecognitionGameOfWeek, resolveRecognitionWeeklyLegacy, setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
 import { settleSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getCoachAssignmentMap, setCoachAssignment } from '../../shared/madden_coach_assignments.js';
@@ -820,15 +820,30 @@ async function buildRecognitionBackfillPayload({
     const statement = !upset && margin >= 14 && (loserWins >= loserGames || loserWins >= 3);
     const weekKey = `week_${Number(game.weekIndex) + 1}`;
     const winnerUserIds = coachIndex.resolveByTeam(winnerTeamId, winnerTeam);
+    const awayUserIds = coachIndex.resolveByTeam(awayTeamId, game.awayTeam);
+    const homeUserIds = coachIndex.resolveByTeam(homeTeamId, game.homeTeam);
+    const allUserIds = [...new Set([...awayUserIds, ...homeUserIds].map(String))];
+    if (margin <= 3) {
+      for (const userId of allUserIds) {
+        addBackfillAward(awards, userId, 'impact', RECOGNITION_ECONOMY.points.impact.closeGame, 'Recognition backfill: close game bonus already on the books', weekKey);
+        recordSummary(userId, 'impact', RECOGNITION_ECONOMY.points.impact.closeGame);
+      }
+    }
+    if ((awayScore + homeScore) >= 70) {
+      for (const userId of allUserIds) {
+        addBackfillAward(awards, userId, 'impact', RECOGNITION_ECONOMY.points.impact.shootout, 'Recognition backfill: shootout bonus already on the books', weekKey);
+        recordSummary(userId, 'impact', RECOGNITION_ECONOMY.points.impact.shootout);
+      }
+    }
     if (upset) {
       for (const userId of winnerUserIds) {
-        addBackfillAward(awards, userId, 'impact', 2, 'Recognition backfill: upset win already on the books', weekKey);
-        recordSummary(userId, 'impact', 2);
+        addBackfillAward(awards, userId, 'impact', RECOGNITION_ECONOMY.points.impact.upsetWin, 'Recognition backfill: upset win already on the books', weekKey);
+        recordSummary(userId, 'impact', RECOGNITION_ECONOMY.points.impact.upsetWin);
       }
     } else if (statement) {
       for (const userId of winnerUserIds) {
-        addBackfillAward(awards, userId, 'impact', 1, 'Recognition backfill: statement win already on the books', weekKey);
-        recordSummary(userId, 'impact', 1);
+        addBackfillAward(awards, userId, 'impact', RECOGNITION_ECONOMY.points.impact.statementWin, 'Recognition backfill: statement win already on the books', weekKey);
+        recordSummary(userId, 'impact', RECOGNITION_ECONOMY.points.impact.statementWin);
       }
     }
 
@@ -1090,6 +1105,40 @@ async function buildRecognitionBackfillPayload({
   return { awards, interactionCounts, summary };
 }
 
+async function postRecognitionBackfillAnnouncement(client, guildId, result, payloadSummary) {
+  const channelMap = loadMaddenChannelMap(guildId);
+  const channelId = channelMap['Madden League Buddy Announcements'] || channelMap['Weekly Awards'] || channelMap['League Staff'] || null;
+  if (!channelId) return;
+  const channel = await client.channels.fetch(channelId).catch(() => null);
+  if (!channel?.isTextBased()) return;
+  const summary = result?.summary || payloadSummary || {};
+  const totals = summary?.totals || {
+    activity: Number(payloadSummary?.activity?.points || 0),
+    impact: Number(payloadSummary?.impact?.points || 0),
+    legacy: Number(payloadSummary?.legacy?.points || 0),
+  };
+  const embed = new EmbedBuilder()
+    .setTitle(brandTitle('Recognition Backfill Applied'))
+    .setColor(0xf1c40f)
+    .setDescription([
+      'The recognition system was expanded and this season was backfilled so coaches get credit for what already happened.',
+      '',
+      'Activity rewards showing up, scouting/front-office use, thread replies, streams, prep, and on-time games.',
+      'Impact rewards weekly awards, close games, shootouts, statement/upset wins, Game of the Week, and sportsbook wins.',
+      'Legacy rewards season history: playoff position, division leads, strong seasons, award volume, and major season swings.',
+      '',
+      'Use `/franchisehub` to see your balances, weekly checklist, earning paths, sportsbook card, and spendable perks.',
+    ].join('\n'))
+    .addFields(
+      { name: 'Activity Backfilled', value: `${Number(totals.activity || 0)} points`, inline: true },
+      { name: 'Impact Backfilled', value: `${Number(totals.impact || 0)} points`, inline: true },
+      { name: 'Legacy Backfilled', value: `${Number(totals.legacy || 0)} points`, inline: true },
+      { name: 'Coaches Updated', value: String(summary?.usersAffected || payloadSummary?.totalCoaches || 0), inline: true },
+    )
+    .setTimestamp(new Date());
+  await channel.send({ embeds: [embed] }).catch(() => null);
+}
+
 const data = new SlashCommandBuilder()
   .setName('weeklyupdate')
   .setDescription('Run after each advance. Leave every option empty for the normal weekly run.')
@@ -1100,6 +1149,10 @@ const data = new SlashCommandBuilder()
   .addBooleanOption(o => o
     .setName('force_weekly_awards')
     .setDescription('Only use with target_week when you need to force awards for that rebuild week.')
+    .setRequired(false))
+  .addBooleanOption(o => o
+    .setName('recognition_backfill')
+    .setDescription('Apply the one-time expanded recognition backfill for this season.')
     .setRequired(false))
   .setDefaultMemberPermissions(null);
 
@@ -1139,6 +1192,7 @@ async function execute(interaction) {
     }
     weekOverride = interaction.options.getInteger('target_week');
     const forceAwardsOption = interaction.options.getBoolean('force_weekly_awards') === true;
+    const recognitionBackfillOption = interaction.options.getBoolean('recognition_backfill') === true;
     const recapEnabled = true;
     const rebuildMode = Number(weekOverride || 0) > 0;
     const requestedMode = rebuildMode ? 'rebuild_week' : 'normal';
@@ -1424,11 +1478,59 @@ async function execute(interaction) {
     }
     let weeklyGameLog = null;
     const recognitionSeasonKey = getMaddenSeasonKey(snap);
+    let recognitionBackfillResult = null;
     try {
       weeklyGameLog = updateWeeklyGameLog(leagueId, snap);
     } catch (e) {
       criticalFailures.push('Weekly game log');
       console.warn('[madden-weeklyupdate] weekly game log update skipped:', e?.message || e);
+    }
+    if (recognitionBackfillOption && weeklyGameLog) {
+      try {
+        const payload = await buildRecognitionBackfillPayload({
+          guildId: interaction.guildId,
+          leagueId,
+          seasonKey: recognitionSeasonKey,
+          currentWeekValue: effectiveCurrentWeek,
+          snap,
+          guild: interaction.guild,
+          roleMap,
+        });
+        recognitionBackfillResult = applyRecognitionBackfill({
+          guildId: interaction.guildId,
+          league: 'madden',
+          seasonKey: recognitionSeasonKey,
+          backfillKey: `expanded_recognition_v2_${recognitionSeasonKey}`,
+          awards: payload.awards,
+          interactionCounts: payload.interactionCounts,
+          metadata: {
+            source: 'weeklyupdate recognition_backfill',
+            version: 2,
+            summary: payload.summary,
+          },
+        });
+        if (recognitionBackfillResult?.ok) {
+          await postRecognitionBackfillAnnouncement(interaction.client, interaction.guildId, recognitionBackfillResult, payload.summary);
+          appendMaddenStaffLog({
+            type: 'recognition_backfill_applied',
+            guildId: interaction.guildId,
+            seasonKey: recognitionSeasonKey,
+            summary: recognitionBackfillResult.summary,
+          });
+        }
+        if (recognitionBackfillResult?.alreadyApplied) {
+          appendMaddenStaffLog({
+            type: 'recognition_backfill_skipped',
+            guildId: interaction.guildId,
+            seasonKey: recognitionSeasonKey,
+            reason: 'already_applied',
+            summary: recognitionBackfillResult.summary,
+          });
+        }
+      } catch (e) {
+        criticalFailures.push('Recognition backfill');
+        console.warn('[madden-weeklyupdate] recognition backfill skipped:', e?.message || e);
+      }
     }
     if (weeklyGameLog && !statsPartial && Number(stageForWeek) === Stage.SEASON && Number(effectiveCurrentWeekUsed || 0) > 0) {
       try {
@@ -1878,6 +1980,21 @@ async function execute(interaction) {
       embed.addFields({
         name: 'Needs attention',
         value: `Some outputs need a follow-up check: ${[...new Set(criticalFailures)].join(', ')}`.slice(0, 1024),
+      });
+    }
+    if (recognitionBackfillResult) {
+      const resultSummary = recognitionBackfillResult.summary || {};
+      const totals = resultSummary.totals || {};
+      embed.addFields({
+        name: 'Recognition Backfill',
+        value: recognitionBackfillResult.alreadyApplied
+          ? 'Expanded recognition backfill was already applied for this season.'
+          : [
+              `Applied to ${resultSummary.usersAffected || 0} coach${Number(resultSummary.usersAffected || 0) === 1 ? '' : 'es'}.`,
+              `Activity +${Number(totals.activity || 0)} • Impact +${Number(totals.impact || 0)} • Legacy +${Number(totals.legacy || 0)}`,
+              'Announcement posted with the updated earning paths.',
+            ].join('\n'),
+        inline: false,
       });
     }
     if (inPreseason) {
