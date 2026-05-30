@@ -6,6 +6,7 @@ import { appendMaddenStaffLog, postMaddenStaffDecision } from '../shared/madden_
 export const customId = /^madden_sportsbook_(bet(?:\||_)|confirm\||cancel\||buyout\||parlay_)/;
 
 function selectionLabel(market, selection) {
+  if (market === 'prop') return selection === 'under' ? 'Under prop' : 'Over prop';
   if (market === 'superbowl') return 'Super Bowl winner';
   if (market === 'total') return selection === 'over' ? 'Over' : 'Under';
   if (market === 'moneyline') return selection === 'away' ? 'Away ML' : 'Home ML';
@@ -13,6 +14,9 @@ function selectionLabel(market, selection) {
 }
 
 function betDisplayLabel(line, market, selection) {
+  if (market === 'prop') {
+    return `${line.playerName || 'Player'} ${selection === 'under' ? 'Under' : 'Over'} ${line.line} ${line.propType || 'prop'}`;
+  }
   if (market === 'superbowl') {
     return `${line.teamName || 'Team'} Super Bowl winner`;
   }
@@ -28,6 +32,8 @@ function betDisplayLabel(line, market, selection) {
 function buildReceiptEmbed({ result, line, market, selection, wager }) {
   const matchupLabel = market === 'superbowl'
     ? 'Super Bowl Winner Futures'
+    : market === 'prop'
+      ? `${line.awayTeam} at ${line.homeTeam}`
     : `${line.awayTeam} at ${line.homeTeam}`;
   return new EmbedBuilder()
     .setColor(0x2ecc71)
@@ -35,6 +41,7 @@ function buildReceiptEmbed({ result, line, market, selection, wager }) {
     .setDescription([
       matchupLabel,
       `Pick: ${selectionLabel(market, selection)}`,
+      market === 'prop' ? `Prop: ${betDisplayLabel(line, market, selection)}` : null,
       market === 'superbowl' ? `Team: ${line.teamName}` : null,
       `Bet: ${formatImpactValue(Number(wager))}`,
       `Odds: ${result.price > 0 ? '+' : ''}${result.price}`,
@@ -48,6 +55,8 @@ function buildReceiptEmbed({ result, line, market, selection, wager }) {
 function buildConfirmEmbed({ line, market, selection, wager, odds, payout }) {
   const matchupLabel = market === 'superbowl'
     ? 'Super Bowl Winner Futures'
+    : market === 'prop'
+      ? `${line.awayTeam} at ${line.homeTeam}`
     : `${line.awayTeam} at ${line.homeTeam}`;
   return new EmbedBuilder()
     .setColor(0xf1c40f)
@@ -55,6 +64,7 @@ function buildConfirmEmbed({ line, market, selection, wager, odds, payout }) {
     .setDescription([
       matchupLabel,
       `Pick: ${selectionLabel(market, selection)}`,
+      market === 'prop' ? `Prop: ${betDisplayLabel(line, market, selection)}` : null,
       market === 'superbowl' ? `Team: ${line.teamName}` : null,
       `Bet: ${formatImpactValue(Number(wager))}`,
       `Odds: ${odds > 0 ? '+' : ''}${odds}`,
@@ -508,6 +518,7 @@ export async function execute(interaction) {
     .setDescription([
       market === 'superbowl' ? 'Super Bowl Winner Futures' : `${line.awayTeam} at ${line.homeTeam}`,
       `Pick: ${selectionLabel(market, selection)}`,
+      market === 'prop' ? `Prop: ${betDisplayLabel(line, market, selection)}` : null,
       market === 'superbowl' ? `Team: ${line.teamName}` : null,
       '',
       `Type later only if you need a custom amount.`,

@@ -38,6 +38,10 @@ const PARLAY_MARKET = 'parlay';
 const PARLAY_GAME_PREFIX = 'parlay:';
 const PARLAY_MIN_LEGS = 2;
 const PARLAY_MAX_LEGS = 5;
+const PROP_MARKET = 'prop';
+const PROP_GAME_PREFIX = 'prop:';
+const PROP_PRICE = -115;
+const MAX_PROPS_PER_GAME = 4;
 const STAGE_REGULAR = 1;
 const STAGE_POSTSEASON = 2;
 const STAGE_OFFSEASON = 3;
@@ -581,6 +585,184 @@ function buildTeamWeeklyProfiles(snapshot) {
     delete value.games;
   }
   return out;
+}
+
+function rosterForTeam(snapshot, teamId) {
+  return snapshot?.rosters?.teams?.[String(teamId)]?.rosterInfoList || [];
+}
+
+function formatPlayerName(player = {}) {
+  return player?.name || `${player?.firstName || ''} ${player?.lastName || ''}`.trim() || 'Unknown';
+}
+
+function playerPosition(player = {}) {
+  return String(player?.position || player?.pos || '').toUpperCase();
+}
+
+function playerKey(player = {}) {
+  const id = player?.playerId ?? player?.rosterId ?? player?.maddenId ?? null;
+  if (id != null && String(id).trim()) return `id:${id}`;
+  return `name:${normalizeName(formatPlayerName(player))}:${Number(player?.teamId || 0)}`;
+}
+
+function roundPropLine(value, type) {
+  const number = Number(value || 0);
+  if (type === 'rec') return Math.max(1.5, Math.round(number * 2) / 2);
+  if (type === 'sacks') return Math.max(0.5, Math.round(number * 2) / 2);
+  return Math.max(9.5, Math.round(number / 5) * 5 - 0.5);
+}
+
+function propLabel(type) {
+  if (type === 'pass_yds') return 'pass yards';
+  if (type === 'rush_yds') return 'rush yards';
+  if (type === 'rec_yds') return 'rec yards';
+  if (type === 'rec') return 'receptions';
+  if (type === 'sacks') return 'sacks';
+  return 'stat';
+}
+
+function propStatFromRow(row = {}, type) {
+  if (type === 'pass_yds') return Number(row.passYds || 0);
+  if (type === 'rush_yds') return Number(row.rushYds || 0);
+  if (type === 'rec_yds') return Number(row.recYds || 0);
+  if (type === 'rec') return Number(row.recCatches || row.receptions || 0);
+  if (type === 'sacks') return Number(row.defSacks || row.sacks || 0);
+  return 0;
+}
+
+function addPropStat(map, row, type, weekIndex, rosterByKey = new Map()) {
+  const teamId = Number(row?.teamId);
+  if (!Number.isFinite(teamId)) return;
+  const key = playerKey(row);
+  const roster = rosterByKey.get(key) || {};
+  const name = formatPlayerName({ ...roster, ...row });
+  if (!name || name === 'Unknown') return;
+  const stat = propStatFromRow(row, type);
+  const entryKey = `${key}:${type}`;
+  const current = map.get(entryKey) || {
+    playerKey: key,
+    playerId: row?.playerId ?? row?.rosterId ?? roster?.playerId ?? null,
+    playerName: name,
+    position: playerPosition(row) || playerPosition(roster),
+    teamId,
+    type,
+    games: [],
+  };
+  current.games.push({ weekIndex: Number(weekIndex ?? -1), value: stat });
+  map.set(entryKey, current);
+}
+
+function buildPlayerPropProfiles(snapshot, weekNumber = 1) {
+  const targetWeekIndex = Math.max(0, Number(weekNumber || 1) - 1);
+  const rosterByKey = new Map();
+  for (const team of snapshot?.teams?.leagueTeamInfoList || []) {
+    for (const player of rosterForTeam(snapshot, Number(team.teamId))) {
+      rosterByKey.set(playerKey({ ...player, teamId: Number(team.teamId) }), { ...player, teamId: Number(team.teamId) });
+    }
+  }
+  const map = new Map();
+  for (const week of snapshot?.weeklyStats || []) {
+    const stage = Number(week?.stage ?? week?.stageIndex ?? STAGE_REGULAR);
+    const weekIndex = Number(week?.weekIndex ?? -1);
+    if (stage !== STAGE_REGULAR || weekIndex < 0 || weekIndex >= targetWeekIndex) continue;
+    for (const row of week?.passing?.playerPassingStatInfoList || []) addPropStat(map, row, 'pass_yds', weekIndex, rosterByKey);
+    for (const row of week?.rushing?.playerRushingStatInfoList || []) addPropStat(map, row, 'rush_yds', weekIndex, rosterByKey);
+    for (const row of week?.receiving?.playerReceivingStatInfoList || []) {
+      addPropStat(map, row, 'rec_yds', weekIndex, rosterByKey);
+      addPropStat(map, row, 'rec', weekIndex, rosterByKey);
+    }
+    for (const row of week?.defense?.playerDefensiveStatInfoList || []) addPropStat(map, row, 'sacks', weekIndex, rosterByKey);
+  }
+  return [...map.values()].map((profile) => {
+    const ordered = profile.games.slice().sort((a, b) => Number(a.weekIndex) - Number(b.weekIndex));
+    const values = ordered.map((game) => Number(game.value || 0));
+    const recent = values.slice(-3);
+    const avg = averageOf(values);
+    const recentAvg = averageOf(recent);
+    const hitRate = values.length ? values.filter((value) => value >= avg).length / values.length : 0;
+    return {
+      ...profile,
+      gamesPlayed: values.length,
+      avg,
+      recentAvg,
+      trend: recentAvg - avg,
+      high: values.length ? Math.max(...values) : 0,
+      hitRate,
+    };
+  });
+}
+
+function propOpponentAdjustment(type, opponentStrength = {}) {
+  if (type === 'pass_yds' || type === 'rec_yds' || type === 'rec') {
+    return ((Number(opponentStrength.defPassYdsRank || 16) - 16) * 0.35) + ((Number(opponentStrength.ptsAgainst || 21) - 21) * 0.15);
+  }
+  if (type === 'rush_yds') {
+    return ((Number(opponentStrength.defRushYdsRank || 16) - 16) * 0.4) + ((Number(opponentStrength.ptsAgainst || 21) - 21) * 0.12);
+  }
+  if (type === 'sacks') {
+    return ((Number(opponentStrength.offPassYdsRank || 16) - 16) * 0.03);
+  }
+  return 0;
+}
+
+function buildPlayerPropsForGame(snapshot, line, { seasonKey = null, weekNumber = 1 } = {}) {
+  const profiles = buildPlayerPropProfiles(snapshot, weekNumber);
+  const strength = buildTeamStrengthMap(snapshot);
+  const teams = [Number(line.awayTeamId), Number(line.homeTeamId)];
+  const candidates = [];
+  for (const profile of profiles) {
+    if (!teams.includes(Number(profile.teamId))) continue;
+    if (Number(profile.gamesPlayed || 0) < 2) continue;
+    const opponentId = Number(profile.teamId) === Number(line.awayTeamId) ? Number(line.homeTeamId) : Number(line.awayTeamId);
+    const opponent = strength[opponentId] || {};
+    const baseline = (Number(profile.avg || 0) * 0.65) + (Number(profile.recentAvg || 0) * 0.35) + propOpponentAdjustment(profile.type, opponent);
+    const lineValue = roundPropLine(baseline, profile.type);
+    const confidence =
+      (Number(profile.gamesPlayed || 0) * 0.8) +
+      Math.min(8, Number(profile.avg || 0) / (profile.type === 'sacks' ? 0.18 : profile.type === 'rec' ? 0.45 : 12)) +
+      Math.min(5, Math.abs(Number(profile.trend || 0)) / (profile.type === 'sacks' ? 0.2 : profile.type === 'rec' ? 0.5 : 12)) +
+      (Number(profile.hitRate || 0) * 2);
+    const minimum =
+      profile.type === 'pass_yds' ? 120 :
+        profile.type === 'rush_yds' ? 30 :
+          profile.type === 'rec_yds' ? 28 :
+            profile.type === 'rec' ? 2 :
+              0.25;
+    if (Number(profile.avg || 0) < minimum && Number(profile.recentAvg || 0) < minimum) continue;
+    candidates.push({
+      gameId: `${PROP_GAME_PREFIX}${line.gameId}:${profile.playerKey.replace(/[^a-zA-Z0-9:_-]/g, '')}:${profile.type}`,
+      underlyingGameId: line.gameId,
+      weekNumber: Number(weekNumber),
+      market: PROP_MARKET,
+      propType: profile.type,
+      playerKey: profile.playerKey,
+      playerId: profile.playerId,
+      playerName: profile.playerName,
+      position: profile.position,
+      teamId: Number(profile.teamId),
+      teamName: Number(profile.teamId) === Number(line.awayTeamId) ? line.awayTeam : line.homeTeam,
+      opponentTeamId: opponentId,
+      awayTeamId: line.awayTeamId,
+      homeTeamId: line.homeTeamId,
+      awayTeam: line.awayTeam,
+      homeTeam: line.homeTeam,
+      stage: line.stage,
+      scheduleWeekIndex: line.scheduleWeekIndex,
+      line: lineValue,
+      price: PROP_PRICE,
+      avg: Number(profile.avg.toFixed(1)),
+      recentAvg: Number(profile.recentAvg.toFixed(1)),
+      gamesPlayed: profile.gamesPlayed,
+      trend: Number(profile.trend.toFixed(1)),
+      confidence,
+      betLabel: `${profile.playerName} ${lineValue} ${propLabel(profile.type)} ${formatSigned(PROP_PRICE)}`,
+    });
+  }
+  const byTypePriority = { pass_yds: 5, rush_yds: 4, rec_yds: 4, rec: 2, sacks: 3 };
+  return candidates
+    .sort((a, b) => (b.confidence + (byTypePriority[b.propType] || 0)) - (a.confidence + (byTypePriority[a.propType] || 0)))
+    .filter((candidate, idx, arr) => arr.findIndex((entry) => entry.playerKey === candidate.playerKey) === idx)
+    .slice(0, MAX_PROPS_PER_GAME);
 }
 
 function tendencyLabelFromProfile(profile = {}) {
@@ -1291,6 +1473,7 @@ export async function postSportsbookWeek({ client, guild, seasonKey, weekNumber,
     weekKey,
   });
   weekStore.lines = lines;
+  weekStore.props = lines.flatMap((line) => buildPlayerPropsForGame(snapshot, line, { seasonKey, weekNumber }));
   refreshSuperBowlFutures(seasonStore, snapshot, { seasonKey, weekNumber });
   // Clear any legacy channel post pointers so they don't get refreshed/recreated.
   weekStore.posts = null;
@@ -1348,11 +1531,13 @@ export function getLineForBet(seasonKey, weekNumber, gameId) {
   const seasonStore = store?.[seasonKey];
   const weekStore = seasonStore?.weeks?.[`week_${weekNumber}`];
   return weekStore?.lines?.find((entry) => entry.gameId === gameId)
+    || weekStore?.props?.find((entry) => entry.gameId === gameId)
     || seasonStore?.futures?.lines?.find((entry) => entry.gameId === gameId)
     || null;
 }
 
 function linePrice(line, market, selection) {
+  if (market === PROP_MARKET || String(line?.gameId || '').startsWith(PROP_GAME_PREFIX)) return Number(line?.price || PROP_PRICE);
   if (market === SUPERBOWL_FUTURE_MARKET || String(line?.gameId || '').startsWith(SUPERBOWL_FUTURE_PREFIX)) {
     return Number(line?.odds || 0);
   }
@@ -1366,6 +1551,7 @@ function linePrice(line, market, selection) {
 function betLabelForLine(line, market, selection, price = null) {
   const odds = price == null ? linePrice(line, market, selection) : Number(price || 0);
   if (market === SUPERBOWL_FUTURE_MARKET) return futureBetLabel(line, odds);
+  if (market === PROP_MARKET) return `${line.playerName} ${selection === 'under' ? 'Under' : 'Over'} ${line.line} ${propLabel(line.propType)} ${formatSigned(odds)}`;
   if (market === 'moneyline') return `${selection === 'away' ? line.awayTeam : line.homeTeam} moneyline ${formatSigned(odds)}`;
   if (market === 'total') return `${selection === 'over' ? 'Over' : 'Under'} ${line.total} ${formatSigned(odds)}`;
   return `${selection === 'away' ? line.awaySpreadDisplay : line.homeSpreadDisplay} ${formatSigned(odds)}`;
@@ -1404,8 +1590,9 @@ function validateParlayLeg({ guildId, member, liveContext, line, market, selecti
     team === normalizeName(line.awayTeam) || team === normalizeName(line.homeTeam),
   );
   if (bettingOwnGame) return { ok: false, message: 'Coaches cannot add their own games to a parlay.' };
-  const allowed = ['spread', 'total', 'moneyline'].includes(String(market || ''));
+  const allowed = ['spread', 'total', 'moneyline', PROP_MARKET].includes(String(market || ''));
   if (!allowed) return { ok: false, message: 'That market cannot be added to a parlay.' };
+  if (market === PROP_MARKET && !['over', 'under'].includes(String(selection || ''))) return { ok: false, message: 'Invalid prop selection.' };
   if (market === 'total' && !['over', 'under'].includes(String(selection || ''))) return { ok: false, message: 'Invalid parlay selection.' };
   if (['spread', 'moneyline'].includes(String(market || '')) && !['away', 'home'].includes(String(selection || ''))) return { ok: false, message: 'Invalid parlay selection.' };
   return { ok: true };
@@ -1432,12 +1619,14 @@ export function addSportsbookParlayLeg({ guildId, member, userId, seasonKey, wee
   if (builder.weekNumber && Number(builder.weekNumber) !== Number(weekNumber)) {
     builder.legs = [];
   }
-  const duplicateGame = builder.legs.find((leg) => String(leg.gameId) === String(gameId));
+  const legGameKey = line.underlyingGameId || line.gameId;
+  const duplicateGame = builder.legs.find((leg) => String(leg.underlyingGameId || leg.gameId) === String(legGameKey));
   if (duplicateGame) return { ok: false, message: 'Parlays can only use one leg from each game.' };
   if (builder.legs.length >= PARLAY_MAX_LEGS) return { ok: false, message: `Parlays are limited to ${PARLAY_MAX_LEGS} legs.` };
   const price = linePrice(line, market, selection);
   const leg = {
     gameId,
+    underlyingGameId: line.underlyingGameId || line.gameId,
     market,
     selection,
     matchupLabel: `${line.awayTeam} at ${line.homeTeam}`,
@@ -1821,7 +2010,7 @@ function cardLinesForUser(bets = [], lines = [], guildId = null) {
 
 function openBuyoutBetsForUser(bets = []) {
   return bets
-    .filter((bet) => String(bet?.status || '') === 'open' && String(bet?.market || '') !== PARLAY_MARKET)
+    .filter((bet) => String(bet?.status || '') === 'open' && ![PARLAY_MARKET, PROP_MARKET].includes(String(bet?.market || '')))
     .slice()
     .sort((a, b) => Number(b?.placedAt || 0) - Number(a?.placedAt || 0));
 }
@@ -1895,6 +2084,29 @@ function futuresBetRow(weekNumber, lines = []) {
     );
   }
   return row.components.length ? row : null;
+}
+
+function propRows(weekNumber, props = []) {
+  const shown = props.slice(0, MAX_PROPS_PER_GAME);
+  if (!shown.length) return [];
+  const overRow = new ActionRowBuilder();
+  const underRow = new ActionRowBuilder();
+  for (const prop of shown) {
+    const labelBase = `${prop.playerName.split(' ').slice(-1)[0]} ${prop.line} ${propLabel(prop.propType)}`.slice(0, 60);
+    overRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`madden_sportsbook_bet|${weekNumber}|${prop.gameId}|${PROP_MARKET}|over`)
+        .setLabel(`O ${labelBase}`)
+        .setStyle(ButtonStyle.Primary),
+    );
+    underRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`madden_sportsbook_bet|${weekNumber}|${prop.gameId}|${PROP_MARKET}|under`)
+        .setLabel(`U ${labelBase}`)
+        .setStyle(ButtonStyle.Secondary),
+    );
+  }
+  return [overRow, underRow].filter((row) => row.components.length);
 }
 
 function parlaySlipRows(weekNumber, slip = {}, canBet = false) {
@@ -1978,6 +2190,11 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
   ) {
     const store = loadStore();
     const seasonStore = ensureSeason(store, seasonKey);
+    const weekStore = ensureWeek(seasonStore, `week_${weekNumber}`);
+    if (!Array.isArray(weekStore.props) || !weekStore.props.length) {
+      const activeLines = weekStore.lines?.length ? weekStore.lines : lines;
+      weekStore.props = (activeLines || []).flatMap((line) => buildPlayerPropsForGame(liveContext.snapshot, line, { seasonKey, weekNumber }));
+    }
     const futures = refreshSuperBowlFutures(seasonStore, liveContext.snapshot, { seasonKey, weekNumber });
     saveStore(store);
     card = { ...card, futures: futures.lines || [], futureBets: (futures.bets || []).filter((bet) => String(bet.userId) === String(userId)) };
@@ -2153,6 +2370,10 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
   }
 
   const line = lines[safeIndex];
+  const store = loadStore();
+  const gameProps = (store?.[seasonKey]?.weeks?.[`week_${weekNumber}`]?.props || [])
+    .filter((prop) => String(prop?.underlyingGameId || '') === String(line.gameId))
+    .slice(0, MAX_PROPS_PER_GAME);
   const gameBets = openBetsForGame(card.bets, line.gameId);
   const limits = getSportsbookLimits(card.bankroll.balance || STARTING_BANKROLL);
   const priceGuide = payoutBreakdown(5, SPREAD_PRICE);
@@ -2182,6 +2403,9 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
       gameBets.length
         ? `Your bets on this game: ${gameBets.map((bet) => `${bet.betLabel || `${bet.market} ${bet.selection}`} ${formatImpactValue(bet.wager)}`).join(' • ')}`
         : 'Your bets on this game: none yet.',
+      gameProps.length
+        ? `\n**Player Props**\n${gameProps.map((prop) => `• ${prop.playerName} ${prop.line} ${propLabel(prop.propType)} (${prop.avg} avg, ${prop.recentAvg} last 3)`).join('\n')}`
+        : null,
       '',
       !canBet
         ? 'You can browse the sportsbook board here. Betting unlocks once you have a coach role or LEAGUEbuddy Coaches access in this server.'
@@ -2195,6 +2419,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
   components.push(pageRow(weekNumber, safeIndex, lines.length));
   components.push(...parlaySlipRows(weekNumber, parlaySlip, canBet));
   if (canBet && !ownGameBlocked) components.push(...betRows(line));
+  if (canBet && !ownGameBlocked && gameProps.length) components.push(...propRows(weekNumber, gameProps));
   return { embeds: [embed], components };
 }
 
@@ -2338,11 +2563,19 @@ function settleBet(line, bet, game) {
   return { result: selectionWins ? 'win' : 'loss', profit: selectionWins ? americanProfit(bet.wager, bet.price) : -bet.wager };
 }
 
-function settleParlayBet(weekStore, bet, gameMap) {
+function settleParlayBet(weekStore, bet, gameMap, snapshot = null) {
   const legs = Array.isArray(bet?.legs) ? bet.legs : [];
   if (!legs.length) return null;
   const settledLegs = [];
   for (const leg of legs) {
+    const propLine = weekStore.props?.find((entry) => String(entry.gameId) === String(leg.gameId));
+    if (propLine) {
+      if (!snapshot) return null;
+      const propOutcome = settlePropBet(propLine, leg, snapshot);
+      if (!propOutcome) return null;
+      settledLegs.push({ ...leg, result: propOutcome.result, profit: propOutcome.profit, actual: propOutcome.actual });
+      continue;
+    }
     const line = weekStore.lines.find((entry) => String(entry.gameId) === String(leg.gameId));
     const game = gameMap.get(leg.gameId);
     if (!line || !game || !hasRealPlayedSignal(game)) return null;
@@ -2363,11 +2596,56 @@ function settleParlayBet(weekStore, bet, gameMap) {
   };
 }
 
+function findPropActual(snapshot, prop = {}) {
+  const targetWeekIndex = Number(prop.scheduleWeekIndex ?? -1);
+  const weeks = (snapshot?.weeklyStats || []).filter((week) =>
+    Number(week?.stage ?? week?.stageIndex ?? STAGE_REGULAR) === Number(prop.stage ?? STAGE_REGULAR) &&
+    Number(week?.weekIndex ?? -1) === targetWeekIndex,
+  );
+  const listsByType = {
+    pass_yds: (week) => week?.passing?.playerPassingStatInfoList || [],
+    rush_yds: (week) => week?.rushing?.playerRushingStatInfoList || [],
+    rec_yds: (week) => week?.receiving?.playerReceivingStatInfoList || [],
+    rec: (week) => week?.receiving?.playerReceivingStatInfoList || [],
+    sacks: (week) => week?.defense?.playerDefensiveStatInfoList || [],
+  };
+  for (const week of weeks) {
+    for (const row of listsByType[prop.propType]?.(week) || []) {
+      if (Number(row?.teamId) !== Number(prop.teamId)) continue;
+      const sameId = prop.playerId != null && (String(row?.playerId ?? row?.rosterId ?? '') === String(prop.playerId));
+      const sameName = normalizeName(formatPlayerName(row)) === normalizeName(prop.playerName);
+      if (!sameId && !sameName) continue;
+      return propStatFromRow(row, prop.propType);
+    }
+  }
+  return null;
+}
+
+function settlePropBet(prop, bet, snapshot) {
+  const actual = findPropActual(snapshot, prop);
+  if (actual == null) return null;
+  const lineValue = Number(prop.line || 0);
+  if (Number(actual) === lineValue) return { result: 'push', profit: 0, actual };
+  const over = Number(actual) > lineValue;
+  const selectionWins = (bet.selection === 'over' && over) || (bet.selection === 'under' && !over);
+  return {
+    result: selectionWins ? 'win' : 'loss',
+    profit: selectionWins ? americanProfit(bet.wager, bet.price) : -bet.wager,
+    actual,
+  };
+}
+
 export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNumber, games = [] }) {
   const store = loadStore();
   const seasonStore = ensureSeason(store, seasonKey);
   const weekStore = ensureWeek(seasonStore, `week_${weekNumber}`);
   if (weekStore.settled) return null;
+  let settleSnapshot = null;
+  if (guildId) {
+    try {
+      settleSnapshot = loadLeagueSnapshot(requireLeagueIdForGuild(guildId));
+    } catch { }
+  }
   const gameMap = new Map((games || []).map((game) => [`${weekNumber}:${Number(game.awayTeamId)}:${Number(game.homeTeamId)}`, game]));
   let lineResultsUpdated = 0;
   for (const line of weekStore.lines || []) {
@@ -2398,11 +2676,18 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
   for (const bet of weekStore.bets || []) {
     if (bet.status !== 'open') continue;
     const parlayBet = String(bet.market || '') === PARLAY_MARKET;
-    const line = parlayBet ? null : weekStore.lines.find((entry) => entry.gameId === bet.gameId);
+    const propBet = String(bet.market || '') === PROP_MARKET;
+    const line = parlayBet || propBet ? null : weekStore.lines.find((entry) => entry.gameId === bet.gameId);
+    const prop = propBet ? weekStore.props?.find((entry) => String(entry.gameId) === String(bet.gameId)) : null;
     const game = parlayBet ? null : gameMap.get(bet.gameId);
-    if (!parlayBet && (!line || !game || !hasRealPlayedSignal(game))) continue;
+    if (!parlayBet && !propBet && (!line || !game || !hasRealPlayedSignal(game))) continue;
+    if (propBet && (!prop || !settleSnapshot)) continue;
     const bankroll = ensureBankroll(seasonStore, String(bet.userId));
-    const outcome = parlayBet ? settleParlayBet(weekStore, bet, gameMap) : settleBet(line, bet, game);
+    const outcome = parlayBet
+      ? settleParlayBet(weekStore, bet, gameMap, settleSnapshot)
+      : propBet
+        ? settlePropBet(prop, bet, settleSnapshot)
+        : settleBet(line, bet, game);
     if (!outcome) continue;
     let firstBetBoostBonus = 0;
     if (outcome.result === 'win' && bet.firstBetBoost) {
@@ -2414,6 +2699,7 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
     }
     bet.status = outcome.result;
     bet.profit = outcome.profit;
+    if (outcome.actual != null) bet.actual = outcome.actual;
     if (outcome.settledLegs) bet.settledLegs = outcome.settledLegs;
     if (outcome.settledPrice) bet.settledPrice = outcome.settledPrice;
     bet.settledAt = Date.now();

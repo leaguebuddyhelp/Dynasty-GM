@@ -5,6 +5,7 @@ import { formatImpactValue, getLineForBet, getSportsbookParlaySlip, parlayPrice,
 export const customId_wager = /^madden_sportsbook_(wager|parlay_wager)\|/;
 
 function selectionLabel(market, selection) {
+  if (market === 'prop') return selection === 'under' ? 'Under prop' : 'Over prop';
   if (market === 'superbowl') return 'Super Bowl winner';
   if (market === 'total') return selection === 'over' ? 'Over' : 'Under';
   if (market === 'moneyline') return selection === 'away' ? 'Away ML' : 'Home ML';
@@ -94,6 +95,7 @@ export async function execute_wager(interaction) {
     .setDescription([
       market === 'superbowl' ? 'Super Bowl Winner Futures' : `${line.awayTeam} at ${line.homeTeam}`,
       `Pick: ${selectionLabel(market, selection)}`,
+      market === 'prop' ? `Prop: ${line.playerName} ${selection === 'under' ? 'Under' : 'Over'} ${line.line} ${line.propType || 'prop'}` : null,
       market === 'superbowl' ? `Team: ${line.teamName}` : null,
       `Bet: ${formatImpactValue(wager)}`,
       `Odds: ${odds > 0 ? '+' : ''}${odds}`,
