@@ -18,6 +18,7 @@ import { loadMaddenChannelMap } from './madden_metadata.js';
 import { getGuildRoleMap } from './madden_guild_config.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { getMessageForWeek } from '../madden/madden_utils.js';
+import { getTeamEmojiByName } from './madden_visuals.js';
 
 const STORE_PATH = getMaddenDataFilePath('sportsbook.json');
 const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
@@ -619,6 +620,20 @@ function propLabel(type) {
   if (type === 'rec') return 'receptions';
   if (type === 'sacks') return 'sacks';
   return 'stat';
+}
+
+function propShortLabel(prop = {}) {
+  const position = String(prop.position || '').trim().toUpperCase();
+  const lastName = String(prop.playerName || 'Player').split(' ').filter(Boolean).slice(-1)[0] || 'Player';
+  return `${position ? `${position} ` : ''}${lastName} ${prop.line} ${propLabel(prop.propType)}`.trim();
+}
+
+function propDisplayLine(prop = {}) {
+  const emoji = getTeamEmojiByName(prop.teamName || '');
+  const team = [emoji, prop.teamName].filter(Boolean).join(' ');
+  const position = String(prop.position || '').trim().toUpperCase();
+  const player = `${prop.playerName || 'Player'}${position ? ` (${position})` : ''}`;
+  return `• ${team ? `${team}: ` : ''}**${player}** — ${prop.line} ${propLabel(prop.propType)}`;
 }
 
 function propStatFromRow(row = {}, type) {
@@ -2107,7 +2122,7 @@ function propRows(weekNumber, props = []) {
   const overRow = new ActionRowBuilder();
   const underRow = new ActionRowBuilder();
   for (const prop of shown) {
-    const labelBase = `${prop.playerName.split(' ').slice(-1)[0]} ${prop.line} ${propLabel(prop.propType)}`.slice(0, 60);
+    const labelBase = propShortLabel(prop).slice(0, 60);
     overRow.addComponents(
       new ButtonBuilder()
         .setCustomId(`madden_sportsbook_bet|${weekNumber}|${prop.gameId}|${PROP_MARKET}|over`)
@@ -2398,7 +2413,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
       .setDescription([
         `**${line.awayTeam} at ${line.homeTeam}**`,
         gameProps.length
-          ? gameProps.map((prop) => `• **${prop.playerName}** ${prop.line} ${propLabel(prop.propType)} • ${prop.avg} avg, ${prop.recentAvg} last 3 • ${formatSigned(prop.price)}`).join('\n')
+          ? gameProps.map((prop) => propDisplayLine(prop)).join('\n')
           : 'No smart props are available for this matchup yet. Props require enough previous weekly player stat data.',
         '',
         !canBet
