@@ -257,6 +257,9 @@ export function buildLiveDraftContext(league) {
       const homeTeamId = Number(game.homeTeamId);
       const awayTeamId = Number(game.awayTeamId);
       if (!Number.isFinite(homeTeamId) || !Number.isFinite(awayTeamId)) continue;
+      const homeHadStats = Boolean(offenseByTeam[homeTeamId]);
+      const awayHadStats = Boolean(offenseByTeam[awayTeamId]);
+      if (!homeHadStats && !awayHadStats) continue;
       const homeOff = offenseByTeam[homeTeamId] || { passYds: 0, rushYds: 0 };
       const awayOff = offenseByTeam[awayTeamId] || { passYds: 0, rushYds: 0 };
       ensureTeam(homeTeamId).def.passYdsAllowed += awayOff.passYds;

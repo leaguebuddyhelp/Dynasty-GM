@@ -534,10 +534,13 @@ function rookieCandidates(snapshot, live, teamId) {
     .filter((player) => player?.isRookie === true || Number(player?.yearsPro ?? -1) === 0)
     .map((player) => {
       const livePlayer = liveByName.get(normalizeName(formatPlayerName(player)));
+      const statPlayer = livePlayer || {};
       return {
         ...player,
+        ...statPlayer,
         name: formatPlayerName(player),
         position: String(player?.position || '').toUpperCase(),
+        overall: playerOvr(statPlayer) || playerOvr(player),
         impact: playerImpact(livePlayer || player) + (playerOvr(player) * 0.4),
       };
     })
