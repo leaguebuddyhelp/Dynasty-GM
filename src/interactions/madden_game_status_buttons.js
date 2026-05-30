@@ -10,6 +10,7 @@ import { queueRemovalReview, queueImmediateRemedyReview } from '../shared/madden
 import { sendCoachReceipt } from '../shared/madden_coach_receipts.js';
 import { consumeRecognitionPerk, hasRecognitionPerk, recordRecognitionGameOutcome } from '../shared/league_recognition.js';
 import { getGuildRoleMap, loadGuildMaddenConfig } from '../shared/madden_guild_config.js';
+import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 import { isStaffRoleName } from '../madden/staff/staffUtils.js';
 import {
   STRIKE_LIMIT,
@@ -189,23 +190,35 @@ function rolesFromMessageMentions(thread) {
 
 async function coachUserIds(guild, team, roleMap) {
   const ids = await resolveCoachRoleIdsForTeam(guild, team, roleMap);
-  const users = [];
+  const users = new Set();
+  const teamKeys = normalizedTeamKeys(team);
+  const assignments = getCoachAssignmentMap({ guildId: guild?.id });
+  for (const [userId, assignedTeams] of assignments?.userToTeams?.entries?.() || []) {
+    const matches = (assignedTeams || []).some((entry) => {
+      const assignedKeys = normalizedTeamKeys(entry?.teamName || '');
+      for (const key of assignedKeys) {
+        if (teamKeys.has(key)) return true;
+      }
+      return false;
+    });
+    if (matches) users.add(String(userId));
+  }
   for (const roleId of ids) {
     const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
     if (!role) continue;
     // Use cached members first; if empty, fetch all members and filter by role to avoid cache misses.
     if (role.members?.size) {
-      role.members.forEach(m => users.push(m.id));
+      role.members.forEach(m => users.add(m.id));
     } else {
       try {
         const all = await guild.members.fetch();
-        all.filter(m => m.roles.cache.has(roleId)).forEach(m => users.push(m.id));
+        all.filter(m => m.roles.cache.has(roleId)).forEach(m => users.add(m.id));
       } catch {
         // ignore fetch failures; fallback is empty
       }
     }
   }
-  return users;
+  return [...users];
 }
 
 function seasonKeyFromSnapshot(snapshot) {
