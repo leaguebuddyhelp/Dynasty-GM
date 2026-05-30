@@ -1814,7 +1814,7 @@ export async function execute(interaction) {
     .setTitle('Madden Mock Draft (Picks 1–32)')
     .setDescription(picks.join('\n'))
     .setColor(0x1e90ff)
-    .setFooter({ text: `${coachVoiceFooter('mockdraft', 'Live board, live order, live class')} • ${classLock} • league ${leagueId}` });
+    .setFooter({ text: `${coachVoiceFooter('mockdraft', 'Live board, live order, live class')} • league ${leagueId}` });
 
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()

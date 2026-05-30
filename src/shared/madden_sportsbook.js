@@ -2050,11 +2050,20 @@ function breakdownPagerRow(weekNumber, index, total) {
   );
 }
 
-function pageRow(weekNumber, index, total) {
-  return new ActionRowBuilder().addComponents(
+function pageRow(weekNumber, index, total, { includeProps = false } = {}) {
+  const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|page_prev|${Math.max(0, index - 1)}`).setLabel('Prev').setStyle(ButtonStyle.Secondary).setDisabled(index <= 0),
     new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|page_next|${Math.min(total - 1, index + 1)}`).setLabel('Next').setStyle(ButtonStyle.Secondary).setDisabled(index >= total - 1),
   );
+  if (includeProps) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`madden_sportsbook_view|${weekNumber}|props|${index}`)
+        .setLabel('Player Props')
+        .setStyle(ButtonStyle.Primary),
+    );
+  }
+  return row;
 }
 
 function betRows(line) {
@@ -2380,10 +2389,34 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
   const gameProps = (store?.[seasonKey]?.weeks?.[`week_${weekNumber}`]?.props || [])
     .filter((prop) => String(prop?.underlyingGameId || '') === String(line.gameId))
     .slice(0, MAX_PROPS_PER_GAME);
+  const ownGameBlocked = userOwnsSportsbookGame({ guildId, userId, line });
+
+  if (mode === 'props') {
+    const propEmbed = new EmbedBuilder()
+      .setColor(0x2ecc71)
+      .setTitle(`LB Sportsbook • Player Props • ${boardLabel}`)
+      .setDescription([
+        `**${line.awayTeam} at ${line.homeTeam}**`,
+        gameProps.length
+          ? gameProps.map((prop) => `• **${prop.playerName}** ${prop.line} ${propLabel(prop.propType)} • ${prop.avg} avg, ${prop.recentAvg} last 3 • ${formatSigned(prop.price)}`).join('\n')
+          : 'No smart props are available for this matchup yet. Props require enough previous weekly player stat data.',
+        '',
+        !canBet
+          ? 'You can browse props here. Betting unlocks once you have a coach role or LEAGUEbuddy Coaches access in this server.'
+          : ownGameBlocked
+            ? 'You cannot bet props from this game because it is your matchup.'
+            : 'Pick over or under below, then choose a straight bet or add the prop to a parlay.',
+      ].filter(Boolean).join('\n'))
+      .setFooter({ text: `Game ${safeIndex + 1} of ${lines.length} • props are generated from season average, recent trend, and matchup profile` })
+      .setTimestamp();
+    components.push(pageRow(weekNumber, safeIndex, lines.length));
+    if (canBet && !ownGameBlocked && gameProps.length) components.push(...propRows(weekNumber, gameProps));
+    return { embeds: [propEmbed], components };
+  }
+
   const gameBets = openBetsForGame(card.bets, line.gameId);
   const limits = getSportsbookLimits(card.bankroll.balance || STARTING_BANKROLL);
   const priceGuide = payoutBreakdown(5, SPREAD_PRICE);
-  const ownGameBlocked = userOwnsSportsbookGame({ guildId, userId, line });
   const gotwSeasonKey = resolveRecognitionSeasonKeyForGuild(guildId, seasonKey);
   const gotw = guildId ? getRecognitionGameOfWeek({ guildId, league: 'madden', seasonKey: gotwSeasonKey, weekKey: `week_${weekNumber}` }) : null;
   const gotwMatch = gotw && normalizeName(gotw.awayTeam) === normalizeName(line.awayTeam) && normalizeName(gotw.homeTeam) === normalizeName(line.homeTeam);
@@ -2410,7 +2443,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
         ? `Your bets on this game: ${gameBets.map((bet) => `${bet.betLabel || `${bet.market} ${bet.selection}`} ${formatImpactValue(bet.wager)}`).join(' • ')}`
         : 'Your bets on this game: none yet.',
       gameProps.length
-        ? `\n**Player Props**\n${gameProps.map((prop) => `• ${prop.playerName} ${prop.line} ${propLabel(prop.propType)} (${prop.avg} avg, ${prop.recentAvg} last 3)`).join('\n')}`
+        ? `Player props: ${gameProps.length} smart line(s) available. Use **Player Props** below.`
         : null,
       '',
       !canBet
@@ -2422,10 +2455,9 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     .setFooter({ text: `Game ${safeIndex + 1} of ${lines.length} • private betting board` })
     .setTimestamp();
 
-  components.push(pageRow(weekNumber, safeIndex, lines.length));
+  components.push(pageRow(weekNumber, safeIndex, lines.length, { includeProps: gameProps.length > 0 }));
   components.push(...parlaySlipRows(weekNumber, parlaySlip, canBet));
   if (canBet && !ownGameBlocked) components.push(...betRows(line));
-  if (canBet && !ownGameBlocked && gameProps.length) components.push(...propRows(weekNumber, gameProps));
   return { embeds: [embed], components };
 }
 

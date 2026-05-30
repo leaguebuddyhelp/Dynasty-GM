@@ -17,6 +17,8 @@ export async function execute(interaction) {
       ? 'card'
       : rawMode === 'tab_board' || rawMode === 'page_prev' || rawMode === 'page_next'
         ? 'board'
+        : rawMode === 'props'
+          ? 'props'
         : rawMode === 'breakdown_prev' || rawMode === 'breakdown_next'
         ? 'breakdown'
         : rawMode === 'tab_breakdown'
