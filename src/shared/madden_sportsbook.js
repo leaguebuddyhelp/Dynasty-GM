@@ -34,6 +34,10 @@ const FIRST_BET_BOOST_MAX_EXTRA = 10;
 const SUPERBOWL_FUTURE_MARKET = 'superbowl';
 const SUPERBOWL_FUTURE_PREFIX = 'future:superbowl:';
 const FUTURES_PAGE_SIZE = 5;
+const PARLAY_MARKET = 'parlay';
+const PARLAY_GAME_PREFIX = 'parlay:';
+const PARLAY_MIN_LEGS = 2;
+const PARLAY_MAX_LEGS = 5;
 const STAGE_REGULAR = 1;
 const STAGE_POSTSEASON = 2;
 const STAGE_OFFSEASON = 3;
@@ -281,6 +285,25 @@ function payoutBreakdown(stake, americanOdds) {
     profit,
     totalReturn: wager + profit,
   };
+}
+
+function americanToDecimal(odds) {
+  const price = Number(odds || 0);
+  if (!Number.isFinite(price) || price === 0) return 1;
+  return price > 0 ? 1 + (price / 100) : 1 + (100 / Math.abs(price));
+}
+
+function decimalToAmerican(decimalOdds) {
+  const decimal = Math.max(1.01, Number(decimalOdds || 1));
+  const american = decimal >= 2
+    ? (decimal - 1) * 100
+    : -100 / (decimal - 1);
+  return Math.round(american);
+}
+
+function parlayPrice(legs = []) {
+  const decimal = (legs || []).reduce((product, leg) => product * americanToDecimal(leg?.price || 0), 1);
+  return decimalToAmerican(decimal);
 }
 
 function impliedMoneylineFromSpread(spread) {
@@ -1340,6 +1363,14 @@ function linePrice(line, market, selection) {
   return SPREAD_PRICE;
 }
 
+function betLabelForLine(line, market, selection, price = null) {
+  const odds = price == null ? linePrice(line, market, selection) : Number(price || 0);
+  if (market === SUPERBOWL_FUTURE_MARKET) return futureBetLabel(line, odds);
+  if (market === 'moneyline') return `${selection === 'away' ? line.awayTeam : line.homeTeam} moneyline ${formatSigned(odds)}`;
+  if (market === 'total') return `${selection === 'over' ? 'Over' : 'Under'} ${line.total} ${formatSigned(odds)}`;
+  return `${selection === 'away' ? line.awaySpreadDisplay : line.homeSpreadDisplay} ${formatSigned(odds)}`;
+}
+
 function isSuperBowlFutureBet(market, gameId) {
   return market === SUPERBOWL_FUTURE_MARKET || String(gameId || '').startsWith(SUPERBOWL_FUTURE_PREFIX);
 }
@@ -1347,6 +1378,176 @@ function isSuperBowlFutureBet(market, gameId) {
 function futureBetLabel(line, price = null) {
   const odds = price == null ? Number(line?.odds || 0) : Number(price || 0);
   return `${line?.teamName || 'Team'} Super Bowl winner ${formatSigned(odds)}`;
+}
+
+function parlayBuilderFor(seasonStore, userId) {
+  seasonStore.parlayBuilders = seasonStore.parlayBuilders || {};
+  const key = String(userId);
+  seasonStore.parlayBuilders[key] = seasonStore.parlayBuilders[key] || { legs: [], updatedAt: Date.now() };
+  seasonStore.parlayBuilders[key].legs = Array.isArray(seasonStore.parlayBuilders[key].legs)
+    ? seasonStore.parlayBuilders[key].legs
+    : [];
+  return seasonStore.parlayBuilders[key];
+}
+
+function validateParlayLeg({ guildId, member, liveContext, line, market, selection }) {
+  if (!line) return { ok: false, message: 'This betting line is no longer available.' };
+  if (isSuperBowlFutureBet(market, line.gameId)) {
+    return { ok: false, message: 'Super Bowl futures cannot be added to parlays.' };
+  }
+  if (gameAlreadyPlayed(liveContext.leagueId, liveContext.weekNumber, line, liveContext.games || [])) {
+    return { ok: false, message: 'This game has already been logged as played. Betting is closed.' };
+  }
+  const roleMap = loadRoleMap(guildId);
+  const coachTeams = coachTeamsFromMember(member, roleMap).map(normalizeName);
+  const bettingOwnGame = coachTeams.some((team) =>
+    team === normalizeName(line.awayTeam) || team === normalizeName(line.homeTeam),
+  );
+  if (bettingOwnGame) return { ok: false, message: 'Coaches cannot add their own games to a parlay.' };
+  const allowed = ['spread', 'total', 'moneyline'].includes(String(market || ''));
+  if (!allowed) return { ok: false, message: 'That market cannot be added to a parlay.' };
+  if (market === 'total' && !['over', 'under'].includes(String(selection || ''))) return { ok: false, message: 'Invalid parlay selection.' };
+  if (['spread', 'moneyline'].includes(String(market || '')) && !['away', 'home'].includes(String(selection || ''))) return { ok: false, message: 'Invalid parlay selection.' };
+  return { ok: true };
+}
+
+export function addSportsbookParlayLeg({ guildId, member, userId, seasonKey, weekNumber, gameId, market, selection }) {
+  const roleMap = loadRoleMap(guildId);
+  if (!isCoachOrLeaguebuddy(member, roleMap)) {
+    return { ok: false, message: 'Only coaches and LEAGUEbuddy Coaches can use parlays.' };
+  }
+  const liveContext = getSportsbookContextForGuild(guildId);
+  if (!liveContext?.seasonKey || !liveContext?.weekNumber) return { ok: false, message: 'The sportsbook is not open right now.' };
+  if (String(seasonKey) !== String(liveContext.seasonKey) || Number(weekNumber) !== Number(liveContext.weekNumber)) {
+    return { ok: false, message: 'Only the current week board is open for parlay building.' };
+  }
+  const line = getLineForBet(seasonKey, weekNumber, gameId);
+  const valid = validateParlayLeg({ guildId, member, liveContext, line, market, selection });
+  if (!valid.ok) return valid;
+  const store = loadStore();
+  const seasonStore = ensureSeason(store, seasonKey);
+  const weekStore = ensureWeek(seasonStore, `week_${weekNumber}`);
+  if (weekStore.settled) return { ok: false, message: 'This week is already settled.' };
+  const builder = parlayBuilderFor(seasonStore, userId);
+  if (builder.weekNumber && Number(builder.weekNumber) !== Number(weekNumber)) {
+    builder.legs = [];
+  }
+  const duplicateGame = builder.legs.find((leg) => String(leg.gameId) === String(gameId));
+  if (duplicateGame) return { ok: false, message: 'Parlays can only use one leg from each game.' };
+  if (builder.legs.length >= PARLAY_MAX_LEGS) return { ok: false, message: `Parlays are limited to ${PARLAY_MAX_LEGS} legs.` };
+  const price = linePrice(line, market, selection);
+  const leg = {
+    gameId,
+    market,
+    selection,
+    matchupLabel: `${line.awayTeam} at ${line.homeTeam}`,
+    betLabel: betLabelForLine(line, market, selection, price),
+    price,
+    addedAt: Date.now(),
+  };
+  builder.legs.push(leg);
+  builder.weekNumber = Number(weekNumber);
+  builder.updatedAt = Date.now();
+  saveStore(store);
+  return {
+    ok: true,
+    leg,
+    legs: builder.legs,
+    price: parlayPrice(builder.legs),
+  };
+}
+
+export function clearSportsbookParlay({ seasonKey, userId }) {
+  const store = loadStore();
+  const seasonStore = ensureSeason(store, seasonKey);
+  seasonStore.parlayBuilders = seasonStore.parlayBuilders || {};
+  seasonStore.parlayBuilders[String(userId)] = { legs: [], updatedAt: Date.now() };
+  saveStore(store);
+  return { ok: true };
+}
+
+export function getSportsbookParlaySlip({ seasonKey, userId }) {
+  const store = loadStore();
+  const seasonStore = store?.[seasonKey];
+  const builder = seasonStore?.parlayBuilders?.[String(userId)] || { legs: [] };
+  const legs = Array.isArray(builder.legs) ? builder.legs : [];
+  return {
+    legs,
+    price: legs.length >= PARLAY_MIN_LEGS ? parlayPrice(legs) : null,
+    updatedAt: builder.updatedAt || null,
+  };
+}
+
+export function placeSportsbookParlay({ guildId, member, userId, seasonKey, weekNumber, wager }) {
+  const roleMap = loadRoleMap(guildId);
+  if (!isCoachOrLeaguebuddy(member, roleMap)) {
+    return { ok: false, message: 'Only coaches and LEAGUEbuddy Coaches can use parlays.' };
+  }
+  const liveContext = getSportsbookContextForGuild(guildId);
+  if (!liveContext?.seasonKey || !liveContext?.weekNumber) return { ok: false, message: 'The sportsbook is not open right now.' };
+  if (String(seasonKey) !== String(liveContext.seasonKey) || Number(weekNumber) !== Number(liveContext.weekNumber)) {
+    return { ok: false, message: 'Only the current week board is open for parlay betting.' };
+  }
+  const store = loadStore();
+  const seasonStore = ensureSeason(store, seasonKey);
+  const weekStore = ensureWeek(seasonStore, `week_${weekNumber}`);
+  if (weekStore.settled) return { ok: false, message: 'This week is already settled.' };
+  const builder = parlayBuilderFor(seasonStore, userId);
+  const legs = Array.isArray(builder.legs) ? builder.legs : [];
+  if (builder.weekNumber && Number(builder.weekNumber) !== Number(weekNumber)) {
+    builder.legs = [];
+    builder.updatedAt = Date.now();
+    saveStore(store);
+    return { ok: false, message: 'That parlay slip was from a different week, so it was cleared. Add fresh legs from this week.' };
+  }
+  if (legs.length < PARLAY_MIN_LEGS) return { ok: false, message: `Add at least ${PARLAY_MIN_LEGS} legs before placing a parlay.` };
+  if (legs.length > PARLAY_MAX_LEGS) return { ok: false, message: `Parlays are limited to ${PARLAY_MAX_LEGS} legs.` };
+  for (const leg of legs) {
+    const line = getLineForBet(seasonKey, weekNumber, leg.gameId);
+    const valid = validateParlayLeg({ guildId, member, liveContext, line, market: leg.market, selection: leg.selection });
+    if (!valid.ok) return valid;
+  }
+  const bankroll = ensureBankroll(seasonStore, String(userId), initialSportsbookImpact({ guildId, seasonKey, userId }));
+  const limits = getSportsbookLimits(bankroll.balance);
+  const amount = Number(wager || 0);
+  if (!Number.isFinite(amount) || amount < 1 || amount > limits.maxWager) {
+    return { ok: false, message: `Bet amount must be between 1 and ${limits.maxWager} based on your Impact available to bet.` };
+  }
+  const weeklyExposure = openExposureForWeek(weekStore, userId);
+  if ((weeklyExposure + amount) > limits.maxWeeklyExposure) {
+    return { ok: false, message: `You can only keep ${formatImpactValue(limits.maxWeeklyExposure)} in open bets this week.` };
+  }
+  if (bankroll.balance < amount) return { ok: false, message: `You only have ${formatImpactValue(bankroll.balance)} Impact available to bet.` };
+  const placedAt = Date.now();
+  const price = parlayPrice(legs);
+  const record = {
+    userId: String(userId),
+    gameId: `${PARLAY_GAME_PREFIX}${placedAt}`,
+    market: PARLAY_MARKET,
+    selection: 'all',
+    matchupLabel: `${legs.length}-Leg Parlay`,
+    betLabel: legs.map((leg) => leg.betLabel).join(' + '),
+    legs: legs.map((leg) => ({ ...leg })),
+    wager: amount,
+    price,
+    status: 'open',
+    placedAt,
+    firstBetBoost: false,
+  };
+  bankroll.balance -= amount;
+  bankroll.totalWagered += amount;
+  weekStore.bets.push(record);
+  builder.legs = [];
+  builder.updatedAt = Date.now();
+  saveStore(store);
+  return {
+    ok: true,
+    bet: record,
+    balance: bankroll.balance,
+    price,
+    payout: payoutBreakdown(amount, price),
+    limits,
+  };
 }
 
 export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNumber, gameId, market, selection, wager }) {
@@ -1454,12 +1655,7 @@ export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNum
   const price = linePrice(line, market, selection);
   const placedAt = Date.now();
   const firstBetBoost = !bankroll.firstBetBoostUsed && !bankroll.firstBetBoostBetPlacedAt;
-  const betLabel =
-    market === 'moneyline'
-      ? `${selection === 'away' ? line.awayTeam : line.homeTeam} moneyline ${formatSigned(price)}`
-      : market === 'total'
-        ? `${selection === 'over' ? 'Over' : 'Under'} ${line.total} ${formatSigned(price)}`
-        : `${selection === 'away' ? line.awaySpreadDisplay : line.homeSpreadDisplay} ${formatSigned(price)}`;
+  const betLabel = betLabelForLine(line, market, selection, price);
   const record = {
     userId: String(userId),
     gameId,
@@ -1504,7 +1700,8 @@ export function getSportsbookUserCard({ seasonKey, weekNumber, userId, guildId =
   const bets = (weekStore.bets || []).filter((bet) => String(bet.userId) === String(userId));
   const futures = seasonStore?.futures || { lines: [], bets: [] };
   const futureBets = (futures.bets || []).filter((bet) => String(bet.userId) === String(userId));
-  return { bankroll, bets, futureBets, lines: weekStore.lines || [], futures: futures.lines || [] };
+  const parlaySlip = seasonStore?.parlayBuilders?.[String(userId)] || { legs: [] };
+  return { bankroll, bets, futureBets, lines: weekStore.lines || [], futures: futures.lines || [], parlaySlip };
 }
 
 function parseMatchupFromGameId(gameId = '') {
@@ -1606,6 +1803,11 @@ function cardLinesForUser(bets = [], lines = [], guildId = null) {
       .map((bet) => {
         const matchupLabel = resolveBetMatchupLabel(bet, lines, guildId);
         const baseLabel = bet.betLabel || `${bet.market} ${bet.selection}`;
+        if (bet.market === PARLAY_MARKET) {
+          const legCount = Array.isArray(bet.legs) ? bet.legs.length : 0;
+          const legLabel = legCount ? `${legCount}-leg parlay` : 'Parlay';
+          return `${legLabel} • ${formatSigned(bet.price || 0)} • ${formatImpactValue(bet.wager)} • ${bet.status}`;
+        }
         const oddsLabel = Number.isFinite(Number(bet?.price || 0)) && Number(bet?.price || 0) !== 0 && !String(baseLabel).includes(formatSigned(Number(bet.price || 0)))
           ? ` @ ${formatSigned(Number(bet.price || 0))}`
           : '';
@@ -1619,7 +1821,7 @@ function cardLinesForUser(bets = [], lines = [], guildId = null) {
 
 function openBuyoutBetsForUser(bets = []) {
   return bets
-    .filter((bet) => String(bet?.status || '') === 'open')
+    .filter((bet) => String(bet?.status || '') === 'open' && String(bet?.market || '') !== PARLAY_MARKET)
     .slice()
     .sort((a, b) => Number(b?.placedAt || 0) - Number(a?.placedAt || 0));
 }
@@ -1695,6 +1897,28 @@ function futuresBetRow(weekNumber, lines = []) {
   return row.components.length ? row : null;
 }
 
+function parlaySlipRows(weekNumber, slip = {}, canBet = false) {
+  const legs = slip?.legs || [];
+  if (!canBet || !legs.length) return [];
+  const rows = [
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`madden_sportsbook_parlay_clear|${weekNumber}`)
+        .setLabel('Clear Parlay')
+        .setStyle(ButtonStyle.Secondary),
+    ),
+  ];
+  if (legs.length >= PARLAY_MIN_LEGS) {
+    rows[0].addComponents(
+      new ButtonBuilder()
+        .setCustomId(`madden_sportsbook_parlay_place|${weekNumber}`)
+        .setLabel(`Place ${legs.length}-Leg Parlay`)
+        .setStyle(ButtonStyle.Success),
+    );
+  }
+  return rows;
+}
+
 function buyoutRows(openBets = [], weekNumber = 0) {
   const rows = [];
   const bets = openBets.slice(0, 5);
@@ -1766,6 +1990,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
   const safeIndex = lines.length ? Math.max(0, Math.min(lines.length - 1, Number(index || 0))) : 0;
   const components = [viewNavRow(weekNumber, mode, safeIndex, lines.length > 0)];
   const canBet = await canUserBetSportsbook({ guild, guildId, userId });
+  const parlaySlip = getSportsbookParlaySlip({ seasonKey, userId });
 
   if (mode === 'breakdown') {
     const store = loadStore();
@@ -1876,6 +2101,13 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
         { name: 'Impact Won', value: formatImpactValue(card.bankroll.profit || 0), inline: true },
         { name: 'Record', value: `${card.bankroll.wins || 0}-${card.bankroll.losses || 0}-${card.bankroll.pushes || 0}`, inline: true },
         { name: 'First Bet Boost', value: firstBetBoostState(card), inline: false },
+        {
+          name: 'Parlay Builder',
+          value: (parlaySlip.legs || []).length
+            ? `${parlaySlip.legs.length} leg(s) queued • ${parlaySlip.price ? formatSigned(parlaySlip.price) : `needs ${PARLAY_MIN_LEGS} legs`}\n${(parlaySlip.legs || []).map((leg) => `• ${leg.betLabel}`).join('\n')}`
+            : 'No parlay legs queued. Open a line and choose Add to Parlay.',
+          inline: false,
+        },
       )
       .setFooter({ text: 'Private view • open bets and settled results' })
       .setTimestamp();
@@ -1888,6 +2120,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
         inline: false,
       });
     }
+    components.push(...parlaySlipRows(weekNumber, parlaySlip, canBet));
     if (buyoutBets.length) components.push(...buyoutRows(buyoutBets, weekNumber));
     return { embeds: [embed], components };
   }
@@ -1943,6 +2176,9 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
       `Max open this week: ${formatImpactValue(limits.maxWeeklyExposure)}`,
       `Example: bet ${formatImpactValue(priceGuide.stake)} at -110 • win ${formatImpactValue(priceGuide.profit)} • return ${formatImpactValue(priceGuide.totalReturn)}`,
       gotwMatch ? `Featured bonus: this is Game of the Week • winning bets add +${GAME_OF_WEEK_BET_BONUS} ${IMPACT_EMOJI}` : null,
+      (parlaySlip.legs || []).length
+        ? `Parlay builder: ${parlaySlip.legs.length} leg(s) queued${parlaySlip.price ? ` • ${formatSigned(parlaySlip.price)}` : ''}`
+        : 'Parlay builder: open any weekly pick and choose Add to Parlay.',
       gameBets.length
         ? `Your bets on this game: ${gameBets.map((bet) => `${bet.betLabel || `${bet.market} ${bet.selection}`} ${formatImpactValue(bet.wager)}`).join(' • ')}`
         : 'Your bets on this game: none yet.',
@@ -1957,11 +2193,12 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     .setTimestamp();
 
   components.push(pageRow(weekNumber, safeIndex, lines.length));
+  components.push(...parlaySlipRows(weekNumber, parlaySlip, canBet));
   if (canBet && !ownGameBlocked) components.push(...betRows(line));
   return { embeds: [embed], components };
 }
 
-export { IMPACT_EMOJI, formatImpactValue, formatImpactDelta, getSportsbookLimits, payoutBreakdown, linePrice };
+export { IMPACT_EMOJI, formatImpactValue, formatImpactDelta, getSportsbookLimits, payoutBreakdown, linePrice, parlayPrice };
 
 export function buyoutSportsbookBet({ guildId, seasonKey, weekNumber, userId, gameId, placedAt }) {
   if (!guildId || !seasonKey || !weekNumber || !userId || !gameId || !placedAt) {
@@ -2101,6 +2338,31 @@ function settleBet(line, bet, game) {
   return { result: selectionWins ? 'win' : 'loss', profit: selectionWins ? americanProfit(bet.wager, bet.price) : -bet.wager };
 }
 
+function settleParlayBet(weekStore, bet, gameMap) {
+  const legs = Array.isArray(bet?.legs) ? bet.legs : [];
+  if (!legs.length) return null;
+  const settledLegs = [];
+  for (const leg of legs) {
+    const line = weekStore.lines.find((entry) => String(entry.gameId) === String(leg.gameId));
+    const game = gameMap.get(leg.gameId);
+    if (!line || !game || !hasRealPlayedSignal(game)) return null;
+    const outcome = settleBet(line, leg, game);
+    settledLegs.push({ ...leg, result: outcome.result, profit: outcome.profit });
+  }
+  if (settledLegs.some((leg) => leg.result === 'loss')) {
+    return { result: 'loss', profit: -Number(bet.wager || 0), settledLegs };
+  }
+  const liveLegs = settledLegs.filter((leg) => leg.result === 'win');
+  if (!liveLegs.length) return { result: 'push', profit: 0, settledLegs };
+  const price = parlayPrice(liveLegs);
+  return {
+    result: 'win',
+    profit: americanProfit(bet.wager, price),
+    settledLegs,
+    settledPrice: price,
+  };
+}
+
 export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNumber, games = [] }) {
   const store = loadStore();
   const seasonStore = ensureSeason(store, seasonKey);
@@ -2135,11 +2397,13 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
   const summary = [];
   for (const bet of weekStore.bets || []) {
     if (bet.status !== 'open') continue;
-    const line = weekStore.lines.find((entry) => entry.gameId === bet.gameId);
-    const game = gameMap.get(bet.gameId);
-    if (!line || !game || !hasRealPlayedSignal(game)) continue;
+    const parlayBet = String(bet.market || '') === PARLAY_MARKET;
+    const line = parlayBet ? null : weekStore.lines.find((entry) => entry.gameId === bet.gameId);
+    const game = parlayBet ? null : gameMap.get(bet.gameId);
+    if (!parlayBet && (!line || !game || !hasRealPlayedSignal(game))) continue;
     const bankroll = ensureBankroll(seasonStore, String(bet.userId));
-    const outcome = settleBet(line, bet, game);
+    const outcome = parlayBet ? settleParlayBet(weekStore, bet, gameMap) : settleBet(line, bet, game);
+    if (!outcome) continue;
     let firstBetBoostBonus = 0;
     if (outcome.result === 'win' && bet.firstBetBoost) {
       firstBetBoostBonus = Math.min(
@@ -2150,6 +2414,8 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
     }
     bet.status = outcome.result;
     bet.profit = outcome.profit;
+    if (outcome.settledLegs) bet.settledLegs = outcome.settledLegs;
+    if (outcome.settledPrice) bet.settledPrice = outcome.settledPrice;
     bet.settledAt = Date.now();
     bet.impactAward = 0;
     bet.firstBetBoostBonus = firstBetBoostBonus;
