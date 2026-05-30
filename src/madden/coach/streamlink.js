@@ -203,6 +203,10 @@ function findWeeklyMatchup(snapshot, teamId, explicitOpponentTeamId = null) {
   return candidates.sort((a, b) => a.weekIndex - b.weekIndex)[0]?.entry || null;
 }
 
+function noteRequestsNonOwnedGame(note = '') {
+  return /\bnot\s+my\s+game\b|\bnot\s+mine\b|\bother\s+game\b/i.test(String(note || ''));
+}
+
 function recordByTeamId(snapshot) {
   return new Map(
     (snapshot?.standings?.teamStandingInfoList || []).map((team) => [Number(team.teamId), team]),
@@ -1076,6 +1080,8 @@ export async function execute(interaction) {
 
   await interaction.deferReply({ flags: 64 });
 
+  const note = interaction.options.getString('note');
+  const link = interaction.options.getString('link');
   const ownTeam = coachTeamFromMember(interaction.member, roleMap, snapshot);
   if (!ownTeam) {
     await interaction.editReply({ content: 'Your coach role could not be matched to a Madden team.' });
@@ -1084,10 +1090,16 @@ export async function execute(interaction) {
 
   const opponentRole = interaction.options.getRole('opponent_coach');
   const explicitOpponent = opponentRole ? resolveTeamFromRoleName(opponentRole.name, snapshot) : null;
-  const matchup = findWeeklyMatchup(snapshot, ownTeam.teamId, explicitOpponent?.teamId || null);
-  let opponentTeam = explicitOpponent;
+  const nonOwnedGame = noteRequestsNonOwnedGame(note);
+  if (nonOwnedGame && !explicitOpponent) {
+    await interaction.editReply({ content: 'For a stream that is not your game, add the coach role for one team in that game using `opponent_coach` so I do not use your own matchup.' });
+    return;
+  }
+  const anchorTeam = nonOwnedGame && explicitOpponent ? explicitOpponent : ownTeam;
+  const matchup = findWeeklyMatchup(snapshot, anchorTeam.teamId, nonOwnedGame ? null : explicitOpponent?.teamId || null);
+  let opponentTeam = nonOwnedGame ? null : explicitOpponent;
   if (matchup && !opponentTeam) {
-    const isHome = Number(matchup.homeTeamId) === Number(ownTeam.teamId);
+    const isHome = Number(matchup.homeTeamId) === Number(anchorTeam.teamId);
     const opponentTeamId = Number(isHome ? matchup.awayTeamId : matchup.homeTeamId);
     opponentTeam = teamMap(snapshot).get(opponentTeamId) || null;
   }
@@ -1095,19 +1107,20 @@ export async function execute(interaction) {
     await interaction.editReply({ content: 'No opponent could be resolved from your current matchup or the provided coach role.' });
     return;
   }
+  const ownDisplayTeam = anchorTeam;
 
   const live = buildLiveDraftContext(snapshot);
   const statsByTeam = live?.teamStatsByTeamId || {};
   const standingsByTeam = recordByTeamId(snapshot);
-  const ownStats = statsByTeam[ownTeam.teamId] || {};
+  const ownStats = statsByTeam[ownDisplayTeam.teamId] || {};
   const oppStats = statsByTeam[opponentTeam.teamId] || {};
-  const ownStanding = standingsByTeam.get(ownTeam.teamId) || null;
+  const ownStanding = standingsByTeam.get(ownDisplayTeam.teamId) || null;
   const oppStanding = standingsByTeam.get(opponentTeam.teamId) || null;
-  const ownPlayers = teamLivePlayers(live, ownTeam.teamId);
+  const ownPlayers = teamLivePlayers(live, ownDisplayTeam.teamId);
   const oppPlayers = teamLivePlayers(live, opponentTeam.teamId);
-  const ownRookies = rookieCandidates(snapshot, live, ownTeam.teamId);
+  const ownRookies = rookieCandidates(snapshot, live, ownDisplayTeam.teamId);
   const oppRookies = rookieCandidates(snapshot, live, opponentTeam.teamId);
-  const ownCoachRoleId = resolveCoachRoleIdForTeam(ownTeam, roleMap);
+  const ownCoachRoleId = resolveCoachRoleIdForTeam(ownDisplayTeam, roleMap);
   const opponentCoachRoleId = opponentRole?.id || resolveCoachRoleIdForTeam(opponentTeam, roleMap);
   const ownCoachUser = await resolveCoachUserFromRole(interaction.guild, ownCoachRoleId);
   const opponentCoachUser = await resolveCoachUserFromRole(interaction.guild, opponentCoachRoleId);
@@ -1143,17 +1156,15 @@ export async function execute(interaction) {
       userId: opponentCoachUser.id,
     })
     : 0;
-  const note = interaction.options.getString('note');
-  const link = interaction.options.getString('link');
-  const seed = hashSeed(meta?.seasonKey, meta?.weekKey, ownTeam.fullName, opponentTeam.fullName, interaction.id, note, link);
-  const ownLegacyInPlay = getLegacyOpportunityForTeam({ snapshot, teamId: ownTeam.teamId });
+  const seed = hashSeed(meta?.seasonKey, meta?.weekKey, ownDisplayTeam.fullName, opponentTeam.fullName, interaction.id, note, link);
+  const ownLegacyInPlay = getLegacyOpportunityForTeam({ snapshot, teamId: ownDisplayTeam.teamId });
   const oppLegacyInPlay = getLegacyOpportunityForTeam({ snapshot, teamId: opponentTeam.teamId });
-  const isHome = matchup ? Number(matchup.homeTeamId) === Number(ownTeam.teamId) : false;
-  const awayTeamId = matchup ? Number(matchup.awayTeamId) : (isHome ? opponentTeam.teamId : ownTeam.teamId);
-  const homeTeamId = matchup ? Number(matchup.homeTeamId) : (isHome ? ownTeam.teamId : opponentTeam.teamId);
+  const isHome = matchup ? Number(matchup.homeTeamId) === Number(ownDisplayTeam.teamId) : false;
+  const awayTeamId = matchup ? Number(matchup.awayTeamId) : (isHome ? opponentTeam.teamId : ownDisplayTeam.teamId);
+  const homeTeamId = matchup ? Number(matchup.homeTeamId) : (isHome ? ownDisplayTeam.teamId : opponentTeam.teamId);
   const matchupTitle = matchup
-    ? `${formatTeamLabelWithEmoji(isHome ? opponentTeam.fullName : ownTeam.fullName)} at ${formatTeamLabelWithEmoji(isHome ? ownTeam.fullName : opponentTeam.fullName)}`
-    : `${formatTeamLabelWithEmoji(ownTeam.fullName)} vs ${formatTeamLabelWithEmoji(opponentTeam.fullName)}`;
+    ? `${formatTeamLabelWithEmoji(isHome ? opponentTeam.fullName : ownDisplayTeam.fullName)} at ${formatTeamLabelWithEmoji(isHome ? ownDisplayTeam.fullName : opponentTeam.fullName)}`
+    : `${formatTeamLabelWithEmoji(ownDisplayTeam.fullName)} vs ${formatTeamLabelWithEmoji(opponentTeam.fullName)}`;
   const sportsbookAccess = hasFeatureAccess(interaction.guildId, 'sportsbook');
   const bettingLine = sportsbookAccess.ok
     ? getSportsbookLineForMatchup({
@@ -1166,23 +1177,23 @@ export async function execute(interaction) {
     })
     : null;
 
-  const ownForm = teamRecentForm(snapshot, ownTeam.teamId);
+  const ownForm = teamRecentForm(snapshot, ownDisplayTeam.teamId);
   const oppForm = teamRecentForm(snapshot, opponentTeam.teamId);
   const playersField = buildPlayersToWatch({
-    ownTeam,
+    ownTeam: ownDisplayTeam,
     oppTeam: opponentTeam,
     ownPlayers,
     oppPlayers,
   });
   const rookiesField = buildRookiesToWatch({
-    ownTeam,
+    ownTeam: ownDisplayTeam,
     oppTeam: opponentTeam,
     ownRookies,
     oppRookies,
   });
   const quickRead = buildQuickRead({
     snapshot,
-    ownTeam,
+    ownTeam: ownDisplayTeam,
     oppTeam: opponentTeam,
     ownStanding,
     oppStanding,
@@ -1216,7 +1227,7 @@ export async function execute(interaction) {
     .addFields(
       {
         name: 'Matchup',
-        value: `${formatTeamLabelWithEmoji(ownTeam.fullName)} (${formatRecord(ownStanding)}) vs ${formatTeamLabelWithEmoji(opponentTeam.fullName)} (${formatRecord(oppStanding)})`,
+        value: `${formatTeamLabelWithEmoji(ownDisplayTeam.fullName)} (${formatRecord(ownStanding)}) vs ${formatTeamLabelWithEmoji(opponentTeam.fullName)} (${formatRecord(oppStanding)})`,
         inline: false,
       },
       {
@@ -1242,7 +1253,7 @@ export async function execute(interaction) {
       {
         name: 'Legacy',
         value: formatLegacyOutlook(
-          formatLegacySummaryLine(ownTeam.fullName, ownCoachUser, ownPerkState?.balances || {}, ownStreamTotal, ownLegacyInPlay),
+          formatLegacySummaryLine(ownDisplayTeam.fullName, ownCoachUser, ownPerkState?.balances || {}, ownStreamTotal, ownLegacyInPlay),
           formatLegacySummaryLine(opponentTeam.fullName, opponentCoachUser, oppPerkState?.balances || {}, oppStreamTotal, oppLegacyInPlay),
         ),
         inline: false,
@@ -1260,7 +1271,7 @@ export async function execute(interaction) {
     })
     .setTimestamp(new Date());
   let files = [];
-  files = applyEmbedThumbnailFromAsset(embed, files, getNflTeamLogoAsset(ownTeam, 'stream_team.png'));
+  files = applyEmbedThumbnailFromAsset(embed, files, getNflTeamLogoAsset(ownDisplayTeam, 'stream_team.png'));
 
   const roleMentions = [ghostRoleId, opponentRole?.id].filter(Boolean);
   const mentionParts = [
