@@ -1155,13 +1155,29 @@ async function execute(interaction) {
           const challengeLine = hasRecognition
             ? formatWeeklyRecognitionChallenge({ weekNumber: wkNumeric, featuredGame })
             : null;
-          const sportsbookRow = hasSportsbook
-            ? new ActionRowBuilder().addComponents(
+          const announcementButtons = [];
+          if (hasRecognition) {
+            announcementButtons.push(
+              new ButtonBuilder()
+                .setCustomId('madden_franchisehub_spend|activity')
+                .setLabel('Spend Activity')
+                .setStyle(ButtonStyle.Secondary),
+              new ButtonBuilder()
+                .setCustomId('madden_franchisehub_spend|impact')
+                .setLabel('Spend Impact')
+                .setStyle(ButtonStyle.Secondary),
+            );
+          }
+          if (hasSportsbook) {
+            announcementButtons.push(
               new ButtonBuilder()
                 .setCustomId(`madden_sportsbook_open|${wkNumeric}|board|0`)
                 .setLabel('Open Sportsbook')
                 .setStyle(ButtonStyle.Success),
-            )
+            );
+          }
+          const announcementRow = announcementButtons.length
+            ? new ActionRowBuilder().addComponents(...announcementButtons)
             : null;
           const baseDescription = [
             `${created} matchup ${created === 1 ? 'thread is' : 'threads are'} live for ${roundLabel}.`,
@@ -1193,7 +1209,7 @@ async function execute(interaction) {
           await announce.send({
             content: coachTag || null,
             embeds: [embed],
-            components: sportsbookRow ? [sportsbookRow] : [],
+            components: announcementRow ? [announcementRow] : [],
           });
         }
       }
