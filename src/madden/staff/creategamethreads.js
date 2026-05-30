@@ -1155,6 +1155,14 @@ async function execute(interaction) {
           const challengeLine = hasRecognition
             ? formatWeeklyRecognitionChallenge({ weekNumber: wkNumeric, featuredGame })
             : null;
+          const sportsbookRow = hasSportsbook
+            ? new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId(`madden_sportsbook_open|${wkNumeric}|board|0`)
+                .setLabel('Open Sportsbook')
+                .setStyle(ButtonStyle.Success),
+            )
+            : null;
           const baseDescription = [
             `${created} matchup ${created === 1 ? 'thread is' : 'threads are'} live for ${roundLabel}.`,
             `${GAME_THREAD_DEADLINE_HOURS}-hour sim deadline: <t:${deadline}:F> (<t:${deadline}:R>).`,
@@ -1182,7 +1190,11 @@ async function execute(interaction) {
               : [],
             timestamp: new Date().toISOString(),
           };
-          await announce.send({ content: coachTag || null, embeds: [embed] });
+          await announce.send({
+            content: coachTag || null,
+            embeds: [embed],
+            components: sportsbookRow ? [sportsbookRow] : [],
+          });
         }
       }
     } catch (e) {
