@@ -447,15 +447,28 @@ function buildQuickRead({
   const ownLine = teamStatLine(ownStats);
   const oppLine = teamStatLine(oppStats);
   const stakes = buildStakesLine(snapshot, ownTeam, oppTeam, ownStanding, oppStanding, seed);
+  const ownRecord = formatRecord(ownStanding);
+  const oppRecord = formatRecord(oppStanding);
+  const ownStreak = ownForm?.streak && ownForm.streak !== 'N/A' ? `, ${ownForm.streak}` : '';
+  const oppStreak = oppForm?.streak && oppForm.streak !== 'N/A' ? `, ${oppForm.streak}` : '';
+  const ownIdentity = ownLine.passYpg >= ownLine.rushYpg
+    ? `${formatOneDecimal(ownLine.passYpg)} pass yards per game`
+    : `${formatOneDecimal(ownLine.rushYpg)} rush yards per game`;
+  const oppIdentity = oppLine.passYpg >= oppLine.rushYpg
+    ? `${formatOneDecimal(oppLine.passYpg)} pass yards per game`
+    : `${formatOneDecimal(oppLine.rushYpg)} rush yards per game`;
+  const rivalryRematch = buildDivisionRematchLine(bettingLine, ownTeam, oppTeam, seed);
+  const h2hStatLine = buildHeadToHeadStatLine(bettingLine, ownTeam, oppTeam);
+  const injury = buildInjuryContextLine(snapshot, ownTeam, oppTeam, ownTeam.teamId, oppTeam.teamId, seed);
   const leverageOptions = [
     ownLine.sacksAllowedPerGame >= 2.2 || oppLine.sacksPerGame >= 2.2
-      ? `Protection is the first tell: ${ownTeam.fullName} allow ${formatOneDecimal(ownLine.sacksAllowedPerGame)} sacks/gm, ${oppTeam.fullName} create ${formatOneDecimal(oppLine.sacksPerGame)}.`
+      ? `Protection is the first tell: ${ownTeam.fullName} allow ${formatOneDecimal(ownLine.sacksAllowedPerGame)} sacks per game, while ${oppTeam.fullName} create ${formatOneDecimal(oppLine.sacksPerGame)}.`
       : null,
     ownLine.compPct && oppLine.compPct
-      ? `QB rhythm is the clean watch point: ${ownTeam.fullName} are at ${formatOneDecimal(ownLine.compPct)}%, ${oppTeam.fullName} at ${formatOneDecimal(oppLine.compPct)}%.`
+      ? `QB rhythm is the clean watch point, with ${ownTeam.fullName} completing ${formatOneDecimal(ownLine.compPct)}% and ${oppTeam.fullName} at ${formatOneDecimal(oppLine.compPct)}%.`
       : null,
     ownForm?.games && oppForm?.games
-      ? `Recent form is split ${ownForm.recentWins}-${Math.max(0, ownForm.recentGames - ownForm.recentWins)} vs ${oppForm.recentWins}-${Math.max(0, oppForm.recentGames - oppForm.recentWins)} over the latest completed games.`
+      ? `Recent form adds another layer: ${ownTeam.fullName} are ${ownForm.recentWins}-${Math.max(0, ownForm.recentGames - ownForm.recentWins)} over their latest completed games, while ${oppTeam.fullName} are ${oppForm.recentWins}-${Math.max(0, oppForm.recentGames - oppForm.recentWins)}.`
       : null,
     bettingLine?.total
       ? `The book has this at O/U ${formatOneDecimal(bettingLine.total)}, so one early stop can change the whole script.`
@@ -463,10 +476,14 @@ function buildQuickRead({
   ].filter(Boolean);
 
   return [
-    teamQuickLine(ownTeam, ownStanding, ownStats, ownForm),
-    teamQuickLine(oppTeam, oppStanding, oppStats, oppForm),
-    pickVariant(seed + 31, leverageOptions) || stakes,
-  ].join('\n');
+    `${ownTeam.fullName} come in ${ownRecord}${ownStreak}, while ${oppTeam.fullName} enter ${oppRecord}${oppStreak}; the records give this stream an immediate frame.`,
+    `Where it gets interesting is style: ${ownTeam.fullName} have leaned on ${ownIdentity}, and ${oppTeam.fullName} answer with ${oppIdentity}.`,
+    pickVariant(seed + 31, [rivalryRematch, h2hStatLine, ...leverageOptions].filter(Boolean)) || stakes,
+    stripTrailingPeriod(injury) ? `${stripTrailingPeriod(injury)}.` : stakes,
+  ]
+    .filter(Boolean)
+    .slice(0, 4)
+    .join(' ');
 }
 
 function rosterForTeam(snapshot, teamId) {
@@ -812,10 +829,10 @@ function buildMatchupLever({
 }
 
 function buildPlayersToWatch({
+  ownTeam,
+  oppTeam,
   ownPlayers,
   oppPlayers,
-  ownRookies,
-  oppRookies,
 }) {
   const watch = [];
   const ownTop = topImpactPlayers(ownPlayers, 1)[0];
@@ -824,7 +841,6 @@ function buildPlayersToWatch({
   const oppDef = findDefenseToneSetter(oppPlayers);
   const ownNonQb = findBestNonQuarterback(ownPlayers);
   const oppNonQb = findBestNonQuarterback(oppPlayers);
-  const rookie = ownRookies[0] || oppRookies[0] || null;
   const ownStar = ownDef && spotlightScore(ownDef) >= spotlightScore(ownTop) * 0.85
     ? ownDef
     : (String(ownTop?.position || '').toUpperCase() === 'QB' && ownNonQb ? ownNonQb : ownTop);
@@ -834,16 +850,35 @@ function buildPlayersToWatch({
 
   if (ownStar) {
     const pos = String(ownStar.position || '').toUpperCase();
-    watch.push(`Own spotlight: ${pos === 'QB' ? qbShortLine(ownStar) : nonQbShortLine(ownStar)}`);
+    watch.push(`• ${ownTeam.abbr || ownTeam.mascot || ownTeam.fullName}: ${pos === 'QB' ? qbShortLine(ownStar) : nonQbShortLine(ownStar)}`);
   }
   if (oppStar && normalizeName(formatPlayerName(oppStar)) !== normalizeName(formatPlayerName(ownStar))) {
     const pos = String(oppStar.position || '').toUpperCase();
-    watch.push(`Opponent spotlight: ${pos === 'QB' ? qbShortLine(oppStar) : nonQbShortLine(oppStar)}`);
+    watch.push(`• ${oppTeam.abbr || oppTeam.mascot || oppTeam.fullName}: ${pos === 'QB' ? qbShortLine(oppStar) : nonQbShortLine(oppStar)}`);
   }
-  if (rookie) {
-    watch.push(`Rookie watch: ${formatPlayerName(rookie)} (${String(rookie.position || '').toUpperCase()})`);
-  }
-  return watch.slice(0, 3).join('\n');
+  return watch.slice(0, 3).join('\n') || '• No clear player spotlight found in the current export yet.';
+}
+
+function buildRookiesToWatch({
+  ownTeam,
+  oppTeam,
+  ownRookies,
+  oppRookies,
+}) {
+  const rookies = [
+    ...ownRookies.map((player) => ({ player, team: ownTeam })),
+    ...oppRookies.map((player) => ({ player, team: oppTeam })),
+  ]
+    .sort((a, b) => Number(b.player?.impact || 0) - Number(a.player?.impact || 0))
+    .filter((entry, index, list) =>
+      list.findIndex((candidate) => normalizeName(formatPlayerName(candidate.player)) === normalizeName(formatPlayerName(entry.player))) === index,
+    )
+    .slice(0, 3);
+
+  if (!rookies.length) return '• No rookie watch candidates found in the current export yet.';
+  return rookies
+    .map(({ player, team }) => `• ${team.abbr || team.mascot || team.fullName}: ${nonQbShortLine(player)}`)
+    .join('\n');
 }
 
 function stripTrailingPeriod(text = '') {
@@ -1121,7 +1156,18 @@ export async function execute(interaction) {
     seed,
     bettingLine,
   });
-  const playersField = buildPlayersField({ ownPlayers, oppPlayers, ownRookies, oppRookies, seed });
+  const playersField = buildPlayersToWatch({
+    ownTeam,
+    oppTeam: opponentTeam,
+    ownPlayers,
+    oppPlayers,
+  });
+  const rookiesField = buildRookiesToWatch({
+    ownTeam,
+    oppTeam: opponentTeam,
+    ownRookies,
+    oppRookies,
+  });
   const phaseHook = buildPhaseHook(snapshot, ownStanding, oppStanding, seed);
 
   const titleVariants = [
@@ -1146,8 +1192,13 @@ export async function execute(interaction) {
         inline: false,
       },
       {
-        name: 'Players',
+        name: 'Key Players to Watch',
         value: playersField,
+        inline: false,
+      },
+      {
+        name: 'Key Rookies to Watch',
+        value: rookiesField,
         inline: false,
       },
       ...(bettingLine ? [{
