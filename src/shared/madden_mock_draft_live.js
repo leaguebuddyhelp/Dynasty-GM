@@ -12,6 +12,7 @@ import { loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from './madden_draft_class.js';
+import { formatMaddenProspectIdentity } from './madden_draft_class_files.js';
 import { ensureStableMockAvpStore } from './madden_avp_simulator.js';
 import {
   applyPickTrades,
@@ -546,7 +547,7 @@ function topAvailableLines(session, limit = 8) {
   return (session.availableProspects || []).slice(0, limit).map((prospect) => {
     const recent = session.picks.find((pick) => pick.prospectId === prospect.id);
     if (recent) return null;
-    return `#${prospect.rank} ${prospect.name} (${prospect.position}, ${prospect.school})`;
+    return `#${prospect.rank} ${prospect.name} (${formatMaddenProspectIdentity(prospect)}, ${prospect.school})`;
   }).filter(Boolean);
 }
 
@@ -556,7 +557,7 @@ function recentPickLines(session, limit = 6) {
     const emoji = formatTeamEmoji(pick.teamName, emojiMap);
     const grade = pick.userId !== 'auto' && pick.grade ? ` • ${pick.grade}` : '';
     const actor = pick.actorLabel || (pick.userId ? `<@${pick.userId}>` : 'Auto');
-    return `${pick.pickNumber}. ${emoji ? `${emoji} ` : ''}${pick.teamName} — ${pick.prospectName} (${pick.position})${grade} by ${actor}`;
+    return `${pick.pickNumber}. ${emoji ? `${emoji} ` : ''}${pick.teamName} — ${pick.prospectName} (${pick.positionLabel || pick.position})${grade} by ${actor}`;
   });
 }
 
@@ -577,7 +578,7 @@ export function buildMockDraftPickEmbed(session, pick) {
 
   const headline = `${emoji ? `${emoji} ` : ''}${pick.teamName} select **${pick.prospectName}**`;
   const details = [
-    pick.position ? `**Pos:** ${pick.position}` : null,
+    (pick.positionLabel || pick.position) ? `**Pos:** ${pick.positionLabel || pick.position}` : null,
     pick.school ? `**School:** ${pick.school}` : null,
     pick.boardRank != null ? `**Board:** #${pick.boardRank}` : null,
     pick.avp != null ? `**AVP:** ${Number(pick.avp).toFixed(1)}` : null,
@@ -1159,7 +1160,7 @@ function buildPickSynopsis({
     passedEliteDelta != null && Number(passedEliteDelta) >= 12
       ? seededPickOne(session?.variantSeed || session?.id || 'seed', `opp_cost:${teamName}:${prospect?.name}`, [
         bestRemaining?.name && bestRemaining?.position
-          ? `The question is who they left on the table — ${bestRemaining.name} (${bestRemaining.position}) was still right there.`
+          ? `The question is who they left on the table — ${bestRemaining.name} (${formatMaddenProspectIdentity(bestRemaining)}) was still right there.`
           : `The question is who they left on the table — there were cleaner top-of-board options still available.`,
         `When the gap at the top of the board is this wide, passing on it usually comes back around.`,
         `This is the kind of spot where you expect them to walk away with the best player still sitting there.`,
@@ -1512,6 +1513,7 @@ export function applyPick(session, userId, prospect, options = {}) {
     prospectId: prospect.id,
     prospectName: prospect.name,
     position: prospect.position,
+    positionLabel: formatMaddenProspectIdentity(prospect),
     school: prospect.school,
     boardRank: review?.boardRank ?? (Number(prospect.rank || null) || null),
     avp: review?.avp ?? avpForProspect(session, prospect),
@@ -1540,7 +1542,7 @@ export function listUserAssignedSlots(session, userId) {
     items.push({
       pickNumber,
       teamName: slot.name,
-      status: made ? `${made.prospectName} (${made.position})` : 'Still open',
+      status: made ? `${made.prospectName} (${made.positionLabel || made.position})` : 'Still open',
     });
   }
   return items;

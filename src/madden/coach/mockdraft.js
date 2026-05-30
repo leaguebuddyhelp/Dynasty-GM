@@ -38,7 +38,7 @@ import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
 import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
-import { findMaddenDraftClassFile, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { findMaddenDraftClassFile, formatMaddenProspectIdentity, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -1801,7 +1801,7 @@ export async function execute(interaction) {
     if (chosenGroup) pickedGroups.add(chosenGroup);
 
     const emoji = formatTeamEmoji(team.name, emojis);
-    const pos = chosen?.position || chosen?.position_1 || '';
+    const pos = formatMaddenProspectIdentity(chosen, chosen?.position || chosen?.position_1 || 'POS');
     const school = chosen?.school || chosen?.College || chosen?.college || 'N/A';
     const via = team.via ? ` (via ${team.via})` : '';
     const line = `${currentPickNumber}. ${emoji ? emoji + ' ' : ''}${team.name}${via} — ${pos || 'POS'} ${chosen?.name || 'TBD'} — ${school}`;

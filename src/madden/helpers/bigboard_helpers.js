@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { resolveLeagueIdWithConfig } from '../madden_data.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
-import { displayMaddenDraftClassId, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { displayMaddenDraftClassId, formatMaddenProspectIdentity, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 
 function classIdForSeason(calendarYear) {
   return getMaddenDraftClassId({ calendarYear });
@@ -34,7 +34,7 @@ export function buildPages(snapshot, classIdOverride = null, leagueId = null, op
   if (!draftData) throw new Error(`Draft class ${classId} not found`);
 
   const prospects = Object.values(draftData || {}).sort((a, b) => (a.RNK ?? a.rank ?? a.order ?? 9999) - (b.RNK ?? b.rank ?? b.order ?? 9999));
-  const lines = prospects.map((p, idx) => `${idx + 1}. ${p.position || ''} ${p.name || 'Unknown'} - ${p.school || 'N/A'}`);
+  const lines = prospects.map((p, idx) => `${idx + 1}. ${formatMaddenProspectIdentity(p, p.position || '')} ${p.name || 'Unknown'} - ${p.school || 'N/A'}`);
   const pages = chunk(lines, 32);
   const embeds = pages.map((page, idx) => new EmbedBuilder()
     .setTitle(`Madden Big Board — ${displayClassId(classId)} (Page ${idx + 1}/${pages.length})`)

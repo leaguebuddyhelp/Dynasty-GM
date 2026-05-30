@@ -11,7 +11,7 @@ import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
-import { findMaddenDraftClassFile, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { findMaddenDraftClassFile, formatMaddenProspectClassLabel, formatMaddenProspectIdentity, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 import { getMaddenScoutingPhase, OFFSEASON_SCOUT_POINTS, REGULAR_SCOUT_POINTS } from '../../shared/madden_scouting_phase.js';
 
 export const featureKey = 'scouting_draft';
@@ -383,7 +383,7 @@ function getBoardUi(userData, classKey) {
 
 function buildBoardLine(item, displayIndex) {
   const boardBits = [`#${displayIndex}`];
-  const identity = [item.position, item.school, `Board #${item.boardPos || '?'}`].filter(Boolean).join(' • ');
+  const identity = [item.positionClass || item.position, item.school, `Board #${item.boardPos || '?'}`].filter(Boolean).join(' • ');
   return `**${boardBits.join(' | ')}**\n**${item.name}** (${identity})\n${item.status}${item.parts.length ? ` | ${item.parts.join(' | ')}` : ' | No info unlocked'}`;
 }
 
@@ -505,12 +505,7 @@ function buildPagesForUser(userId, guildId, member = null) {
     if (hasArch) parts.push(`Arch: ${p.archetype_1 || p.archetype_2 || 'N/A'}`);
     if (unlocked.includes('ovr')) parts.push(`OVR: ${p.overall ?? 'N/A'}`);
     if (unlocked.includes('dev')) parts.push(`Dev: ${formatDev(p.dev_trait)}`);
-    const meta = [];
-    if (p.position) meta.push(p.position);
-    if (p.year) meta.push(p.year);
-    if (p.school) meta.push(p.school);
     const boardPos = p.RNK ?? p.rank ?? p.order ?? p['#'];
-    meta.push(`Board #${boardPos || '?'}`);
     const progress = `${Math.min(unlocked.length, REVEAL_ORDER.length)}/${REVEAL_ORDER.length}`;
     const status = unlocked.length >= REVEAL_ORDER.length ? 'Fully scouted' : `${progress} unlocked`;
     const boardNum = Number(boardPos);
@@ -518,6 +513,8 @@ function buildPagesForUser(userId, guildId, member = null) {
     return {
       name,
       position: p.position || '',
+      positionClass: formatMaddenProspectIdentity(p, p.position || ''),
+      classLabel: formatMaddenProspectClassLabel(p),
       school: p.school || '',
       boardPos: boardPos || '?',
       boardKey,

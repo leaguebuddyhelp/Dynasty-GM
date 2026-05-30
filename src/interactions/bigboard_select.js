@@ -5,6 +5,7 @@ import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_da
 import { loadDraftClass } from '../madden/helpers/bigboard_helpers.js';
 import { loadScoutStore, getScoutSeasonKey, getSeasonScoutUser } from '../madden/coach/scout_store.js';
 import { getMaddenDraftClassId } from '../shared/madden_draft_class.js';
+import { formatMaddenProspectClassLabel, formatMaddenProspectIdentity } from '../shared/madden_draft_class_files.js';
 
 function normalize(str = '') {
     return String(str)
@@ -85,11 +86,11 @@ export async function execute(interaction) {
     });
 
     const embed = new EmbedBuilder()
-        .setTitle(`${selected.position_1 || selected.position || ''} - ${selected.name}`)
+        .setTitle(`${formatMaddenProspectIdentity(selected, selected.position_1 || selected.position || '')} - ${selected.name}`)
         .setThumbnail(selected.image || selected.imgUrl || selected.imgURL || null)
         .addFields(
             { name: "Team", value: selected.team || "N/A", inline: true },
-            { name: "Class", value: selected.class || "N/A", inline: true },
+            { name: "Class", value: formatMaddenProspectClassLabel(selected) || selected.class?.toString() || "N/A", inline: true },
             { name: "Age", value: selected.age?.toString() || "N/A", inline: true },
             { name: "Nationality", value: selected.nationality || "N/A", inline: true },
             { name: "Physicals", value: `**Ht:** ${selected.height || 'N/A'}  **Wt:** ${selected.weight?.toString() || 'N/A'}  **Wingspan:** ${selected.wingspan || 'N/A'}`, inline: false },

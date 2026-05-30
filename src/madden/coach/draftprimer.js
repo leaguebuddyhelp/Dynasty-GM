@@ -15,6 +15,7 @@ import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 import {
     findMaddenDraftClassFile,
+    formatMaddenProspectIdentity,
     loadMaddenDraftClassArray,
     normalizeMaddenDraftClassId,
 } from '../../shared/madden_draft_class_files.js';
@@ -1492,7 +1493,7 @@ export async function execute(interaction) {
                 round,
                 target,
                 need: targetNeed,
-                line: `${round}. ${target.name} (${target.position || target.position_1 || 'POS'}) — ${school}`,
+                line: `${round}. ${target.name} (${formatMaddenProspectIdentity(target)}) — ${school}`,
             }
             : { round, target: null, need: null, line: `${round}. No suggestion` });
     }
@@ -1521,7 +1522,7 @@ export async function execute(interaction) {
                 round: targetIdx + 1,
                 target: rep,
                 need: repNeed,
-                line: `${targetIdx + 1}. ${rep.name} (${rep.position || rep.position_1 || 'POS'}) — ${school}`,
+                line: `${targetIdx + 1}. ${rep.name} (${formatMaddenProspectIdentity(rep)}) — ${school}`,
             };
         }
     }
@@ -1609,7 +1610,7 @@ export async function execute(interaction) {
                 if (pickedR1) {
                     seenNames.add(pickedR1.name);
                     const school = pickedR1.college || pickedR1.College || pickedR1.school || pickedR1.schoolName || 'N/A';
-                    rebuilt.push(`${round}. ${pickedR1.name} (${pickedR1.position || pickedR1.position_1 || 'POS'}) — ${school} (Proj R${round})`);
+                    rebuilt.push(`${round}. ${pickedR1.name} (${formatMaddenProspectIdentity(pickedR1)}) — ${school} (Proj R${round})`);
                     continue;
                 }
             }
@@ -1664,7 +1665,7 @@ export async function execute(interaction) {
                 if (needHit) needCount[needHit] = (needCount[needHit] || 0) + 1;
             }
             const school = pick?.college || pick?.College || pick?.school || pick?.schoolName || 'N/A';
-            rebuilt.push(pick ? `${round}. ${pick.name} (${pick.position || pick.position_1 || 'POS'}) — ${school} (Proj R${round})`
+            rebuilt.push(pick ? `${round}. ${pick.name} (${formatMaddenProspectIdentity(pick)}) — ${school} (Proj R${round})`
                 : `${round}. No suggestion`);
         }
 
@@ -1678,7 +1679,7 @@ export async function execute(interaction) {
                 || draftClass.find(p => !seenNames.has(p.name) && mapNeed(p) === 'QB');
             if (depthQB) {
                 const school = depthQB.college || depthQB.College || depthQB.school || depthQB.schoolName || 'N/A';
-                rebuilt[6] = `7. ${depthQB.name} (${depthQB.position || depthQB.position_1 || 'QB'}) — ${school} (Proj R7)`;
+                rebuilt[6] = `7. ${depthQB.name} (${formatMaddenProspectIdentity(depthQB, 'QB')}) — ${school} (Proj R7)`;
             }
         }
         if (process.env.MOCK_DEBUG) console.log(`[MOCK_POST] Rebuilt non-QB picks for ${teamName}`);
@@ -2370,7 +2371,7 @@ export async function execute(interaction) {
                     round: idx + 1,
                     target: replacement,
                     need: replacementNeed,
-                    line: `${idx + 1}. ${replacement.name} (${replacement.position || replacement.position_1 || 'POS'}) — ${school}`,
+                    line: `${idx + 1}. ${replacement.name} (${formatMaddenProspectIdentity(replacement)}) — ${school}`,
                 };
             }
             return { round: idx + 1, target: null, need: null, line: `${idx + 1}. No suggestion` };
@@ -2399,7 +2400,7 @@ export async function execute(interaction) {
         const archetype = canShowScoutDetail ? formatShortArchetype(intel.targetNeed, target) : '';
         const projectedPick = canShowScoutDetail ? projectedPickForProspect(target) : null;
         const headerBits = [
-            `${idx + 1}. ${target.name} (${target.position || target.position_1 || formatNeedLabel(intel.targetNeed)})`,
+            `${idx + 1}. ${target.name} (${formatMaddenProspectIdentity(target, formatNeedLabel(intel.targetNeed))})`,
             school,
             `R${intel.targetRound} #${intel.targetRank}`,
         ];
@@ -2542,7 +2543,7 @@ export async function execute(interaction) {
             }
             return suggestedProspects.map((prospect, idx) => {
                 const roundLabel = ['Round 1', 'Round 2', 'Round 3', 'Round 4', 'Round 5', 'Round 6', 'Round 7+'][idx] || `Spot ${idx + 1}`;
-                return `• ${roundLabel}: ${prospect.name} (${prospect.position || 'N/A'} • Board #${prospectRank(prospect) || '?'}${prospect.school ? ` • ${prospect.school}` : ''})`;
+                return `• ${roundLabel}: ${prospect.name} (${formatMaddenProspectIdentity(prospect, 'N/A')} • Board #${prospectRank(prospect) || '?'}${prospect.school ? ` • ${prospect.school}` : ''})`;
             }).join('\n');
         })()
         : null;

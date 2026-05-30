@@ -12,7 +12,7 @@ import { applyEmbedThumbnailFromAsset, getDevTraitAsset, getLeagueBuddyBrandAsse
 import { formatMaddenDraftClassLock, getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getDevTraitEmoji } from '../../shared/application_emojis.js';
-import { findMaddenDraftClassFile, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { findMaddenDraftClassFile, formatMaddenProspectClassLabel, formatMaddenProspectIdentity, loadMaddenDraftClassRaw, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 import { getMaddenScoutingPhase, OFFSEASON_SCOUT_POINTS, REGULAR_SCOUT_POINTS } from '../../shared/madden_scouting_phase.js';
 
 export const featureKey = 'scouting_draft';
@@ -391,9 +391,9 @@ export async function execute(interaction) {
       if (cat === 'dev') fields.push(`**Dev Trait:** ${formatDev(player.dev_trait)}`);
     }
   });
-  const yearLabel = player.year ? ` • ${player.year}` : '';
+  const yearLabel = formatMaddenProspectClassLabel(player);
   const embed = new EmbedBuilder()
-    .setTitle(`${player.position} ${player.name}${yearLabel}`)
+    .setTitle(`${formatMaddenProspectIdentity(player, player.position || 'POS')} ${player.name}`)
     .setDescription(fields.join('\n') || 'No info unlocked yet.')
     .setFooter({ text: `Used ${cost} pts. ${pointsLeft} pts left ${isOffseason ? 'this offseason (300 total)' : `this week (${POINTS_PER_WEEK})`}. ${classLock}` })
     .setColor(0x1e90ff);
@@ -404,6 +404,13 @@ export async function execute(interaction) {
     metaFields.push({
       name: 'Jersey',
       value: `#${jerseyNum}`,
+      inline: true
+    });
+  }
+  if (yearLabel) {
+    metaFields.push({
+      name: 'Class',
+      value: yearLabel,
       inline: true
     });
   }

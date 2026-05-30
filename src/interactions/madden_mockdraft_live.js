@@ -173,7 +173,7 @@ async function sendMockDraftSummaryDMs(client, sessionId) {
   // Use pick-count truncation (not character truncation) so the "full recap" stays coherent.
   // 32 picks comfortably fit in one embed description, but this safeguards partial mocks too.
   const fullPickLines = allPicks.length
-    ? allPicks.map((pick) => `Pick ${pick.pickNumber}: ${pick.teamName} — ${pick.prospectName} (${pick.position})${pick.grade ? ` • ${pick.grade}` : ''}`)
+    ? allPicks.map((pick) => `Pick ${pick.pickNumber}: ${pick.teamName} — ${pick.prospectName} (${pick.positionLabel || pick.position})${pick.grade ? ` • ${pick.grade}` : ''}`)
     : ['No picks were made.'];
   const fullLog = fullPickLines.join('\n');
 
@@ -183,7 +183,7 @@ async function sendMockDraftSummaryDMs(client, sessionId) {
     const teamText = participant.teamNames?.length ? participant.teamNames.join(', ') : 'No assigned team';
     const userPickItems = (session.picks || []).filter((pick) => pick.userId === participant.userId);
     const userPicks = userPickItems
-      .map((pick) => `${pick.pickNumber}. ${pick.teamName} — ${pick.prospectName} (${pick.position})${pick.grade ? ` • ${pick.grade}` : ''}`)
+      .map((pick) => `${pick.pickNumber}. ${pick.teamName} — ${pick.prospectName} (${pick.positionLabel || pick.position})${pick.grade ? ` • ${pick.grade}` : ''}`)
       .join('\n') || 'No coach-made picks in this mock.';
     const userRecaps = userPickItems
       .map((pick) => `Pick ${pick.pickNumber}: ${pick.synopsis || `${pick.teamName} selected ${pick.prospectName}.`}`)
@@ -915,7 +915,7 @@ async function handleButton(interaction) {
           new EmbedBuilder()
             .setTitle('Pick Simulated')
             .setColor(0x5865f2)
-            .setDescription(`CPU made your pick: **${madePick.pickNumber}. ${madePick.teamName} — ${madePick.prospectName} (${madePick.position})**.\n\nChoose whether to continue the live mock, finish the rest with CPU, or end it here.`),
+            .setDescription(`CPU made your pick: **${madePick.pickNumber}. ${madePick.teamName} — ${madePick.prospectName} (${madePick.positionLabel || madePick.position})**.\n\nChoose whether to continue the live mock, finish the rest with CPU, or end it here.`),
         ],
         components: buildPostPickControlComponents(sessionId)(interaction),
       });
@@ -1016,7 +1016,7 @@ async function handlePickSelect(interaction) {
           new EmbedBuilder()
             .setTitle('Pick Submitted')
             .setColor(0x5865f2)
-            .setDescription(`Pick ${madePick.pickNumber} is locked in: **${madePick.teamName} — ${madePick.prospectName} (${madePick.position})**.`),
+            .setDescription(`Pick ${madePick.pickNumber} is locked in: **${madePick.teamName} — ${madePick.prospectName} (${madePick.positionLabel || madePick.position})**.`),
         ],
         components: [],
       }).catch(() => null);

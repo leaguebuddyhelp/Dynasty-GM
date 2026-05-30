@@ -20,6 +20,37 @@ export function displayMaddenDraftClassId(value = '') {
   return String(normalized || '').replace('_', '').toUpperCase();
 }
 
+export function formatMaddenProspectClassLabel(player = null) {
+  const raw = player?.year ?? player?.classYear ?? player?.academicYear ?? player?.eligibility ?? '';
+  const text = String(raw || '').trim().toUpperCase();
+  if (text) {
+    return text
+      .replace(/\s+/g, '')
+      .replace(/^SO$/, 'SPH')
+      .replace(/^SOPH$/, 'SPH')
+      .replace(/^SOPHOMORE$/, 'SPH')
+      .replace(/^FRESHMAN$/, 'FR')
+      .replace(/^JUNIOR$/, 'JR')
+      .replace(/^SENIOR$/, 'SR')
+      .replace(/^R-?FR$/, 'FR(RS)')
+      .replace(/^R-?SO$/, 'SPH(RS)')
+      .replace(/^R-?SOPH$/, 'SPH(RS)')
+      .replace(/^R-?JR$/, 'JR(RS)')
+      .replace(/^R-?SR$/, 'SR(RS)');
+  }
+  const classText = String(player?.className || player?.schoolClass || '').trim().toUpperCase();
+  if (classText) return classText.replace(/\s+/g, '');
+  return '';
+}
+
+export function formatMaddenProspectIdentity(player = null, fallbackPosition = 'POS') {
+  const parts = [
+    player?.position || player?.position_1 || fallbackPosition,
+    formatMaddenProspectClassLabel(player),
+  ].filter(Boolean);
+  return parts.join(' ');
+}
+
 function bundledDraftClassDir() {
   return path.join(process.cwd(), 'bundled_data', 'draft_classes', 'madden');
 }

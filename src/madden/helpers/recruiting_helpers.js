@@ -1,6 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getMaddenDraftClassId } from '../../shared/madden_draft_class.js';
-import { displayMaddenDraftClassId, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { displayMaddenDraftClassId, formatMaddenProspectIdentity, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
 const PAGE_SIZE = 10;
 
 const safeLoadRecruiting = (snapshotOrLeague = null, classIdOverride = null) => {
@@ -37,7 +37,7 @@ const buildRecruitingEmbed = (pageIndex, recruits, options = {}) => {
     const rank = r.national_rank ?? r['#'] ?? '?';
     const starStr = starsToEmoji(r.stars);
     const school = r.school || 'Uncommitted';
-    const pos = r.position || 'Pos';
+    const pos = formatMaddenProspectIdentity(r, r.position || 'Pos');
     const name = r.name || 'Unknown';
     const ht = r.height || 'N/A';
     const wt = r.weight ? `${r.weight} lbs` : 'N/A';
