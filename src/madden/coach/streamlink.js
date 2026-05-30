@@ -411,26 +411,6 @@ function statBackedPlayerLine(player = {}) {
   return `${name} (${pos}${ovr ? `, ${ovr} OVR` : ''})`;
 }
 
-function buildPlayersField({
-  ownPlayers,
-  oppPlayers,
-  ownRookies,
-  oppRookies,
-  seed,
-}) {
-  const ownQb = findTeamQuarterback(ownPlayers);
-  const oppQb = findTeamQuarterback(oppPlayers);
-  const ownStar = findBestNonQuarterback(ownPlayers) || topImpactPlayers(ownPlayers, 1)[0];
-  const oppStar = findBestNonQuarterback(oppPlayers) || topImpactPlayers(oppPlayers, 1)[0];
-  const rookie = pickVariant(seed + 9, [ownRookies[0], oppRookies[0]].filter(Boolean));
-  return [ownQb, oppQb, ownStar, oppStar, rookie]
-    .filter(Boolean)
-    .filter((player, index, list) => list.findIndex((entry) => normalizeName(formatPlayerName(entry)) === normalizeName(formatPlayerName(player))) === index)
-    .slice(0, 4)
-    .map((player) => `• ${statBackedPlayerLine(player)}`)
-    .join('\n') || '• No player stat leaders found in the current export yet.';
-}
-
 function buildQuickRead({
   snapshot,
   ownTeam,
@@ -443,6 +423,7 @@ function buildQuickRead({
   oppForm,
   seed,
   bettingLine,
+  standouts = null,
 }) {
   const ownLine = teamStatLine(ownStats);
   const oppLine = teamStatLine(oppStats);
@@ -460,6 +441,13 @@ function buildQuickRead({
   const rivalryRematch = buildDivisionRematchLine(bettingLine, ownTeam, oppTeam, seed);
   const h2hStatLine = buildHeadToHeadStatLine(bettingLine, ownTeam, oppTeam);
   const injury = buildInjuryContextLine(snapshot, ownTeam, oppTeam, ownTeam.teamId, oppTeam.teamId, seed);
+  const ownOffense = standouts?.ownOffense ? `${formatPlayerName(standouts.ownOffense)} (${String(standouts.ownOffense.position || '').toUpperCase()})` : null;
+  const oppOffense = standouts?.oppOffense ? `${formatPlayerName(standouts.oppOffense)} (${String(standouts.oppOffense.position || '').toUpperCase()})` : null;
+  const ownDefense = standouts?.ownDefense ? `${formatPlayerName(standouts.ownDefense)} (${String(standouts.ownDefense.position || '').toUpperCase()})` : null;
+  const oppDefense = standouts?.oppDefense ? `${formatPlayerName(standouts.oppDefense)} (${String(standouts.oppDefense.position || '').toUpperCase()})` : null;
+  const rookieName = standouts?.ownRookie || standouts?.oppRookie
+    ? `${formatPlayerName(pickVariant(seed + 41, [standouts.ownRookie, standouts.oppRookie].filter(Boolean)))}`
+    : null;
   const leverageOptions = [
     ownLine.sacksAllowedPerGame >= 2.2 || oppLine.sacksPerGame >= 2.2
       ? `Protection is the first tell: ${ownTeam.fullName} allow ${formatOneDecimal(ownLine.sacksAllowedPerGame)} sacks per game, while ${oppTeam.fullName} create ${formatOneDecimal(oppLine.sacksPerGame)}.`
@@ -475,12 +463,51 @@ function buildQuickRead({
       : null,
   ].filter(Boolean);
 
-  return [
-    `${ownTeam.fullName} come in ${ownRecord}${ownStreak}, while ${oppTeam.fullName} enter ${oppRecord}${oppStreak}; the records give this stream an immediate frame.`,
-    `Where it gets interesting is style: ${ownTeam.fullName} have leaned on ${ownIdentity}, and ${oppTeam.fullName} answer with ${oppIdentity}.`,
+  const opener = [
+    `${ownRecord}${ownStreak} against ${oppRecord}${oppStreak} is the surface; the better watch is how fast ${ownTeam.fullName} can make this game feel like theirs.`,
+    `Start with the pressure point: ${ownTeam.fullName} need their ${ownIdentity} to travel, because ${oppTeam.fullName} bring ${oppIdentity} into the same window.`,
+    `This is not a generic stream slot: ${ownTeam.fullName} carry a ${ownRecord}${ownStreak} profile into a matchup with ${oppTeam.fullName}, who sit ${oppRecord}${oppStreak}.`,
+    `The records say ${ownTeam.fullName} ${ownRecord} and ${oppTeam.fullName} ${oppRecord}; the tape question is which side gets to play from comfort first.`,
+  ];
+  const middle = [
+    ownOffense && oppDefense
+      ? `${ownOffense} is the first offensive name to circle, but ${oppDefense} gives ${oppTeam.fullName} a real counterpunch.`
+      : null,
+    oppOffense && ownDefense
+      ? `If ${oppOffense} gets loose early, ${ownDefense || `${ownTeam.fullName}'s defense`} becomes the swing piece for the whole matchup.`
+      : null,
     pickVariant(seed + 31, [rivalryRematch, h2hStatLine, ...leverageOptions].filter(Boolean)) || stakes,
-    stripTrailingPeriod(injury) ? `${stripTrailingPeriod(injury)}.` : stakes,
-  ]
+    `${ownTeam.fullName} can win the texture battle with ${ownIdentity}; ${oppTeam.fullName} can answer by forcing the game toward ${oppIdentity}.`,
+  ].filter(Boolean);
+  const closer = [
+    rookieName
+      ? `The fun wrinkle is ${rookieName}, a rookie with enough juice to make one drive feel different.`
+      : null,
+    bettingLine?.total
+      ? `With the total sitting at ${formatOneDecimal(bettingLine.total)}, every empty possession feels louder than usual.`
+      : null,
+    stripTrailingPeriod(injury) ? `${stripTrailingPeriod(injury)}.` : null,
+    stakes,
+  ].filter(Boolean);
+  const templates = [
+    () => [pickVariant(seed + 1, opener), pickVariant(seed + 2, middle), pickVariant(seed + 3, closer)],
+    () => [pickVariant(seed + 4, middle), pickVariant(seed + 5, opener), pickVariant(seed + 6, closer)],
+    () => [
+      `${ownTeam.fullName} have the clean headline at ${ownRecord}${ownStreak}; ${oppTeam.fullName} have the answer if their ${oppIdentity} shows up early.`,
+      ownOffense && oppOffense
+        ? `Two offensive spotlights shape the watch: ${ownOffense} for ${ownTeam.fullName}, ${oppOffense} for ${oppTeam.fullName}.`
+        : pickVariant(seed + 7, middle),
+      pickVariant(seed + 8, [rivalryRematch, h2hStatLine, stakes, ...leverageOptions].filter(Boolean)),
+      pickVariant(seed + 9, closer),
+    ],
+    () => [
+      `What changes first: field position, pressure, or one busted coverage? That is the hook for ${ownTeam.fullName} vs ${oppTeam.fullName}.`,
+      `${ownTeam.fullName} enter ${ownRecord}${ownStreak} with ${ownIdentity}; across from them, ${oppTeam.fullName} sit ${oppRecord}${oppStreak} and lean on ${oppIdentity}.`,
+      pickVariant(seed + 10, middle),
+      pickVariant(seed + 11, closer),
+    ],
+  ];
+  return pickVariant(seed + 13, templates)()
     .filter(Boolean)
     .slice(0, 4)
     .join(' ');
@@ -614,6 +641,12 @@ function findTeamQuarterback(players = []) {
 function findDefenseToneSetter(players = []) {
   return players
     .filter((player) => ['LE', 'RE', 'DT', 'ROLB', 'LOLB', 'MLB', 'CB', 'FS', 'SS'].includes(String(player?.position || '').toUpperCase()))
+    .sort((a, b) => spotlightScore(b) - spotlightScore(a) || playerImpact(b) - playerImpact(a) || playerOvr(b) - playerOvr(a))[0] || null;
+}
+
+function findOffensiveStandout(players = []) {
+  return players
+    .filter((player) => ['QB', 'HB', 'RB', 'FB', 'WR', 'TE'].includes(String(player?.position || '').toUpperCase()))
     .sort((a, b) => spotlightScore(b) - spotlightScore(a) || playerImpact(b) - playerImpact(a) || playerOvr(b) - playerOvr(a))[0] || null;
 }
 
@@ -837,29 +870,22 @@ function buildPlayersToWatch({
   ownPlayers,
   oppPlayers,
 }) {
-  const watch = [];
-  const ownTop = topImpactPlayers(ownPlayers, 1)[0];
-  const oppTop = topImpactPlayers(oppPlayers, 1)[0];
-  const ownDef = findDefenseToneSetter(ownPlayers);
-  const oppDef = findDefenseToneSetter(oppPlayers);
-  const ownNonQb = findBestNonQuarterback(ownPlayers);
-  const oppNonQb = findBestNonQuarterback(oppPlayers);
-  const ownStar = ownDef && spotlightScore(ownDef) >= spotlightScore(ownTop) * 0.85
-    ? ownDef
-    : (String(ownTop?.position || '').toUpperCase() === 'QB' && ownNonQb ? ownNonQb : ownTop);
-  const oppStar = oppDef && spotlightScore(oppDef) >= spotlightScore(oppTop) * 0.85
-    ? oppDef
-    : (String(oppTop?.position || '').toUpperCase() === 'QB' && oppNonQb ? oppNonQb : oppTop);
-
-  if (ownStar) {
-    const pos = String(ownStar.position || '').toUpperCase();
-    watch.push(`• ${ownTeam.abbr || ownTeam.mascot || ownTeam.fullName}: ${pos === 'QB' ? qbShortLine(ownStar) : nonQbShortLine(ownStar)}`);
-  }
-  if (oppStar && normalizeName(formatPlayerName(oppStar)) !== normalizeName(formatPlayerName(ownStar))) {
-    const pos = String(oppStar.position || '').toUpperCase();
-    watch.push(`• ${oppTeam.abbr || oppTeam.mascot || oppTeam.fullName}: ${pos === 'QB' ? qbShortLine(oppStar) : nonQbShortLine(oppStar)}`);
-  }
-  return watch.slice(0, 3).join('\n') || '• No clear player spotlight found in the current export yet.';
+  const ownOffense = findOffensiveStandout(ownPlayers);
+  const ownDefense = findDefenseToneSetter(ownPlayers);
+  const oppOffense = findOffensiveStandout(oppPlayers);
+  const oppDefense = findDefenseToneSetter(oppPlayers);
+  return {
+    ownOffense,
+    ownDefense,
+    oppOffense,
+    oppDefense,
+    value: [
+      ownOffense ? `• ${ownTeam.abbr || ownTeam.mascot || ownTeam.fullName} offense: ${statBackedPlayerLine(ownOffense)}` : null,
+      ownDefense ? `• ${ownTeam.abbr || ownTeam.mascot || ownTeam.fullName} defense: ${statBackedPlayerLine(ownDefense)}` : null,
+      oppOffense ? `• ${oppTeam.abbr || oppTeam.mascot || oppTeam.fullName} offense: ${statBackedPlayerLine(oppOffense)}` : null,
+      oppDefense ? `• ${oppTeam.abbr || oppTeam.mascot || oppTeam.fullName} defense: ${statBackedPlayerLine(oppDefense)}` : null,
+    ].filter(Boolean).join('\n') || '• No clear offensive or defensive standouts found in the current export yet.',
+  };
 }
 
 function buildRookiesToWatch({
@@ -868,20 +894,16 @@ function buildRookiesToWatch({
   ownRookies,
   oppRookies,
 }) {
-  const rookies = [
-    ...ownRookies.map((player) => ({ player, team: ownTeam })),
-    ...oppRookies.map((player) => ({ player, team: oppTeam })),
-  ]
-    .sort((a, b) => Number(b.player?.impact || 0) - Number(a.player?.impact || 0))
-    .filter((entry, index, list) =>
-      list.findIndex((candidate) => normalizeName(formatPlayerName(candidate.player)) === normalizeName(formatPlayerName(entry.player))) === index,
-    )
-    .slice(0, 3);
-
-  if (!rookies.length) return '• No rookie watch candidates found in the current export yet.';
-  return rookies
-    .map(({ player, team }) => `• ${team.abbr || team.mascot || team.fullName}: ${nonQbShortLine(player)}`)
-    .join('\n');
+  const ownRookie = ownRookies[0] || null;
+  const oppRookie = oppRookies[0] || null;
+  return {
+    ownRookie,
+    oppRookie,
+    value: [
+      ownRookie ? `• ${ownTeam.abbr || ownTeam.mascot || ownTeam.fullName}: ${statBackedPlayerLine(ownRookie)}` : `• ${ownTeam.abbr || ownTeam.mascot || ownTeam.fullName}: no rookie watch candidate found yet`,
+      oppRookie ? `• ${oppTeam.abbr || oppTeam.mascot || oppTeam.fullName}: ${statBackedPlayerLine(oppRookie)}` : `• ${oppTeam.abbr || oppTeam.mascot || oppTeam.fullName}: no rookie watch candidate found yet`,
+    ].join('\n'),
+  };
 }
 
 function stripTrailingPeriod(text = '') {
@@ -1146,6 +1168,18 @@ export async function execute(interaction) {
 
   const ownForm = teamRecentForm(snapshot, ownTeam.teamId);
   const oppForm = teamRecentForm(snapshot, opponentTeam.teamId);
+  const playersField = buildPlayersToWatch({
+    ownTeam,
+    oppTeam: opponentTeam,
+    ownPlayers,
+    oppPlayers,
+  });
+  const rookiesField = buildRookiesToWatch({
+    ownTeam,
+    oppTeam: opponentTeam,
+    ownRookies,
+    oppRookies,
+  });
   const quickRead = buildQuickRead({
     snapshot,
     ownTeam,
@@ -1158,18 +1192,14 @@ export async function execute(interaction) {
     oppForm,
     seed,
     bettingLine,
-  });
-  const playersField = buildPlayersToWatch({
-    ownTeam,
-    oppTeam: opponentTeam,
-    ownPlayers,
-    oppPlayers,
-  });
-  const rookiesField = buildRookiesToWatch({
-    ownTeam,
-    oppTeam: opponentTeam,
-    ownRookies,
-    oppRookies,
+    standouts: {
+      ownOffense: playersField.ownOffense,
+      ownDefense: playersField.ownDefense,
+      oppOffense: playersField.oppOffense,
+      oppDefense: playersField.oppDefense,
+      ownRookie: rookiesField.ownRookie,
+      oppRookie: rookiesField.oppRookie,
+    },
   });
   const phaseHook = buildPhaseHook(snapshot, ownStanding, oppStanding, seed);
 
@@ -1195,13 +1225,13 @@ export async function execute(interaction) {
         inline: false,
       },
       {
-        name: 'Key Players to Watch',
-        value: playersField,
+        name: 'Team Standouts',
+        value: playersField.value,
         inline: false,
       },
       {
-        name: 'Key Rookies to Watch',
-        value: rookiesField,
+        name: 'Rookie Watch',
+        value: rookiesField.value,
         inline: false,
       },
       ...(bettingLine ? [{
