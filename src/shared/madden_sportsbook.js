@@ -1761,6 +1761,12 @@ export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNum
   const bettingOwnGame = coachTeams.some((team) =>
     team === normalizeName(line.awayTeam) || team === normalizeName(line.homeTeam),
   );
+  const bettingOwnFuture = futureBet && coachTeams.some((team) =>
+    team === normalizeName(line.teamName) || team === normalizeName(line.shortName),
+  );
+  if (bettingOwnFuture) {
+    return { ok: false, message: 'Coaches cannot bet Super Bowl futures on their own team.' };
+  }
   if (!futureBet && bettingOwnGame) {
     return { ok: false, message: 'Coaches cannot bet on their own games.' };
   }
