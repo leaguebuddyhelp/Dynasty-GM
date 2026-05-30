@@ -5,7 +5,9 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../../../madden/m
 import { draftOrder, applyPickTrades } from '../coach/mockdraft.js';
 import { registerThread } from '../../shared/madden_thread_notifier.js';
 import { brandTitle } from '../../shared/madden_branding.js';
-import { setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
+import { getRecognitionLeaderboard, setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
+import { RECOGNITION_EMOJIS } from '../../shared/madden_visuals.js';
+import { formatWeeklyRecognitionChallenge } from '../../shared/madden_recognition_challenges.js';
 import { postSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
@@ -288,6 +290,43 @@ async function userIdsForRoleIds(guild, roleIds = []) {
     }
   }
   return [...users];
+}
+
+async function displayNameForUser(guild, userId) {
+  const cachedMember = guild?.members?.cache?.get?.(String(userId));
+  const fetchedMember = cachedMember
+    ? null
+    : await (guild?.members?.fetch?.(String(userId)) || Promise.resolve(null)).catch(() => null);
+  const member = cachedMember || fetchedMember;
+  const fetchedUser = member?.user
+    ? null
+    : await (guild?.client?.users?.fetch?.(String(userId)) || Promise.resolve(null)).catch(() => null);
+  const user = member?.user || fetchedUser;
+  return member?.displayName || user?.globalName || user?.username || `Coach ${String(userId).slice(-4)}`;
+}
+
+async function recognitionLeaderboardLines({ guild, guildId, seasonKey }) {
+  const tiers = [
+    ['activity', RECOGNITION_EMOJIS.activity || 'A', 'Activity'],
+    ['impact', RECOGNITION_EMOJIS.impact || 'I', 'Impact'],
+    ['legacy', RECOGNITION_EMOJIS.legacy || 'L', 'Legacy'],
+  ];
+  const rows = [];
+  for (const [tier, emoji, label] of tiers) {
+    const leaders = getRecognitionLeaderboard({
+      guildId,
+      league: 'madden',
+      seasonKey,
+      tier,
+      limit: 3,
+    });
+    const leadersText = [];
+    for (const leader of leaders) {
+      leadersText.push(`${await displayNameForUser(guild, leader.userId)} ${Number(leader[tier] || 0)}`);
+    }
+    rows.push(`${emoji} **${label}:** ${leadersText.length ? leadersText.join(' • ') : 'board opening this week'}`);
+  }
+  return rows.join('\n');
 }
 
 function pickField(obj, keys) {
@@ -1097,6 +1136,7 @@ async function execute(interaction) {
           if (announceChannelId) {
         const announce = await interaction.client.channels.fetch(announceChannelId).catch(() => null);
         if (announce && announce.isTextBased()) {
+          const seasonKey = `year_${snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear()}`;
           const featuredLine = hasRecognition && featuredGame
             ? `**Game of the Week:** ${featuredGame.awayTeam} (${featuredGame.awayRecord}) vs ${featuredGame.homeTeam} (${featuredGame.homeRecord})`
             : null;
@@ -1104,6 +1144,16 @@ async function execute(interaction) {
             ? wkNumeric >= 11 && featuredGame.playoffImplicationBoost > 0
               ? `This one carries real late-season weight. Winner earns double impact recognition.`
               : `This is the featured matchup on the slate. Winner earns double impact recognition.`
+            : null;
+          const leaderboardLine = hasRecognition
+            ? await recognitionLeaderboardLines({
+              guild: interaction.guild,
+              guildId: interaction.guildId,
+              seasonKey,
+            })
+            : null;
+          const challengeLine = hasRecognition
+            ? formatWeeklyRecognitionChallenge({ weekNumber: wkNumeric, featuredGame })
             : null;
           const baseDescription = [
             `${created} matchup ${created === 1 ? 'thread is' : 'threads are'} live for ${roundLabel}.`,
@@ -1124,6 +1174,12 @@ async function execute(interaction) {
                     : `This week's clean recognition checklist: use strategy, post stream, touch a front-office tool, respond in-thread, and finish on time.`,
                 ].filter(Boolean).join('\n'),
             color: 0x00b0f4,
+            fields: hasRecognition
+              ? [
+                { name: 'Recognition Leaders', value: leaderboardLine || 'Leaderboard opens after the first recognition update.', inline: false },
+                { name: 'Weekly Challenge', value: challengeLine || 'Challenge board opens this week.', inline: false },
+              ]
+              : [],
             timestamp: new Date().toISOString(),
           };
           await announce.send({ content: coachTag || null, embeds: [embed] });

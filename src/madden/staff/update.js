@@ -24,6 +24,7 @@ import { brandText, brandTitle } from '../../shared/madden_branding.js';
 import { appendMaddenStaffLog } from '../../shared/madden_staff_ops.js';
 import { applyRecognitionBackfill, awardRecognitionOnce, finalizeRecognitionWeek, getRecognitionGameOfWeek, RECOGNITION_ECONOMY, resolveRecognitionDoubleOrNothing, resolveRecognitionGameOfWeek, resolveRecognitionWeeklyLegacy, setRecognitionGameOfWeek } from '../../shared/league_recognition.js';
 import { settleSportsbookWeek } from '../../shared/madden_sportsbook.js';
+import { evaluateWeeklyRecognitionChallenge } from '../../shared/madden_recognition_challenges.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getCoachAssignmentMap, setCoachAssignment } from '../../shared/madden_coach_assignments.js';
 import { getMaddenSeasonKey } from '../../shared/madden_metadata.js';
@@ -1574,6 +1575,28 @@ async function execute(interaction) {
             amount,
             awardKey: `weekly_awards:${weekKey}`,
             reason: `Weekly award recognition (${count} award${Number(count) === 1 ? '' : 's'})`,
+          });
+        }
+        const challengeAwards = evaluateWeeklyRecognitionChallenge({
+          weekNumber: resolvedWeekNumber,
+          snapshot: snap,
+          weeklyStats: gatherWeeklyStats(snap, Number(resolvedWeekNumber) - 1),
+          leagueAwards,
+          coachIndex,
+          weeklyAwardPointValue: RECOGNITION_ECONOMY.points.impact.weeklyAward,
+        });
+        for (const award of challengeAwards) {
+          if (Number(award.amount || 0) <= 0) continue;
+          awardRecognitionOnce({
+            guildId: interaction.guildId,
+            league: 'madden',
+            seasonKey: recognitionSeasonKey,
+            weekKey,
+            userId: award.userId,
+            tier: 'impact',
+            amount: award.amount,
+            awardKey: award.awardKey,
+            reason: award.reason,
           });
         }
         const currentWeekGames = (weeklyGameLog.games || []).filter((game) =>
