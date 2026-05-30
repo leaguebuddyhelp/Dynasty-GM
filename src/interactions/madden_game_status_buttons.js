@@ -56,6 +56,8 @@ function loadRoleMap(guildId = null) {
 function normalize(name) {
   if (!name) return name;
   const lower = name.toLowerCase();
+  if (lower === 'buffalo') return 'Bills';
+  if (lower === 'bills') return 'Bills';
   if (lower === 'g-men' || lower === 'gmen') return 'Giants';
   if (lower === 'pack' || lower === 'packers') return 'Packers';
   if (lower === 'jags') return 'Jaguars';
@@ -65,6 +67,61 @@ function normalize(name) {
   if (lower === 'pats' || lower === 'patriots') return 'Patriots';
   if (lower === 'bolts' || lower === 'chargers') return 'Chargers';
   return name;
+}
+
+const TEAM_ALIAS_GROUPS = [
+  ['buffalo', 'bills', 'buffalobills'],
+  ['arizona', 'cardinals', 'arizonacardinals'],
+  ['atlanta', 'falcons', 'atlantafalcons'],
+  ['baltimore', 'ravens', 'baltimoreravens'],
+  ['carolina', 'panthers', 'carolinapanthers'],
+  ['chicago', 'bears', 'chicagobears'],
+  ['cincinnati', 'bengals', 'cincinnatibengals'],
+  ['cleveland', 'browns', 'clevelandbrowns'],
+  ['dallas', 'cowboys', 'dallascowboys'],
+  ['denver', 'broncos', 'denverbroncos'],
+  ['detroit', 'lions', 'detroitlions'],
+  ['greenbay', 'pack', 'packers', 'greenbaypackers'],
+  ['houston', 'texans', 'houstontexans'],
+  ['indianapolis', 'colts', 'indianapoliscolts'],
+  ['jacksonville', 'jags', 'jaguars', 'jacksonvillejaguars'],
+  ['kansascity', 'chiefs', 'kansascitychiefs'],
+  ['lasvegas', 'raiders', 'lasvegasraiders'],
+  ['losangeleschargers', 'chargers', 'bolts'],
+  ['losangelesrams', 'rams'],
+  ['miami', 'dolphins', 'fins', 'phins', 'miamidolphins'],
+  ['minnesota', 'vikings', 'vikes', 'minnesotavikings'],
+  ['newengland', 'patriots', 'pats', 'newenglandpatriots'],
+  ['neworleans', 'saints', 'neworleanssaints'],
+  ['newyorkgiants', 'giants', 'gmen'],
+  ['newyorkjets', 'jets'],
+  ['philadelphia', 'eagles', 'philadelphiaeagles'],
+  ['pittsburgh', 'steelers', 'pittsburghsteelers'],
+  ['sanfrancisco', '49ers', 'niners', 'sanfrancisco49ers', 'sf49ers'],
+  ['seattle', 'seahawks', 'seattleseahawks'],
+  ['tampa', 'tampabay', 'buccaneers', 'bucs', 'tampabaybuccaneers'],
+  ['tennessee', 'titans', 'tennesseetitans'],
+  ['washington', 'commanders', 'washingtoncommanders'],
+];
+
+function normalizedTeamKeys(label = '') {
+  const compact = normalize(String(label || '').replace(/coach/ig, '').trim()).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const last = normalize(String(label || '').replace(/coach/ig, '').trim().split(/\s+/).pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const keys = new Set([compact, last].filter(Boolean));
+  for (const group of TEAM_ALIAS_GROUPS) {
+    if (group.some((alias) => keys.has(alias))) group.forEach((alias) => keys.add(alias));
+  }
+  return keys;
+}
+
+function coachRoleNameMatchesTeam(roleName, team) {
+  if (!/coach$/i.test(roleName || '') || !team) return false;
+  const roleKeys = normalizedTeamKeys(String(roleName || '').replace(/coach$/i, '').trim());
+  const teamKeys = normalizedTeamKeys(team);
+  for (const key of roleKeys) {
+    if (teamKeys.has(key)) return true;
+  }
+  return false;
 }
 
 function parseTeams(threadName) {
@@ -77,28 +134,23 @@ function parseTeams(threadName) {
 
 function coachRoleIds(team, roleMap) {
   if (!team) return [];
-  const norm = (str) => normalize(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const normTeam = norm(team.replace(/coach/ig, '').trim());
-  const mascotTeam = norm(team.split(/\s+/).pop());
   return Object.entries(roleMap)
     .filter(([k]) => /coach$/i.test(k))
-    .filter(([k]) => {
-      const base = k.replace(/coach$/i, '').trim();
-      const normBase = norm(base);
-      const mascotBase = norm(base.split(/\s+/).pop());
-      return (
-        normBase === normTeam ||
-        mascotBase === mascotTeam ||
-        normBase.includes(normTeam) ||
-        normTeam.includes(normBase)
-      );
-    })
+    .filter(([k]) => coachRoleNameMatchesTeam(k, team))
     .map(([, id]) => id)
     .filter(Boolean);
 }
 
+async function resolveCoachRoleIdsForTeam(guild, team, roleMap) {
+  const configured = coachRoleIds(team, roleMap);
+  const live = guild.roles.cache
+    .filter((role) => coachRoleNameMatchesTeam(role.name, team))
+    .map((role) => role.id);
+  return resolveGuildRoleIds(guild, [...configured, ...live]);
+}
+
 async function buildCoachMentions(guild, team, roleMap) {
-  const roleIds = await resolveGuildRoleIds(guild, coachRoleIds(team, roleMap));
+  const roleIds = await resolveCoachRoleIdsForTeam(guild, team, roleMap);
   if (roleIds.length) return roleIds.map(id => `<@&${id}>`);
   const users = await coachUserIds(guild, team, roleMap);
   return users.map(id => `<@${id}>`);
@@ -136,7 +188,7 @@ function rolesFromMessageMentions(thread) {
 }
 
 async function coachUserIds(guild, team, roleMap) {
-  const ids = coachRoleIds(team, roleMap);
+  const ids = await resolveCoachRoleIdsForTeam(guild, team, roleMap);
   const users = [];
   for (const roleId of ids) {
     const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
@@ -305,8 +357,8 @@ export async function execute(interaction) {
     home = homeEnc ? decodeURIComponent(homeEnc) : home;
   }
   console.log('[game_status] thread', { thread: thread.name, away, home, action, user: interaction.user.id });
-  let awayCoachRoles = await resolveGuildRoleIds(interaction.guild, coachRoleIds(away, roleMap));
-  let homeCoachRoles = await resolveGuildRoleIds(interaction.guild, coachRoleIds(home, roleMap));
+  let awayCoachRoles = await resolveCoachRoleIdsForTeam(interaction.guild, away, roleMap);
+  let homeCoachRoles = await resolveCoachRoleIdsForTeam(interaction.guild, home, roleMap);
   // Fallback: use first-message mentions if no roles found (helps test threads)
   if (!awayCoachRoles.length || !homeCoachRoles.length) {
     const mentionRoles = rolesFromMessageMentions(thread);
