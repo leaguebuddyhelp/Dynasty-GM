@@ -5,6 +5,7 @@ import { formatImpactValue, getLineForBet, linePrice, payoutBreakdown } from '..
 export const customId_wager = /^madden_sportsbook_wager\|/;
 
 function selectionLabel(market, selection) {
+  if (market === 'superbowl') return 'Super Bowl winner';
   if (market === 'total') return selection === 'over' ? 'Over' : 'Under';
   if (market === 'moneyline') return selection === 'away' ? 'Away ML' : 'Home ML';
   return selection === 'away' ? 'Away spread' : 'Home spread';
@@ -41,15 +42,16 @@ export async function execute_wager(interaction) {
     .setColor(0xf1c40f)
     .setTitle('Confirm This Bet')
     .setDescription([
-      `${line.awayTeam} at ${line.homeTeam}`,
+      market === 'superbowl' ? 'Super Bowl Winner Futures' : `${line.awayTeam} at ${line.homeTeam}`,
       `Pick: ${selectionLabel(market, selection)}`,
+      market === 'superbowl' ? `Team: ${line.teamName}` : null,
       `Bet: ${formatImpactValue(wager)}`,
       `Odds: ${odds > 0 ? '+' : ''}${odds}`,
       `If it wins: +${formatImpactValue(payout?.profit || 0)}`,
       `You get back: ${formatImpactValue(payout?.totalReturn || 0)} total`,
       '',
       'Are you sure you want to place this bet?',
-    ].join('\n'))
+    ].filter(Boolean).join('\n'))
     .setTimestamp();
   const controls = new ActionRowBuilder().addComponents(
     new ButtonBuilder()

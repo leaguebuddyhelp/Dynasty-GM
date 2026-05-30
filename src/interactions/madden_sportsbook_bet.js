@@ -6,12 +6,16 @@ import { appendMaddenStaffLog, postMaddenStaffDecision } from '../shared/madden_
 export const customId = /^madden_sportsbook_(bet(?:\||_)|confirm\||cancel\||buyout\|)/;
 
 function selectionLabel(market, selection) {
+  if (market === 'superbowl') return 'Super Bowl winner';
   if (market === 'total') return selection === 'over' ? 'Over' : 'Under';
   if (market === 'moneyline') return selection === 'away' ? 'Away ML' : 'Home ML';
   return selection === 'away' ? 'Away spread' : 'Home spread';
 }
 
 function betDisplayLabel(line, market, selection) {
+  if (market === 'superbowl') {
+    return `${line.teamName || 'Team'} Super Bowl winner`;
+  }
   if (market === 'moneyline') {
     return `${selection === 'away' ? line.awayTeam : line.homeTeam} moneyline`;
   }
@@ -22,35 +26,43 @@ function betDisplayLabel(line, market, selection) {
 }
 
 function buildReceiptEmbed({ result, line, market, selection, wager }) {
+  const matchupLabel = market === 'superbowl'
+    ? 'Super Bowl Winner Futures'
+    : `${line.awayTeam} at ${line.homeTeam}`;
   return new EmbedBuilder()
     .setColor(0x2ecc71)
     .setTitle('Bet Slip Accepted')
     .setDescription([
-      `${line.awayTeam} at ${line.homeTeam}`,
+      matchupLabel,
       `Pick: ${selectionLabel(market, selection)}`,
+      market === 'superbowl' ? `Team: ${line.teamName}` : null,
       `Bet: ${formatImpactValue(Number(wager))}`,
       `Odds: ${result.price > 0 ? '+' : ''}${result.price}`,
       `If it wins: +${formatImpactValue(result.payout?.profit || 0)}`,
       `You get back: ${formatImpactValue(result.payout?.totalReturn || 0)} total`,
       `Impact left to bet: ${formatImpactValue(result.balance)}`,
-    ].join('\n'))
+    ].filter(Boolean).join('\n'))
     .setTimestamp();
 }
 
 function buildConfirmEmbed({ line, market, selection, wager, odds, payout }) {
+  const matchupLabel = market === 'superbowl'
+    ? 'Super Bowl Winner Futures'
+    : `${line.awayTeam} at ${line.homeTeam}`;
   return new EmbedBuilder()
     .setColor(0xf1c40f)
     .setTitle('Confirm This Bet')
     .setDescription([
-      `${line.awayTeam} at ${line.homeTeam}`,
+      matchupLabel,
       `Pick: ${selectionLabel(market, selection)}`,
+      market === 'superbowl' ? `Team: ${line.teamName}` : null,
       `Bet: ${formatImpactValue(Number(wager))}`,
       `Odds: ${odds > 0 ? '+' : ''}${odds}`,
       `If it wins: +${formatImpactValue(payout?.profit || 0)}`,
       `You get back: ${formatImpactValue(payout?.totalReturn || 0)} total`,
       '',
       'Are you sure you want to place this bet?',
-    ].join('\n'))
+    ].filter(Boolean).join('\n'))
     .setTimestamp();
 }
 
@@ -160,9 +172,10 @@ export async function execute(interaction) {
       weekNumber: Number(weekNumber),
       seasonKey,
       gameId,
-      awayTeam: line.awayTeam,
-      homeTeam: line.homeTeam,
-      matchup: `${line.awayTeam} at ${line.homeTeam}`,
+      awayTeam: line.awayTeam || null,
+      homeTeam: line.homeTeam || null,
+      teamName: line.teamName || null,
+      matchup: market === 'superbowl' ? 'Super Bowl Winner Futures' : `${line.awayTeam} at ${line.homeTeam}`,
       market,
       selection,
       selectionLabel: selectionLabel(market, selection),
@@ -181,7 +194,7 @@ export async function execute(interaction) {
       interaction.client,
       interaction.guildId,
       'Sportsbook Bet Placed',
-      `<@${interaction.user.id}> placed a sportsbook bet on **${line.awayTeam} at ${line.homeTeam}**.`,
+      `<@${interaction.user.id}> placed a sportsbook bet on **${market === 'superbowl' ? `${line.teamName} Super Bowl winner` : `${line.awayTeam} at ${line.homeTeam}`}**.`,
       [
         { name: 'Week', value: String(weekNumber), inline: true },
         { name: 'Market', value: market, inline: true },
@@ -291,15 +304,16 @@ export async function execute(interaction) {
     .setColor(0x5865f2)
     .setTitle('Choose Your Bet Size')
     .setDescription([
-      `${line.awayTeam} at ${line.homeTeam}`,
+      market === 'superbowl' ? 'Super Bowl Winner Futures' : `${line.awayTeam} at ${line.homeTeam}`,
       `Pick: ${selectionLabel(market, selection)}`,
+      market === 'superbowl' ? `Team: ${line.teamName}` : null,
       '',
       `Type later only if you need a custom amount.`,
       `Impact available to bet: ${formatImpactValue(card.bankroll?.balance || 0)}`,
       `Max on this bet: ${formatImpactValue(limits.maxWager || 0)}`,
       `Odds on this pick: ${odds > 0 ? '+' : ''}${odds}`,
       `Tap a quick amount below to see exactly how much Impact that bet can win, or choose Other.`,
-    ].join('\n'));
+    ].filter(Boolean).join('\n'));
 
   await interaction.update({ content: null, embeds: [embed], components: [row] });
 }

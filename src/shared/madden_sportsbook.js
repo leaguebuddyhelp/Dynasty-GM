@@ -31,6 +31,9 @@ const IMPACT_EMOJI = 'impact';
 const GAME_OF_WEEK_BET_BONUS = 2;
 const FIRST_BET_BOOST_MULTIPLIER = 2;
 const FIRST_BET_BOOST_MAX_EXTRA = 10;
+const SUPERBOWL_FUTURE_MARKET = 'superbowl';
+const SUPERBOWL_FUTURE_PREFIX = 'future:superbowl:';
+const FUTURES_PAGE_SIZE = 5;
 const STAGE_REGULAR = 1;
 const STAGE_POSTSEASON = 2;
 const STAGE_OFFSEASON = 3;
@@ -290,7 +293,21 @@ function impliedMoneylineFromSpread(spread) {
 
 function ensureSeason(store, seasonKey) {
   store[seasonKey] = store[seasonKey] || { bankrolls: {}, weeks: {} };
+  store[seasonKey].bankrolls = store[seasonKey].bankrolls || {};
+  store[seasonKey].weeks = store[seasonKey].weeks || {};
   return store[seasonKey];
+}
+
+function ensureFuturesBook(seasonStore) {
+  seasonStore.futures = seasonStore.futures || {
+    market: SUPERBOWL_FUTURE_MARKET,
+    lines: [],
+    bets: [],
+    updatedAt: null,
+  };
+  seasonStore.futures.lines = Array.isArray(seasonStore.futures.lines) ? seasonStore.futures.lines : [];
+  seasonStore.futures.bets = Array.isArray(seasonStore.futures.bets) ? seasonStore.futures.bets : [];
+  return seasonStore.futures;
 }
 
 function ensureWeek(seasonStore, weekKey) {
@@ -681,6 +698,135 @@ function buildHistoricalSportsbookProfiles({ seasonKey = null, weekNumber = null
     team: new Map([...teamGames.entries()].map(([teamId, games]) => [teamId, summarize(games)])),
     h2h,
   };
+}
+
+function teamDisplayName(team = {}, fallback = '') {
+  return String(team.displayName || team.nickName || team.longName || fallback || `Team ${team.teamId}`).trim();
+}
+
+function teamShortName(team = {}, label = '') {
+  return String(team.abbrName || team.teamAbbr || team.abbreviation || team.nickName || label || `T${team.teamId}`).trim();
+}
+
+function conferenceLabelFromStanding(standing = {}) {
+  const value = standing?.conferenceName || standing?.confName || standing?.conferenceId;
+  if (value == null || value === '') return 'CONF';
+  if (String(value).toUpperCase().includes('AFC')) return 'AFC';
+  if (String(value).toUpperCase().includes('NFC')) return 'NFC';
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) return numeric === 0 ? 'AFC' : numeric === 1 ? 'NFC' : `CONF ${numeric}`;
+  return String(value).toUpperCase();
+}
+
+function playoffSeedFromStanding(standing = {}) {
+  return pickField(standing, ['playoffSeed', 'seed', 'confSeed', 'conferenceSeed', 'rank']) || null;
+}
+
+function roundFutureOdds(odds) {
+  const value = Math.max(250, Number(odds || 0));
+  if (value < 1000) return Math.round(value / 25) * 25;
+  if (value < 5000) return Math.round(value / 100) * 100;
+  return Math.round(value / 500) * 500;
+}
+
+function impliedProbabilityToAmericanOdds(probability) {
+  const p = clamp(Number(probability || 0), 0.003, 0.25);
+  return roundFutureOdds(((1 / p) - 1) * 100);
+}
+
+function buildSuperBowlFutures(snapshot, { seasonKey = null, weekNumber = null } = {}) {
+  const teams = snapshot?.teams?.leagueTeamInfoList || [];
+  const standings = buildStandingsByTeam(snapshot);
+  const strength = buildTeamStrengthMap(snapshot);
+  const recentForm = buildRecentFormMap(snapshot);
+  const historical = buildHistoricalSportsbookProfiles({ seasonKey, weekNumber });
+  const currentWeek = Number(weekNumber || snapshot?.currentWeek || snapshot?.info?.careerHubInfo?.seasonInfo?.seasonWeek || 1);
+  const rows = teams
+    .map((team) => {
+      const teamId = Number(team?.teamId);
+      if (!Number.isFinite(teamId)) return null;
+      const standing = standings[teamId] || {};
+      const current = strength[teamId] || {
+        wins: Number(standing.totalWins || 0),
+        losses: Number(standing.totalLosses || 0),
+        winPct: 0,
+        diff: 0,
+        ptsFor: 21,
+        ptsAgainst: 21,
+        teamOvr: Number(standing.teamOvr || team.teamOvr || 80),
+        score: 0,
+      };
+      const recent = recentForm[teamId] || { recentWins: 0, recentAvgMargin: 0, games: 0 };
+      const history = historical.team.get(teamId) || null;
+      const seed = playoffSeedFromStanding(standing);
+      const games = Math.max(1, Number(current.wins || 0) + Number(current.losses || 0));
+      const recordScore = (Number(current.winPct || 0) - 0.5) * 18;
+      const differentialScore = clamp(Number(current.diff || 0), -24, 24) * 0.95;
+      const rosterScore = (Number(current.teamOvr || 80) - 80) * 0.65;
+      const recentScore = Number(recent.games || 0)
+        ? (Number(recent.recentWins || 0) * 2.4) + (clamp(Number(recent.recentAvgMargin || 0), -21, 21) * 0.45)
+        : 0;
+      const historyScore = history
+        ? ((Number(history.winPct || 0) - 0.5) * 9) + (clamp(Number(history.avgMargin || 0), -21, 21) * 0.35) + Math.min(3, Number(history.games || 0) * 0.3)
+        : 0;
+      const seedScore = seed ? Math.max(0, 8 - Number(seed)) * 0.8 : 0;
+      const earlySeasonBlend = currentWeek <= 4 ? 0.8 : 1;
+      const powerScore = (
+        12 +
+        (recordScore * earlySeasonBlend) +
+        differentialScore +
+        rosterScore +
+        recentScore +
+        historyScore +
+        seedScore +
+        (games >= 4 ? 1.5 : 0)
+      );
+      const label = teamDisplayName(team, standing.teamName);
+      return {
+        gameId: `${SUPERBOWL_FUTURE_PREFIX}${teamId}`,
+        market: SUPERBOWL_FUTURE_MARKET,
+        selection: String(teamId),
+        teamId,
+        teamName: label,
+        shortName: teamShortName(team, label),
+        conference: conferenceLabelFromStanding(standing),
+        seed,
+        record: `${Number(current.wins || 0)}-${Number(current.losses || 0)}`,
+        winPct: Number(current.winPct || 0),
+        pointDiff: Number(current.diff || 0),
+        teamOvr: Number(current.teamOvr || team.teamOvr || 80),
+        recentWins: Number(recent.recentWins || 0),
+        recentGames: Number(recent.games || 0),
+        historyGames: Number(history?.games || 0),
+        historyWinPct: Number(history?.winPct || 0),
+        powerScore,
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 32);
+
+  const weights = rows.map((row) => Math.exp(clamp(row.powerScore, -10, 45) / 8));
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0) || 1;
+  return rows
+    .map((row, idx) => {
+      const trueProbability = weights[idx] / totalWeight;
+      const bookProbability = clamp(trueProbability * 0.78, 0.003, 0.25);
+      const odds = impliedProbabilityToAmericanOdds(bookProbability);
+      return {
+        ...row,
+        odds,
+        impliedProbability: Number((10000 / (odds + 100)).toFixed(4)),
+      };
+    })
+    .sort((a, b) => (a.odds - b.odds) || (b.powerScore - a.powerScore) || a.teamName.localeCompare(b.teamName))
+    .map((row, idx) => ({ ...row, rank: idx + 1 }));
+}
+
+function refreshSuperBowlFutures(seasonStore, snapshot, { seasonKey = null, weekNumber = null } = {}) {
+  const futures = ensureFuturesBook(seasonStore);
+  futures.lines = buildSuperBowlFutures(snapshot, { seasonKey, weekNumber });
+  futures.updatedAt = Date.now();
+  return futures;
 }
 
 function divisionGameFlag(snapshot, awayTeamId, homeTeamId) {
@@ -1122,6 +1268,7 @@ export async function postSportsbookWeek({ client, guild, seasonKey, weekNumber,
     weekKey,
   });
   weekStore.lines = lines;
+  refreshSuperBowlFutures(seasonStore, snapshot, { seasonKey, weekNumber });
   // Clear any legacy channel post pointers so they don't get refreshed/recreated.
   weekStore.posts = null;
   saveStore(store);
@@ -1161,7 +1308,7 @@ export async function refreshSportsbookHeaders({ client, guild, mode = 'all' } =
 export function sportsbookModal(customId, line) {
   const modal = new ModalBuilder()
     .setCustomId(customId)
-    .setTitle(`${line.awayTeam} at ${line.homeTeam}`);
+    .setTitle(line?.futureLabel || (line?.teamName ? `${line.teamName} futures` : `${line.awayTeam} at ${line.homeTeam}`));
   const wagerInput = new TextInputBuilder()
     .setCustomId('wager')
     .setLabel('Type a whole number only (example: 5)')
@@ -1177,15 +1324,29 @@ export function getLineForBet(seasonKey, weekNumber, gameId) {
   const store = loadStore();
   const seasonStore = store?.[seasonKey];
   const weekStore = seasonStore?.weeks?.[`week_${weekNumber}`];
-  return weekStore?.lines?.find((entry) => entry.gameId === gameId) || null;
+  return weekStore?.lines?.find((entry) => entry.gameId === gameId)
+    || seasonStore?.futures?.lines?.find((entry) => entry.gameId === gameId)
+    || null;
 }
 
 function linePrice(line, market, selection) {
+  if (market === SUPERBOWL_FUTURE_MARKET || String(line?.gameId || '').startsWith(SUPERBOWL_FUTURE_PREFIX)) {
+    return Number(line?.odds || 0);
+  }
   if (market === 'moneyline') {
     return selection === 'away' ? line.awayMoneyline : line.homeMoneyline;
   }
   if (market === 'total') return TOTAL_PRICE;
   return SPREAD_PRICE;
+}
+
+function isSuperBowlFutureBet(market, gameId) {
+  return market === SUPERBOWL_FUTURE_MARKET || String(gameId || '').startsWith(SUPERBOWL_FUTURE_PREFIX);
+}
+
+function futureBetLabel(line, price = null) {
+  const odds = price == null ? Number(line?.odds || 0) : Number(price || 0);
+  return `${line?.teamName || 'Team'} Super Bowl winner ${formatSigned(odds)}`;
 }
 
 export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNumber, gameId, market, selection, wager }) {
@@ -1202,6 +1363,7 @@ export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNum
   }
   const line = getLineForBet(seasonKey, weekNumber, gameId);
   if (!line) return { ok: false, message: 'This betting line is no longer available.' };
+  const futureBet = isSuperBowlFutureBet(market, gameId);
   if (gameAlreadyPlayed(liveContext.leagueId, weekNumber, line, liveContext.games || [])) {
     return { ok: false, message: 'This game has already been logged as played. Betting is closed.' };
   }
@@ -1209,13 +1371,14 @@ export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNum
   const bettingOwnGame = coachTeams.some((team) =>
     team === normalizeName(line.awayTeam) || team === normalizeName(line.homeTeam),
   );
-  if (bettingOwnGame) {
+  if (!futureBet && bettingOwnGame) {
     return { ok: false, message: 'Coaches cannot bet on their own games.' };
   }
   const store = loadStore();
   const seasonStore = ensureSeason(store, seasonKey);
   const weekStore = ensureWeek(seasonStore, `week_${weekNumber}`);
-  if (weekStore.settled) return { ok: false, message: 'This week is already settled.' };
+  const futuresBook = ensureFuturesBook(seasonStore);
+  if (!futureBet && weekStore.settled) return { ok: false, message: 'This week is already settled.' };
   const bankroll = ensureBankroll(
     seasonStore,
     String(userId),
@@ -1243,6 +1406,48 @@ export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNum
   }
   if (bankroll.balance < amount) {
     return { ok: false, message: `You only have ${formatImpactValue(bankroll.balance)} Impact available to bet.` };
+  }
+  if (futureBet) {
+    const existingFuture = futuresBook.bets.find((bet) =>
+      String(bet.userId) === String(userId) &&
+      String(bet.gameId) === String(gameId) &&
+      String(bet.status || '') === 'open',
+    );
+    if (existingFuture) {
+      return { ok: false, message: 'You already have an open Super Bowl ticket on this team.' };
+    }
+    bankroll.balance -= amount;
+    bankroll.totalWagered += amount;
+    const price = linePrice(line, market, selection);
+    const placedAt = Date.now();
+    const firstBetBoost = false;
+    const record = {
+      userId: String(userId),
+      gameId,
+      market: SUPERBOWL_FUTURE_MARKET,
+      selection: String(line.teamId || selection || ''),
+      matchupLabel: 'Super Bowl Winner',
+      betLabel: futureBetLabel(line, price),
+      wager: amount,
+      price,
+      status: 'open',
+      placedAt,
+      weekPlaced: Number(weekNumber || liveContext.weekNumber || 0),
+      teamId: Number(line.teamId || selection || 0),
+      teamName: line.teamName || null,
+      firstBetBoost,
+    };
+    futuresBook.bets.push(record);
+    saveStore(store);
+    const payout = payoutBreakdown(amount, price);
+    return {
+      ok: true,
+      line,
+      balance: bankroll.balance,
+      price,
+      payout,
+      limits,
+    };
   }
   bankroll.balance -= amount;
   bankroll.totalWagered += amount;
@@ -1297,7 +1502,9 @@ export function getSportsbookUserCard({ seasonKey, weekNumber, userId, guildId =
   };
   const weekStore = seasonStore?.weeks?.[`week_${weekNumber}`] || { bets: [] };
   const bets = (weekStore.bets || []).filter((bet) => String(bet.userId) === String(userId));
-  return { bankroll, bets, lines: weekStore.lines || [] };
+  const futures = seasonStore?.futures || { lines: [], bets: [] };
+  const futureBets = (futures.bets || []).filter((bet) => String(bet.userId) === String(userId));
+  return { bankroll, bets, futureBets, lines: weekStore.lines || [], futures: futures.lines || [] };
 }
 
 function parseMatchupFromGameId(gameId = '') {
@@ -1407,7 +1614,7 @@ function cardLinesForUser(bets = [], lines = [], guildId = null) {
         }
         return `${matchupLabel} • ${baseLabel}${oddsLabel} • ${formatImpactValue(bet.wager)} • ${bet.status}`;
       })
-    : ['No bets placed for this week.'];
+    : ['No bets placed for this week or Super Bowl futures board.'];
 }
 
 function openBuyoutBetsForUser(bets = []) {
@@ -1433,6 +1640,7 @@ function viewNavRow(weekNumber, mode, index, hasBoard = true) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|tab_breakdown|0`).setLabel('Week Breakdown').setStyle(mode === 'breakdown' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|tab_board|${index}`).setLabel('Board').setStyle(mode === 'board' ? ButtonStyle.Primary : ButtonStyle.Secondary).setDisabled(!hasBoard),
+    new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|tab_futures|0`).setLabel('Super Bowl Futures').setStyle(mode === 'futures' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|tab_card|0`).setLabel('My Card').setStyle(mode === 'card' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|tab_leaderboard|0`).setLabel('Leaderboard').setStyle(mode === 'leaderboard' ? ButtonStyle.Primary : ButtonStyle.Secondary),
   );
@@ -1465,6 +1673,26 @@ function betRows(line) {
       new ButtonBuilder().setCustomId(`madden_sportsbook_bet|${line.weekNumber}|${line.gameId}|moneyline|home`).setLabel(`${line.homeTeam} ML ${formatSigned(line.homeMoneyline)}`).setStyle(ButtonStyle.Success),
     ),
   ];
+}
+
+function futuresPagerRow(weekNumber, index, total) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|futures_prev|${Math.max(0, index - FUTURES_PAGE_SIZE)}`).setLabel('Prev Teams').setStyle(ButtonStyle.Secondary).setDisabled(index <= 0),
+    new ButtonBuilder().setCustomId(`madden_sportsbook_view|${weekNumber}|futures_next|${Math.min(Math.max(0, total - FUTURES_PAGE_SIZE), index + FUTURES_PAGE_SIZE)}`).setLabel('Next Teams').setStyle(ButtonStyle.Secondary).setDisabled(index + FUTURES_PAGE_SIZE >= total),
+  );
+}
+
+function futuresBetRow(weekNumber, lines = []) {
+  const row = new ActionRowBuilder();
+  for (const line of lines.slice(0, FUTURES_PAGE_SIZE)) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`madden_sportsbook_bet|${weekNumber}|${line.gameId}|${SUPERBOWL_FUTURE_MARKET}|${line.teamId}`)
+        .setLabel(`${line.shortName || line.teamName} ${formatSigned(line.odds)}`.slice(0, 80))
+        .setStyle(ButtonStyle.Success),
+    );
+  }
+  return row.components.length ? row : null;
 }
 
 function buyoutRows(openBets = [], weekNumber = 0) {
@@ -1518,6 +1746,17 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     });
     card = getSportsbookUserCard({ seasonKey, weekNumber, userId, guildId });
     lines = card.lines || [];
+  }
+  if (
+    liveContext?.seasonKey === seasonKey &&
+    Number(liveContext?.weekNumber || 0) === Number(weekNumber || 0) &&
+    liveContext?.snapshot
+  ) {
+    const store = loadStore();
+    const seasonStore = ensureSeason(store, seasonKey);
+    const futures = refreshSuperBowlFutures(seasonStore, liveContext.snapshot, { seasonKey, weekNumber });
+    saveStore(store);
+    card = { ...card, futures: futures.lines || [], futureBets: (futures.bets || []).filter((bet) => String(bet.userId) === String(userId)) };
   }
   const boardLabel = liveContext?.displayLabel || sportsbookWeekLabel({
     weekNumber,
@@ -1580,6 +1819,44 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     return { embeds: [embed], components };
   }
 
+  if (mode === 'futures') {
+    const futures = (card.futures || []).slice().sort((a, b) => (Number(a.rank || 999) - Number(b.rank || 999)) || (Number(a.odds || 0) - Number(b.odds || 0)));
+    const safeFutureIndex = futures.length ? Math.max(0, Math.min(futures.length - 1, Number(index || 0))) : 0;
+    const pageStart = Math.floor(safeFutureIndex / FUTURES_PAGE_SIZE) * FUTURES_PAGE_SIZE;
+    const pageLines = futures.slice(pageStart, pageStart + FUTURES_PAGE_SIZE);
+    const boardLines = futures.map((line) => {
+      const history = Number(line.historyGames || 0) > 0
+        ? `hist ${Math.round(Number(line.historyWinPct || 0) * 100)}%`
+        : 'hist new';
+      const diff = Number(line.pointDiff || 0);
+      const diffLabel = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)} MOV`;
+      return `**${line.rank}. ${line.teamName} ${formatSigned(line.odds)}** — ${line.record}, ${diffLabel}, ${history}`;
+    });
+    const openFutureBets = (card.futureBets || []).filter((bet) => String(bet?.status || '') === 'open');
+    const embed = new EmbedBuilder()
+      .setColor(0x2ecc71)
+      .setTitle(`LB Sportsbook • Super Bowl Winner Futures • ${boardLabel}`)
+      .setDescription([
+        `All 32 teams are priced like a futures board, sorted favorite to longshot with current record, scoring margin, roster strength, recent form, and year-to-year sportsbook history baked in.`,
+        `Impact available to bet: **${formatImpactValue(card.bankroll.balance || 0)}**`,
+        openFutureBets.length ? `Open futures: **${openFutureBets.length}**` : 'Open futures: **0**',
+        '',
+        safeEmbedText(boardLines.join('\n'), 3400),
+        '',
+        pageLines.length
+          ? `Bet buttons shown: **${pageStart + 1}-${pageStart + pageLines.length}**`
+          : 'Futures board is not ready yet.',
+      ].filter(Boolean).join('\n'))
+      .setFooter({ text: 'Super Bowl futures stay open across advances until they are settled manually at season end' })
+      .setTimestamp();
+    if (futures.length) {
+      components.push(futuresPagerRow(weekNumber, pageStart, futures.length));
+      const row = futuresBetRow(weekNumber, pageLines);
+      if (canBet && row) components.push(row);
+    }
+    return { embeds: [embed], components };
+  }
+
   if (mode === 'card') {
     const buyoutActive = Boolean(hasRecognitionPerk({
       guildId,
@@ -1593,7 +1870,7 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle(`LB Sportsbook • My Card • ${boardLabel}`)
-      .setDescription(safeEmbedText(cardLinesForUser(card.bets, card.lines, guildId).join('\n')))
+      .setDescription(safeEmbedText(cardLinesForUser([...(card.bets || []), ...(card.futureBets || [])], [...(card.lines || []), ...(card.futures || [])], guildId).join('\n')))
       .addFields(
         { name: 'Impact To Bet', value: formatImpactValue(card.bankroll.balance || 0), inline: true },
         { name: 'Impact Won', value: formatImpactValue(card.bankroll.profit || 0), inline: true },
@@ -1769,6 +2046,17 @@ export function resetSportsbookUserSeason({ seasonKey, userId, reason = 'Coach r
     }
     weekStore.bets = remaining;
   }
+  if (seasonStore?.futures?.bets?.length) {
+    const remainingFutures = [];
+    for (const bet of seasonStore.futures.bets || []) {
+      if (String(bet.userId) === userKey) {
+        userBets.push({ weekKey: 'futures', ...bet });
+      } else {
+        remainingFutures.push(bet);
+      }
+    }
+    seasonStore.futures.bets = remainingFutures;
+  }
   if (!bankroll && !userBets.length) {
     return { ok: false, message: 'No sportsbook state found for this user in the current season.' };
   }
@@ -1843,6 +2131,7 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
     lineResultsUpdated += 1;
   }
   let settled = 0;
+  let futuresSettled = 0;
   const summary = [];
   for (const bet of weekStore.bets || []) {
     if (bet.status !== 'open') continue;
@@ -1906,7 +2195,46 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
     }
     summary.push({ userId: String(bet.userId), wager: Number(bet.wager || 0), ...outcome });
   }
-  if (!settled && !lineResultsUpdated) return null;
+  const titleGame = (games || []).filter((game) => resolveGameStage(game) === STAGE_POSTSEASON && hasRealPlayedSignal(game)).slice(-1)[0] || null;
+  if (titleGame && (games || []).filter((game) => resolveGameStage(game) === STAGE_POSTSEASON).length === 1) {
+    const winnerTeamId = Number(titleGame.awayScore || 0) > Number(titleGame.homeScore || 0)
+      ? Number(titleGame.awayTeamId)
+      : Number(titleGame.homeTeamId);
+    const futuresBook = ensureFuturesBook(seasonStore);
+    for (const bet of futuresBook.bets || []) {
+      if (String(bet?.status || '') !== 'open') continue;
+      const bankroll = ensureBankroll(seasonStore, String(bet.userId));
+      const won = Number(bet.teamId || bet.selection || 0) === winnerTeamId;
+      const profit = won ? Number(payoutBreakdown(bet.wager || 0, bet.price || 0)?.profit || 0) : -Number(bet.wager || 0);
+      bet.status = won ? 'win' : 'loss';
+      bet.profit = profit;
+      bet.settledAt = Date.now();
+      bet.impactAward = 0;
+      if (won) {
+        bankroll.wins += 1;
+        bankroll.profit += profit;
+        bankroll.balance += Number(bet.wager || 0) + profit;
+        const impactAward = Math.max(2, Math.round(profit));
+        bet.impactAward = impactAward;
+        awardRecognitionPoints({
+          guildId,
+          league: 'madden',
+          seasonKey,
+          userId: String(bet.userId),
+          tier: 'impact',
+          amount: impactAward,
+          reason: 'Sportsbook future win • Super Bowl',
+          weekKey: `week_${weekNumber}`,
+        });
+      } else {
+        bankroll.losses += 1;
+        bankroll.profit -= Number(bet.wager || 0);
+      }
+      futuresSettled += 1;
+      summary.push({ userId: String(bet.userId), wager: Number(bet.wager || 0), result: bet.status, profit });
+    }
+  }
+  if (!settled && !lineResultsUpdated && !futuresSettled) return null;
   weekStore.settled = true;
   weekStore.settledAt = Date.now();
   saveStore(store);
@@ -1920,6 +2248,16 @@ export async function settleSportsbookWeek({ client, guildId, seasonKey, weekNum
       const list = settledByUser.get(String(bet.userId)) || [];
       list.push(bet);
       settledByUser.set(String(bet.userId), list);
+    }
+    if (futuresSettled) {
+      for (const bet of seasonStore?.futures?.bets || []) {
+        if (!bet?.userId) continue;
+        if (!['win', 'loss'].includes(String(bet.status || ''))) continue;
+        if (Number(bet.settledAt || 0) < Number(weekStore.settledAt || 0) - 5000) continue;
+        const list = settledByUser.get(String(bet.userId)) || [];
+        list.push(bet);
+        settledByUser.set(String(bet.userId), list);
+      }
     }
 
     await Promise.all(
