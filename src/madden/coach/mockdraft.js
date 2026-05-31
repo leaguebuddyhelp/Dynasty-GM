@@ -519,8 +519,13 @@ export function draftOrder(league) {
       playoff: Number(t.playoffStatus || 0),
       rank: Number(t.rank),
       seed: Number(t.seed || 0),
+      orderSource: 'madden_standings_rank',
     }))
     .sort((a, b) => b.rank - a.rank || a.id - b.id);
+  const expectedTeamCount = Math.min(32, standings.length || 32);
+  const uniqueRankCount = new Set(rankDrivenOrder.map((team) => team.rank)).size;
+  const hasCompleteMaddenRankOrder =
+    rankDrivenOrder.length >= expectedTeamCount && uniqueRankCount === rankDrivenOrder.length;
 
   const teams = standings.map(t => ({
     id: t.teamId,
@@ -536,6 +541,12 @@ export function draftOrder(league) {
   }));
   const teamByName = Object.fromEntries(teams.map(t => [(t.name || '').toLowerCase(), t]));
   const seasonInfo = league?.info?.careerHubInfo?.seasonInfo || {};
+  const seasonWeekType = seasonInfo.seasonWeekType ?? league?.info?.seasonWeekType ?? league?.stage ?? 0;
+  const isRegularSeason = Number(seasonWeekType) === 1;
+
+  if (isRegularSeason && hasCompleteMaddenRankOrder) {
+    return rankDrivenOrder.slice(0, 32);
+  }
 
   // Derive playoff participation from weeklyStats when schedule is missing postseason games
   const weekTeams = {};
@@ -575,8 +586,6 @@ export function draftOrder(league) {
     buckets = computePlayoffBuckets(league);
   }
   // Regular-season fallback: project playoff bracket from current seeds so late picks use current playoff picture.
-  const seasonWeekType = seasonInfo.seasonWeekType ?? league?.info?.seasonWeekType ?? league?.stage ?? 0;
-  const isRegularSeason = Number(seasonWeekType) === 1;
   if (!buckets && isRegularSeason) {
     buckets = computeSeedBracketBuckets(league);
   }
@@ -751,6 +760,7 @@ function teamCodeForPick(team = {}) {
 function applyDefaultFirstYearOriginalOrder(order, seasonYear) {
   if (!DEFAULT_FIRST_MADDEN_DRAFT_YEARS.has(Number(seasonYear))) return order;
   if (!Array.isArray(order) || order.length < 32) return order;
+  if (order.some((team) => team?.orderSource === 'madden_standings_rank')) return order;
 
   const byCode = new Map();
   for (const team of order) {
