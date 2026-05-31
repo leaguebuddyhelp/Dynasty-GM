@@ -479,7 +479,7 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             'Top 100': publicReadOnly,
             'Weekly Awards': publicReadOnly,
             'Yearly Awards': publicReadOnly,
-            'Streaming links': publicReadOnly,
+            'Streaming links': publicInteractiveWithCoachAccess,
             'Draft Grades': publicReadOnly,
             'Transaction Log': publicReadOnly,
             'Injuries Log': publicReadOnly,
