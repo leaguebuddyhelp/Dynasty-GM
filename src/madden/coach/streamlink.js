@@ -428,6 +428,8 @@ function buildQuickRead({
   seed,
   bettingLine,
   standouts = null,
+  ownPlayers = [],
+  oppPlayers = [],
 }) {
   const ownLine = teamStatLine(ownStats);
   const oppLine = teamStatLine(oppStats);
@@ -444,7 +446,7 @@ function buildQuickRead({
     : `${formatOneDecimal(oppLine.rushYpg)} rush yards per game`;
   const rivalryRematch = buildDivisionRematchLine(bettingLine, ownTeam, oppTeam, seed);
   const h2hStatLine = buildHeadToHeadStatLine(bettingLine, ownTeam, oppTeam);
-  const injury = buildInjuryContextLine(snapshot, ownTeam, oppTeam, ownTeam.teamId, oppTeam.teamId, seed);
+  const injury = buildInjuryContextLine(snapshot, ownTeam, oppTeam, ownTeam.teamId, oppTeam.teamId, seed, ownPlayers, oppPlayers);
   const ownOffense = standouts?.ownOffense ? `${formatPlayerName(standouts.ownOffense)} (${String(standouts.ownOffense.position || '').toUpperCase()})` : null;
   const oppOffense = standouts?.oppOffense ? `${formatPlayerName(standouts.oppOffense)} (${String(standouts.oppOffense.position || '').toUpperCase()})` : null;
   const ownDefense = standouts?.ownDefense ? `${formatPlayerName(standouts.ownDefense)} (${String(standouts.ownDefense.position || '').toUpperCase()})` : null;
@@ -525,6 +527,60 @@ function sortByOvr(players = []) {
   return players.slice().sort((a, b) => playerOvr(b) - playerOvr(a));
 }
 
+function samePlayer(a = {}, b = {}) {
+  const aRosterId = a?.rosterId ?? a?.playerId ?? null;
+  const bRosterId = b?.rosterId ?? b?.playerId ?? null;
+  if (aRosterId != null && bRosterId != null && String(aRosterId) === String(bRosterId)) return true;
+  return normalizeName(formatPlayerName(a)) === normalizeName(formatPlayerName(b));
+}
+
+function livePlayerForRoster(livePlayers = [], rosterPlayer = {}) {
+  return livePlayers.find((player) => samePlayer(player, rosterPlayer)) || null;
+}
+
+function passAttempts(player = {}) {
+  return Number(player?.passAtt || player?.pass?.att || 0);
+}
+
+function primaryQuarterbackForTeam(snapshot, teamId, livePlayers = []) {
+  const qbs = rosterForTeam(snapshot, teamId)
+    .filter((player) => String(player?.position || '').toUpperCase() === 'QB')
+    .map((player) => {
+      const livePlayer = livePlayerForRoster(livePlayers, player);
+      return {
+        ...player,
+        ...(livePlayer || {}),
+        rosterPlayer: player,
+        livePlayer,
+      };
+    });
+  if (!qbs.length) return null;
+
+  const withAttempts = qbs.filter((player) => passAttempts(player) > 0);
+  if (withAttempts.length) {
+    return withAttempts.sort((a, b) =>
+      passAttempts(b) - passAttempts(a) ||
+      Number(b?.passYds || b?.pass?.yds || 0) - Number(a?.passYds || a?.pass?.yds || 0) ||
+      playerOvr(b) - playerOvr(a),
+    )[0];
+  }
+
+  return sortByOvr(qbs)[0] || null;
+}
+
+function isPrimaryQuarterbackInjury(snapshot, teamId, injury, livePlayers = []) {
+  if (String(injury?.position || '').toUpperCase() !== 'QB') return true;
+  const primary = primaryQuarterbackForTeam(snapshot, teamId, livePlayers);
+  if (!primary) return true;
+  if (samePlayer(primary, injury) || samePlayer(primary?.rosterPlayer, injury)) return true;
+
+  const primaryAttempts = passAttempts(primary);
+  const injuredAttempts = passAttempts(livePlayerForRoster(livePlayers, injury) || injury);
+  if (primaryAttempts >= 20 && injuredAttempts < Math.max(8, primaryAttempts * 0.35)) return false;
+
+  return playerOvr(injury) >= playerOvr(primary) + 2;
+}
+
 function injuryPlayers(snapshot, teamId) {
   return rosterForTeam(snapshot, teamId)
     .filter((player) => Number(player?.injuryLength || 0) > 0)
@@ -543,8 +599,9 @@ function injuryPriority(player = {}) {
   return posBoost + ovr + (weeks * 2);
 }
 
-function findImpactInjury(snapshot, teamId) {
+function findImpactInjury(snapshot, teamId, livePlayers = []) {
   return injuryPlayers(snapshot, teamId)
+    .filter((player) => isPrimaryQuarterbackInjury(snapshot, teamId, player, livePlayers))
     .sort((a, b) => injuryPriority(b) - injuryPriority(a))[0] || null;
 }
 
@@ -773,9 +830,9 @@ function buildStakesLine(snapshot, ownTeam, oppTeam, ownStanding, oppStanding, s
   ]);
 }
 
-function buildInjuryContextLine(snapshot, ownTeam, oppTeam, ownTeamId, oppTeamId, seed) {
-  const ownInjury = findImpactInjury(snapshot, ownTeamId);
-  const oppInjury = findImpactInjury(snapshot, oppTeamId);
+function buildInjuryContextLine(snapshot, ownTeam, oppTeam, ownTeamId, oppTeamId, seed, ownPlayers = [], oppPlayers = []) {
+  const ownInjury = findImpactInjury(snapshot, ownTeamId, ownPlayers);
+  const oppInjury = findImpactInjury(snapshot, oppTeamId, oppPlayers);
 
   if (ownInjury && String(ownInjury.position || '').toUpperCase() === 'QB') {
     const backup = sortByOvr(
@@ -1203,6 +1260,8 @@ export async function execute(interaction) {
     oppForm,
     seed,
     bettingLine,
+    ownPlayers,
+    oppPlayers,
     standouts: {
       ownOffense: playersField.ownOffense,
       ownDefense: playersField.ownDefense,
