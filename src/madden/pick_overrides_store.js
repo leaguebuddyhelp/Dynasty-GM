@@ -76,7 +76,8 @@ const TEAM_ABBR = new Map([
   ['seahawks', 'SEA'],
   ['buccaneers', 'TB'],
   ['titans', 'TEN'],
-  ['commanders', 'WAS'],
+  ['commanders', 'WSH'],
+  ['washington', 'WSH'],
 ]);
 const viaCodeFor = (teamName = '') => {
   const teamNorm = norm(teamName);
@@ -98,6 +99,8 @@ const DEFAULT_START_FIRST_ROUND_OVERRIDES = [
   { from: 'Packers', to: 'Dallas Cowboys', via: 'GB', year: 2027 },
   { from: 'Cowboys', to: 'New York Jets', via: 'DAL', year: 2027 },
   { from: 'Colts', to: 'New York Jets', via: 'IND', year: 2027 },
+  { from: 'Giants', to: 'Cleveland Browns', via: 'NYG', year: 2027 },
+  { from: 'Commanders', to: 'Pittsburgh Steelers', via: 'WSH', year: 2028 },
 ];
 
 function findOverrideByOriginalOwner(list, fromTeam, year, round = 1) {
