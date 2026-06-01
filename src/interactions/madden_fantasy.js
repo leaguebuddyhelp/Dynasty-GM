@@ -3,6 +3,7 @@ import {
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
+  ChannelType,
   EmbedBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
@@ -40,6 +41,7 @@ import { coachTeamsForMember } from '../shared/madden_mock_draft_live.js';
 
 export const customId = /^madden_fantasy\|/;
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24;
+const MOCK_ROOM_IDLE_MS = 1000 * 60 * 60 * 6;
 
 function parseParts(interaction) {
   const [, action = 'hub', value = '0'] = interaction.customId.split('|');
@@ -89,6 +91,93 @@ async function replyError(interaction, content) {
   } else if (interaction.isButton() || interaction.isStringSelectMenu()) {
     await interaction.reply({ content, flags: 64 });
   }
+}
+
+async function fantasyMockRoomIsUsable(client, league) {
+  const roomId = league?.room?.channelId;
+  if (!roomId) return false;
+  if (!league?.room?.messageId) return false;
+  if ((Date.now() - Number(league.room?.updatedAt || league.room?.createdAt || 0)) > MOCK_ROOM_IDLE_MS) return false;
+  const room = await client.channels.fetch(roomId).catch(() => null);
+  if (!room) return false;
+  if (league.room?.messageId && room.messages?.fetch) {
+    const message = await room.messages.fetch(league.room.messageId).catch(() => null);
+    if (!message) return false;
+  }
+  return true;
+}
+
+async function syncFantasyMockRoomMessage(client, guildId, seasonKey, league, snapshot, userId, componentSeasonKey) {
+  const roomId = league?.room?.channelId;
+  const messageId = league?.room?.messageId;
+  if (!roomId || !messageId) return null;
+  const room = await client.channels.fetch(roomId).catch(() => null);
+  const message = room?.messages?.fetch ? await room.messages.fetch(messageId).catch(() => null) : null;
+  if (!message) return null;
+  const payload = buildFantasyHubPayload(league, snapshot, userId, { mode: 'mock', seasonKey: componentSeasonKey });
+  await message.edit(payload).catch(() => null);
+  mutateFantasyLeague({ guildId, seasonKey }, (draftLeague) => {
+    draftLeague.room = {
+      ...(draftLeague.room || {}),
+      updatedAt: Date.now(),
+    };
+    return draftLeague;
+  });
+  return message;
+}
+
+async function ensureFantasyMockRoom(interaction, guildId, seasonKey, league, snapshot, userId, componentSeasonKey) {
+  if (await fantasyMockRoomIsUsable(interaction.client, league)) {
+    const room = await interaction.client.channels.fetch(league.room.channelId).catch(() => null);
+    await room?.members?.add?.(userId).catch(() => null);
+    await syncFantasyMockRoomMessage(interaction.client, guildId, seasonKey, league, snapshot, userId, componentSeasonKey);
+    return { ok: true, roomId: league.room.channelId, created: false };
+  }
+
+  let parent = interaction.guild?.channels?.cache?.get(FANTASY_CHAT_CHANNEL_ID) || null;
+  if (!parent && interaction.guild?.channels?.fetch) {
+    parent = await interaction.guild.channels.fetch(FANTASY_CHAT_CHANNEL_ID).catch(() => null);
+  }
+  if (!parent?.threads?.create) {
+    return { ok: false, reason: `Fantasy chat <#${FANTASY_CHAT_CHANNEL_ID}> cannot create private mock rooms right now.` };
+  }
+
+  const roomName = `Fantasy Mock ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  const room = await parent.threads.create({
+    name: roomName,
+    autoArchiveDuration: 60,
+    type: ChannelType.PrivateThread,
+    reason: 'Private fantasy mock draft room',
+    invitable: false,
+  }).catch(() => null);
+  if (!room) return { ok: false, reason: 'Could not create the private fantasy mock room.' };
+
+  await room.members.add(userId).catch(() => null);
+  let savedLeague = league;
+  savedLeague = mutateFantasyLeague({ guildId, seasonKey }, (draftLeague) => {
+    draftLeague.room = {
+      channelId: room.id,
+      parentChannelId: FANTASY_CHAT_CHANNEL_ID,
+      hostId: userId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    if (!draftLeague.hostId) draftLeague.hostId = userId;
+    return draftLeague;
+  });
+  const message = await room.send(buildFantasyHubPayload(savedLeague, snapshot, userId, { mode: 'mock', seasonKey: componentSeasonKey })).catch(() => null);
+  if (!message) return { ok: false, reason: 'Private fantasy mock room was created, but I could not post the draft controls inside it.' };
+  if (message) {
+    savedLeague = mutateFantasyLeague({ guildId, seasonKey }, (draftLeague) => {
+      draftLeague.room = {
+        ...(draftLeague.room || {}),
+        messageId: message.id,
+        updatedAt: Date.now(),
+      };
+      return draftLeague;
+    });
+  }
+  return { ok: true, roomId: room.id, created: true, league: savedLeague };
 }
 
 function hasFantasyAccess(member) {
@@ -186,6 +275,7 @@ function buildFantasyInvitePickerPayload(league, inviteOptions = [], page = 0, c
     .addFields(
       { name: 'League', value: `${joined}/${target} teams joined`, inline: true },
       ...(isMock ? [
+        { name: 'Room', value: league.room?.channelId ? `<#${league.room.channelId}>` : 'Private room will be created when the mock opens.', inline: true },
         { name: 'Participants', value: participants.length ? participants.join('\n') : 'No coaches added yet.', inline: false },
         { name: 'How To Use It', value: '1. Invite coaches\n2. Press `Start Mock`\n3. Coaches pick when they are on the clock\n4. CPU teams and auto-pick fill the gaps\n5. Draft recaps go to DMs when it ends', inline: false },
       ] : []),
@@ -226,6 +316,8 @@ async function sendFantasyInviteDM(client, guildId, seasonKey, hostUser, member)
   const user = member?.user || await client.users.fetch(member?.id || '').catch(() => null);
   if (!user) return false;
   const isMockInvite = String(seasonKey || '').includes(':mock');
+  const inviteLeague = ensureFantasyLeague({ guildId, seasonKey });
+  const roomLine = isMockInvite && inviteLeague.room?.channelId ? `\n\nRoom: <#${inviteLeague.room.channelId}>` : '';
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`madden_fantasy|invite_accept|${guildId}|${encodeURIComponent(seasonKey)}`)
@@ -240,7 +332,7 @@ async function sendFantasyInviteDM(client, guildId, seasonKey, hostUser, member)
   const embed = new EmbedBuilder()
     .setTitle(isMockInvite ? 'Fantasy Mock Draft Invite' : 'Madden Fantasy Invite')
     .setColor(0x5865f2)
-    .setDescription(`<@${hostUser.id}> invited you to ${isMockInvite ? 'a fantasy mock draft' : 'the 10-team Madden fantasy season'}.\n\nPress **${isMockInvite ? 'Accept Mock Invite' : 'Accept Fantasy Invite'}** to join. Fantasy chat is <#${FANTASY_CHAT_CHANNEL_ID}>.`)
+    .setDescription(`<@${hostUser.id}> invited you to ${isMockInvite ? 'a fantasy mock draft' : 'the 10-team Madden fantasy season'}.${roomLine}\n\nPress **${isMockInvite ? 'Accept Mock Invite' : 'Accept Fantasy Invite'}** to join. Fantasy chat is <#${FANTASY_CHAT_CHANNEL_ID}>.`)
     .addFields(
       { name: 'Your Madden Team', value: assignedTeams.length ? assignedTeams.join(', ') : 'No team assignment found', inline: false },
       { name: 'Format', value: '10 teams max • 2 conferences of 5 • top 3 per conference • #1 seed gets a bye', inline: false },
@@ -315,17 +407,22 @@ export async function execute(interaction) {
     });
     const joinedCount = Object.values(joinedLeague.managers || {}).filter((manager) => !manager.isCpu).length;
     const isMockInvite = String(seasonKey || '').includes(':mock');
-    const components = isMockInvite
-      ? [new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`madden_fantasy|mockkey_draft|${fantasyMockToken(guildId, seasonKey)}`)
-          .setLabel('Open Mock Draft Room')
-          .setStyle(ButtonStyle.Primary),
-      )]
-      : [];
+    if (isMockInvite && joinedLeague.room?.channelId) {
+      const room = await interaction.client.channels.fetch(joinedLeague.room.channelId).catch(() => null);
+      await room?.members?.add?.(interaction.user.id).catch(() => null);
+      await syncFantasyMockRoomMessage(
+        interaction.client,
+        guildId,
+        seasonKey,
+        joinedLeague,
+        snapshot,
+        pending.hostId || interaction.user.id,
+        fantasyMockToken(guildId, seasonKey),
+      ).catch(() => null);
+    }
     await interaction.editReply({
-      embeds: [new EmbedBuilder().setTitle(isMockInvite ? 'Mock Invite Accepted' : 'Fantasy Invite Accepted').setColor(0x2ecc71).setDescription(`You’re in. Fantasy chat is <#${FANTASY_CHAT_CHANNEL_ID}>.\n\n${isMockInvite ? 'Open the mock draft room below when the host starts.' : `League: ${joinedCount}/${joinedLeague.settings?.leagueSize || 10} teams joined.`}`)],
-      components,
+      embeds: [new EmbedBuilder().setTitle(isMockInvite ? 'Mock Invite Accepted' : 'Fantasy Invite Accepted').setColor(0x2ecc71).setDescription(`You’re in. Fantasy chat is <#${FANTASY_CHAT_CHANNEL_ID}>.\n\n${isMockInvite ? `Open <#${joinedLeague.room?.channelId || FANTASY_CHAT_CHANNEL_ID}> to follow the mock and pick when you are on the clock.` : `League: ${joinedCount}/${joinedLeague.settings?.leagueSize || 10} teams joined.`}`)],
+      components: [],
     });
     await notifyFantasyInviteHost(interaction.client, pending.hostId, `<@${interaction.user.id}> accepted the ${isMockInvite ? 'fantasy mock' : 'fantasy'} invite.${isMockInvite ? '' : ` League is now ${joinedCount}/${joinedLeague.settings?.leagueSize || 10}.`}`);
     return;
@@ -348,6 +445,25 @@ export async function execute(interaction) {
   const componentSeasonKey = mode === 'mock' ? fantasyMockToken(activeGuildId, seasonKey) : seasonKey;
   let league = context.fantasyLeague;
   const userId = interaction.user.id;
+
+  if (mode === 'mock' && action === 'hub' && interaction.channelId !== league.room?.channelId) {
+    const roomResult = await ensureFantasyMockRoom(interaction, activeGuildId, seasonKey, league, snapshot, userId, componentSeasonKey);
+    if (!roomResult.ok) {
+      await replyError(interaction, roomResult.reason || 'Could not open the private fantasy mock room.');
+      return;
+    }
+    league = roomResult.league || ensureFantasyLeague({ guildId: activeGuildId, seasonKey });
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(roomResult.created ? 'Private Fantasy Mock Room Created' : 'Private Fantasy Mock Room Ready')
+          .setColor(0x2ecc71)
+          .setDescription(`Your fantasy mock draft room is ready: <#${roomResult.roomId}>.\n\nOpen that private thread to invite coaches, start the mock, and make picks.`),
+      ],
+      components: [],
+    });
+    return;
+  }
 
   if (action === 'join') {
     league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => (
