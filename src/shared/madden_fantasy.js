@@ -492,9 +492,19 @@ export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { m
     .setFooter({ text: `Page ${safePage + 1}/${maxPage + 1} • board excludes your own Madden team.` });
 
   const rows = baseButtons('board', safePage, mode);
+  const prevDisabled = safePage <= 0;
+  const nextDisabled = safePage >= maxPage;
   rows.push(new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(actionId(mode, 'board', Math.max(0, safePage - 1))).setLabel('Prev').setStyle(ButtonStyle.Secondary).setDisabled(safePage <= 0),
-    new ButtonBuilder().setCustomId(actionId(mode, 'board', Math.min(maxPage, safePage + 1))).setLabel('Next').setStyle(ButtonStyle.Secondary).setDisabled(safePage >= maxPage),
+    new ButtonBuilder()
+      .setCustomId(prevDisabled ? actionId(mode, 'board_prev_disabled', safePage) : actionId(mode, 'board', safePage - 1))
+      .setLabel('Prev')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(prevDisabled),
+    new ButtonBuilder()
+      .setCustomId(nextDisabled ? actionId(mode, 'board_next_disabled', safePage) : actionId(mode, 'board', safePage + 1))
+      .setLabel('Next')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(nextDisabled),
   ));
   if (league.draft?.status === 'live' && onClock === userId && slice.length) {
     rows.push(new ActionRowBuilder().addComponents(
