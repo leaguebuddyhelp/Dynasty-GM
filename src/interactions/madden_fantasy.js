@@ -177,9 +177,13 @@ function fantasyOnClockPayload(league, snapshot, userId, componentSeasonKey) {
     ));
   }
   components.push(new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
+    new ButtonBuilder()
       .setCustomId(`madden_fantasy|mockkey_simpick|${componentSeasonKey}`)
       .setLabel('Sim My Pick')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`madden_fantasy|mockkey_autopick|${componentSeasonKey}`)
+      .setLabel('Toggle Auto Pilot')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`madden_fantasy|mockkey_board|${componentSeasonKey}|0`)
