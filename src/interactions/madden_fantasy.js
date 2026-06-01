@@ -11,6 +11,7 @@ import {
   ensureFantasyLeague,
   findFantasyAsset,
   getFantasyLeagueKey,
+  autoSimFantasyUntilUser,
   makeFantasyPick,
   mutateFantasyLeague,
   normalizeFantasyMode,
@@ -33,7 +34,9 @@ function parseParts(interaction) {
 async function loadContext(interaction, mode = 'live') {
   const leagueId = requireLeagueIdForGuild(interaction.guildId);
   const snapshot = loadLeagueSnapshot(leagueId);
-  const seasonKey = getFantasyLeagueKey(snapshot, normalizeFantasyMode(mode));
+  const normalizedMode = normalizeFantasyMode(mode);
+  const baseSeasonKey = getFantasyLeagueKey(snapshot, normalizedMode);
+  const seasonKey = normalizedMode === 'mock' ? `${baseSeasonKey}:${interaction.user.id}` : baseSeasonKey;
   ensureFantasyLeague({ guildId: interaction.guildId, seasonKey });
   const maddenTeamIds = resolveCoachTeamIds(interaction.member, snapshot);
   const fantasyLeague = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (league) => (
@@ -81,13 +84,15 @@ export async function execute(interaction) {
 
   if (action === 'start') {
     const roleMap = loadRoleMapForGuild(interaction.guildId);
-    if (!hasStaffRole(interaction.member, roleMap)) {
+    if (mode !== 'mock' && !hasStaffRole(interaction.member, roleMap)) {
       await replyError(interaction, 'Only staff can start the fantasy draft.');
       return;
     }
     let result = null;
     league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
-      result = startFantasyDraft(draftLeague);
+      if (mode === 'mock') resetFantasyDraft(draftLeague);
+      result = startFantasyDraft(draftLeague, mode === 'mock' ? { soloMockUserId: userId } : {});
+      if (result?.ok && mode === 'mock') autoSimFantasyUntilUser(draftLeague, snapshot, userId);
       return draftLeague;
     });
     if (!result?.ok) {
@@ -99,13 +104,8 @@ export async function execute(interaction) {
   }
 
   if (action === 'reset') {
-    const roleMap = loadRoleMapForGuild(interaction.guildId);
     if (mode !== 'mock') {
       await replyError(interaction, 'Only the mock draft can be reset from this button.');
-      return;
-    }
-    if (!hasStaffRole(interaction.member, roleMap)) {
-      await replyError(interaction, 'Only staff can reset the fantasy mock draft.');
       return;
     }
     league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
@@ -122,6 +122,7 @@ export async function execute(interaction) {
     league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
       const asset = findFantasyAsset(draftLeague, snapshot, assetId, userId);
       result = asset ? makeFantasyPick(draftLeague, asset, userId) : { ok: false, reason: 'That board item is no longer available.' };
+      if (result?.ok && mode === 'mock') autoSimFantasyUntilUser(draftLeague, snapshot, userId);
       return draftLeague;
     });
     if (!result?.ok) {
@@ -154,6 +155,17 @@ export async function execute(interaction) {
 
   if (action === 'trade') {
     await interaction.editReply(buildFantasyTradePayload(league, userId));
+    return;
+  }
+
+  if (mode === 'mock' && action === 'hub' && league.draft?.status !== 'live') {
+    league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
+      resetFantasyDraft(draftLeague);
+      startFantasyDraft(draftLeague, { soloMockUserId: userId });
+      autoSimFantasyUntilUser(draftLeague, snapshot, userId);
+      return draftLeague;
+    });
+    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode }));
     return;
   }
 

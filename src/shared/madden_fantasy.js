@@ -30,6 +30,7 @@ const DEFAULT_ROSTER_SLOTS = {
 const SKILL_POSITIONS = new Set(['QB', 'HB', 'RB', 'WR', 'TE', 'K']);
 const POSITION_LABELS = { HB: 'RB' };
 const FANTASY_MODES = new Set(['live', 'mock']);
+const SOLO_MOCK_CPU_COUNT = 7;
 
 function nowIso() {
   return new Date().toISOString();
@@ -66,6 +67,16 @@ function normalizeKey(value = '') {
 function safeNumber(value, fallback = 0) {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
+}
+
+function isCpuUserId(userId = '') {
+  return String(userId || '').startsWith('cpu_');
+}
+
+function managerLabel(league, userId) {
+  if (!userId) return 'N/A';
+  if (isCpuUserId(userId)) return league?.managers?.[userId]?.displayName || 'CPU';
+  return `<@${userId}>`;
 }
 
 function fullName(player = {}) {
@@ -224,6 +235,24 @@ export function upsertFantasyManager(league, member, maddenTeamIds = []) {
   return league;
 }
 
+function ensureCpuManagers(league, count = SOLO_MOCK_CPU_COUNT) {
+  for (let idx = 1; idx <= count; idx += 1) {
+    const userId = `cpu_${idx}`;
+    const existing = league.managers[userId] || {};
+    league.managers[userId] = {
+      userId,
+      displayName: existing.displayName || `CPU Team ${idx}`,
+      teamName: existing.teamName || `CPU Team ${idx}`,
+      maddenTeamIds: [],
+      roster: existing.roster || [],
+      lineup: existing.lineup || {},
+      picks: existing.picks || [],
+      joinedAt: existing.joinedAt || nowIso(),
+      isCpu: true,
+    };
+  }
+}
+
 function playerFantasyPoints(player, scoring) {
   const pass = safeNumber(player.passYds) * scoring.passYds
     + safeNumber(player.passTDs) * scoring.passTD
@@ -334,8 +363,13 @@ export function currentFantasyDrafter(league) {
   return nextDrafterId(league?.draft || {});
 }
 
-export function startFantasyDraft(league) {
-  const order = Object.keys(league.managers || {});
+export function startFantasyDraft(league, options = {}) {
+  if (options.soloMockUserId) {
+    ensureCpuManagers(league, options.cpuTeams || SOLO_MOCK_CPU_COUNT);
+  }
+  const order = options.soloMockUserId
+    ? [options.soloMockUserId, ...Object.keys(league.managers || {}).filter((id) => isCpuUserId(id)).slice(0, options.cpuTeams || SOLO_MOCK_CPU_COUNT)]
+    : Object.keys(league.managers || {}).filter((id) => !isCpuUserId(id));
   if (order.length < 2) return { ok: false, reason: 'Need at least two joined coaches before the draft starts.' };
   league.status = 'draft';
   league.draft.status = 'live';
@@ -345,6 +379,21 @@ export function startFantasyDraft(league) {
   league.draft.picks = [];
   league.settings.draft.rounds = rosterSize(league.settings);
   return { ok: true };
+}
+
+export function autoSimFantasyUntilUser(league, snapshot, userId, limit = 100) {
+  let count = 0;
+  while (league.draft?.status === 'live' && currentFantasyDrafter(league) !== userId && count < limit) {
+    const cpuId = currentFantasyDrafter(league);
+    if (!isCpuUserId(cpuId)) break;
+    const board = buildFantasyBoard(league, snapshot, { userId: cpuId, includeOwnTeam: true });
+    const asset = board[0];
+    if (!asset) break;
+    const result = makeFantasyPick(league, asset, cpuId);
+    if (!result?.ok) break;
+    count += 1;
+  }
+  return count;
 }
 
 export function resetFantasyDraft(league) {
@@ -468,7 +517,7 @@ export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live'
       : `Draft players from other Madden teams, then their real league production becomes your fantasy score. Own-team players and own-team defenses are blocked. Fantasy chat lives in <#${FANTASY_CHAT_CHANNEL_ID}>.`)
     .addFields(
       { name: 'Status', value: `${league.status} • ${managerCount} coaches joined`, inline: true },
-      { name: 'Draft', value: league.draft?.status === 'live' ? `Live • on clock: <@${onClock}>` : league.draft?.status || 'not_started', inline: true },
+      { name: 'Draft', value: league.draft?.status === 'live' ? `Live • on clock: ${managerLabel(league, onClock)}` : league.draft?.status || 'not_started', inline: true },
       { name: 'Lineup', value: 'QB, RB, RB, WR, WR, TE, FLEX, DST, K, 5 BN', inline: false },
       { name: 'Board Leaders', value: preview.slice(0, 1024), inline: false },
     )
@@ -488,7 +537,7 @@ export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { m
     .setDescription(
       slice.map((asset) => `#${asset.rank} ${formatAssetLine(asset)}`).join('\n') || 'No eligible board entries on this page.',
     )
-    .addFields({ name: 'On Clock', value: onClock ? `<@${onClock}>` : 'Draft has not started.', inline: true })
+    .addFields({ name: 'On Clock', value: onClock ? managerLabel(league, onClock) : 'Draft has not started.', inline: true })
     .setFooter({ text: `Page ${safePage + 1}/${maxPage + 1} • board excludes your own Madden team.` });
 
   const rows = baseButtons('board', safePage, mode);
@@ -548,7 +597,7 @@ export function buildFantasyStandingsPayload(league, snapshot) {
     .setTitle('Fantasy Standings')
     .setColor(0x3498db)
     .setDescription(rows.length
-      ? rows.map((row, idx) => `${idx + 1}. <@${row.manager.userId}> - ${row.total.toFixed(1)} draft-board pts • ${row.picks} players`).join('\n')
+      ? rows.map((row, idx) => `${idx + 1}. ${managerLabel(league, row.manager.userId)} - ${row.total.toFixed(1)} draft-board pts • ${row.picks} players`).join('\n')
       : 'No coaches have joined yet.')
     .setFooter({ text: 'Live weekly scoring will use the same half-PPR scoring model.' });
   return { embeds: [embed], components: baseButtons('standings', 0, league.isMock ? 'mock' : 'live') };
@@ -561,11 +610,11 @@ export function buildFantasyDraftPayload(league, snapshot, userId, { mode = 'liv
     .setTitle(normalizeFantasyMode(mode) === 'mock' ? 'Fantasy Mock Draft Room' : 'Fantasy Draft Room')
     .setColor(0xe67e22)
     .setDescription(league.draft?.status === 'live'
-      ? `Round ${league.draft.round}, Pick ${league.draft.pickIndex + 1} • On clock: <@${onClock}>`
+      ? `Round ${league.draft.round}, Pick ${league.draft.pickIndex + 1} • On clock: ${managerLabel(league, onClock)}`
       : `Draft status: ${league.draft?.status || 'not_started'}`)
     .addFields(
-      { name: 'Order', value: (league.draft?.order || Object.keys(league.managers || {})).map((id, idx) => `${idx + 1}. <@${id}>`).join('\n') || 'No joined coaches yet.', inline: true },
-      { name: 'Recent Picks', value: lastPicks.length ? lastPicks.map((pick) => `${pick.pickNo}. ${pick.position} ${pick.name} - <@${pick.userId}>`).join('\n') : 'No picks made yet.', inline: true },
+      { name: 'Order', value: (league.draft?.order || Object.keys(league.managers || {})).map((id, idx) => `${idx + 1}. ${managerLabel(league, id)}`).join('\n') || 'No joined coaches yet.', inline: true },
+      { name: 'Recent Picks', value: lastPicks.length ? lastPicks.map((pick) => `${pick.pickNo}. ${pick.position} ${pick.name} - ${managerLabel(league, pick.userId)}`).join('\n') : 'No picks made yet.', inline: true },
     );
   const payload = buildFantasyBoardPayload(league, snapshot, userId, 0, { mode });
   return { embeds: [embed, ...payload.embeds], components: payload.components };
