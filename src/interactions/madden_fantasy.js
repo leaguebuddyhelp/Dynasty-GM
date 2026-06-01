@@ -22,15 +22,17 @@ import {
   ensureFantasyLeague,
   findFantasyAsset,
   getFantasyLeagueKey,
-  autoSimFantasyUntilUser,
+  autoSimFantasyUntilManualPick,
   makeFantasyPick,
   mutateFantasyLeague,
   normalizeFantasyMode,
   resetFantasyDraft,
   resolveCoachTeamIds,
   startFantasyDraft,
+  toggleFantasyAutoPick,
   upsertFantasyManager,
   FANTASY_CHAT_CHANNEL_ID,
+  FANTASY_ACCESS_ROLE_ID,
 } from '../shared/madden_fantasy.js';
 import { coachTeamsForMember } from '../shared/madden_mock_draft_live.js';
 
@@ -64,9 +66,12 @@ async function loadContext(interaction, mode = 'live', seasonKeyOverride = null,
   const baseSeasonKey = getFantasyLeagueKey(snapshot, normalizedMode);
   const seasonKey = seasonKeyOverride || (normalizedMode === 'mock' ? `${baseSeasonKey}:${interaction.user.id}` : baseSeasonKey);
   ensureFantasyLeague({ guildId, seasonKey });
-  const maddenTeamIds = resolveCoachTeamIds(interaction.member, snapshot);
+  const member = interaction.member?.roles?.cache
+    ? interaction.member
+    : await fetchGuildMember(interaction.client, guildId, interaction.user.id);
+  const maddenTeamIds = resolveCoachTeamIds(member, snapshot);
   const fantasyLeague = mutateFantasyLeague({ guildId, seasonKey }, (league) => {
-    upsertFantasyManager(league, interaction.member, maddenTeamIds);
+    upsertFantasyManager(league, member || { id: interaction.user.id, user: interaction.user }, maddenTeamIds);
     if (normalizedMode === 'mock' && !league.hostId) {
       league.hostId = seasonKeyOverride ? String(seasonKey).split(':').pop() : interaction.user.id;
     }
@@ -83,8 +88,23 @@ async function replyError(interaction, content) {
   }
 }
 
-function privatePayload(content) {
-  return { content, flags: 64 };
+function hasFantasyAccess(member) {
+  return Boolean(member?.roles?.cache?.has?.(FANTASY_ACCESS_ROLE_ID));
+}
+
+async function fetchGuildMember(client, guildId, userId) {
+  const guild = client.guilds.cache.get(guildId) || await client.guilds.fetch(guildId).catch(() => null);
+  if (!guild) return null;
+  return guild.members.cache.get(userId) || await guild.members.fetch(userId).catch(() => null);
+}
+
+async function ensureFantasyAccess(interaction, guildId) {
+  const member = interaction.member?.roles?.cache
+    ? interaction.member
+    : await fetchGuildMember(interaction.client, guildId, interaction.user.id);
+  if (hasFantasyAccess(member)) return { ok: true, member };
+  await replyError(interaction, 'You need the fantasy role to use this fantasy feature.');
+  return { ok: false, member };
 }
 
 function normalizeAssignedTeamNames(entries = []) {
@@ -109,6 +129,7 @@ async function buildFantasyInviteOptions(guild, league, hostId) {
   for (const userId of assignments?.userToTeams?.keys() || []) {
     const member = guild.members.cache.get(userId) || await guild.members.fetch(userId).catch(() => null);
     if (!member?.user || member.user.bot) continue;
+    if (!hasFantasyAccess(member)) continue;
     membersById.set(member.id, member);
   }
   if (!membersById.size) {
@@ -116,6 +137,7 @@ async function buildFantasyInviteOptions(guild, league, hostId) {
       const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
       for (const member of role?.members?.values?.() || []) {
         if (!member?.user || member.user.bot) continue;
+        if (!hasFantasyAccess(member)) continue;
         membersById.set(member.id, member);
       }
     }
@@ -237,6 +259,8 @@ export async function execute(interaction) {
       await interaction.editReply({ content: 'That fantasy invite is missing league context.', embeds: [], components: [] });
       return;
     }
+    const access = await ensureFantasyAccess(interaction, guildId);
+    if (!access.ok) return;
     const inviteLeague = ensureFantasyLeague({ guildId, seasonKey });
     const pending = inviteLeague.pendingInvites?.[interaction.user.id];
     if (!pending || (pending.expiresAt && Date.now() > pending.expiresAt)) {
@@ -282,6 +306,10 @@ export async function execute(interaction) {
     return;
   }
 
+  const accessGuildId = guildIdOverride || interaction.guildId;
+  const access = await ensureFantasyAccess(interaction, accessGuildId);
+  if (!access.ok) return;
+
   let context;
   try {
     context = await loadContext(interaction, mode, seasonKeyOverride, guildIdOverride);
@@ -314,7 +342,8 @@ export async function execute(interaction) {
       await replyError(interaction, 'Only staff can send fantasy invites.');
       return;
     }
-    const inviteOptions = await buildFantasyInviteOptions(interaction.guild, league, userId);
+    const activeGuild = interaction.guild || await interaction.client.guilds.fetch(activeGuildId).catch(() => null);
+    const inviteOptions = await buildFantasyInviteOptions(activeGuild, league, userId);
     await interaction.editReply(buildFantasyInvitePickerPayload(league, inviteOptions, 0, inviteOptions.length ? 'Choose coaches to invite.' : null, { mode, seasonKey: componentSeasonKey }));
     return;
   }
@@ -329,7 +358,8 @@ export async function execute(interaction) {
       await replyError(interaction, 'Only staff can page fantasy invites.');
       return;
     }
-    const inviteOptions = await buildFantasyInviteOptions(interaction.guild, league, userId);
+    const activeGuild = interaction.guild || await interaction.client.guilds.fetch(activeGuildId).catch(() => null);
+    const inviteOptions = await buildFantasyInviteOptions(activeGuild, league, userId);
     const totalPages = Math.max(1, Math.ceil(inviteOptions.length / 25));
     const currentPage = Number.isFinite(Number(value)) ? Number(value) : 0;
     const nextPage = action === 'invite_next'
@@ -365,7 +395,8 @@ export async function execute(interaction) {
         alreadyPending += 1;
         continue;
       }
-      const member = interaction.guild?.members?.cache?.get(invitedUserId) || await interaction.guild?.members?.fetch?.(invitedUserId).catch(() => null);
+      const activeGuild = interaction.guild || await interaction.client.guilds.fetch(activeGuildId).catch(() => null);
+      const member = activeGuild?.members?.cache?.get(invitedUserId) || await activeGuild?.members?.fetch?.(invitedUserId).catch(() => null);
       if (!member) {
         dmFailed += 1;
         continue;
@@ -392,7 +423,8 @@ export async function execute(interaction) {
       }
     }
     league = ensureFantasyLeague({ guildId: activeGuildId, seasonKey });
-    const inviteOptions = await buildFantasyInviteOptions(interaction.guild, league, userId);
+    const activeGuild = interaction.guild || await interaction.client.guilds.fetch(activeGuildId).catch(() => null);
+    const inviteOptions = await buildFantasyInviteOptions(activeGuild, league, userId);
     await interaction.editReply(buildFantasyInvitePickerPayload(league, inviteOptions, Number(value || 0), [
       invited ? `Invited: **${invited}**` : null,
       alreadyJoined ? `Already joined: **${alreadyJoined}**` : null,
@@ -416,7 +448,7 @@ export async function execute(interaction) {
     league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       if (mode === 'mock') resetFantasyDraft(draftLeague);
       result = startFantasyDraft(draftLeague, mode === 'mock' ? { soloMockUserId: userId } : {});
-      if (result?.ok && mode === 'mock') autoSimFantasyUntilUser(draftLeague, snapshot, userId);
+      if (result?.ok) autoSimFantasyUntilManualPick(draftLeague, snapshot);
       return draftLeague;
     });
     if (!result?.ok) {
@@ -444,13 +476,32 @@ export async function execute(interaction) {
     return;
   }
 
+  if (action === 'autopick') {
+    let result = null;
+    league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
+      result = toggleFantasyAutoPick(draftLeague, userId);
+      if (result?.ok) autoSimFantasyUntilManualPick(draftLeague, snapshot);
+      return draftLeague;
+    });
+    if (!result?.ok) {
+      await replyError(interaction, result?.reason || 'Could not update auto pick.');
+      return;
+    }
+    await sendFantasyDraftRecapDMs(interaction.client, activeGuildId, seasonKey, league, snapshot);
+    await interaction.editReply({
+      content: `Auto Pick is now **${result.enabled ? 'ON' : 'OFF'}**.`,
+      ...buildFantasyDraftPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }),
+    });
+    return;
+  }
+
   if (action === 'pick') {
     const assetId = interaction.values?.[0];
     let result = null;
     league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       const asset = findFantasyAsset(draftLeague, snapshot, assetId, userId);
       result = asset ? makeFantasyPick(draftLeague, asset, userId) : { ok: false, reason: 'That board item is no longer available.' };
-      if (result?.ok && mode === 'mock') autoSimFantasyUntilUser(draftLeague, snapshot, userId);
+      if (result?.ok) autoSimFantasyUntilManualPick(draftLeague, snapshot);
       return draftLeague;
     });
     if (!result?.ok) {

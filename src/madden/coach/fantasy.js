@@ -8,6 +8,7 @@ import {
   mutateFantasyLeague,
   resolveCoachTeamIds,
   upsertFantasyManager,
+  FANTASY_ACCESS_ROLE_ID,
 } from '../../shared/madden_fantasy.js';
 
 export const data = new SlashCommandBuilder()
@@ -17,6 +18,11 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   await interaction.deferReply({ flags: 64 });
+
+  if (!interaction.member?.roles?.cache?.has?.(FANTASY_ACCESS_ROLE_ID)) {
+    await interaction.editReply({ content: 'You need the fantasy role to use `/fantasy`.' });
+    return;
+  }
 
   let leagueId;
   try {
