@@ -322,6 +322,90 @@ function defenseFantasyPoints(stats, scoring) {
     + safeNumber(labels.defINT) * scoring.defINT;
 }
 
+function remainingRegularSeasonGames(context) {
+  const completed = safeNumber(context?.seasonContext?.completedRegularWeeks, 0);
+  return Math.max(1, 17 - completed);
+}
+
+function positionDemandIndex(position) {
+  const demand = {
+    QB: FANTASY_TEAM_COUNT,
+    RB: FANTASY_TEAM_COUNT * 3,
+    WR: FANTASY_TEAM_COUNT * 3,
+    TE: FANTASY_TEAM_COUNT,
+    DST: FANTASY_TEAM_COUNT,
+    K: FANTASY_TEAM_COUNT,
+  };
+  return demand[position] || FANTASY_TEAM_COUNT * 2;
+}
+
+function positionPremium(position) {
+  const premiums = {
+    RB: 8,
+    WR: 7,
+    TE: 6,
+    QB: 1,
+    DST: -6,
+    K: -14,
+  };
+  return premiums[position] ?? 0;
+}
+
+function playerRoleScore(player, position) {
+  if (position === 'QB') {
+    return Math.min(18, safeNumber(player.passAtt) * 0.04 + safeNumber(player.rushAtt) * 0.12);
+  }
+  if (position === 'RB') {
+    return Math.min(18, safeNumber(player.rushAtt) * 0.18 + safeNumber(player.recCatches) * 0.45);
+  }
+  if (position === 'WR' || position === 'TE') {
+    return Math.min(18, safeNumber(player.recCatches) * 0.55 + safeNumber(player.recYds) * 0.01);
+  }
+  return 0;
+}
+
+function playerProjection(player, position, points, games, context) {
+  const played = Math.max(1, safeNumber(games, 1));
+  const ppg = points / played;
+  const remaining = remainingRegularSeasonGames(context);
+  const ovr = safeNumber(player.overall);
+  const talentBoost = Math.max(-4, Math.min(10, (ovr - 78) * 0.45));
+  const roleScore = playerRoleScore(player, position);
+  const future = ppg * remaining;
+  return points * 0.55 + future * 0.45 + talentBoost + roleScore;
+}
+
+function defenseProjection(stats, points, context) {
+  const games = Math.max(1, safeNumber(stats?.labels?.games || stats?.games, 1));
+  const ppg = points / games;
+  const remaining = remainingRegularSeasonGames(context);
+  const labels = stats?.labels || {};
+  const pressure = safeNumber(labels.defSacks) * 0.7 + safeNumber(labels.defINT) * 1.2;
+  return points * 0.5 + (ppg * remaining) * 0.35 + pressure;
+}
+
+function applyFantasyDraftValues(board) {
+  const byPosition = new Map();
+  for (const asset of board) {
+    if (!byPosition.has(asset.position)) byPosition.set(asset.position, []);
+    byPosition.get(asset.position).push(asset);
+  }
+  const baselines = {};
+  for (const [position, assets] of byPosition.entries()) {
+    const sorted = [...assets].sort((a, b) => b.projected - a.projected);
+    const index = Math.min(sorted.length - 1, Math.max(0, positionDemandIndex(position) - 1));
+    baselines[position] = safeNumber(sorted[index]?.projected, 0);
+  }
+  for (const asset of board) {
+    const replacementGap = asset.projected - safeNumber(baselines[asset.position], 0);
+    const value = replacementGap
+      + positionPremium(asset.position)
+      + safeNumber(asset.overall) * (asset.position === 'K' || asset.position === 'DST' ? 0 : 0.08);
+    asset.draftValue = Number(value.toFixed(1));
+  }
+  return board;
+}
+
 function draftedAssetIds(league) {
   return new Set((league?.draft?.picks || []).map((pick) => pick.assetId));
 }
@@ -342,6 +426,8 @@ export function buildFantasyBoard(league, snapshot, { userId = null, includeOwnT
       if (!includeOwnTeam && blockedTeamIds.has(Number(player.teamId))) continue;
       const points = playerFantasyPoints(player, scoring);
       if (points <= 0 && !['K'].includes(position)) continue;
+      const teamGames = context.teamStatsByTeamId?.[Number(player.teamId)]?.labels?.games || context.teamStatsByTeamId?.[Number(player.teamId)]?.games || 1;
+      const projected = playerProjection(player, position, points, teamGames, context);
       board.push({
         assetId,
         rosterId: player.rosterId,
@@ -351,6 +437,7 @@ export function buildFantasyBoard(league, snapshot, { userId = null, includeOwnT
         teamId: Number(player.teamId),
         teamName: player.teamName || context.teamNameById?.[player.teamId] || String(player.teamId),
         points,
+        projected,
         overall: safeNumber(player.overall),
         statLine: playerStatLine(player, position),
       });
@@ -362,6 +449,7 @@ export function buildFantasyBoard(league, snapshot, { userId = null, includeOwnT
     if (!includeDrafted && taken.has(assetId)) continue;
     if (!includeOwnTeam && blockedTeamIds.has(teamId)) continue;
     const points = defenseFantasyPoints(stats, scoring);
+    const projected = defenseProjection(stats, points, context);
     board.push({
       assetId,
       type: 'dst',
@@ -370,13 +458,19 @@ export function buildFantasyBoard(league, snapshot, { userId = null, includeOwnT
       teamId,
       teamName: stats.teamName,
       points,
+      projected,
       overall: 0,
       statLine: `${safeNumber(stats.labels?.defSacks)} sacks, ${safeNumber(stats.labels?.defINT)} INT`,
     });
   }
-  return board
-    .sort((a, b) => b.points - a.points || b.overall - a.overall || a.name.localeCompare(b.name))
-    .map((entry, index) => ({ ...entry, rank: index + 1, points: Number(entry.points.toFixed(1)) }));
+  return applyFantasyDraftValues(board)
+    .sort((a, b) => b.draftValue - a.draftValue || b.projected - a.projected || b.points - a.points || b.overall - a.overall || a.name.localeCompare(b.name))
+    .map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+      points: Number(entry.points.toFixed(1)),
+      projected: Number(entry.projected.toFixed(1)),
+    }));
 }
 
 export function findFantasyAsset(league, snapshot, assetId, userId) {
@@ -492,7 +586,8 @@ export function makeFantasyPick(league, asset, userId) {
 
 function formatAssetLine(asset) {
   const emoji = teamEmoji(asset.teamName);
-  return `${emoji ? `${emoji} ` : ''}${asset.position} **${asset.name}** (${asset.teamName}) - ${asset.points} pts - ${asset.statLine}`;
+  const valueLabel = asset.draftValue != null ? `${asset.draftValue} value` : `${asset.points} pts`;
+  return `${emoji ? `${emoji} ` : ''}${asset.position} **${asset.name}** (${asset.teamName}) - ${valueLabel} - ${asset.points} pts - ${asset.statLine}`;
 }
 
 function formatPlayoffSystem(settings = {}) {
@@ -610,7 +705,7 @@ export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { m
         .addOptions(slice.slice(0, SELECT_PAGE_SIZE).map((asset) => (
           new StringSelectMenuOptionBuilder()
             .setLabel(`${asset.position} ${asset.name}`.slice(0, 100))
-            .setDescription(`${asset.teamName} • ${asset.points} pts • ${asset.statLine}`.slice(0, 100))
+            .setDescription(`${asset.teamName} • ${asset.draftValue} value • ${asset.points} pts • ${asset.statLine}`.slice(0, 100))
             .setValue(asset.assetId)
         ))),
     ));
