@@ -130,7 +130,8 @@ function createLeague({ guildId, seasonKey }) {
       playoffs: {
         teams: 6,
         conferences: 2,
-        teamsPerConference: 5,
+        conferenceSize: 5,
+        playoffTeamsPerConference: 3,
         byesPerConference: 1,
       },
       scoring: {
@@ -169,10 +170,13 @@ function normalizeFantasySettings(league) {
   league.settings.playoffs = {
     teams: 6,
     conferences: 2,
-    teamsPerConference: 5,
+    conferenceSize: 5,
+    playoffTeamsPerConference: 3,
     byesPerConference: 1,
     ...(league.settings.playoffs || {}),
   };
+  league.settings.playoffs.conferenceSize = Math.floor(safeNumber(league.settings.leagueSize, FANTASY_TEAM_COUNT) / safeNumber(league.settings.playoffs.conferences, 2));
+  league.settings.playoffs.playoffTeamsPerConference = Math.floor(safeNumber(league.settings.playoffs.teams, 6) / safeNumber(league.settings.playoffs.conferences, 2));
   league.settings.draft = {
     type: 'snake',
     rounds: rosterSize(league.settings),
@@ -491,6 +495,16 @@ function formatAssetLine(asset) {
   return `${emoji ? `${emoji} ` : ''}${asset.position} **${asset.name}** (${asset.teamName}) - ${asset.points} pts - ${asset.statLine}`;
 }
 
+function formatPlayoffSystem(settings = {}) {
+  const leagueSize = safeNumber(settings.leagueSize, FANTASY_TEAM_COUNT);
+  const playoffs = settings.playoffs || {};
+  const conferences = safeNumber(playoffs.conferences, 2);
+  const conferenceSize = safeNumber(playoffs.conferenceSize, Math.floor(leagueSize / conferences));
+  const playoffTeamsPerConference = safeNumber(playoffs.playoffTeamsPerConference, 3);
+  const totalPlayoffTeams = conferences * playoffTeamsPerConference;
+  return `${leagueSize} teams max • ${conferences} conferences of ${conferenceSize} • top ${playoffTeamsPerConference} per conference make it (${totalPlayoffTeams} total) • #1 gets a bye, #2 vs #3, winners play for the conference title`;
+}
+
 function managerRosterAssets(league, snapshot, userId) {
   const picked = new Map((league.draft?.picks || []).map((pick) => [pick.assetId, pick]));
   return (league.managers?.[userId]?.roster || [])
@@ -538,7 +552,6 @@ export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live'
   const isMock = normalizeFantasyMode(mode) === 'mock';
   const managerCount = Object.values(league.managers || {}).filter((manager) => isMock || !manager.isCpu).length;
   const leagueSize = safeNumber(league.settings?.leagueSize, FANTASY_TEAM_COUNT);
-  const playoffs = league.settings?.playoffs || {};
   const onClock = currentFantasyDrafter(league);
   const board = buildFantasyBoard(league, snapshot, { userId });
   const preview = board.slice(0, 5).map((asset, idx) => `${idx + 1}. ${formatAssetLine(asset)}`).join('\n') || 'No eligible players found from the current export.';
@@ -552,7 +565,7 @@ export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live'
       { name: 'Status', value: `${league.status} • ${managerCount}/${leagueSize} teams`, inline: true },
       { name: 'Draft', value: league.draft?.status === 'live' ? `Live • on clock: ${managerLabel(league, onClock)}` : league.draft?.status || 'not_started', inline: true },
       { name: 'Lineup', value: 'QB, RB, RB, WR, WR, TE, FLEX, DST, K, 5 BN', inline: false },
-      { name: 'Playoffs', value: `${safeNumber(playoffs.teams, 6)} teams • ${safeNumber(playoffs.conferences, 2)} conferences • 1-seed in each conference gets a bye`, inline: false },
+      { name: 'Playoffs', value: formatPlayoffSystem(league.settings), inline: false },
       { name: 'Board Leaders', value: preview.slice(0, 1024), inline: false },
     )
     .setFooter({ text: isMock ? 'Mock mode is safe to reset before launch.' : 'Scoring uses common half-PPR fantasy rules from current Madden season totals.' });
