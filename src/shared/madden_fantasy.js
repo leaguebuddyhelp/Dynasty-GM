@@ -372,10 +372,10 @@ function positionDemandIndex(position) {
 
 function positionPremium(position) {
   const premiums = {
-    RB: 8,
-    WR: 7,
-    TE: 6,
-    QB: 1,
+    RB: 6,
+    WR: 6,
+    TE: 5,
+    QB: 4,
     DST: -6,
     K: -14,
   };
@@ -429,12 +429,31 @@ function applyFantasyDraftValues(board) {
   }
   for (const asset of board) {
     const replacementGap = asset.projected - safeNumber(baselines[asset.position], 0);
-    const value = replacementGap
+    const ovr = safeNumber(asset.overall);
+    const ovrBoost = asset.position === 'K' || asset.position === 'DST'
+      ? 0
+      : Math.max(-4, Math.min(14, (ovr - 76) * 0.5));
+    const starBoost = asset.position === 'K' || asset.position === 'DST'
+      ? 0
+      : Math.max(0, ovr - 88) * 1.15;
+    const value = replacementGap * 0.4
+      + safeNumber(asset.projected) * 0.35
+      + safeNumber(asset.points) * 0.25
       + positionPremium(asset.position)
-      + safeNumber(asset.overall) * (asset.position === 'K' || asset.position === 'DST' ? 0 : 0.08);
+      + ovrBoost
+      + starBoost;
     asset.draftValue = Number(value.toFixed(1));
   }
   return board;
+}
+
+function shuffled(values = []) {
+  const list = [...values];
+  for (let idx = list.length - 1; idx > 0; idx -= 1) {
+    const swapIdx = Math.floor(Math.random() * (idx + 1));
+    [list[idx], list[swapIdx]] = [list[swapIdx], list[idx]];
+  }
+  return list;
 }
 
 function draftedAssetIds(league) {
@@ -538,12 +557,13 @@ export function startFantasyDraft(league, options = {}) {
       ...humanManagers.filter((id) => id !== options.soloMockUserId),
     ]
     : humanManagers;
-  const order = options.soloMockUserId
+  const pool = options.soloMockUserId
     ? [
       ...orderedHumans,
       ...Object.keys(league.managers || {}).filter((id) => isCpuUserId(id)).slice(0, Math.max(0, desiredTeams - orderedHumans.length)),
     ].slice(0, desiredTeams)
     : orderedHumans.slice(0, desiredTeams);
+  const order = shuffled(pool).slice(0, desiredTeams);
   if (options.soloMockUserId && order.length < desiredTeams) return { ok: false, reason: `Need ${desiredTeams} fantasy teams before the mock starts.` };
   if (!options.soloMockUserId && order.length < desiredTeams) return { ok: false, reason: `Need ${desiredTeams} joined coaches before the fantasy draft starts.` };
   league.status = 'draft';
@@ -790,8 +810,9 @@ function baseButtons(active = 'hub', page = 0, mode = 'live', seasonKey = null) 
 
 export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live', seasonKey = null } = {}) {
   const isMock = normalizeFantasyMode(mode) === 'mock';
-  const managerCount = Object.values(league.managers || {}).filter((manager) => isMock || !manager.isCpu).length;
   const leagueSize = safeNumber(league.settings?.leagueSize, FANTASY_TEAM_COUNT);
+  const rawManagerCount = Object.values(league.managers || {}).filter((manager) => isMock || !manager.isCpu).length;
+  const managerCount = Math.min(leagueSize, league.draft?.order?.length || rawManagerCount);
   const onClock = currentFantasyDrafter(league);
   const manager = league.managers?.[userId];
   const board = buildFantasyBoard(league, snapshot, { userId });

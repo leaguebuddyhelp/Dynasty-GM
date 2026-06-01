@@ -138,16 +138,24 @@ function fantasyPickEmbed(pick, title = 'Fantasy Pick Is In') {
     );
 }
 
-function fantasyOnClockPayload(league, snapshot, userId, componentSeasonKey) {
-  const board = buildFantasyBoard(league, snapshot, { userId }).slice(0, 25);
+const FANTASY_POSITION_FILTERS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'DST', 'K'];
+
+function fantasyOnClockPayload(league, snapshot, userId, componentSeasonKey, positionFilter = 'ALL') {
+  const normalizedFilter = FANTASY_POSITION_FILTERS.includes(String(positionFilter || '').toUpperCase())
+    ? String(positionFilter || '').toUpperCase()
+    : 'ALL';
+  const fullBoard = buildFantasyBoard(league, snapshot, { userId });
+  const board = (normalizedFilter === 'ALL'
+    ? fullBoard
+    : fullBoard.filter((asset) => asset.position === normalizedFilter)).slice(0, 25);
   const pickNo = (league.draft?.picks || []).length + 1;
   const quickPicks = board.slice(0, 4);
   const embed = new EmbedBuilder()
     .setTitle(`Fantasy Mock Pick ${pickNo} • On The Clock`)
     .setColor(0xf39c12)
-    .setDescription(`<@${userId}> is up. Use a quick-pick button or open the full menu.\n\nYou have **30 seconds**. If the clock expires, LEAGUEbuddy takes the top board value.`)
+    .setDescription(`<@${userId}> is up. Use a quick-pick button or filter by position.\n\nYou have **30 seconds**. If the clock expires, LEAGUEbuddy takes the top board value.`)
     .addFields(
-      { name: 'Top Board', value: board.slice(0, 8).map((asset, idx) => `${idx + 1}. ${fantasyTeamEmoji(asset.teamName)} ${asset.position} **${asset.name}** (${asset.teamName}) - ${asset.draftValue} value`).join('\n') || 'No eligible players available.', inline: false },
+      { name: normalizedFilter === 'ALL' ? 'Top Board' : `Top ${normalizedFilter}`, value: board.slice(0, 8).map((asset, idx) => `${idx + 1}. ${fantasyTeamEmoji(asset.teamName)} ${asset.position} **${asset.name}** (${asset.teamName}) - ${asset.draftValue} value`).join('\n') || `No eligible ${normalizedFilter} options available.`, inline: false },
     );
   const components = [];
   if (quickPicks.length) {
@@ -177,6 +185,22 @@ function fantasyOnClockPayload(league, snapshot, userId, componentSeasonKey) {
     ));
   }
   components.push(new ActionRowBuilder().addComponents(
+    ...['ALL', 'QB', 'RB', 'WR', 'TE'].map((pos) => (
+      new ButtonBuilder()
+        .setCustomId(`madden_fantasy|mockkey_pos|${componentSeasonKey}|${pos}`)
+        .setLabel(pos === 'ALL' ? 'All' : pos)
+        .setStyle(pos === normalizedFilter ? ButtonStyle.Primary : ButtonStyle.Secondary)
+    )),
+  ));
+  components.push(new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`madden_fantasy|mockkey_pos|${componentSeasonKey}|DST`)
+      .setLabel('DST')
+      .setStyle(normalizedFilter === 'DST' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`madden_fantasy|mockkey_pos|${componentSeasonKey}|K`)
+      .setLabel('K')
+      .setStyle(normalizedFilter === 'K' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`madden_fantasy|mockkey_simpick|${componentSeasonKey}`)
       .setLabel('Sim My Pick')
@@ -849,6 +873,19 @@ export async function execute(interaction) {
       content: `Auto Pick is now **${result.enabled ? 'ON' : 'OFF'}**.`,
       ...buildFantasyDraftPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }),
     });
+    return;
+  }
+
+  if (action === 'pos') {
+    if (mode !== 'mock') {
+      await replyError(interaction, 'Position filters are only available inside fantasy mock drafts.');
+      return;
+    }
+    if (currentFantasyDrafter(league) !== userId) {
+      await replyError(interaction, 'You can only filter the pick prompt when you are on the clock.');
+      return;
+    }
+    await interaction.editReply(fantasyOnClockPayload(league, snapshot, userId, componentSeasonKey, value));
     return;
   }
 
