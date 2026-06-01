@@ -17,6 +17,7 @@ const STORE_FILE = getMaddenDataFilePath('fantasy_leagues.json');
 const BOARD_PAGE_SIZE = 20;
 const SELECT_PAGE_SIZE = 25;
 export const FANTASY_CHAT_CHANNEL_ID = '1510874753014169661';
+const FANTASY_TEAM_COUNT = 10;
 const DEFAULT_ROSTER_SLOTS = {
   QB: 1,
   RB: 2,
@@ -30,7 +31,7 @@ const DEFAULT_ROSTER_SLOTS = {
 const SKILL_POSITIONS = new Set(['QB', 'HB', 'RB', 'WR', 'TE', 'K']);
 const POSITION_LABELS = { HB: 'RB' };
 const FANTASY_MODES = new Set(['live', 'mock']);
-const SOLO_MOCK_CPU_COUNT = 7;
+const SOLO_MOCK_CPU_COUNT = FANTASY_TEAM_COUNT - 1;
 
 function nowIso() {
   return new Date().toISOString();
@@ -125,6 +126,13 @@ function createLeague({ guildId, seasonKey }) {
     updatedAt: nowIso(),
     settings: {
       rosterSlots: DEFAULT_ROSTER_SLOTS,
+      leagueSize: FANTASY_TEAM_COUNT,
+      playoffs: {
+        teams: 6,
+        conferences: 2,
+        teamsPerConference: 5,
+        byesPerConference: 1,
+      },
       scoring: {
         passYds: 0.04,
         passTD: 4,
@@ -154,6 +162,25 @@ function createLeague({ guildId, seasonKey }) {
   };
 }
 
+function normalizeFantasySettings(league) {
+  league.settings = league.settings || {};
+  league.settings.rosterSlots = league.settings.rosterSlots || DEFAULT_ROSTER_SLOTS;
+  league.settings.leagueSize = safeNumber(league.settings.leagueSize, FANTASY_TEAM_COUNT);
+  league.settings.playoffs = {
+    teams: 6,
+    conferences: 2,
+    teamsPerConference: 5,
+    byesPerConference: 1,
+    ...(league.settings.playoffs || {}),
+  };
+  league.settings.draft = {
+    type: 'snake',
+    rounds: rosterSize(league.settings),
+    ...(league.settings.draft || {}),
+  };
+  return league;
+}
+
 export function ensureFantasyLeague({ guildId, seasonKey }) {
   const store = loadFantasyStore();
   if (!store.guilds[guildId]) store.guilds[guildId] = { leagues: {} };
@@ -163,6 +190,7 @@ export function ensureFantasyLeague({ guildId, seasonKey }) {
   } else {
     store.guilds[guildId].leagues[seasonKey].isMock = String(seasonKey || '').endsWith(':mock');
   }
+  normalizeFantasySettings(store.guilds[guildId].leagues[seasonKey]);
   return store.guilds[guildId].leagues[seasonKey];
 }
 
@@ -174,6 +202,7 @@ export function mutateFantasyLeague({ guildId, seasonKey }, mutator) {
   }
   const league = store.guilds[guildId].leagues[seasonKey];
   league.isMock = String(seasonKey || '').endsWith(':mock');
+  normalizeFantasySettings(league);
   const result = mutator(league) || league;
   result.updatedAt = nowIso();
   store.guilds[guildId].leagues[seasonKey] = result;
@@ -367,10 +396,12 @@ export function startFantasyDraft(league, options = {}) {
   if (options.soloMockUserId) {
     ensureCpuManagers(league, options.cpuTeams || SOLO_MOCK_CPU_COUNT);
   }
+  const desiredTeams = safeNumber(league.settings?.leagueSize, FANTASY_TEAM_COUNT);
   const order = options.soloMockUserId
     ? [options.soloMockUserId, ...Object.keys(league.managers || {}).filter((id) => isCpuUserId(id)).slice(0, options.cpuTeams || SOLO_MOCK_CPU_COUNT)]
-    : Object.keys(league.managers || {}).filter((id) => !isCpuUserId(id));
-  if (order.length < 2) return { ok: false, reason: 'Need at least two joined coaches before the draft starts.' };
+    : Object.keys(league.managers || {}).filter((id) => !isCpuUserId(id)).slice(0, desiredTeams);
+  if (options.soloMockUserId && order.length < desiredTeams) return { ok: false, reason: `Need ${desiredTeams} fantasy teams before the mock starts.` };
+  if (!options.soloMockUserId && order.length < desiredTeams) return { ok: false, reason: `Need ${desiredTeams} joined coaches before the fantasy draft starts.` };
   league.status = 'draft';
   league.draft.status = 'live';
   league.draft.order = order;
@@ -505,7 +536,9 @@ function baseButtons(active = 'hub', page = 0, mode = 'live') {
 
 export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live' } = {}) {
   const isMock = normalizeFantasyMode(mode) === 'mock';
-  const managerCount = Object.keys(league.managers || {}).length;
+  const managerCount = Object.values(league.managers || {}).filter((manager) => isMock || !manager.isCpu).length;
+  const leagueSize = safeNumber(league.settings?.leagueSize, FANTASY_TEAM_COUNT);
+  const playoffs = league.settings?.playoffs || {};
   const onClock = currentFantasyDrafter(league);
   const board = buildFantasyBoard(league, snapshot, { userId });
   const preview = board.slice(0, 5).map((asset, idx) => `${idx + 1}. ${formatAssetLine(asset)}`).join('\n') || 'No eligible players found from the current export.';
@@ -516,9 +549,10 @@ export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live'
       ? `Test the yearly redraft flow here. Mock picks, mock rosters, and mock resets are separate from the real fantasy league. Use <#${FANTASY_CHAT_CHANNEL_ID}> for mock draft chat.`
       : `Draft players from other Madden teams, then their real league production becomes your fantasy score. Own-team players and own-team defenses are blocked. Fantasy chat lives in <#${FANTASY_CHAT_CHANNEL_ID}>.`)
     .addFields(
-      { name: 'Status', value: `${league.status} • ${managerCount} coaches joined`, inline: true },
+      { name: 'Status', value: `${league.status} • ${managerCount}/${leagueSize} teams`, inline: true },
       { name: 'Draft', value: league.draft?.status === 'live' ? `Live • on clock: ${managerLabel(league, onClock)}` : league.draft?.status || 'not_started', inline: true },
       { name: 'Lineup', value: 'QB, RB, RB, WR, WR, TE, FLEX, DST, K, 5 BN', inline: false },
+      { name: 'Playoffs', value: `${safeNumber(playoffs.teams, 6)} teams • ${safeNumber(playoffs.conferences, 2)} conferences • 1-seed in each conference gets a bye`, inline: false },
       { name: 'Board Leaders', value: preview.slice(0, 1024), inline: false },
     )
     .setFooter({ text: isMock ? 'Mock mode is safe to reset before launch.' : 'Scoring uses common half-PPR fantasy rules from current Madden season totals.' });
