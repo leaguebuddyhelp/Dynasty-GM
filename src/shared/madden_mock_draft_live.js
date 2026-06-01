@@ -596,6 +596,12 @@ export function buildMockDraftPickEmbed(session, pick) {
     if (pick.gradeScore != null) {
       embed.addFields({ name: 'Score', value: String(pick.gradeScore), inline: true });
     }
+    const teamNeeds = findNeedsForTeam(pick.teamName, session.teamNeeds || {}, pick.teamNick || pick.nick)
+      .filter(Boolean)
+      .slice(0, 5);
+    if (teamNeeds.length) {
+      embed.addFields({ name: 'Team Needs', value: teamNeeds.join(', '), inline: false });
+    }
     embed.addFields({ name: 'Review', value: pick.synopsis || 'No review available.', inline: false });
   }
 
