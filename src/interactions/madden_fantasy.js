@@ -13,6 +13,7 @@ import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_da
 import { hasStaffRole, loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 import {
+  buildFantasyBoard,
   buildFantasyBoardPayload,
   buildFantasyDraftPayload,
   buildFantasyDraftRecaps,
@@ -20,6 +21,7 @@ import {
   buildFantasyStandingsPayload,
   buildFantasyTeamPayload,
   buildFantasyTradePayload,
+  currentFantasyDrafter,
   ensureFantasyLeague,
   fantasyMockToken,
   findFantasyAsset,
@@ -42,6 +44,8 @@ import { coachTeamsForMember } from '../shared/madden_mock_draft_live.js';
 export const customId = /^madden_fantasy\|/;
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24;
 const MOCK_ROOM_IDLE_MS = 1000 * 60 * 60 * 6;
+const FANTASY_PICK_TIMER_MS = 1000 * 30;
+const activeFantasyMockTickers = new Set();
 
 function parseParts(interaction) {
   const [, action = 'hub', value = '0'] = interaction.customId.split('|');
@@ -91,6 +95,76 @@ async function replyError(interaction, content) {
   } else if (interaction.isButton() || interaction.isStringSelectMenu()) {
     await interaction.reply({ content, flags: 64 });
   }
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isCpuFantasyUser(userId = '') {
+  return String(userId || '').startsWith('cpu_');
+}
+
+function fantasyUserLabel(userId = '') {
+  return isCpuFantasyUser(userId) ? 'CPU' : `<@${userId}>`;
+}
+
+function fantasyPickEmbed(pick, title = 'Fantasy Pick Is In') {
+  return new EmbedBuilder()
+    .setTitle(title)
+    .setColor(0x2ecc71)
+    .setDescription(`Pick ${pick.pickNo}: ${fantasyUserLabel(pick.userId)} selected **${pick.position} ${pick.name}**`)
+    .addFields(
+      { name: 'Team', value: pick.teamName || 'N/A', inline: true },
+      { name: 'Production', value: `${pick.points ?? 0} pts • ${pick.statLine || 'No stat line'}`.slice(0, 1024), inline: false },
+    );
+}
+
+function fantasyOnClockPayload(league, snapshot, userId, componentSeasonKey) {
+  const board = buildFantasyBoard(league, snapshot, { userId }).slice(0, 25);
+  const pickNo = (league.draft?.picks || []).length + 1;
+  const embed = new EmbedBuilder()
+    .setTitle(`Fantasy Mock Pick ${pickNo} • On The Clock`)
+    .setColor(0xf39c12)
+    .setDescription(`<@${userId}> is up.\n\nYou have **30 seconds** to pick. If the clock expires, LEAGUEbuddy will take the top board value for you.`)
+    .addFields(
+      { name: 'Top Board', value: board.slice(0, 8).map((asset, idx) => `${idx + 1}. ${asset.position} **${asset.name}** (${asset.teamName}) - ${asset.draftValue} value`).join('\n') || 'No eligible players available.', inline: false },
+    );
+  const components = [];
+  if (board.length) {
+    components.push(new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(`madden_fantasy|mockkey_pick|${componentSeasonKey}|0`)
+        .setPlaceholder('Make your fantasy pick')
+        .addOptions(board.map((asset) => (
+          new StringSelectMenuOptionBuilder()
+            .setLabel(`${asset.position} ${asset.name}`.slice(0, 100))
+            .setDescription(`${asset.teamName} • ${asset.draftValue} value • ${asset.points} pts • ${asset.statLine}`.slice(0, 100))
+            .setValue(asset.assetId)
+        ))),
+    ));
+  }
+  components.push(new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`madden_fantasy|mockkey_simpick|${componentSeasonKey}`)
+      .setLabel('Sim My Pick')
+      .setStyle(ButtonStyle.Secondary),
+  ));
+  return { content: `<@${userId}> is on the clock.`, embeds: [embed], components };
+}
+
+function makeFantasyAutoPickForCurrent({ guildId, seasonKey, snapshot }) {
+  let result = null;
+  const league = mutateFantasyLeague({ guildId, seasonKey }, (draftLeague) => {
+    const onClock = currentFantasyDrafter(draftLeague);
+    const board = onClock ? buildFantasyBoard(draftLeague, snapshot, { userId: onClock, includeOwnTeam: isCpuFantasyUser(onClock) }) : [];
+    const asset = board[0];
+    result = asset && onClock
+      ? makeFantasyPick(draftLeague, asset, onClock)
+      : { ok: false, reason: 'No eligible fantasy asset available.' };
+    return draftLeague;
+  });
+  return { league, result };
 }
 
 async function fantasyMockRoomIsUsable(client, league) {
@@ -178,6 +252,74 @@ async function ensureFantasyMockRoom(interaction, guildId, seasonKey, league, sn
     });
   }
   return { ok: true, roomId: room.id, created: true, league: savedLeague };
+}
+
+async function runFantasyMockTicker(client, guildId, seasonKey, snapshot, hostId, componentSeasonKey) {
+  const tickerKey = `${guildId}:${seasonKey}`;
+  if (activeFantasyMockTickers.has(tickerKey)) return;
+  activeFantasyMockTickers.add(tickerKey);
+  try {
+    while (true) {
+      let league = ensureFantasyLeague({ guildId, seasonKey });
+      if (league.draft?.status !== 'live') break;
+      const roomId = league.room?.channelId;
+      const room = roomId ? await client.channels.fetch(roomId).catch(() => null) : null;
+      if (!room) break;
+      const onClock = currentFantasyDrafter(league);
+      if (!onClock) break;
+
+      if (isCpuFantasyUser(onClock) || league.managers?.[onClock]?.autoPick) {
+        await delay(900);
+        const { league: pickedLeague, result } = makeFantasyAutoPickForCurrent({ guildId, seasonKey, snapshot });
+        if (!result?.ok) {
+          await room.send({ embeds: [new EmbedBuilder().setTitle('Fantasy Pick Failed').setColor(0xe74c3c).setDescription(result?.reason || 'Could not make the CPU pick.')] }).catch(() => null);
+          break;
+        }
+        await room.send({ embeds: [fantasyPickEmbed(result.pick, isCpuFantasyUser(onClock) ? 'CPU Fantasy Pick' : 'Auto Pick')] }).catch(() => null);
+        await syncFantasyMockRoomMessage(client, guildId, seasonKey, pickedLeague, snapshot, hostId, componentSeasonKey);
+        if (pickedLeague.draft?.status === 'complete') {
+          await room.send({ embeds: [new EmbedBuilder().setTitle('Fantasy Mock Complete').setColor(0x2ecc71).setDescription('The fantasy mock draft is complete. Draft recaps are being sent by DM.')] }).catch(() => null);
+          await sendFantasyDraftRecapDMs(client, guildId, seasonKey, pickedLeague, snapshot);
+          break;
+        }
+        continue;
+      }
+
+      const pickNo = (league.draft?.picks || []).length + 1;
+      const prompt = await room.send(fantasyOnClockPayload(league, snapshot, onClock, componentSeasonKey)).catch(() => null);
+      const user = await client.users.fetch(onClock).catch(() => null);
+      await user?.send?.({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('You Are On The Clock')
+            .setColor(0x5865f2)
+            .setDescription(`It is your fantasy mock pick.\n\nOpen <#${roomId}> and make your pick. The timer is **30 seconds**.`),
+        ],
+      }).catch(() => null);
+
+      await delay(FANTASY_PICK_TIMER_MS);
+      league = ensureFantasyLeague({ guildId, seasonKey });
+      const stillOnClock = league.draft?.status === 'live'
+        && currentFantasyDrafter(league) === onClock
+        && ((league.draft?.picks || []).length + 1) === pickNo;
+      if (!stillOnClock) continue;
+
+      const { league: pickedLeague, result } = makeFantasyAutoPickForCurrent({ guildId, seasonKey, snapshot });
+      if (!result?.ok) {
+        await prompt?.edit?.({ content: 'Timer expired, but no eligible auto pick was available.', embeds: [], components: [] }).catch(() => null);
+        break;
+      }
+      await prompt?.edit?.({ content: `Time expired. Auto-picked **${result.pick.position} ${result.pick.name}** for <@${onClock}>.`, embeds: [fantasyPickEmbed(result.pick, 'Timer Auto Pick')], components: [] }).catch(() => null);
+      await syncFantasyMockRoomMessage(client, guildId, seasonKey, pickedLeague, snapshot, hostId, componentSeasonKey);
+      if (pickedLeague.draft?.status === 'complete') {
+        await room.send({ embeds: [new EmbedBuilder().setTitle('Fantasy Mock Complete').setColor(0x2ecc71).setDescription('The fantasy mock draft is complete. Draft recaps are being sent by DM.')] }).catch(() => null);
+        await sendFantasyDraftRecapDMs(client, guildId, seasonKey, pickedLeague, snapshot);
+        break;
+      }
+    }
+  } finally {
+    activeFantasyMockTickers.delete(tickerKey);
+  }
 }
 
 function hasFantasyAccess(member) {
@@ -589,11 +731,23 @@ export async function execute(interaction) {
     league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       if (mode === 'mock') resetFantasyDraft(draftLeague);
       result = startFantasyDraft(draftLeague, mode === 'mock' ? { soloMockUserId: userId } : {});
-      if (result?.ok) autoSimFantasyUntilManualPick(draftLeague, snapshot);
+      if (result?.ok && mode !== 'mock') autoSimFantasyUntilManualPick(draftLeague, snapshot);
       return draftLeague;
     });
     if (!result?.ok) {
       await replyError(interaction, result?.reason || 'Fantasy draft could not be started.');
+      return;
+    }
+    if (mode === 'mock') {
+      await syncFantasyMockRoomMessage(interaction.client, activeGuildId, seasonKey, league, snapshot, userId, componentSeasonKey);
+      await interaction.editReply({
+        content: `Fantasy mock started in <#${league.room?.channelId || interaction.channelId}>. Picks now run live with a 30 second clock.`,
+        embeds: [],
+        components: [],
+      });
+      void runFantasyMockTicker(interaction.client, activeGuildId, seasonKey, snapshot, league.hostId || userId, componentSeasonKey).catch((error) => {
+        console.error('[fantasy_mock] ticker failed', error?.message || error);
+      });
       return;
     }
     await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }));
@@ -621,7 +775,7 @@ export async function execute(interaction) {
     let result = null;
     league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       result = toggleFantasyAutoPick(draftLeague, userId);
-      if (result?.ok) autoSimFantasyUntilManualPick(draftLeague, snapshot);
+      if (result?.ok && mode !== 'mock') autoSimFantasyUntilManualPick(draftLeague, snapshot);
       return draftLeague;
     });
     if (!result?.ok) {
@@ -629,9 +783,47 @@ export async function execute(interaction) {
       return;
     }
     await sendFantasyDraftRecapDMs(interaction.client, activeGuildId, seasonKey, league, snapshot);
+    if (mode === 'mock') {
+      await interaction.editReply({
+        content: `Auto Pick is now **${result.enabled ? 'ON' : 'OFF'}**.`,
+        embeds: [],
+        components: [],
+      });
+      void runFantasyMockTicker(interaction.client, activeGuildId, seasonKey, snapshot, league.hostId || userId, componentSeasonKey).catch((error) => {
+        console.error('[fantasy_mock] ticker failed', error?.message || error);
+      });
+      return;
+    }
     await interaction.editReply({
       content: `Auto Pick is now **${result.enabled ? 'ON' : 'OFF'}**.`,
       ...buildFantasyDraftPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }),
+    });
+    return;
+  }
+
+  if (action === 'simpick') {
+    if (mode !== 'mock') {
+      await replyError(interaction, 'Sim My Pick is only available inside fantasy mock drafts.');
+      return;
+    }
+    if (currentFantasyDrafter(league) !== userId) {
+      await replyError(interaction, 'You can only sim your pick when you are on the clock.');
+      return;
+    }
+    const { league: pickedLeague, result } = makeFantasyAutoPickForCurrent({ guildId: activeGuildId, seasonKey, snapshot });
+    if (!result?.ok) {
+      await replyError(interaction, result?.reason || 'Could not sim your pick.');
+      return;
+    }
+    await interaction.editReply({
+      content: `Simmed pick: **${result.pick.position} ${result.pick.name}**.`,
+      embeds: [fantasyPickEmbed(result.pick, 'Simmed Fantasy Pick')],
+      components: [],
+    });
+    await syncFantasyMockRoomMessage(interaction.client, activeGuildId, seasonKey, pickedLeague, snapshot, pickedLeague.hostId || userId, componentSeasonKey);
+    await sendFantasyDraftRecapDMs(interaction.client, activeGuildId, seasonKey, pickedLeague, snapshot);
+    void runFantasyMockTicker(interaction.client, activeGuildId, seasonKey, snapshot, pickedLeague.hostId || userId, componentSeasonKey).catch((error) => {
+      console.error('[fantasy_mock] ticker failed', error?.message || error);
     });
     return;
   }
@@ -642,7 +834,7 @@ export async function execute(interaction) {
     league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       const asset = findFantasyAsset(draftLeague, snapshot, assetId, userId);
       result = asset ? makeFantasyPick(draftLeague, asset, userId) : { ok: false, reason: 'That board item is no longer available.' };
-      if (result?.ok) autoSimFantasyUntilManualPick(draftLeague, snapshot);
+      if (result?.ok && mode !== 'mock') autoSimFantasyUntilManualPick(draftLeague, snapshot);
       return draftLeague;
     });
     if (!result?.ok) {
@@ -650,6 +842,18 @@ export async function execute(interaction) {
       return;
     }
     await sendFantasyDraftRecapDMs(interaction.client, activeGuildId, seasonKey, league, snapshot);
+    if (mode === 'mock') {
+      await interaction.editReply({
+        content: `Pick submitted: **${result.pick.position} ${result.pick.name}**.`,
+        embeds: [fantasyPickEmbed(result.pick)],
+        components: [],
+      });
+      await syncFantasyMockRoomMessage(interaction.client, activeGuildId, seasonKey, league, snapshot, league.hostId || userId, componentSeasonKey);
+      void runFantasyMockTicker(interaction.client, activeGuildId, seasonKey, snapshot, league.hostId || userId, componentSeasonKey).catch((error) => {
+        console.error('[fantasy_mock] ticker failed', error?.message || error);
+      });
+      return;
+    }
     await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }));
     return;
   }
