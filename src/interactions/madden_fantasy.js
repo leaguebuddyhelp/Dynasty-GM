@@ -167,17 +167,28 @@ function inviteActionId(mode, action, page = 0, seasonKey = null) {
 }
 
 function buildFantasyInvitePickerPayload(league, inviteOptions = [], page = 0, content = null, { mode = 'live', seasonKey = null } = {}) {
+  const isMock = normalizeFantasyMode(mode) === 'mock';
   const totalPages = Math.max(1, Math.ceil(inviteOptions.length / 25));
   const safePage = Math.max(0, Math.min(Number(page) || 0, totalPages - 1));
   const visibleOptions = inviteOptions.slice(safePage * 25, (safePage + 1) * 25);
   const joined = Object.values(league.managers || {}).filter((manager) => !manager.isCpu).length;
   const target = Number(league.settings?.leagueSize || 10);
+  const participants = Object.values(league.managers || {})
+    .filter((manager) => !manager.isCpu)
+    .map((manager) => `<@${manager.userId}>${manager.teamName ? ` - ${manager.teamName}` : ''}`)
+    .slice(0, 10);
   const embed = new EmbedBuilder()
-    .setTitle('Invite Fantasy Coaches')
+    .setTitle(isMock ? 'Fantasy Mock Draft Host Panel' : 'Invite Fantasy Coaches')
     .setColor(0x5865f2)
-    .setDescription(`Send fantasy season invites by DM. Accepted invites join the live ${target}-team league and use <#${FANTASY_CHAT_CHANNEL_ID}>.`)
+    .setDescription(isMock
+      ? `Invite coaches, start the mock, and jump back into the draft room from this panel. Mock chat lives in <#${FANTASY_CHAT_CHANNEL_ID}>.`
+      : `Send fantasy season invites by DM. Accepted invites join the live ${target}-team league and use <#${FANTASY_CHAT_CHANNEL_ID}>.`)
     .addFields(
       { name: 'League', value: `${joined}/${target} teams joined`, inline: true },
+      ...(isMock ? [
+        { name: 'Participants', value: participants.length ? participants.join('\n') : 'No coaches added yet.', inline: false },
+        { name: 'How To Use It', value: '1. Invite coaches\n2. Press `Start Mock`\n3. Coaches pick when they are on the clock\n4. CPU teams and auto-pick fill the gaps\n5. Draft recaps go to DMs when it ends', inline: false },
+      ] : []),
       { name: 'Invite Pool', value: inviteOptions.length ? `${inviteOptions.length} coaches available${totalPages > 1 ? ` • Page ${safePage + 1}/${totalPages}` : ''}` : 'No coaches found from assignments/coach roles.', inline: false },
     );
   const components = [];
@@ -197,6 +208,17 @@ function buildFantasyInvitePickerPayload(league, inviteOptions = [], page = 0, c
       new ButtonBuilder().setCustomId(inviteActionId(mode, 'invite_next', safePage, seasonKey)).setLabel('Next Coaches').setStyle(ButtonStyle.Secondary).setDisabled(safePage >= totalPages - 1),
     ));
   }
+  components.push(new ActionRowBuilder().addComponents(
+    ...(isMock ? [
+      new ButtonBuilder().setCustomId(inviteActionId(mode, 'invite', safePage, seasonKey)).setLabel('Invite Coaches').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(inviteActionId(mode, 'start', safePage, seasonKey)).setLabel('Start Mock').setStyle(ButtonStyle.Primary).setDisabled(league.draft?.status === 'live'),
+      new ButtonBuilder().setCustomId(inviteActionId(mode, 'draft', safePage, seasonKey)).setLabel('Draft Room').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(inviteActionId(mode, 'hub', safePage, seasonKey)).setLabel('Mock Hub').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(inviteActionId(mode, 'reset', safePage, seasonKey)).setLabel('Reset Mock').setStyle(ButtonStyle.Danger),
+    ] : [
+      new ButtonBuilder().setCustomId(inviteActionId(mode, 'hub', safePage, seasonKey)).setLabel('Back to Hub').setStyle(ButtonStyle.Secondary),
+    ]),
+  ));
   return { content: content || undefined, embeds: [embed], components };
 }
 
