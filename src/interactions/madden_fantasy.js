@@ -14,6 +14,7 @@ import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
 import {
   buildFantasyBoardPayload,
   buildFantasyDraftPayload,
+  buildFantasyDraftRecaps,
   buildFantasyHubPayload,
   buildFantasyStandingsPayload,
   buildFantasyTeamPayload,
@@ -38,24 +39,40 @@ const INVITE_TTL_MS = 1000 * 60 * 60 * 24;
 
 function parseParts(interaction) {
   const [, action = 'hub', value = '0'] = interaction.customId.split('|');
+  if (String(action || '').startsWith('mockkey_')) {
+    const decoded = decodeURIComponent(value || '');
+    const [guildIdOverride, seasonKeyOverride] = decoded.includes('::') ? decoded.split('::') : [null, decoded];
+    return {
+      action: action.replace(/^mockkey_/, ''),
+      value: interaction.customId.split('|')[3] || '0',
+      mode: 'mock',
+      guildIdOverride,
+      seasonKeyOverride,
+    };
+  }
   if (String(action || '').startsWith('mock_')) {
     return { action: action.replace(/^mock_/, ''), value, mode: 'mock' };
   }
   return { action, value, mode: 'live' };
 }
 
-async function loadContext(interaction, mode = 'live') {
-  const leagueId = requireLeagueIdForGuild(interaction.guildId);
+async function loadContext(interaction, mode = 'live', seasonKeyOverride = null, guildIdOverride = null) {
+  const guildId = guildIdOverride || interaction.guildId;
+  const leagueId = requireLeagueIdForGuild(guildId);
   const snapshot = loadLeagueSnapshot(leagueId);
   const normalizedMode = normalizeFantasyMode(mode);
   const baseSeasonKey = getFantasyLeagueKey(snapshot, normalizedMode);
-  const seasonKey = normalizedMode === 'mock' ? `${baseSeasonKey}:${interaction.user.id}` : baseSeasonKey;
-  ensureFantasyLeague({ guildId: interaction.guildId, seasonKey });
+  const seasonKey = seasonKeyOverride || (normalizedMode === 'mock' ? `${baseSeasonKey}:${interaction.user.id}` : baseSeasonKey);
+  ensureFantasyLeague({ guildId, seasonKey });
   const maddenTeamIds = resolveCoachTeamIds(interaction.member, snapshot);
-  const fantasyLeague = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (league) => (
-    upsertFantasyManager(league, interaction.member, maddenTeamIds)
-  ));
-  return { snapshot, seasonKey, fantasyLeague };
+  const fantasyLeague = mutateFantasyLeague({ guildId, seasonKey }, (league) => {
+    upsertFantasyManager(league, interaction.member, maddenTeamIds);
+    if (normalizedMode === 'mock' && !league.hostId) {
+      league.hostId = seasonKeyOverride ? String(seasonKey).split(':').pop() : interaction.user.id;
+    }
+    return league;
+  });
+  return { snapshot, seasonKey, fantasyLeague, guildId };
 }
 
 async function replyError(interaction, content) {
@@ -119,7 +136,12 @@ async function buildFantasyInviteOptions(guild, league, hostId) {
     });
 }
 
-function buildFantasyInvitePickerPayload(league, inviteOptions = [], page = 0, content = null) {
+function inviteActionId(mode, action, page = 0, seasonKey = null) {
+  if (mode === 'mock' && seasonKey) return `madden_fantasy|mockkey_${action}|${encodeURIComponent(seasonKey)}|${page}`;
+  return `madden_fantasy|${action}|${page}`;
+}
+
+function buildFantasyInvitePickerPayload(league, inviteOptions = [], page = 0, content = null, { mode = 'live', seasonKey = null } = {}) {
   const totalPages = Math.max(1, Math.ceil(inviteOptions.length / 25));
   const safePage = Math.max(0, Math.min(Number(page) || 0, totalPages - 1));
   const visibleOptions = inviteOptions.slice(safePage * 25, (safePage + 1) * 25);
@@ -137,7 +159,7 @@ function buildFantasyInvitePickerPayload(league, inviteOptions = [], page = 0, c
   if (visibleOptions.length) {
     components.push(new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
-        .setCustomId(`madden_fantasy|invite_select|${safePage}`)
+        .setCustomId(inviteActionId(mode, 'invite_select', safePage, seasonKey))
         .setPlaceholder('Invite coaches to fantasy')
         .setMinValues(1)
         .setMaxValues(Math.min(target, visibleOptions.length))
@@ -146,8 +168,8 @@ function buildFantasyInvitePickerPayload(league, inviteOptions = [], page = 0, c
   }
   if (totalPages > 1) {
     components.push(new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId(`madden_fantasy|invite_prev|${safePage}`).setLabel('Prev Coaches').setStyle(ButtonStyle.Secondary).setDisabled(safePage <= 0),
-      new ButtonBuilder().setCustomId(`madden_fantasy|invite_next|${safePage}`).setLabel('Next Coaches').setStyle(ButtonStyle.Secondary).setDisabled(safePage >= totalPages - 1),
+      new ButtonBuilder().setCustomId(inviteActionId(mode, 'invite_prev', safePage, seasonKey)).setLabel('Prev Coaches').setStyle(ButtonStyle.Secondary).setDisabled(safePage <= 0),
+      new ButtonBuilder().setCustomId(inviteActionId(mode, 'invite_next', safePage, seasonKey)).setLabel('Next Coaches').setStyle(ButtonStyle.Secondary).setDisabled(safePage >= totalPages - 1),
     ));
   }
   return { content: content || undefined, embeds: [embed], components };
@@ -156,10 +178,11 @@ function buildFantasyInvitePickerPayload(league, inviteOptions = [], page = 0, c
 async function sendFantasyInviteDM(client, guildId, seasonKey, hostUser, member) {
   const user = member?.user || await client.users.fetch(member?.id || '').catch(() => null);
   if (!user) return false;
+  const isMockInvite = String(seasonKey || '').includes(':mock');
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`madden_fantasy|invite_accept|${guildId}|${encodeURIComponent(seasonKey)}`)
-      .setLabel('Accept Fantasy Invite')
+      .setLabel(isMockInvite ? 'Accept Mock Invite' : 'Accept Fantasy Invite')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId(`madden_fantasy|invite_decline|${guildId}|${encodeURIComponent(seasonKey)}`)
@@ -168,9 +191,9 @@ async function sendFantasyInviteDM(client, guildId, seasonKey, hostUser, member)
   );
   const assignedTeams = coachTeamsForMember(member);
   const embed = new EmbedBuilder()
-    .setTitle('Madden Fantasy Invite')
+    .setTitle(isMockInvite ? 'Fantasy Mock Draft Invite' : 'Madden Fantasy Invite')
     .setColor(0x5865f2)
-    .setDescription(`<@${hostUser.id}> invited you to the 10-team Madden fantasy season.\n\nPress **Accept Fantasy Invite** to join. Fantasy chat is <#${FANTASY_CHAT_CHANNEL_ID}>.`)
+    .setDescription(`<@${hostUser.id}> invited you to ${isMockInvite ? 'a fantasy mock draft' : 'the 10-team Madden fantasy season'}.\n\nPress **${isMockInvite ? 'Accept Mock Invite' : 'Accept Fantasy Invite'}** to join. Fantasy chat is <#${FANTASY_CHAT_CHANNEL_ID}>.`)
     .addFields(
       { name: 'Your Madden Team', value: assignedTeams.length ? assignedTeams.join(', ') : 'No team assignment found', inline: false },
       { name: 'Format', value: '10 teams max • 2 conferences of 5 • top 3 per conference • #1 seed gets a bye', inline: false },
@@ -184,10 +207,23 @@ async function notifyFantasyInviteHost(client, hostId, message) {
   await host?.send?.({ embeds: [new EmbedBuilder().setColor(0x5865f2).setTitle('Fantasy Invite Update').setDescription(message)] }).catch(() => null);
 }
 
+async function sendFantasyDraftRecapDMs(client, guildId, seasonKey, league, snapshot) {
+  if (league.summarySentAt || league.draft?.status !== 'complete') return;
+  const recaps = buildFantasyDraftRecaps(league, snapshot);
+  for (const recap of recaps) {
+    const user = await client.users.fetch(recap.userId).catch(() => null);
+    await user?.send?.({ embeds: [recap.embed] }).catch(() => null);
+  }
+  mutateFantasyLeague({ guildId, seasonKey }, (draftLeague) => {
+    draftLeague.summarySentAt = Date.now();
+    return draftLeague;
+  });
+}
+
 export async function execute(interaction) {
   if (!(interaction instanceof ButtonInteraction) && !(interaction instanceof StringSelectMenuInteraction)) return;
   const parts = interaction.customId.split('|');
-  const { action, value, mode } = parseParts(interaction);
+  const { action, value, mode, seasonKeyOverride, guildIdOverride } = parseParts(interaction);
 
   if (!interaction.deferred && !interaction.replied) {
     if (action === 'pick') await interaction.deferUpdate();
@@ -229,48 +265,67 @@ export async function execute(interaction) {
       return draftLeague;
     });
     const joinedCount = Object.values(joinedLeague.managers || {}).filter((manager) => !manager.isCpu).length;
+    const isMockInvite = String(seasonKey || '').includes(':mock');
+    const components = isMockInvite
+      ? [new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`madden_fantasy|mockkey_draft|${encodeURIComponent(`${guildId}::${seasonKey}`)}`)
+          .setLabel('Open Mock Draft Room')
+          .setStyle(ButtonStyle.Primary),
+      )]
+      : [];
     await interaction.editReply({
-      embeds: [new EmbedBuilder().setTitle('Fantasy Invite Accepted').setColor(0x2ecc71).setDescription(`You’re in. Fantasy chat is <#${FANTASY_CHAT_CHANNEL_ID}>.\n\nLeague: ${joinedCount}/${joinedLeague.settings?.leagueSize || 10} teams joined.`)],
-      components: [],
+      embeds: [new EmbedBuilder().setTitle(isMockInvite ? 'Mock Invite Accepted' : 'Fantasy Invite Accepted').setColor(0x2ecc71).setDescription(`You’re in. Fantasy chat is <#${FANTASY_CHAT_CHANNEL_ID}>.\n\n${isMockInvite ? 'Open the mock draft room below when the host starts.' : `League: ${joinedCount}/${joinedLeague.settings?.leagueSize || 10} teams joined.`}`)],
+      components,
     });
-    await notifyFantasyInviteHost(interaction.client, pending.hostId, `<@${interaction.user.id}> accepted the fantasy invite. League is now ${joinedCount}/${joinedLeague.settings?.leagueSize || 10}.`);
+    await notifyFantasyInviteHost(interaction.client, pending.hostId, `<@${interaction.user.id}> accepted the ${isMockInvite ? 'fantasy mock' : 'fantasy'} invite.${isMockInvite ? '' : ` League is now ${joinedCount}/${joinedLeague.settings?.leagueSize || 10}.`}`);
     return;
   }
 
   let context;
   try {
-    context = await loadContext(interaction, mode);
+    context = await loadContext(interaction, mode, seasonKeyOverride, guildIdOverride);
   } catch {
     await replyError(interaction, 'Fantasy could not load the connected Madden league. Run `/sync`, then open `/fantasy` again.');
     return;
   }
 
   const { snapshot, seasonKey } = context;
+  const activeGuildId = context.guildId || interaction.guildId;
+  const componentSeasonKey = mode === 'mock' ? `${activeGuildId}::${seasonKey}` : seasonKey;
   let league = context.fantasyLeague;
   const userId = interaction.user.id;
 
   if (action === 'join') {
-    league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => (
+    league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => (
       upsertFantasyManager(draftLeague, interaction.member, resolveCoachTeamIds(interaction.member, snapshot))
     ));
-    await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode }));
+    await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'invite') {
-    const roleMap = loadRoleMapForGuild(interaction.guildId);
-    if (!hasStaffRole(interaction.member, roleMap)) {
+    const roleMap = loadRoleMapForGuild(activeGuildId);
+    if (mode === 'mock' && league.hostId && league.hostId !== userId) {
+      await replyError(interaction, 'Only the mock host can send invites for this draft.');
+      return;
+    }
+    if (mode !== 'mock' && !hasStaffRole(interaction.member, roleMap)) {
       await replyError(interaction, 'Only staff can send fantasy invites.');
       return;
     }
     const inviteOptions = await buildFantasyInviteOptions(interaction.guild, league, userId);
-    await interaction.editReply(buildFantasyInvitePickerPayload(league, inviteOptions, 0, inviteOptions.length ? 'Choose coaches to invite.' : null));
+    await interaction.editReply(buildFantasyInvitePickerPayload(league, inviteOptions, 0, inviteOptions.length ? 'Choose coaches to invite.' : null, { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'invite_prev' || action === 'invite_next') {
-    const roleMap = loadRoleMapForGuild(interaction.guildId);
-    if (!hasStaffRole(interaction.member, roleMap)) {
+    const roleMap = loadRoleMapForGuild(activeGuildId);
+    if (mode === 'mock' && league.hostId && league.hostId !== userId) {
+      await replyError(interaction, 'Only the mock host can page fantasy invites.');
+      return;
+    }
+    if (mode !== 'mock' && !hasStaffRole(interaction.member, roleMap)) {
       await replyError(interaction, 'Only staff can page fantasy invites.');
       return;
     }
@@ -280,13 +335,17 @@ export async function execute(interaction) {
     const nextPage = action === 'invite_next'
       ? Math.min(totalPages - 1, currentPage + 1)
       : Math.max(0, currentPage - 1);
-    await interaction.editReply(buildFantasyInvitePickerPayload(league, inviteOptions, nextPage));
+    await interaction.editReply(buildFantasyInvitePickerPayload(league, inviteOptions, nextPage, null, { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'invite_select') {
-    const roleMap = loadRoleMapForGuild(interaction.guildId);
-    if (!hasStaffRole(interaction.member, roleMap)) {
+    const roleMap = loadRoleMapForGuild(activeGuildId);
+    if (mode === 'mock' && league.hostId && league.hostId !== userId) {
+      await replyError(interaction, 'Only the mock host can send fantasy invites.');
+      return;
+    }
+    if (mode !== 'mock' && !hasStaffRole(interaction.member, roleMap)) {
       await replyError(interaction, 'Only staff can send fantasy invites.');
       return;
     }
@@ -296,7 +355,7 @@ export async function execute(interaction) {
     let alreadyPending = 0;
     let dmFailed = 0;
     for (const invitedUserId of selectedIds) {
-      const freshLeague = ensureFantasyLeague({ guildId: interaction.guildId, seasonKey });
+      const freshLeague = ensureFantasyLeague({ guildId: activeGuildId, seasonKey });
       if (freshLeague.managers?.[invitedUserId]) {
         alreadyJoined += 1;
         continue;
@@ -311,7 +370,7 @@ export async function execute(interaction) {
         dmFailed += 1;
         continue;
       }
-      mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
+      mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
         draftLeague.pendingInvites = draftLeague.pendingInvites || {};
         draftLeague.pendingInvites[invitedUserId] = {
           hostId: interaction.user.id,
@@ -320,37 +379,41 @@ export async function execute(interaction) {
         };
         return draftLeague;
       });
-      const ok = await sendFantasyInviteDM(interaction.client, interaction.guildId, seasonKey, interaction.user, member);
+      const ok = await sendFantasyInviteDM(interaction.client, activeGuildId, seasonKey, interaction.user, member);
       if (ok) {
         invited += 1;
       } else {
         dmFailed += 1;
-        mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
+        mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
           draftLeague.pendingInvites = draftLeague.pendingInvites || {};
           delete draftLeague.pendingInvites[invitedUserId];
           return draftLeague;
         });
       }
     }
-    league = ensureFantasyLeague({ guildId: interaction.guildId, seasonKey });
+    league = ensureFantasyLeague({ guildId: activeGuildId, seasonKey });
     const inviteOptions = await buildFantasyInviteOptions(interaction.guild, league, userId);
     await interaction.editReply(buildFantasyInvitePickerPayload(league, inviteOptions, Number(value || 0), [
       invited ? `Invited: **${invited}**` : null,
       alreadyJoined ? `Already joined: **${alreadyJoined}**` : null,
       alreadyPending ? `Already pending: **${alreadyPending}**` : null,
       dmFailed ? `DM failed: **${dmFailed}**` : null,
-    ].filter(Boolean).join(' • ') || 'No invites sent.'));
+    ].filter(Boolean).join(' • ') || 'No invites sent.', { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'start') {
-    const roleMap = loadRoleMapForGuild(interaction.guildId);
+    const roleMap = loadRoleMapForGuild(activeGuildId);
+    if (mode === 'mock' && league.hostId && league.hostId !== userId) {
+      await replyError(interaction, 'Only the mock host can start this fantasy mock draft.');
+      return;
+    }
     if (mode !== 'mock' && !hasStaffRole(interaction.member, roleMap)) {
       await replyError(interaction, 'Only staff can start the fantasy draft.');
       return;
     }
     let result = null;
-    league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
+    league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       if (mode === 'mock') resetFantasyDraft(draftLeague);
       result = startFantasyDraft(draftLeague, mode === 'mock' ? { soloMockUserId: userId } : {});
       if (result?.ok && mode === 'mock') autoSimFantasyUntilUser(draftLeague, snapshot, userId);
@@ -360,7 +423,7 @@ export async function execute(interaction) {
       await replyError(interaction, result?.reason || 'Fantasy draft could not be started.');
       return;
     }
-    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode }));
+    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
@@ -369,18 +432,22 @@ export async function execute(interaction) {
       await replyError(interaction, 'Only the mock draft can be reset from this button.');
       return;
     }
-    league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
+    if (league.hostId && league.hostId !== userId) {
+      await replyError(interaction, 'Only the mock host can reset this fantasy mock draft.');
+      return;
+    }
+    league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       resetFantasyDraft(draftLeague);
       return draftLeague;
     });
-    await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode }));
+    await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'pick') {
     const assetId = interaction.values?.[0];
     let result = null;
-    league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
+    league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       const asset = findFantasyAsset(draftLeague, snapshot, assetId, userId);
       result = asset ? makeFantasyPick(draftLeague, asset, userId) : { ok: false, reason: 'That board item is no longer available.' };
       if (result?.ok && mode === 'mock') autoSimFantasyUntilUser(draftLeague, snapshot, userId);
@@ -390,27 +457,28 @@ export async function execute(interaction) {
       await replyError(interaction, result?.reason || 'Pick could not be made.');
       return;
     }
-    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode }));
+    await sendFantasyDraftRecapDMs(interaction.client, activeGuildId, seasonKey, league, snapshot);
+    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'board') {
-    await interaction.editReply(buildFantasyBoardPayload(league, snapshot, userId, Number(value || 0), { mode }));
+    await interaction.editReply(buildFantasyBoardPayload(league, snapshot, userId, Number(value || 0), { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'team') {
-    await interaction.editReply(buildFantasyTeamPayload(league, snapshot, userId));
+    await interaction.editReply(buildFantasyTeamPayload(league, snapshot, userId, { seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'standings') {
-    await interaction.editReply(buildFantasyStandingsPayload(league, snapshot));
+    await interaction.editReply(buildFantasyStandingsPayload(league, snapshot, { seasonKey: componentSeasonKey }));
     return;
   }
 
   if (action === 'draft') {
-    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode }));
+    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }));
     return;
   }
 
@@ -419,18 +487,7 @@ export async function execute(interaction) {
     return;
   }
 
-  if (mode === 'mock' && action === 'hub' && league.draft?.status !== 'live') {
-    league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
-      resetFantasyDraft(draftLeague);
-      startFantasyDraft(draftLeague, { soloMockUserId: userId });
-      autoSimFantasyUntilUser(draftLeague, snapshot, userId);
-      return draftLeague;
-    });
-    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode }));
-    return;
-  }
-
-  await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode }));
+  await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode, seasonKey: componentSeasonKey }));
 }
 
 export default { customId, execute };

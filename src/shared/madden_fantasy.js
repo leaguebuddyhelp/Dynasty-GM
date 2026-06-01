@@ -116,7 +116,7 @@ export function normalizeFantasyMode(mode = 'live') {
 
 function createLeague({ guildId, seasonKey }) {
   const rounds = rosterSize({ rosterSlots: DEFAULT_ROSTER_SLOTS });
-  const isMock = String(seasonKey || '').endsWith(':mock');
+  const isMock = String(seasonKey || '').includes(':mock');
   return {
     guildId,
     seasonKey,
@@ -192,7 +192,7 @@ export function ensureFantasyLeague({ guildId, seasonKey }) {
     store.guilds[guildId].leagues[seasonKey] = createLeague({ guildId, seasonKey });
     saveFantasyStore(store);
   } else {
-    store.guilds[guildId].leagues[seasonKey].isMock = String(seasonKey || '').endsWith(':mock');
+    store.guilds[guildId].leagues[seasonKey].isMock = String(seasonKey || '').includes(':mock');
   }
   normalizeFantasySettings(store.guilds[guildId].leagues[seasonKey]);
   return store.guilds[guildId].leagues[seasonKey];
@@ -205,7 +205,7 @@ export function mutateFantasyLeague({ guildId, seasonKey }, mutator) {
     store.guilds[guildId].leagues[seasonKey] = createLeague({ guildId, seasonKey });
   }
   const league = store.guilds[guildId].leagues[seasonKey];
-  league.isMock = String(seasonKey || '').endsWith(':mock');
+  league.isMock = String(seasonKey || '').includes(':mock');
   normalizeFantasySettings(league);
   const result = mutator(league) || league;
   result.updatedAt = nowIso();
@@ -495,9 +495,19 @@ export function startFantasyDraft(league, options = {}) {
     ensureCpuManagers(league, options.cpuTeams || SOLO_MOCK_CPU_COUNT);
   }
   const desiredTeams = safeNumber(league.settings?.leagueSize, FANTASY_TEAM_COUNT);
+  const humanManagers = Object.keys(league.managers || {}).filter((id) => !isCpuUserId(id));
+  const orderedHumans = options.soloMockUserId
+    ? [
+      options.soloMockUserId,
+      ...humanManagers.filter((id) => id !== options.soloMockUserId),
+    ]
+    : humanManagers;
   const order = options.soloMockUserId
-    ? [options.soloMockUserId, ...Object.keys(league.managers || {}).filter((id) => isCpuUserId(id)).slice(0, options.cpuTeams || SOLO_MOCK_CPU_COUNT)]
-    : Object.keys(league.managers || {}).filter((id) => !isCpuUserId(id)).slice(0, desiredTeams);
+    ? [
+      ...orderedHumans,
+      ...Object.keys(league.managers || {}).filter((id) => isCpuUserId(id)).slice(0, Math.max(0, desiredTeams - orderedHumans.length)),
+    ].slice(0, desiredTeams)
+    : orderedHumans.slice(0, desiredTeams);
   if (options.soloMockUserId && order.length < desiredTeams) return { ok: false, reason: `Need ${desiredTeams} fantasy teams before the mock starts.` };
   if (!options.soloMockUserId && order.length < desiredTeams) return { ok: false, reason: `Need ${desiredTeams} joined coaches before the fantasy draft starts.` };
   league.status = 'draft';
@@ -611,20 +621,81 @@ function managerRosterAssets(league, snapshot, userId) {
     .filter(Boolean);
 }
 
-function actionId(mode, action, value = null) {
+function gradeFromRank(rank, total) {
+  if (rank <= 1) return 'A';
+  if (rank <= Math.ceil(total * 0.25)) return 'A-';
+  if (rank <= Math.ceil(total * 0.45)) return 'B+';
+  if (rank <= Math.ceil(total * 0.65)) return 'B';
+  if (rank <= Math.ceil(total * 0.85)) return 'C+';
+  return 'C';
+}
+
+function projectedWinsForRank(rank, total) {
+  if (total <= 1) return 8;
+  const pct = 1 - ((rank - 1) / Math.max(1, total - 1));
+  return Math.max(4, Math.min(12, Math.round(5 + pct * 7)));
+}
+
+function formatRecapPlayer(asset) {
+  return `${asset.position} ${asset.name} (${asset.teamName}) - ${asset.points} pts, ${asset.statLine}`;
+}
+
+export function buildFantasyDraftRecaps(league, snapshot) {
+  const managers = Object.values(league.managers || {}).filter((manager) => !manager.isCpu);
+  const scored = managers.map((manager) => {
+    const assets = managerRosterAssets(league, snapshot, manager.userId);
+    const totalValue = assets.reduce((sum, asset) => sum + safeNumber(asset.draftValue), 0);
+    const totalProjected = assets.reduce((sum, asset) => sum + safeNumber(asset.projected), 0);
+    return { manager, assets, totalValue, totalProjected };
+  }).sort((a, b) => b.totalValue - a.totalValue || b.totalProjected - a.totalProjected);
+
+  return scored.map((entry, index) => {
+    const rank = index + 1;
+    const grade = gradeFromRank(rank, scored.length);
+    const projectedWins = projectedWinsForRank(rank, scored.length);
+    const top = entry.assets.slice()
+      .sort((a, b) => safeNumber(b.draftValue) - safeNumber(a.draftValue))
+      .slice(0, 5);
+    const positionCounts = entry.assets.reduce((acc, asset) => {
+      acc[asset.position] = (acc[asset.position] || 0) + 1;
+      return acc;
+    }, {});
+    const coreNames = top.slice(0, 3).map((asset) => asset.name).join(', ') || 'your top picks';
+    const blurb = `${entry.manager.teamName || 'Your fantasy team'} came out with a ${grade}. The build leans on ${coreNames}, with enough weekly ceiling to project around ${projectedWins} wins if the usage holds. The strongest part of the roster is ${top[0]?.position || 'the top end'} value; the swing point is whether the bench turns into usable flex depth once the season settles.`;
+    const embed = new EmbedBuilder()
+      .setTitle('Fantasy Draft Recap')
+      .setColor(0x5865f2)
+      .setDescription(blurb)
+      .addFields(
+        { name: 'Grade', value: grade, inline: true },
+        { name: 'Projected Wins', value: String(projectedWins), inline: true },
+        { name: 'Draft Rank', value: `${rank}/${scored.length}`, inline: true },
+        { name: 'Roster Shape', value: Object.entries(positionCounts).map(([pos, count]) => `${pos}: ${count}`).join(' • ') || 'No picks logged', inline: false },
+        { name: 'Best Picks', value: top.length ? top.map(formatRecapPlayer).join('\n').slice(0, 1024) : 'No picks logged.', inline: false },
+      )
+      .setFooter({ text: 'Projection uses fantasy draft value, current production, position scarcity, and expected rest-of-season role.' });
+    return { userId: entry.manager.userId, embed, grade, projectedWins };
+  });
+}
+
+function actionId(mode, action, value = null, seasonKey = null) {
+  if (normalizeFantasyMode(mode) === 'mock' && seasonKey) {
+    const base = `madden_fantasy|mockkey_${action}|${encodeURIComponent(seasonKey)}`;
+    return value === null ? base : `${base}|${value}`;
+  }
   const prefix = normalizeFantasyMode(mode) === 'mock' ? `mock_${action}` : action;
   return value === null ? `madden_fantasy|${prefix}` : `madden_fantasy|${prefix}|${value}`;
 }
 
-function baseButtons(active = 'hub', page = 0, mode = 'live') {
+function baseButtons(active = 'hub', page = 0, mode = 'live', seasonKey = null) {
   const isMock = normalizeFantasyMode(mode) === 'mock';
   const secondRowComponents = [
-    new ButtonBuilder().setCustomId(actionId(mode, 'start')).setLabel(isMock ? 'Start Mock' : 'Start Draft').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(actionId(mode, 'draft')).setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(actionId(mode, 'trade')).setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-    ...(!isMock ? [new ButtonBuilder().setCustomId(actionId(mode, 'invite')).setLabel('Invite Coaches').setStyle(ButtonStyle.Secondary)] : []),
+    new ButtonBuilder().setCustomId(actionId(mode, 'start', null, seasonKey)).setLabel(isMock ? 'Start Mock' : 'Start Draft').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId(actionId(mode, 'draft', null, seasonKey)).setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    ...(!isMock ? [new ButtonBuilder().setCustomId(actionId(mode, 'trade', null, seasonKey)).setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary)] : []),
+    new ButtonBuilder().setCustomId(actionId(mode, 'invite', null, seasonKey)).setLabel('Invite Coaches').setStyle(ButtonStyle.Secondary),
     isMock
-      ? new ButtonBuilder().setCustomId(actionId(mode, 'reset')).setLabel('Reset Mock').setStyle(ButtonStyle.Secondary)
+      ? new ButtonBuilder().setCustomId(actionId(mode, 'reset', null, seasonKey)).setLabel('Reset Mock').setStyle(ButtonStyle.Secondary)
       : new ButtonBuilder().setCustomId(actionId('mock', 'hub')).setLabel('Mock Draft').setStyle(ButtonStyle.Secondary),
   ];
   if (isMock) {
@@ -634,17 +705,17 @@ function baseButtons(active = 'hub', page = 0, mode = 'live') {
   }
   return [
     new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId(actionId(mode, 'hub')).setLabel(isMock ? 'Mock Hub' : 'Hub').setStyle(active === 'hub' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId(actionId(mode, 'join')).setLabel('Join').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId(actionId(mode, 'board', page)).setLabel('Draft Board').setStyle(active === 'board' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId(actionId(mode, 'team')).setLabel('My Team').setStyle(active === 'team' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId(actionId(mode, 'standings')).setLabel('Standings').setStyle(active === 'standings' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'hub', null, seasonKey)).setLabel(isMock ? 'Mock Hub' : 'Hub').setStyle(active === 'hub' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'join', null, seasonKey)).setLabel('Join').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(actionId(mode, 'board', page, seasonKey)).setLabel('Draft Board').setStyle(active === 'board' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'team', null, seasonKey)).setLabel('My Team').setStyle(active === 'team' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'standings', null, seasonKey)).setLabel('Standings').setStyle(active === 'standings' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     ),
     new ActionRowBuilder().addComponents(...secondRowComponents),
   ];
 }
 
-export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live' } = {}) {
+export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live', seasonKey = null } = {}) {
   const isMock = normalizeFantasyMode(mode) === 'mock';
   const managerCount = Object.values(league.managers || {}).filter((manager) => isMock || !manager.isCpu).length;
   const leagueSize = safeNumber(league.settings?.leagueSize, FANTASY_TEAM_COUNT);
@@ -665,10 +736,10 @@ export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live'
       { name: 'Board Leaders', value: preview.slice(0, 1024), inline: false },
     )
     .setFooter({ text: isMock ? 'Mock mode is safe to reset before launch.' : 'Scoring uses common half-PPR fantasy rules from current Madden season totals.' });
-  return { embeds: [embed], components: baseButtons('hub', 0, mode) };
+  return { embeds: [embed], components: baseButtons('hub', 0, mode, seasonKey) };
 }
 
-export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { mode = 'live' } = {}) {
+export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { mode = 'live', seasonKey = null } = {}) {
   const board = buildFantasyBoard(league, snapshot, { userId });
   const maxPage = Math.max(0, Math.ceil(board.length / BOARD_PAGE_SIZE) - 1);
   const safePage = Math.min(Math.max(0, safeNumber(page)), maxPage);
@@ -683,17 +754,17 @@ export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { m
     .addFields({ name: 'On Clock', value: onClock ? managerLabel(league, onClock) : 'Draft has not started.', inline: true })
     .setFooter({ text: `Page ${safePage + 1}/${maxPage + 1} • board excludes your own Madden team.` });
 
-  const rows = baseButtons('board', safePage, mode);
+  const rows = baseButtons('board', safePage, mode, seasonKey);
   const prevDisabled = safePage <= 0;
   const nextDisabled = safePage >= maxPage;
   rows.push(new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(prevDisabled ? actionId(mode, 'board_prev_disabled', safePage) : actionId(mode, 'board', safePage - 1))
+      .setCustomId(prevDisabled ? actionId(mode, 'board_prev_disabled', safePage, seasonKey) : actionId(mode, 'board', safePage - 1, seasonKey))
       .setLabel('Prev')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(prevDisabled),
     new ButtonBuilder()
-      .setCustomId(nextDisabled ? actionId(mode, 'board_next_disabled', safePage) : actionId(mode, 'board', safePage + 1))
+      .setCustomId(nextDisabled ? actionId(mode, 'board_next_disabled', safePage, seasonKey) : actionId(mode, 'board', safePage + 1, seasonKey))
       .setLabel('Next')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(nextDisabled),
@@ -701,7 +772,7 @@ export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { m
   if (league.draft?.status === 'live' && onClock === userId && slice.length) {
     rows.push(new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
-        .setCustomId(actionId(mode, 'pick', safePage))
+        .setCustomId(actionId(mode, 'pick', safePage, seasonKey))
         .setPlaceholder('Make your pick')
         .addOptions(slice.slice(0, SELECT_PAGE_SIZE).map((asset) => (
           new StringSelectMenuOptionBuilder()
@@ -714,7 +785,7 @@ export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { m
   return { embeds: [embed], components: rows.slice(0, 5) };
 }
 
-export function buildFantasyTeamPayload(league, snapshot, userId) {
+export function buildFantasyTeamPayload(league, snapshot, userId, { seasonKey = null } = {}) {
   const manager = league.managers?.[userId];
   const assets = managerRosterAssets(league, snapshot, userId);
   const embed = new EmbedBuilder()
@@ -725,10 +796,10 @@ export function buildFantasyTeamPayload(league, snapshot, userId) {
       { name: 'Roster', value: assets.length ? assets.map(formatAssetLine).join('\n').slice(0, 1024) : 'No drafted players yet.', inline: false },
       { name: 'Madden Team Block', value: (manager?.maddenTeamIds || []).length ? 'Own-team players are hidden from your draft board and blocked at pick time.' : 'No Madden team assignment found yet.', inline: false },
     );
-  return { embeds: [embed], components: baseButtons('team', 0, league.isMock ? 'mock' : 'live') };
+  return { embeds: [embed], components: baseButtons('team', 0, league.isMock ? 'mock' : 'live', seasonKey) };
 }
 
-export function buildFantasyStandingsPayload(league, snapshot) {
+export function buildFantasyStandingsPayload(league, snapshot, { seasonKey = null } = {}) {
   const rows = Object.values(league.managers || {})
     .map((manager) => {
       const assets = managerRosterAssets(league, snapshot, manager.userId);
@@ -743,10 +814,10 @@ export function buildFantasyStandingsPayload(league, snapshot) {
       ? rows.map((row, idx) => `${idx + 1}. ${managerLabel(league, row.manager.userId)} - ${row.total.toFixed(1)} draft-board pts • ${row.picks} players`).join('\n')
       : 'No coaches have joined yet.')
     .setFooter({ text: 'Live weekly scoring will use the same half-PPR scoring model.' });
-  return { embeds: [embed], components: baseButtons('standings', 0, league.isMock ? 'mock' : 'live') };
+  return { embeds: [embed], components: baseButtons('standings', 0, league.isMock ? 'mock' : 'live', seasonKey) };
 }
 
-export function buildFantasyDraftPayload(league, snapshot, userId, { mode = 'live' } = {}) {
+export function buildFantasyDraftPayload(league, snapshot, userId, { mode = 'live', seasonKey = null } = {}) {
   const onClock = currentFantasyDrafter(league);
   const lastPicks = (league.draft?.picks || []).slice(-6).reverse();
   const embed = new EmbedBuilder()
@@ -759,7 +830,7 @@ export function buildFantasyDraftPayload(league, snapshot, userId, { mode = 'liv
       { name: 'Order', value: (league.draft?.order || Object.keys(league.managers || {})).map((id, idx) => `${idx + 1}. ${managerLabel(league, id)}`).join('\n') || 'No joined coaches yet.', inline: true },
       { name: 'Recent Picks', value: lastPicks.length ? lastPicks.map((pick) => `${pick.pickNo}. ${pick.position} ${pick.name} - ${managerLabel(league, pick.userId)}`).join('\n') : 'No picks made yet.', inline: true },
     );
-  const payload = buildFantasyBoardPayload(league, snapshot, userId, 0, { mode });
+  const payload = buildFantasyBoardPayload(league, snapshot, userId, 0, { mode, seasonKey });
   return { embeds: [embed, ...payload.embeds], components: payload.components };
 }
 
