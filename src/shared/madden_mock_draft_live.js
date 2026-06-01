@@ -1570,7 +1570,15 @@ export function buildPickMenu(session) {
 }
 
 export function getMockDraftSession(sessionId) {
-  return loadStore().sessions?.[sessionId] || null;
+  const store = loadStore();
+  const session = store.sessions?.[sessionId] || null;
+  if (!session) return null;
+  const refreshed = refreshMockDraftSessionRosterContext(session);
+  if (refreshed !== session) {
+    store.sessions[sessionId] = refreshed;
+    saveStore(store);
+  }
+  return refreshed;
 }
 
 export async function syncMockDraftSessionMessage(client, session) {
@@ -1674,11 +1682,34 @@ export function findActiveMockDraftSession(guildId, channelId) {
   ) || null;
 }
 
+function refreshMockDraftSessionRosterContext(session) {
+  if (!session || session.status === 'done' || session.status === 'cancelled') return session;
+  try {
+    const leagueId = session.leagueId || (session.guildId ? requireLeagueIdForGuild(session.guildId) : null);
+    if (!leagueId) return session;
+    const league = loadLeagueSnapshot(leagueId);
+    if (!league) return session;
+
+    return {
+      ...session,
+      leagueId,
+      teamNeeds: deriveTeamNeeds(league),
+      teamStrengths: extractTeamStrengths(league),
+      classLock: session.manualClassOverride ? session.classLock : formatMaddenDraftClassLock(league),
+      rosterContextUpdatedAt: Date.now(),
+    };
+  } catch (error) {
+    console.warn('[mockdraft-live] roster context refresh skipped:', error?.message || error);
+    return session;
+  }
+}
+
 export function updateMockDraftSession(sessionId, mutator) {
   const store = loadStore();
   const session = store.sessions?.[sessionId];
   if (!session) return null;
-  const nextSession = mutator(session) || session;
+  const liveSession = refreshMockDraftSessionRosterContext(session);
+  const nextSession = mutator(liveSession) || liveSession;
   nextSession.updatedAt = Date.now();
   store.sessions[sessionId] = nextSession;
   saveStore(store);
