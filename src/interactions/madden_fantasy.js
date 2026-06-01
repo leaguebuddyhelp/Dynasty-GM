@@ -12,6 +12,7 @@ import {
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { hasStaffRole, loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import { getCoachAssignmentMap } from '../shared/madden_coach_assignments.js';
+import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import {
   buildFantasyBoard,
   buildFantasyBoardPayload,
@@ -45,6 +46,7 @@ export const customId = /^madden_fantasy\|/;
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24;
 const MOCK_ROOM_IDLE_MS = 1000 * 60 * 60 * 6;
 const FANTASY_PICK_TIMER_MS = 1000 * 30;
+const FAST_CPU_PICK_MS = 250;
 const activeFantasyMockTickers = new Set();
 
 function parseParts(interaction) {
@@ -109,11 +111,27 @@ function fantasyUserLabel(userId = '') {
   return isCpuFantasyUser(userId) ? 'CPU' : `<@${userId}>`;
 }
 
+function fantasyTeamEmoji(teamName = '') {
+  return getTeamEmojiByName(teamName) || '';
+}
+
+function fantasyAssetButtonLabel(asset) {
+  const raw = `${asset.position} ${asset.name}`.trim();
+  return raw.slice(0, 80);
+}
+
+function discordEmojiData(rawEmoji = '') {
+  const match = String(rawEmoji || '').match(/^<a?:([^:>]+):(\d+)>$/);
+  if (!match) return null;
+  return { name: match[1], id: match[2], animated: String(rawEmoji).startsWith('<a:') };
+}
+
 function fantasyPickEmbed(pick, title = 'Fantasy Pick Is In') {
+  const emoji = fantasyTeamEmoji(pick.teamName);
   return new EmbedBuilder()
     .setTitle(title)
     .setColor(0x2ecc71)
-    .setDescription(`Pick ${pick.pickNo}: ${fantasyUserLabel(pick.userId)} selected **${pick.position} ${pick.name}**`)
+    .setDescription(`Pick ${pick.pickNo}: ${fantasyUserLabel(pick.userId)} selected ${emoji ? `${emoji} ` : ''}**${pick.position} ${pick.name}**`)
     .addFields(
       { name: 'Team', value: pick.teamName || 'N/A', inline: true },
       { name: 'Production', value: `${pick.points ?? 0} pts • ${pick.statLine || 'No stat line'}`.slice(0, 1024), inline: false },
@@ -123,14 +141,28 @@ function fantasyPickEmbed(pick, title = 'Fantasy Pick Is In') {
 function fantasyOnClockPayload(league, snapshot, userId, componentSeasonKey) {
   const board = buildFantasyBoard(league, snapshot, { userId }).slice(0, 25);
   const pickNo = (league.draft?.picks || []).length + 1;
+  const quickPicks = board.slice(0, 4);
   const embed = new EmbedBuilder()
     .setTitle(`Fantasy Mock Pick ${pickNo} • On The Clock`)
     .setColor(0xf39c12)
-    .setDescription(`<@${userId}> is up.\n\nYou have **30 seconds** to pick. If the clock expires, LEAGUEbuddy will take the top board value for you.`)
+    .setDescription(`<@${userId}> is up. Use a quick-pick button or open the full menu.\n\nYou have **30 seconds**. If the clock expires, LEAGUEbuddy takes the top board value.`)
     .addFields(
-      { name: 'Top Board', value: board.slice(0, 8).map((asset, idx) => `${idx + 1}. ${asset.position} **${asset.name}** (${asset.teamName}) - ${asset.draftValue} value`).join('\n') || 'No eligible players available.', inline: false },
+      { name: 'Top Board', value: board.slice(0, 8).map((asset, idx) => `${idx + 1}. ${fantasyTeamEmoji(asset.teamName)} ${asset.position} **${asset.name}** (${asset.teamName}) - ${asset.draftValue} value`).join('\n') || 'No eligible players available.', inline: false },
     );
   const components = [];
+  if (quickPicks.length) {
+    components.push(new ActionRowBuilder().addComponents(
+      ...quickPicks.map((asset, idx) => {
+        const button = new ButtonBuilder()
+          .setCustomId(`madden_fantasy|mockkey_quickpick|${componentSeasonKey}|${encodeURIComponent(asset.assetId)}`)
+          .setLabel(`${idx + 1}. ${fantasyAssetButtonLabel(asset)}`)
+          .setStyle(idx === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary);
+        const emoji = discordEmojiData(fantasyTeamEmoji(asset.teamName));
+        if (emoji) button.setEmoji(emoji);
+        return button;
+      }),
+    ));
+  }
   if (board.length) {
     components.push(new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
@@ -145,9 +177,13 @@ function fantasyOnClockPayload(league, snapshot, userId, componentSeasonKey) {
     ));
   }
   components.push(new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
+      new ButtonBuilder()
       .setCustomId(`madden_fantasy|mockkey_simpick|${componentSeasonKey}`)
       .setLabel('Sim My Pick')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`madden_fantasy|mockkey_board|${componentSeasonKey}|0`)
+      .setLabel('Full Board')
       .setStyle(ButtonStyle.Secondary),
   ));
   return { content: `<@${userId}> is on the clock.`, embeds: [embed], components };
@@ -269,7 +305,7 @@ async function runFantasyMockTicker(client, guildId, seasonKey, snapshot, hostId
       if (!onClock) break;
 
       if (isCpuFantasyUser(onClock) || league.managers?.[onClock]?.autoPick) {
-        await delay(900);
+        await delay(FAST_CPU_PICK_MS);
         const { league: pickedLeague, result } = makeFantasyAutoPickForCurrent({ guildId, seasonKey, snapshot });
         if (!result?.ok) {
           await room.send({ embeds: [new EmbedBuilder().setTitle('Fantasy Pick Failed').setColor(0xe74c3c).setDescription(result?.reason || 'Could not make the CPU pick.')] }).catch(() => null);
@@ -727,6 +763,17 @@ export async function execute(interaction) {
       await replyError(interaction, 'Only staff can start the fantasy draft.');
       return;
     }
+    if (mode === 'mock' && league.draft?.status === 'live') {
+      await interaction.editReply({
+        content: `Fantasy mock is already live in <#${league.room?.channelId || interaction.channelId}>.`,
+        embeds: [],
+        components: [],
+      });
+      void runFantasyMockTicker(interaction.client, activeGuildId, seasonKey, snapshot, league.hostId || userId, componentSeasonKey).catch((error) => {
+        console.error('[fantasy_mock] ticker failed', error?.message || error);
+      });
+      return;
+    }
     let result = null;
     league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       if (mode === 'mock') resetFantasyDraft(draftLeague);
@@ -828,8 +875,8 @@ export async function execute(interaction) {
     return;
   }
 
-  if (action === 'pick') {
-    const assetId = interaction.values?.[0];
+  if (action === 'pick' || action === 'quickpick') {
+    const assetId = action === 'quickpick' ? decodeURIComponent(value || '') : interaction.values?.[0];
     let result = null;
     league = mutateFantasyLeague({ guildId: activeGuildId, seasonKey }, (draftLeague) => {
       const asset = findFantasyAsset(draftLeague, snapshot, assetId, userId);

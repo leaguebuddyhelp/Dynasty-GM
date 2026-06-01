@@ -747,20 +747,31 @@ function actionId(mode, action, value = null, seasonKey = null) {
 
 function baseButtons(active = 'hub', page = 0, mode = 'live', seasonKey = null) {
   const isMock = normalizeFantasyMode(mode) === 'mock';
-  const secondRowComponents = [
-    new ButtonBuilder().setCustomId(actionId(mode, 'start', null, seasonKey)).setLabel(isMock ? 'Start Mock' : 'Start Draft').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(actionId(mode, 'draft', null, seasonKey)).setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-    ...(!isMock ? [new ButtonBuilder().setCustomId(actionId(mode, 'trade', null, seasonKey)).setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary)] : []),
-    new ButtonBuilder().setCustomId(actionId(mode, 'invite', null, seasonKey)).setLabel('Invite Coaches').setStyle(ButtonStyle.Secondary),
-    isMock
-      ? new ButtonBuilder().setCustomId(actionId(mode, 'reset', null, seasonKey)).setLabel('Reset Mock').setStyle(ButtonStyle.Secondary)
-      : new ButtonBuilder().setCustomId(actionId('mock', 'hub')).setLabel('Mock Draft').setStyle(ButtonStyle.Secondary),
-  ];
   if (isMock) {
-    secondRowComponents.push(
-      new ButtonBuilder().setCustomId(actionId('live', 'hub')).setLabel('Live League').setStyle(ButtonStyle.Secondary),
-    );
+    return [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(actionId(mode, 'hub', null, seasonKey)).setLabel('🏠 Mock Hub').setStyle(active === 'hub' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(actionId(mode, 'draft', null, seasonKey)).setLabel('🎯 Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(actionId(mode, 'board', page, seasonKey)).setLabel('📋 Board').setStyle(active === 'board' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(actionId(mode, 'team', null, seasonKey)).setLabel('🧢 My Team').setStyle(active === 'team' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(actionId(mode, 'autopick', null, seasonKey)).setLabel('🤖 Auto Pick').setStyle(ButtonStyle.Secondary),
+      ),
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(actionId(mode, 'start', null, seasonKey)).setLabel('⚡ Start Mock').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(actionId(mode, 'invite', null, seasonKey)).setLabel('👥 Invite').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(actionId(mode, 'standings', null, seasonKey)).setLabel('🏆 Standings').setStyle(active === 'standings' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(actionId(mode, 'reset', null, seasonKey)).setLabel('🔄 Reset').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(actionId('live', 'hub')).setLabel('Live League').setStyle(ButtonStyle.Secondary),
+      ),
+    ];
   }
+  const secondRowComponents = [
+    new ButtonBuilder().setCustomId(actionId(mode, 'start', null, seasonKey)).setLabel('Start Draft').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId(actionId(mode, 'draft', null, seasonKey)).setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(actionId(mode, 'trade', null, seasonKey)).setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(actionId(mode, 'invite', null, seasonKey)).setLabel('Invite Coaches').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(actionId('mock', 'hub')).setLabel('Mock Draft').setStyle(ButtonStyle.Secondary),
+  ];
   const thirdRowComponents = [
     new ButtonBuilder().setCustomId(actionId(mode, 'autopick', null, seasonKey)).setLabel('Toggle Auto Pick').setStyle(ButtonStyle.Secondary),
   ];
