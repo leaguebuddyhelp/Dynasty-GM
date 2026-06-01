@@ -557,6 +557,12 @@ export async function execute(interaction) {
           .setStyle(ButtonStyle.Primary),
       );
     }
+    controls.addComponents(
+      new ButtonBuilder()
+        .setCustomId('madden_fantasy|hub')
+        .setLabel('Open Fantasy')
+        .setStyle(ButtonStyle.Secondary),
+    );
     await interaction.editReply({ embeds: [embed], components: controls.components.length ? [controls] : [], files });
     return;
   }
@@ -652,6 +658,7 @@ export async function execute(interaction) {
     .addComponents(
       new ButtonBuilder().setCustomId('madden_franchisehub_spend|activity').setLabel('Spend Activity').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId('madden_franchisehub_spend|impact').setLabel('Spend Impact').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('madden_fantasy|hub').setLabel('Open Fantasy').setStyle(ButtonStyle.Secondary),
     );
   if (recognition.weekNumber) {
     controls.addComponents(

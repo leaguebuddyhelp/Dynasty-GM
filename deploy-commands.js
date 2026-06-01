@@ -29,6 +29,7 @@ const BETA_MADDEN_COMMANDS = new Set([
   'setup',
   'help',
   'franchisehub',
+  'fantasy',
   'myscouts',
   'draftprimer',
   'mockdraft',

@@ -1,5 +1,6 @@
 const COMMAND_DESCRIPTIONS = {
   franchisehub: 'Your private franchise desk: roster pulse, league leverage, and next moves.',
+  fantasy: 'Open the Madden fantasy league hub and draft board.',
   gamestrategy: 'A matchup report with tendencies, weak spots, and weekly game-plan angles.',
   draftprimer: 'A draft-room brief with team needs, board pressure, and target lanes.',
   draftclass: 'Check which Madden draft class is locked for the current season.',
