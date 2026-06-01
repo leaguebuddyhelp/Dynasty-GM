@@ -16,6 +16,7 @@ import { getTeamEmojiByName } from './madden_visuals.js';
 const STORE_FILE = getMaddenDataFilePath('fantasy_leagues.json');
 const BOARD_PAGE_SIZE = 20;
 const SELECT_PAGE_SIZE = 25;
+export const FANTASY_CHAT_CHANNEL_ID = '1510874753014169661';
 const DEFAULT_ROSTER_SLOTS = {
   QB: 1,
   RB: 2,
@@ -428,6 +429,19 @@ function actionId(mode, action, value = null) {
 
 function baseButtons(active = 'hub', page = 0, mode = 'live') {
   const isMock = normalizeFantasyMode(mode) === 'mock';
+  const secondRowComponents = [
+    new ButtonBuilder().setCustomId(actionId(mode, 'start')).setLabel(isMock ? 'Start Mock' : 'Start Draft').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId(actionId(mode, 'draft')).setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(actionId(mode, 'trade')).setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    isMock
+      ? new ButtonBuilder().setCustomId(actionId(mode, 'reset')).setLabel('Reset Mock').setStyle(ButtonStyle.Secondary)
+      : new ButtonBuilder().setCustomId(actionId('mock', 'hub')).setLabel('Mock Draft').setStyle(ButtonStyle.Secondary),
+  ];
+  if (isMock) {
+    secondRowComponents.push(
+      new ButtonBuilder().setCustomId(actionId('live', 'hub')).setLabel('Live League').setStyle(ButtonStyle.Secondary),
+    );
+  }
   return [
     new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId(actionId(mode, 'hub')).setLabel(isMock ? 'Mock Hub' : 'Hub').setStyle(active === 'hub' ? ButtonStyle.Primary : ButtonStyle.Secondary),
@@ -436,17 +450,7 @@ function baseButtons(active = 'hub', page = 0, mode = 'live') {
       new ButtonBuilder().setCustomId(actionId(mode, 'team')).setLabel('My Team').setStyle(active === 'team' ? ButtonStyle.Primary : ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId(actionId(mode, 'standings')).setLabel('Standings').setStyle(active === 'standings' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     ),
-    new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId(actionId(mode, 'start')).setLabel(isMock ? 'Start Mock' : 'Start Draft').setStyle(ButtonStyle.Danger),
-      new ButtonBuilder().setCustomId(actionId(mode, 'draft')).setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId(actionId(mode, 'trade')).setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      isMock
-        ? new ButtonBuilder().setCustomId(actionId(mode, 'reset')).setLabel('Reset Mock').setStyle(ButtonStyle.Secondary)
-        : new ButtonBuilder().setCustomId(actionId('mock', 'hub')).setLabel('Mock Draft').setStyle(ButtonStyle.Secondary),
-      isMock
-        ? new ButtonBuilder().setCustomId(actionId('live', 'hub')).setLabel('Live League').setStyle(ButtonStyle.Secondary)
-        : new ButtonBuilder().setCustomId(actionId('live', 'channels')).setLabel('Channels').setStyle(ButtonStyle.Secondary),
-    ),
+    new ActionRowBuilder().addComponents(...secondRowComponents),
   ];
 }
 
@@ -460,8 +464,8 @@ export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live'
     .setTitle(isMock ? 'Madden Fantasy Mock Draft' : 'Madden Fantasy League')
     .setColor(0x5865f2)
     .setDescription(isMock
-      ? 'Test the yearly redraft flow here. Mock picks, mock rosters, and mock resets are separate from the real fantasy league.'
-      : 'Draft players from other Madden teams, then their real league production becomes your fantasy score. Own-team players and own-team defenses are blocked.')
+      ? `Test the yearly redraft flow here. Mock picks, mock rosters, and mock resets are separate from the real fantasy league. Use <#${FANTASY_CHAT_CHANNEL_ID}> for mock draft chat.`
+      : `Draft players from other Madden teams, then their real league production becomes your fantasy score. Own-team players and own-team defenses are blocked. Fantasy chat lives in <#${FANTASY_CHAT_CHANNEL_ID}>.`)
     .addFields(
       { name: 'Status', value: `${league.status} • ${managerCount} coaches joined`, inline: true },
       { name: 'Draft', value: league.draft?.status === 'live' ? `Live • on clock: <@${onClock}>` : league.draft?.status || 'not_started', inline: true },
@@ -569,18 +573,4 @@ export function buildFantasyTradePayload(league, userId) {
       { name: 'Your Team', value: manager ? manager.teamName : 'Join the league first.', inline: true },
     );
   return { embeds: [embed], components: baseButtons('trade', 0, league.isMock ? 'mock' : 'live') };
-}
-
-export function buildFantasyChannelsPayload(league, snapshot, userId) {
-  const embed = new EmbedBuilder()
-    .setTitle('Fantasy Channel Setup')
-    .setColor(0x95a5a6)
-    .setDescription('You only need a few channels because `/fantasy` handles the board, draft room, rosters, standings, and mock draft.')
-    .addFields(
-      { name: 'Required', value: '#fantasy-announcements\n#fantasy-draft-room\n#fantasy-chat', inline: false },
-      { name: 'Recommended', value: '#fantasy-trades\n#fantasy-scoreboard', inline: false },
-      { name: 'Optional', value: '#fantasy-mock-draft if you want testing separated from launch-day noise.', inline: false },
-      { name: 'Yearly Redraft', value: 'Each Madden calendar year gets its own fantasy league key, so new teams can be formed every season.', inline: false },
-    );
-  return { embeds: [embed], components: baseButtons('hub'), files: [] };
 }

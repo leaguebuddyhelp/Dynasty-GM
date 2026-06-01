@@ -3,7 +3,6 @@ import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_da
 import { hasStaffRole, loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import {
   buildFantasyBoardPayload,
-  buildFantasyChannelsPayload,
   buildFantasyDraftPayload,
   buildFantasyHubPayload,
   buildFantasyStandingsPayload,
@@ -155,11 +154,6 @@ export async function execute(interaction) {
 
   if (action === 'trade') {
     await interaction.editReply(buildFantasyTradePayload(league, userId));
-    return;
-  }
-
-  if (action === 'channels') {
-    await interaction.editReply(buildFantasyChannelsPayload(league, snapshot, userId));
     return;
   }
 
