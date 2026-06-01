@@ -622,6 +622,7 @@ function baseButtons(active = 'hub', page = 0, mode = 'live') {
     new ButtonBuilder().setCustomId(actionId(mode, 'start')).setLabel(isMock ? 'Start Mock' : 'Start Draft').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId(actionId(mode, 'draft')).setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(actionId(mode, 'trade')).setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    ...(!isMock ? [new ButtonBuilder().setCustomId(actionId(mode, 'invite')).setLabel('Invite Coaches').setStyle(ButtonStyle.Secondary)] : []),
     isMock
       ? new ButtonBuilder().setCustomId(actionId(mode, 'reset')).setLabel('Reset Mock').setStyle(ButtonStyle.Secondary)
       : new ButtonBuilder().setCustomId(actionId('mock', 'hub')).setLabel('Mock Draft').setStyle(ButtonStyle.Secondary),
