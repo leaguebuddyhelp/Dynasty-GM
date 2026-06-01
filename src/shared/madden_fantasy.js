@@ -28,6 +28,7 @@ const DEFAULT_ROSTER_SLOTS = {
 };
 const SKILL_POSITIONS = new Set(['QB', 'HB', 'RB', 'WR', 'TE', 'K']);
 const POSITION_LABELS = { HB: 'RB' };
+const FANTASY_MODES = new Set(['live', 'mock']);
 
 function nowIso() {
   return new Date().toISOString();
@@ -90,11 +91,23 @@ export function getFantasySeasonKey(league = {}) {
   return `madden:${year}`;
 }
 
+export function getFantasyLeagueKey(league = {}, mode = 'live') {
+  const baseKey = getFantasySeasonKey(league);
+  return mode === 'mock' ? `${baseKey}:mock` : baseKey;
+}
+
+export function normalizeFantasyMode(mode = 'live') {
+  const normalized = String(mode || 'live').toLowerCase();
+  return FANTASY_MODES.has(normalized) ? normalized : 'live';
+}
+
 function createLeague({ guildId, seasonKey }) {
   const rounds = rosterSize({ rosterSlots: DEFAULT_ROSTER_SLOTS });
+  const isMock = String(seasonKey || '').endsWith(':mock');
   return {
     guildId,
     seasonKey,
+    isMock,
     status: 'setup',
     createdAt: nowIso(),
     updatedAt: nowIso(),
@@ -135,6 +148,8 @@ export function ensureFantasyLeague({ guildId, seasonKey }) {
   if (!store.guilds[guildId].leagues[seasonKey]) {
     store.guilds[guildId].leagues[seasonKey] = createLeague({ guildId, seasonKey });
     saveFantasyStore(store);
+  } else {
+    store.guilds[guildId].leagues[seasonKey].isMock = String(seasonKey || '').endsWith(':mock');
   }
   return store.guilds[guildId].leagues[seasonKey];
 }
@@ -146,6 +161,7 @@ export function mutateFantasyLeague({ guildId, seasonKey }, mutator) {
     store.guilds[guildId].leagues[seasonKey] = createLeague({ guildId, seasonKey });
   }
   const league = store.guilds[guildId].leagues[seasonKey];
+  league.isMock = String(seasonKey || '').endsWith(':mock');
   const result = mutator(league) || league;
   result.updatedAt = nowIso();
   store.guilds[guildId].leagues[seasonKey] = result;
@@ -330,6 +346,23 @@ export function startFantasyDraft(league) {
   return { ok: true };
 }
 
+export function resetFantasyDraft(league) {
+  league.status = 'setup';
+  league.draft = {
+    status: 'not_started',
+    order: [],
+    round: 1,
+    pickIndex: 0,
+    picks: [],
+  };
+  for (const manager of Object.values(league.managers || {})) {
+    manager.roster = [];
+    manager.lineup = {};
+    manager.picks = [];
+  }
+  return { ok: true };
+}
+
 export function makeFantasyPick(league, asset, userId) {
   if (league.draft?.status !== 'live') return { ok: false, reason: 'The fantasy draft is not live yet.' };
   const onClock = currentFantasyDrafter(league);
@@ -388,50 +421,65 @@ function managerRosterAssets(league, snapshot, userId) {
     .filter(Boolean);
 }
 
-function baseButtons(active = 'hub', page = 0) {
+function actionId(mode, action, value = null) {
+  const prefix = normalizeFantasyMode(mode) === 'mock' ? `mock_${action}` : action;
+  return value === null ? `madden_fantasy|${prefix}` : `madden_fantasy|${prefix}|${value}`;
+}
+
+function baseButtons(active = 'hub', page = 0, mode = 'live') {
+  const isMock = normalizeFantasyMode(mode) === 'mock';
   return [
     new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('madden_fantasy|hub').setLabel('Hub').setStyle(active === 'hub' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('madden_fantasy|join').setLabel('Join').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId(`madden_fantasy|board|${page}`).setLabel('Draft Board').setStyle(active === 'board' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('madden_fantasy|team').setLabel('My Team').setStyle(active === 'team' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('madden_fantasy|standings').setLabel('Standings').setStyle(active === 'standings' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'hub')).setLabel(isMock ? 'Mock Hub' : 'Hub').setStyle(active === 'hub' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'join')).setLabel('Join').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(actionId(mode, 'board', page)).setLabel('Draft Board').setStyle(active === 'board' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'team')).setLabel('My Team').setStyle(active === 'team' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'standings')).setLabel('Standings').setStyle(active === 'standings' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     ),
     new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('madden_fantasy|start').setLabel('Start Draft').setStyle(ButtonStyle.Danger),
-      new ButtonBuilder().setCustomId('madden_fantasy|draft').setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('madden_fantasy|trade').setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'start')).setLabel(isMock ? 'Start Mock' : 'Start Draft').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId(actionId(mode, 'draft')).setLabel('Draft Room').setStyle(active === 'draft' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(actionId(mode, 'trade')).setLabel('Trade Center').setStyle(active === 'trade' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      isMock
+        ? new ButtonBuilder().setCustomId(actionId(mode, 'reset')).setLabel('Reset Mock').setStyle(ButtonStyle.Secondary)
+        : new ButtonBuilder().setCustomId(actionId('mock', 'hub')).setLabel('Mock Draft').setStyle(ButtonStyle.Secondary),
+      isMock
+        ? new ButtonBuilder().setCustomId(actionId('live', 'hub')).setLabel('Live League').setStyle(ButtonStyle.Secondary)
+        : new ButtonBuilder().setCustomId(actionId('live', 'channels')).setLabel('Channels').setStyle(ButtonStyle.Secondary),
     ),
   ];
 }
 
-export function buildFantasyHubPayload(league, snapshot, userId) {
+export function buildFantasyHubPayload(league, snapshot, userId, { mode = 'live' } = {}) {
+  const isMock = normalizeFantasyMode(mode) === 'mock';
   const managerCount = Object.keys(league.managers || {}).length;
   const onClock = currentFantasyDrafter(league);
   const board = buildFantasyBoard(league, snapshot, { userId });
   const preview = board.slice(0, 5).map((asset, idx) => `${idx + 1}. ${formatAssetLine(asset)}`).join('\n') || 'No eligible players found from the current export.';
   const embed = new EmbedBuilder()
-    .setTitle('Madden Fantasy League')
+    .setTitle(isMock ? 'Madden Fantasy Mock Draft' : 'Madden Fantasy League')
     .setColor(0x5865f2)
-    .setDescription('Draft players from other Madden teams, then their real league production becomes your fantasy score. Own-team players and own-team defenses are blocked.')
+    .setDescription(isMock
+      ? 'Test the yearly redraft flow here. Mock picks, mock rosters, and mock resets are separate from the real fantasy league.'
+      : 'Draft players from other Madden teams, then their real league production becomes your fantasy score. Own-team players and own-team defenses are blocked.')
     .addFields(
       { name: 'Status', value: `${league.status} • ${managerCount} coaches joined`, inline: true },
       { name: 'Draft', value: league.draft?.status === 'live' ? `Live • on clock: <@${onClock}>` : league.draft?.status || 'not_started', inline: true },
       { name: 'Lineup', value: 'QB, RB, RB, WR, WR, TE, FLEX, DST, K, 5 BN', inline: false },
       { name: 'Board Leaders', value: preview.slice(0, 1024), inline: false },
     )
-    .setFooter({ text: 'Scoring uses common half-PPR fantasy rules from current Madden season totals.' });
-  return { embeds: [embed], components: baseButtons('hub') };
+    .setFooter({ text: isMock ? 'Mock mode is safe to reset before launch.' : 'Scoring uses common half-PPR fantasy rules from current Madden season totals.' });
+  return { embeds: [embed], components: baseButtons('hub', 0, mode) };
 }
 
-export function buildFantasyBoardPayload(league, snapshot, userId, page = 0) {
+export function buildFantasyBoardPayload(league, snapshot, userId, page = 0, { mode = 'live' } = {}) {
   const board = buildFantasyBoard(league, snapshot, { userId });
   const maxPage = Math.max(0, Math.ceil(board.length / BOARD_PAGE_SIZE) - 1);
   const safePage = Math.min(Math.max(0, safeNumber(page)), maxPage);
   const slice = board.slice(safePage * BOARD_PAGE_SIZE, safePage * BOARD_PAGE_SIZE + BOARD_PAGE_SIZE);
   const onClock = currentFantasyDrafter(league);
   const embed = new EmbedBuilder()
-    .setTitle('Fantasy Draft Board')
+    .setTitle(normalizeFantasyMode(mode) === 'mock' ? 'Fantasy Mock Draft Board' : 'Fantasy Draft Board')
     .setColor(0x2ecc71)
     .setDescription(
       slice.map((asset) => `#${asset.rank} ${formatAssetLine(asset)}`).join('\n') || 'No eligible board entries on this page.',
@@ -439,15 +487,15 @@ export function buildFantasyBoardPayload(league, snapshot, userId, page = 0) {
     .addFields({ name: 'On Clock', value: onClock ? `<@${onClock}>` : 'Draft has not started.', inline: true })
     .setFooter({ text: `Page ${safePage + 1}/${maxPage + 1} • board excludes your own Madden team.` });
 
-  const rows = baseButtons('board', safePage);
+  const rows = baseButtons('board', safePage, mode);
   rows.push(new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`madden_fantasy|board|${Math.max(0, safePage - 1)}`).setLabel('Prev').setStyle(ButtonStyle.Secondary).setDisabled(safePage <= 0),
-    new ButtonBuilder().setCustomId(`madden_fantasy|board|${Math.min(maxPage, safePage + 1)}`).setLabel('Next').setStyle(ButtonStyle.Secondary).setDisabled(safePage >= maxPage),
+    new ButtonBuilder().setCustomId(actionId(mode, 'board', Math.max(0, safePage - 1))).setLabel('Prev').setStyle(ButtonStyle.Secondary).setDisabled(safePage <= 0),
+    new ButtonBuilder().setCustomId(actionId(mode, 'board', Math.min(maxPage, safePage + 1))).setLabel('Next').setStyle(ButtonStyle.Secondary).setDisabled(safePage >= maxPage),
   ));
   if (league.draft?.status === 'live' && onClock === userId && slice.length) {
     rows.push(new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
-        .setCustomId(`madden_fantasy|pick|${safePage}`)
+        .setCustomId(actionId(mode, 'pick', safePage))
         .setPlaceholder('Make your pick')
         .addOptions(slice.slice(0, SELECT_PAGE_SIZE).map((asset) => (
           new StringSelectMenuOptionBuilder()
@@ -471,7 +519,7 @@ export function buildFantasyTeamPayload(league, snapshot, userId) {
       { name: 'Roster', value: assets.length ? assets.map(formatAssetLine).join('\n').slice(0, 1024) : 'No drafted players yet.', inline: false },
       { name: 'Madden Team Block', value: (manager?.maddenTeamIds || []).length ? 'Own-team players are hidden from your draft board and blocked at pick time.' : 'No Madden team assignment found yet.', inline: false },
     );
-  return { embeds: [embed], components: baseButtons('team') };
+  return { embeds: [embed], components: baseButtons('team', 0, league.isMock ? 'mock' : 'live') };
 }
 
 export function buildFantasyStandingsPayload(league, snapshot) {
@@ -489,14 +537,14 @@ export function buildFantasyStandingsPayload(league, snapshot) {
       ? rows.map((row, idx) => `${idx + 1}. <@${row.manager.userId}> - ${row.total.toFixed(1)} draft-board pts • ${row.picks} players`).join('\n')
       : 'No coaches have joined yet.')
     .setFooter({ text: 'Live weekly scoring will use the same half-PPR scoring model.' });
-  return { embeds: [embed], components: baseButtons('standings') };
+  return { embeds: [embed], components: baseButtons('standings', 0, league.isMock ? 'mock' : 'live') };
 }
 
-export function buildFantasyDraftPayload(league, snapshot, userId) {
+export function buildFantasyDraftPayload(league, snapshot, userId, { mode = 'live' } = {}) {
   const onClock = currentFantasyDrafter(league);
   const lastPicks = (league.draft?.picks || []).slice(-6).reverse();
   const embed = new EmbedBuilder()
-    .setTitle('Fantasy Draft Room')
+    .setTitle(normalizeFantasyMode(mode) === 'mock' ? 'Fantasy Mock Draft Room' : 'Fantasy Draft Room')
     .setColor(0xe67e22)
     .setDescription(league.draft?.status === 'live'
       ? `Round ${league.draft.round}, Pick ${league.draft.pickIndex + 1} • On clock: <@${onClock}>`
@@ -505,7 +553,7 @@ export function buildFantasyDraftPayload(league, snapshot, userId) {
       { name: 'Order', value: (league.draft?.order || Object.keys(league.managers || {})).map((id, idx) => `${idx + 1}. <@${id}>`).join('\n') || 'No joined coaches yet.', inline: true },
       { name: 'Recent Picks', value: lastPicks.length ? lastPicks.map((pick) => `${pick.pickNo}. ${pick.position} ${pick.name} - <@${pick.userId}>`).join('\n') : 'No picks made yet.', inline: true },
     );
-  const payload = buildFantasyBoardPayload(league, snapshot, userId, 0);
+  const payload = buildFantasyBoardPayload(league, snapshot, userId, 0, { mode });
   return { embeds: [embed, ...payload.embeds], components: payload.components };
 }
 
@@ -520,5 +568,19 @@ export function buildFantasyTradePayload(league, userId) {
       { name: 'Rule', value: 'You still cannot receive or roster a player from your own Madden team.', inline: false },
       { name: 'Your Team', value: manager ? manager.teamName : 'Join the league first.', inline: true },
     );
-  return { embeds: [embed], components: baseButtons('trade') };
+  return { embeds: [embed], components: baseButtons('trade', 0, league.isMock ? 'mock' : 'live') };
+}
+
+export function buildFantasyChannelsPayload(league, snapshot, userId) {
+  const embed = new EmbedBuilder()
+    .setTitle('Fantasy Channel Setup')
+    .setColor(0x95a5a6)
+    .setDescription('You only need a few channels because `/fantasy` handles the board, draft room, rosters, standings, and mock draft.')
+    .addFields(
+      { name: 'Required', value: '#fantasy-announcements\n#fantasy-draft-room\n#fantasy-chat', inline: false },
+      { name: 'Recommended', value: '#fantasy-trades\n#fantasy-scoreboard', inline: false },
+      { name: 'Optional', value: '#fantasy-mock-draft if you want testing separated from launch-day noise.', inline: false },
+      { name: 'Yearly Redraft', value: 'Each Madden calendar year gets its own fantasy league key, so new teams can be formed every season.', inline: false },
+    );
+  return { embeds: [embed], components: baseButtons('hub'), files: [] };
 }

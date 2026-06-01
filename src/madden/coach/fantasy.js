@@ -4,7 +4,7 @@ import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_co
 import {
   buildFantasyHubPayload,
   ensureFantasyLeague,
-  getFantasySeasonKey,
+  getFantasyLeagueKey,
   mutateFantasyLeague,
   resolveCoachTeamIds,
   upsertFantasyManager,
@@ -32,7 +32,7 @@ export async function execute(interaction) {
     return;
   }
 
-  const seasonKey = getFantasySeasonKey(snapshot);
+  const seasonKey = getFantasyLeagueKey(snapshot);
   ensureFantasyLeague({ guildId: interaction.guildId, seasonKey });
   const maddenTeamIds = resolveCoachTeamIds(interaction.member, snapshot);
   const league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => (

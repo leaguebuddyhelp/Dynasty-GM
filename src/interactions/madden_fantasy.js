@@ -3,6 +3,7 @@ import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden/madden_da
 import { hasStaffRole, loadRoleMapForGuild } from '../madden/staff/staffUtils.js';
 import {
   buildFantasyBoardPayload,
+  buildFantasyChannelsPayload,
   buildFantasyDraftPayload,
   buildFantasyHubPayload,
   buildFantasyStandingsPayload,
@@ -10,9 +11,11 @@ import {
   buildFantasyTradePayload,
   ensureFantasyLeague,
   findFantasyAsset,
-  getFantasySeasonKey,
+  getFantasyLeagueKey,
   makeFantasyPick,
   mutateFantasyLeague,
+  normalizeFantasyMode,
+  resetFantasyDraft,
   resolveCoachTeamIds,
   startFantasyDraft,
   upsertFantasyManager,
@@ -22,13 +25,16 @@ export const customId = /^madden_fantasy\|/;
 
 function parseParts(interaction) {
   const [, action = 'hub', value = '0'] = interaction.customId.split('|');
-  return { action, value };
+  if (String(action || '').startsWith('mock_')) {
+    return { action: action.replace(/^mock_/, ''), value, mode: 'mock' };
+  }
+  return { action, value, mode: 'live' };
 }
 
-async function loadContext(interaction) {
+async function loadContext(interaction, mode = 'live') {
   const leagueId = requireLeagueIdForGuild(interaction.guildId);
   const snapshot = loadLeagueSnapshot(leagueId);
-  const seasonKey = getFantasySeasonKey(snapshot);
+  const seasonKey = getFantasyLeagueKey(snapshot, normalizeFantasyMode(mode));
   ensureFantasyLeague({ guildId: interaction.guildId, seasonKey });
   const maddenTeamIds = resolveCoachTeamIds(interaction.member, snapshot);
   const fantasyLeague = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (league) => (
@@ -47,7 +53,7 @@ async function replyError(interaction, content) {
 
 export async function execute(interaction) {
   if (!(interaction instanceof ButtonInteraction) && !(interaction instanceof StringSelectMenuInteraction)) return;
-  const { action, value } = parseParts(interaction);
+  const { action, value, mode } = parseParts(interaction);
 
   if (!interaction.deferred && !interaction.replied) {
     if (action === 'pick') await interaction.deferUpdate();
@@ -56,7 +62,7 @@ export async function execute(interaction) {
 
   let context;
   try {
-    context = await loadContext(interaction);
+    context = await loadContext(interaction, mode);
   } catch {
     await replyError(interaction, 'Fantasy could not load the connected Madden league. Run `/sync`, then open `/fantasy` again.');
     return;
@@ -70,7 +76,7 @@ export async function execute(interaction) {
     league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => (
       upsertFantasyManager(draftLeague, interaction.member, resolveCoachTeamIds(interaction.member, snapshot))
     ));
-    await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId));
+    await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode }));
     return;
   }
 
@@ -89,7 +95,25 @@ export async function execute(interaction) {
       await replyError(interaction, result?.reason || 'Fantasy draft could not be started.');
       return;
     }
-    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId));
+    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode }));
+    return;
+  }
+
+  if (action === 'reset') {
+    const roleMap = loadRoleMapForGuild(interaction.guildId);
+    if (mode !== 'mock') {
+      await replyError(interaction, 'Only the mock draft can be reset from this button.');
+      return;
+    }
+    if (!hasStaffRole(interaction.member, roleMap)) {
+      await replyError(interaction, 'Only staff can reset the fantasy mock draft.');
+      return;
+    }
+    league = mutateFantasyLeague({ guildId: interaction.guildId, seasonKey }, (draftLeague) => {
+      resetFantasyDraft(draftLeague);
+      return draftLeague;
+    });
+    await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode }));
     return;
   }
 
@@ -105,12 +129,12 @@ export async function execute(interaction) {
       await replyError(interaction, result?.reason || 'Pick could not be made.');
       return;
     }
-    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId));
+    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode }));
     return;
   }
 
   if (action === 'board') {
-    await interaction.editReply(buildFantasyBoardPayload(league, snapshot, userId, Number(value || 0)));
+    await interaction.editReply(buildFantasyBoardPayload(league, snapshot, userId, Number(value || 0), { mode }));
     return;
   }
 
@@ -125,7 +149,7 @@ export async function execute(interaction) {
   }
 
   if (action === 'draft') {
-    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId));
+    await interaction.editReply(buildFantasyDraftPayload(league, snapshot, userId, { mode }));
     return;
   }
 
@@ -134,7 +158,12 @@ export async function execute(interaction) {
     return;
   }
 
-  await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId));
+  if (action === 'channels') {
+    await interaction.editReply(buildFantasyChannelsPayload(league, snapshot, userId));
+    return;
+  }
+
+  await interaction.editReply(buildFantasyHubPayload(league, snapshot, userId, { mode }));
 }
 
 export default { customId, execute };
