@@ -43,7 +43,7 @@ function ensureStoreDir() {
 }
 
 function baseStore() {
-  return { guilds: {} };
+  return { guilds: {}, mockTokens: {} };
 }
 
 export function loadFantasyStore() {
@@ -60,6 +60,34 @@ export function loadFantasyStore() {
 export function saveFantasyStore(store) {
   ensureStoreDir();
   fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2));
+}
+
+function hashText(value = '') {
+  let hash = 2166136261;
+  for (let i = 0; i < String(value).length; i += 1) {
+    hash ^= String(value).charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+export function fantasyMockToken(guildId, seasonKey) {
+  const token = `m${hashText(`${guildId}::${seasonKey}`)}`;
+  const store = loadFantasyStore();
+  store.mockTokens = store.mockTokens || {};
+  store.mockTokens[token] = {
+    guildId: String(guildId || ''),
+    seasonKey: String(seasonKey || ''),
+    updatedAt: Date.now(),
+  };
+  saveFantasyStore(store);
+  return token;
+}
+
+export function resolveFantasyMockToken(token) {
+  const entry = loadFantasyStore().mockTokens?.[String(token || '')];
+  if (!entry?.guildId || !entry?.seasonKey) return null;
+  return entry;
 }
 
 function normalizeKey(value = '') {
@@ -710,7 +738,7 @@ export function buildFantasyDraftRecaps(league, snapshot) {
 
 function actionId(mode, action, value = null, seasonKey = null) {
   if (normalizeFantasyMode(mode) === 'mock' && seasonKey) {
-    const base = `madden_fantasy|mockkey_${action}|${encodeURIComponent(seasonKey)}`;
+    const base = `madden_fantasy|mockkey_${action}|${seasonKey}`;
     return value === null ? base : `${base}|${value}`;
   }
   const prefix = normalizeFantasyMode(mode) === 'mock' ? `mock_${action}` : action;

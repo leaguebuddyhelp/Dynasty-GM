@@ -20,6 +20,7 @@ import {
   buildFantasyTeamPayload,
   buildFantasyTradePayload,
   ensureFantasyLeague,
+  fantasyMockToken,
   findFantasyAsset,
   getFantasyLeagueKey,
   autoSimFantasyUntilManualPick,
@@ -27,6 +28,7 @@ import {
   mutateFantasyLeague,
   normalizeFantasyMode,
   resetFantasyDraft,
+  resolveFantasyMockToken,
   resolveCoachTeamIds,
   startFantasyDraft,
   toggleFantasyAutoPick,
@@ -42,14 +44,15 @@ const INVITE_TTL_MS = 1000 * 60 * 60 * 24;
 function parseParts(interaction) {
   const [, action = 'hub', value = '0'] = interaction.customId.split('|');
   if (String(action || '').startsWith('mockkey_')) {
+    const resolved = resolveFantasyMockToken(value);
     const decoded = decodeURIComponent(value || '');
-    const [guildIdOverride, seasonKeyOverride] = decoded.includes('::') ? decoded.split('::') : [null, decoded];
+    const [legacyGuildId, legacySeasonKey] = decoded.includes('::') ? decoded.split('::') : [null, decoded];
     return {
       action: action.replace(/^mockkey_/, ''),
       value: interaction.customId.split('|')[3] || '0',
       mode: 'mock',
-      guildIdOverride,
-      seasonKeyOverride,
+      guildIdOverride: resolved?.guildId || legacyGuildId,
+      seasonKeyOverride: resolved?.seasonKey || legacySeasonKey,
     };
   }
   if (String(action || '').startsWith('mock_')) {
@@ -159,7 +162,7 @@ async function buildFantasyInviteOptions(guild, league, hostId) {
 }
 
 function inviteActionId(mode, action, page = 0, seasonKey = null) {
-  if (mode === 'mock' && seasonKey) return `madden_fantasy|mockkey_${action}|${encodeURIComponent(seasonKey)}|${page}`;
+  if (mode === 'mock' && seasonKey) return `madden_fantasy|mockkey_${action}|${seasonKey}|${page}`;
   return `madden_fantasy|${action}|${page}`;
 }
 
@@ -293,7 +296,7 @@ export async function execute(interaction) {
     const components = isMockInvite
       ? [new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-          .setCustomId(`madden_fantasy|mockkey_draft|${encodeURIComponent(`${guildId}::${seasonKey}`)}`)
+          .setCustomId(`madden_fantasy|mockkey_draft|${fantasyMockToken(guildId, seasonKey)}`)
           .setLabel('Open Mock Draft Room')
           .setStyle(ButtonStyle.Primary),
       )]
@@ -320,7 +323,7 @@ export async function execute(interaction) {
 
   const { snapshot, seasonKey } = context;
   const activeGuildId = context.guildId || interaction.guildId;
-  const componentSeasonKey = mode === 'mock' ? `${activeGuildId}::${seasonKey}` : seasonKey;
+  const componentSeasonKey = mode === 'mock' ? fantasyMockToken(activeGuildId, seasonKey) : seasonKey;
   let league = context.fantasyLeague;
   const userId = interaction.user.id;
 
