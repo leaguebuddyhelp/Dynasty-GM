@@ -82,12 +82,26 @@ export function extractValidPersonas(entitlementsResponse, personaResponses, con
 }
 
 export async function exchangeLoginCode(rawUrl) {
-  const searchParams = rawUrl.substring(rawUrl.indexOf("?"));
-  const eaCodeParams = new URLSearchParams(searchParams);
-  const code = eaCodeParams.get("code");
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(rawUrl);
+  } catch {
+    throw new Error("Paste the full EA redirect URL, including ?code=.");
+  }
+  const code = parsedUrl.searchParams.get("code");
   if (!code) {
     throw new Error("Could not find ?code= in the URL you provided.");
   }
+  const redirectUri = `${parsedUrl.origin}${parsedUrl.pathname}`;
+  const body = new URLSearchParams({
+    authentication_source: String(AUTH_SOURCE),
+    client_secret: CLIENT_SECRET,
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: redirectUri,
+    release_type: "prod",
+    client_id: CLIENT_ID,
+  });
   const res = await fetch("https://accounts.ea.com/connect/token", {
     method: "POST",
     headers: {
@@ -96,7 +110,7 @@ export async function exchangeLoginCode(rawUrl) {
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
       "Accept-Encoding": "gzip",
     },
-    body: `authentication_source=${AUTH_SOURCE}&client_secret=${CLIENT_SECRET}&grant_type=authorization_code&code=${code}&redirect_uri=${REDIRECT_URL}&release_type=prod&client_id=${CLIENT_ID}`
+    body,
   });
   assertOk(res, 'exchange login code');
   return res.json();

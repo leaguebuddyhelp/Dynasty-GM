@@ -1160,7 +1160,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   }
 
   const eaStepCopy = !hasEaConnection
-    ? 'Open EA Login, sign in, then paste the returned URL here.'
+    ? 'Open EA Login, sign in, then paste the full returned browser URL here.'
     : authDraft?.personas?.length && !hasPersona
       ? 'EA login is saved. Choose the correct Madden account/persona next.'
       : `Connected as ${guildTokens?.personaName || selectedPersona?.displayName || 'your EA account'}.`;
@@ -1431,13 +1431,13 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           </div>
           <div class="step-mobile-summary">${hasEaConnection ? escapeHtml(eaStepCopy) : 'Connect EA to continue.'}</div>
           <div class="step-body">
-          <p style="color:#4b5563;">Sign in with EA in a new tab, then paste the returned browser URL here.</p>
+          <p style="color:#4b5563;">Sign in with EA in a new tab, then paste the full returned browser URL here.</p>
           <div class="info">
             <strong>EA login:</strong>
             <ol class="step-list">
               <li>Open EA Login.</li>
               <li>Sign in with EA in the new tab.</li>
-              <li>Copy the full returned URL.</li>
+              <li>If the tab lands on an upstream/error page after EA redirects, copy the full address bar URL anyway.</li>
               <li>Paste it below.</li>
             </ol>
           </div>
@@ -1457,7 +1457,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
               </div>
               <form method="POST" action="/madden/connect/ea-callback-url?token=${encodeURIComponent(token)}">
                 <label for="redirect_url"><strong>Returned Browser URL</strong></label><br />
-                <input id="redirect_url" name="redirect_url" placeholder="http://127.0.0.1/success?code=..." required />
+                <input id="redirect_url" name="redirect_url" placeholder="Paste the full URL with code= and state=..." required />
                 <button type="submit"${hasLeagueName ? '' : ' disabled'}>Save EA Login</button>
                 ${hasLeagueName ? '' : '<p class="warning">Save the league name first.</p>'}
               </form>

@@ -11,6 +11,7 @@ import {
   saveGuildEATokens,
 } from '../ea_guild_auth.js';
 import { ephemeralClientFromToken } from '../ea_client.js';
+import { APP_REDIRECT_URL, REDIRECT_URL } from '../ea_constants.js';
 import {
   exchangeLoginCode,
   exchangePersonaToken,
@@ -298,14 +299,29 @@ function publicBaseUrl() {
   return 'http://127.0.0.1:8080';
 }
 
-function isExpectedEaLoopbackUrl(value) {
-  const parsed = parseUrl(value);
+function sameCallbackUrl(a, b) {
+  const left = parseUrl(a);
+  const right = parseUrl(b);
   return Boolean(
+    left
+    && right
+    && left.protocol === right.protocol
+    && left.hostname === right.hostname
+    && left.port === right.port
+    && left.pathname === right.pathname
+  );
+}
+
+function isExpectedEaCallbackUrl(value) {
+  const parsed = parseUrl(value);
+  if (!parsed) return false;
+  const isLoopback = Boolean(
     parsed
     && parsed.protocol === 'http:'
     && parsed.hostname === '127.0.0.1'
     && parsed.pathname === '/success'
   );
+  return isLoopback || sameCallbackUrl(parsed.toString(), REDIRECT_URL) || sameCallbackUrl(parsed.toString(), APP_REDIRECT_URL);
 }
 
 async function withTimeout(task, ms, message) {
@@ -591,11 +607,11 @@ export async function submitEaRedirectUrl({
   if (!normalizedUrl) {
     return { ok: false, code: 'missing_redirect_url', message: 'Paste the full URL from the browser after EA login.' };
   }
-  if (!isExpectedEaLoopbackUrl(normalizedUrl)) {
+  if (!isExpectedEaCallbackUrl(normalizedUrl)) {
     return {
       ok: false,
       code: 'invalid_redirect_url',
-      message: 'Paste the full URL that starts with http://127.0.0.1/success after EA login finishes.',
+      message: 'Paste the full returned EA URL from the browser address bar. It should include ?code= and ?state=.',
     };
   }
 
