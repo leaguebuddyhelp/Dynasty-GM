@@ -322,7 +322,8 @@ function parsePickValue(label, seasonYear, options = {}) {
   let labelPick = pickNum && pickNum > 0 ? pickNum : null;
   const isFuture = year > seasonForCalc;
   const isCurrentYear = year === seasonForCalc;
-  const shouldAverageRound = isFuture || (isCurrentYear && !currentYearExactAllowed);
+  const hasExplicitPick = pickNum && pickNum > 0;
+  const shouldAverageRound = isFuture || (isCurrentYear && (!currentYearExactAllowed || !hasExplicitPick));
   if (shouldAverageRound) {
     const baseFuture = Math.max(floor, averageRoundPickValue(round));
     const diff = year - seasonForCalc;
@@ -332,7 +333,7 @@ function parsePickValue(label, seasonYear, options = {}) {
     if (round === 1 && diff >= 2 && value < 200) value = 200;
     labelPick = null;
   } else {
-    if (!pickNum || pickNum < 1) return null;
+    if (!hasExplicitPick) return null;
     const pickValueCurve = currentPickValue(round, pickNum);
     value = Math.max(floor, pickValueCurve);
   }

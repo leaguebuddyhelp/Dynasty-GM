@@ -10,7 +10,7 @@ import { RECOGNITION_EMOJIS } from '../../shared/madden_visuals.js';
 import { formatWeeklyRecognitionChallenge } from '../../shared/madden_recognition_challenges.js';
 import { postSportsbookWeek } from '../../shared/madden_sportsbook.js';
 import { loadMaddenChannelMap } from '../../shared/madden_metadata.js';
-import { getGuildRoleMap } from '../../shared/madden_guild_config.js';
+import { getGuildRoleMap, isPackEnabled } from '../../shared/madden_guild_config.js';
 import { hasFeatureAccess } from '../../leaguebuddy/access.js';
 import { hasStaffRole as hasGuildStaffRole, isStaffRoleName, loadRoleMapForGuild } from './staffUtils.js';
 
@@ -970,7 +970,7 @@ async function execute(interaction) {
     const recognitionAccess = hasFeatureAccess(interaction.guildId, 'recognition');
     const sportsbookAccess = hasFeatureAccess(interaction.guildId, 'sportsbook');
     const hasRecognition = recognitionAccess.ok;
-    const hasSportsbook = sportsbookAccess.ok;
+    const hasSportsbook = sportsbookAccess.ok || isPackEnabled(interaction.guildId, 'sportsbook');
     // Stats removed per request; keep flow lean and focused on buttons/strike instructions.
     let created = 0;
     const deadline = Math.floor((Date.now() + GAME_THREAD_DEADLINE_HOURS * 3600 * 1000) / 1000);
@@ -1113,9 +1113,10 @@ async function execute(interaction) {
         console.warn('[madden-creategamethreads] failed to set suggested game of the week', e?.message || e);
       }
     }
+    let sportsbookWeekStore = null;
     try {
       if (hasSportsbook) {
-        await postSportsbookWeek({
+        sportsbookWeekStore = await postSportsbookWeek({
           client: interaction.client,
           guild: interaction.guild,
           seasonKey: `year_${snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear()}`,
@@ -1168,7 +1169,7 @@ async function execute(interaction) {
                 .setStyle(ButtonStyle.Secondary),
             );
           }
-          if (hasSportsbook) {
+          if (hasSportsbook && (!sportsbookWeekStore || sportsbookWeekStore.lines?.length)) {
             announcementButtons.push(
               new ButtonBuilder()
                 .setCustomId(`madden_sportsbook_open|${wkNumeric}|board|0`)
