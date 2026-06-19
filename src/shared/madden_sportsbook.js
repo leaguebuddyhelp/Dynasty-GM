@@ -390,11 +390,25 @@ function firstBetBoostState(card = {}) {
   return `Available • your first bet of the season pays ${FIRST_BET_BOOST_MULTIPLIER}x profit if it wins`;
 }
 
-function isCoachOrLeaguebuddy(member, roleMap) {
-  return member.roles.cache.some((role) => {
+function memberHasLeaguebuddyCoachRole(member, roleMap) {
+  return member?.roles?.cache?.some((role) => {
     if (role.id === (roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'])) return true;
     return Object.entries(roleMap).some(([name, id]) => /coach$/i.test(name) && id === role.id);
-  });
+  }) === true;
+}
+
+function assignmentTeamsForMember(member, guildId = null) {
+  if (!member?.id || !guildId) return [];
+  const assignments = getCoachAssignmentMap({ guildId });
+  const entries = assignments?.userToTeams?.get(String(member.id)) || [];
+  return entries
+    .map((entry) => entry?.teamName || entry?.name || entry)
+    .filter(Boolean);
+}
+
+function isCoachOrLeaguebuddy(member, roleMap, guildId = null) {
+  if (memberHasLeaguebuddyCoachRole(member, roleMap)) return true;
+  return assignmentTeamsForMember(member, guildId).length > 0;
 }
 
 async function canUserBetSportsbook({ guild = null, guildId = null, userId = null }) {
@@ -403,11 +417,11 @@ async function canUserBetSportsbook({ guild = null, guildId = null, userId = nul
   const member = guild.members?.cache?.get?.(String(userId))
     || await guild.members?.fetch?.(String(userId)).catch(() => null);
   if (!member) return false;
-  return isCoachOrLeaguebuddy(member, roleMap);
+  return isCoachOrLeaguebuddy(member, roleMap, guildId);
 }
 
-function coachTeamsFromMember(member, roleMap) {
-  const teams = [];
+function coachTeamsFromMember(member, roleMap, guildId = null) {
+  const teams = assignmentTeamsForMember(member, guildId);
   for (const role of member?.roles?.cache?.values?.() || []) {
     for (const [name, id] of Object.entries(roleMap || {})) {
       if (id !== role.id) continue;
@@ -1600,7 +1614,7 @@ function validateParlayLeg({ guildId, member, liveContext, line, market, selecti
     return { ok: false, message: 'This game has already been logged as played. Betting is closed.' };
   }
   const roleMap = loadRoleMap(guildId);
-  const coachTeams = coachTeamsFromMember(member, roleMap).map(normalizeName);
+  const coachTeams = coachTeamsFromMember(member, roleMap, guildId).map(normalizeName);
   const bettingOwnGame = coachTeams.some((team) =>
     team === normalizeName(line.awayTeam) || team === normalizeName(line.homeTeam),
   );
@@ -1615,7 +1629,7 @@ function validateParlayLeg({ guildId, member, liveContext, line, market, selecti
 
 export function addSportsbookParlayLeg({ guildId, member, userId, seasonKey, weekNumber, gameId, market, selection }) {
   const roleMap = loadRoleMap(guildId);
-  if (!isCoachOrLeaguebuddy(member, roleMap)) {
+  if (!isCoachOrLeaguebuddy(member, roleMap, guildId)) {
     return { ok: false, message: 'Only coaches and LEAGUEbuddy Coaches can use parlays.' };
   }
   const liveContext = getSportsbookContextForGuild(guildId);
@@ -1684,7 +1698,7 @@ export function getSportsbookParlaySlip({ seasonKey, userId }) {
 
 export function placeSportsbookParlay({ guildId, member, userId, seasonKey, weekNumber, wager }) {
   const roleMap = loadRoleMap(guildId);
-  if (!isCoachOrLeaguebuddy(member, roleMap)) {
+  if (!isCoachOrLeaguebuddy(member, roleMap, guildId)) {
     return { ok: false, message: 'Only coaches and LEAGUEbuddy Coaches can use parlays.' };
   }
   const liveContext = getSportsbookContextForGuild(guildId);
@@ -1756,7 +1770,7 @@ export function placeSportsbookParlay({ guildId, member, userId, seasonKey, week
 
 export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNumber, gameId, market, selection, wager }) {
   const roleMap = loadRoleMap(guildId);
-  if (!isCoachOrLeaguebuddy(member, roleMap)) {
+  if (!isCoachOrLeaguebuddy(member, roleMap, guildId)) {
     return { ok: false, message: 'Only coaches and LEAGUEbuddy Coaches can use the sportsbook.' };
   }
   const liveContext = getSportsbookContextForGuild(guildId);
@@ -1772,7 +1786,7 @@ export function placeSportsbookBet({ guildId, member, userId, seasonKey, weekNum
   if (gameAlreadyPlayed(liveContext.leagueId, weekNumber, line, liveContext.games || [])) {
     return { ok: false, message: 'This game has already been logged as played. Betting is closed.' };
   }
-  const coachTeams = coachTeamsFromMember(member, roleMap).map(normalizeName);
+  const coachTeams = coachTeamsFromMember(member, roleMap, guildId).map(normalizeName);
   const bettingOwnGame = coachTeams.some((team) =>
     team === normalizeName(line.awayTeam) || team === normalizeName(line.homeTeam),
   );
@@ -2315,8 +2329,10 @@ export async function buildSportsbookPrivateView({ seasonKey, weekNumber, userId
         '',
         safeEmbedText(boardLines.join('\n'), 3400),
         '',
-        pageLines.length
+        pageLines.length && canBet
           ? `Bet buttons shown: **${pageStart + 1}-${pageStart + pageLines.length}**`
+          : pageLines.length
+            ? 'Betting unlocks once you have a coach assignment or LEAGUEbuddy Coaches access in this server.'
           : 'Futures board is not ready yet.',
       ].filter(Boolean).join('\n'))
       .setFooter({ text: 'Super Bowl futures stay open across advances until they are settled manually at season end' })
