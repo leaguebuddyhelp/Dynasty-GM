@@ -25,6 +25,33 @@ function formatRecord(team) {
   return t ? `${w}-${l}-${t}` : `${w}-${l}`;
 }
 
+function recordWinPct(team = {}) {
+  const wins = Number(team.totalWins ?? team.wins ?? team.w ?? 0);
+  const losses = Number(team.totalLosses ?? team.losses ?? team.l ?? 0);
+  const ties = Number(team.totalTies ?? team.ties ?? team.t ?? 0);
+  const games = wins + losses + ties;
+  return games ? (wins + ties * 0.5) / games : 0;
+}
+
+function recordSort(a, b) {
+  return recordWinPct(b) - recordWinPct(a)
+    || Number(b.totalWins ?? b.wins ?? b.w ?? 0) - Number(a.totalWins ?? a.wins ?? a.w ?? 0)
+    || Number(a.totalLosses ?? a.losses ?? a.l ?? 0) - Number(b.totalLosses ?? b.losses ?? b.l ?? 0)
+    || Number(b.divisionWins ?? b.divWins ?? -1) - Number(a.divisionWins ?? a.divWins ?? -1)
+    || Number(b.conferenceWins ?? b.confWins ?? -1) - Number(a.conferenceWins ?? a.confWins ?? -1)
+    || Number(b.netPts ?? 0) - Number(a.netPts ?? 0)
+    || Number(b.ptsFor ?? 0) - Number(a.ptsFor ?? 0)
+    || String(a.teamId ?? '').localeCompare(String(b.teamId ?? ''));
+}
+
+function isProvisionalRecordTie(team, list) {
+  return list.some((other) => other !== team
+      && Number(other.totalWins ?? other.wins ?? other.w ?? 0) === Number(team.totalWins ?? team.wins ?? team.w ?? 0)
+      && Number(other.totalLosses ?? other.losses ?? other.l ?? 0) === Number(team.totalLosses ?? team.losses ?? team.l ?? 0)
+      && Number(other.totalTies ?? other.ties ?? other.t ?? 0) === Number(team.totalTies ?? team.ties ?? team.t ?? 0)
+      && !(Number(other.seed || 0) > 0 && Number(team.seed || 0) > 0));
+}
+
 function teamNameMap(snapshot) {
   const map = {};
   const list = snapshot?.teams?.leagueTeamInfoList || [];
@@ -73,11 +100,7 @@ function sortDivision(list) {
     // Alphabetical by team name placeholder (we inject name in caller)
     return list;
   }
-  return list.sort((a, b) =>
-    (b.winPct ?? 0) - (a.winPct ?? 0) ||
-    (b.totalWins ?? 0) - (a.totalWins ?? 0) ||
-    (b.netPts ?? 0) - (a.netPts ?? 0)
-  );
+  return list.sort(recordSort);
 }
 
 export async function updateStandings(client, leagueId, guildId = null) {
@@ -136,9 +159,10 @@ export async function updateStandings(client, leagueId, guildId = null) {
         continue;
       }
       for (const team of sortedWithNames) {
+        const provisional = isProvisionalRecordTie(team, sortedWithNames);
         items.push({
           label: teams[team.teamId] || 'Team',
-          meta: formatRecord(team),
+          meta: `${formatRecord(team)}${provisional ? ' • Provisional tie-break' : ''}`,
           teamLike: teams[team.teamId] || 'Team',
         });
       }

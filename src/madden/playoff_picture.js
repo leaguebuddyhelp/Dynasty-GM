@@ -58,8 +58,11 @@ function recordSort(a, b) {
   return standingWinPct(b) - standingWinPct(a)
     || standingWins(b) - standingWins(a)
     || standingLosses(a) - standingLosses(b)
+    || Number(b.divisionWins ?? b.divWins ?? -1) - Number(a.divisionWins ?? a.divWins ?? -1)
+    || Number(b.conferenceWins ?? b.confWins ?? -1) - Number(a.conferenceWins ?? a.confWins ?? -1)
     || (b.netPts ?? 0) - (a.netPts ?? 0)
-    || (b.ptsFor ?? 0) - (a.ptsFor ?? 0);
+    || (b.ptsFor ?? 0) - (a.ptsFor ?? 0)
+    || String(a.teamId ?? '').localeCompare(String(b.teamId ?? ''));
 }
 
 function existingSeedSort(a, b) {
@@ -75,9 +78,23 @@ function computeConferenceSeeds(standings, conferenceName) {
   const list = standings.filter(s => (s.conferenceName || '').toLowerCase().includes(conferenceName));
   if (!list.length) return [];
   const explicitSeeds = list
-    .filter((team) => Number(team.seed || 0) > 0)
+    .filter((team) => Number(team.seed || 0) > 0 && Number(team.seed) <= 7)
     .sort(existingSeedSort);
-  if (explicitSeeds.length >= 7) return explicitSeeds.slice(0, 7);
+  const explicitSeedMap = new Map();
+  const explicitTeamIds = new Set();
+  for (const team of explicitSeeds) {
+    const seed = Number(team.seed);
+    const teamId = String(team.teamId);
+    if (explicitSeedMap.has(seed) || explicitTeamIds.has(teamId)) continue;
+    explicitSeedMap.set(seed, team);
+    explicitTeamIds.add(teamId);
+  }
+  if ([1, 2, 3, 4, 5, 6, 7].every((seed) => explicitSeedMap.has(seed))) {
+    return [1, 2, 3, 4, 5, 6, 7].map((seed) => ({
+      team: explicitSeedMap.get(seed),
+      authoritative: true,
+    }));
+  }
 
   const byDiv = {};
   list.forEach((team) => {
@@ -93,20 +110,53 @@ function computeConferenceSeeds(standings, conferenceName) {
   const wildcards = list
     .filter((team) => !winnerIds.has(Number(team.teamId)))
     .sort(recordSort);
-  return [...divisionWinners.slice(0, 4), ...wildcards.slice(0, 3)];
+  const projected = [...divisionWinners.slice(0, 4), ...wildcards.slice(0, 3)];
+  if (!explicitSeedMap.size) return projected.map((team) => ({ team, authoritative: false }));
+  const slots = new Map(explicitSeedMap);
+  const used = new Set([...slots.values()].map((team) => String(team.teamId)));
+  const remaining = projected.filter((team) => !used.has(String(team.teamId)));
+  for (let seed = 1; seed <= 7 && remaining.length; seed += 1) {
+    if (!slots.has(seed)) slots.set(seed, remaining.shift());
+  }
+  return [...slots.entries()]
+    .sort(([a], [b]) => a - b)
+    .slice(0, 7)
+    .map(([seed, team]) => ({ team, authoritative: Number(team.seed || 0) === seed }));
 }
 
 function topSeeds(standings, conferenceName, teams) {
   const list = computeConferenceSeeds(standings, conferenceName);
   if (!list.length) return Array.from({ length: 7 }, (_, i) => `${i + 1}) N/A`);
-  const seeds = list.slice(0, 7).map((s, idx) => {
-    const name = teams[s.teamId] || 'Team';
-    const record = formatRecord(s);
-    const seed = Number(s.seed || 0) || idx + 1;
-    return `${seed}) ${name} — ${record}`;
+  const seeds = list.slice(0, 7).map(({ team, authoritative }, idx) => {
+    const name = teams[team.teamId] || 'Team';
+    const record = formatRecord(team);
+    const seed = Number(team.seed || 0) || idx + 1;
+    return `${seed}) ${name} — ${record}${authoritative ? '' : ' • Projected'}`;
   });
   while (seeds.length < 7) seeds.push(`${seeds.length + 1}) N/A`);
   return seeds;
+}
+
+function completedPostseasonGames(snapshot, teams) {
+  const games = snapshot?.schedule?.schedules || [];
+  return games
+    .filter((game) => Number(game.stageIndex ?? game.stage ?? -1) === 2)
+    .filter((game) => {
+      if (game.homeScore === null || game.homeScore === undefined
+        || game.awayScore === null || game.awayScore === undefined) return false;
+      const homeScore = Number(game.homeScore);
+      const awayScore = Number(game.awayScore);
+      return (Number(game.status ?? 0) >= 2 || homeScore > 0 || awayScore > 0)
+        && Number.isFinite(homeScore)
+        && Number.isFinite(awayScore);
+    })
+    .map((game) => {
+      const week = Number(game.weekIndex);
+      const away = teams[game.awayTeamId] || `Team ${game.awayTeamId}`;
+      const home = teams[game.homeTeamId] || `Team ${game.homeTeamId}`;
+      return `Week ${Number.isInteger(week) ? week + 1 : '?'}: ${away} ${game.awayScore} — ${home} ${game.homeScore}`;
+    })
+    .slice(-8);
 }
 
 export async function updatePlayoffPicture(client, leagueId, guildId = null) {
@@ -169,6 +219,10 @@ export async function updatePlayoffPicture(client, leagueId, guildId = null) {
     .setTitle('Madden Playoff Picture')
     .setColor(0x00b0f4)
     .setTimestamp(new Date());
+  const postseasonGames = completedPostseasonGames(snapshot, teams);
+  embed.setDescription(postseasonGames.length
+    ? `Imported postseason results\n${postseasonGames.join('\n')}`.slice(0, 4096)
+    : 'Projected seeds are provisional until Madden provides authoritative seeds. Completed postseason games are shown only when imported results are available.');
   if (boardImage) embed.setImage(`attachment://${boardImage.name}`);
 
   await ensureBoardPinMessage(channel, {

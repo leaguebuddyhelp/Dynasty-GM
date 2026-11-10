@@ -6,6 +6,7 @@ import { computeGradeFromRank } from './top_players.js';
 import { computeWeeklyList } from './top_players.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
@@ -496,7 +497,9 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   buildRosterYearsPro(snapshot);
   const channelMap = loadChannelMap(guildId);
   const roleMap = loadRoleMap(guildId);
-  const awardsChannelId = channelMap['Weekly Awards'] || channelMap['Yearly Awards'] || channelMap['Awards'];
+  const awardsChannelId = isSoloModeEnabled()
+    ? channelMap.Awards || channelMap['Weekly Awards'] || channelMap['Yearly Awards']
+    : channelMap['Weekly Awards'] || channelMap['Yearly Awards'] || channelMap.Awards;
   const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId).catch(() => null) : null);
   if (!interaction && !targetChannel?.isTextBased()) {
     console.warn('[awards] Awards channel not text-based or missing.');
@@ -888,6 +891,21 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   }
   awardsStore[leagueId] = { ...leagueStore, [awardsWeek]: winners };
   saveJson(AWARDS_FILE, awardsStore);
+  if (isSoloModeEnabled() && guildId) {
+    try {
+      const { refreshProgressionForAwardChange } = await import('./progression.js');
+      await refreshProgressionForAwardChange({
+        client,
+        guildId,
+        leagueId,
+        snapshot,
+        weekNumber: awardsWeek,
+        winners,
+      });
+    } catch (error) {
+      console.error('[progression] failed to refresh after weekly award update', error);
+    }
+  }
 }
 
 export default { updateAwards };

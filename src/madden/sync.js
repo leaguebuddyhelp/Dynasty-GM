@@ -23,6 +23,7 @@ import {
   validateFranchiseSnapshot,
 } from './madden_sync_history.js';
 import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
+import { getMaddenChannelId } from '../shared/madden_metadata.js';
 
 const leagueDir = getMaddenLeaguesDir();
 const prevDir = path.join(leagueDir, 'previous');
@@ -42,6 +43,30 @@ async function emitProgress(options, phase, detail) {
   } catch {
     // ignore progress update errors
   }
+}
+
+async function postDataImportSummary(client, guildId, summary) {
+  const channelId = getMaddenChannelId('Data Imports', guildId);
+  if (!channelId) return { posted: false, reason: 'Data Imports channel is not configured.' };
+  const channel = await client.channels.fetch(channelId);
+  if (!channel?.isTextBased()) throw new Error('Configured Data Imports channel is unavailable or not text-based.');
+  const missingBuckets = summary.coverage?.missingBuckets || [];
+  const warningText = missingBuckets.length
+    ? missingBuckets.slice(0, 5).map((bucket) => `${bucket.stage === 2 ? 'postseason' : 'regular season'} week ${Number(bucket.weekIndex) + 1}`).join(', ')
+    : 'None';
+  const embed = new EmbedBuilder()
+    .setTitle('Madden Data Import')
+    .setColor(missingBuckets.length ? 0xf1c40f : 0x2ecc71)
+    .setDescription(`Sync \`${summary.syncId}\` completed for league \`${summary.leagueId}\`.`)
+    .addFields(
+      { name: 'Teams / Rosters', value: `${summary.teamsCount} teams / ${summary.rosterCount} roster teams`, inline: true },
+      { name: 'Standings / Games', value: `${summary.standingsCount} standings / ${summary.gamesCount} games`, inline: true },
+      { name: 'Stat Weeks / Free Agents', value: `${summary.statsWeeks} weeks / ${summary.coverage?.freeAgents ?? 0} free agents`, inline: true },
+      { name: 'Import warnings', value: warningText, inline: false },
+    )
+    .setTimestamp(new Date(summary.syncedAt));
+  await channel.send({ embeds: [embed] });
+  return { posted: true, channelId };
 }
 
 async function ensureDir() {
@@ -579,6 +604,26 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         console.error('[solo-reports] failed to publish sync reports', error);
       }
     }
+    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+      try {
+        const { publishProgressionReports } = await import('./progression.js');
+        const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
+        result.progression = await publishProgressionReports({
+          client: options.client,
+          guildId: options.guildId,
+          snapshot: archivedSnapshot,
+        });
+      } catch (error) {
+        result.progression = { published: false, error: error?.message || String(error) };
+        console.error('[progression] failed to publish sync recommendations', error);
+      }
+      try {
+        result.dataImportSummary = await postDataImportSummary(options.client, options.guildId, summary);
+      } catch (error) {
+        result.dataImportSummary = { posted: false, error: error?.message || String(error) };
+        console.error('[madden-sync] failed to post data import summary', error);
+      }
+    }
     if (!duplicate && options.requestId && options.client && options.guildId) {
       try {
         const { maybePostDraftGrades } = await import('./draft_grades_auto.js');
@@ -677,6 +722,16 @@ async function execute(interaction) {
         ? `Posted for week ${summary.weeklyMockDraft.weekNumber}`
         : summary.weeklyMockDraft.reason || summary.weeklyMockDraft.error || 'Not posted'
       : null;
+    const progressionStatus = summary.progression
+      ? summary.progression.published
+        ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads`
+        : summary.progression.error || summary.progression.reason || 'No recommendations met evidence thresholds'
+      : null;
+    const importSummaryStatus = summary.dataImportSummary
+      ? summary.dataImportSummary.posted
+        ? 'Posted in Data Imports'
+        : summary.dataImportSummary.error || summary.dataImportSummary.reason || 'Not posted'
+      : null;
     const embed = new EmbedBuilder()
       .setTitle('Madden Sync')
       .setColor(0x00cc66)
@@ -690,6 +745,8 @@ async function execute(interaction) {
         { name: 'Stats Weeks', value: String(summary.statsWeeks), inline: true },
         { name: 'Coverage', value: `Schedule weeks: ${summary.coverage?.scheduleWeeks ?? 0}\nMissing stat buckets: ${summary.coverage?.missingBuckets?.length ?? 0}`, inline: true },
         ...(soloReportStatus ? [{ name: 'Solo reports', value: soloReportStatus, inline: false }] : []),
+        ...(progressionStatus ? [{ name: 'Player progression', value: progressionStatus, inline: false }] : []),
+        ...(importSummaryStatus ? [{ name: 'Data import summary', value: importSummaryStatus, inline: false }] : []),
         ...(weeklyMockStatus ? [{ name: 'Weekly mock draft', value: weeklyMockStatus, inline: false }] : []),
         { name: 'Saved', value: summary.outPath, inline: false },
         { name: 'Next', value: 'Return to `/setup` and press Check Again.', inline: false }

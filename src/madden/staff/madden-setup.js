@@ -103,12 +103,10 @@ const SOLO_CHANNEL_SPECS = [
     { key: 'Team Overalls', name: 'team-overalls', categoryKey: 'Franchise HQ' },
     { key: 'Player Overalls', name: 'player-overalls', categoryKey: 'Franchise HQ' },
     { key: 'Awards', name: 'awards', categoryKey: 'Franchise HQ' },
-    { key: 'Data Imports', name: 'data-imports', categoryKey: 'Franchise Management' },
-    { key: 'Weekly Progression', name: 'weekly-progression', categoryKey: 'Franchise Management' },
-    { key: 'Offseason Progression', name: 'offseason-progression', categoryKey: 'Franchise Management' },
-    { key: 'Franchise History', name: 'franchise-history', categoryKey: 'Franchise Management' },
-    { key: 'Draft Results', name: 'draft-results', categoryKey: 'Franchise Management' },
+    { key: 'Data Imports', name: 'data-imports' },
+    { key: 'Player Upgrades', name: 'player-upgrades', categoryKey: 'Franchise Management' },
     { key: 'Mock Draft', name: 'mock-draft', categoryKey: 'Franchise Management' },
+    { key: 'Draft Results', name: 'draft-results', categoryKey: 'Franchise Management' },
 ].map((spec) => ({ ...spec, type: ChannelType.GuildText }));
 
 const TRADE_CHANNEL_SPECS = [
@@ -133,8 +131,13 @@ const SOLO_CATEGORY_SPECS = [
 const LEGACY_UNSUPPORTED_CHANNEL_KEYS = ['rulesOps', 'breakdown', 'LG Logs'];
 
 function channelSpecsForTier(tier, tradeEnabled) {
+    const coreChannels = CORE_CHANNEL_SPECS.map((spec) => (
+        isSoloModeEnabled() && ['Standings', 'Stat Leaders', 'Power Rankings', 'Playoff Picture'].includes(spec.key)
+            ? { ...spec, categoryKey: 'Franchise HQ' }
+            : spec
+    ));
     return [
-        ...CORE_CHANNEL_SPECS,
+        ...coreChannels,
         ...(tier === 'standard' || tier === 'premium' ? STANDARD_PLUS_CHANNEL_SPECS : []),
         ...(tradeEnabled ? TRADE_CHANNEL_SPECS : []),
         ...(isSoloModeEnabled() ? SOLO_CHANNEL_SPECS : []),
@@ -744,12 +747,14 @@ export async function execute(interaction) {
             categoryByKey.set(cat.key, rootCategory);
         }
         const overwritePlan = buildSetupOverwrites(guild, cfg.compat.maddenRoleMap);
-        const categoryOverwrite = await applyOverwrites(rootCategory, overwritePlan.category);
-        if (!categoryOverwrite.ok) {
-            overwriteFailures.push({
-                name: rootCategory?.name || 'LEAGUEbuddy Madden',
-                error: categoryOverwrite.error?.message || String(categoryOverwrite.error || 'Missing Permissions'),
-            });
+        for (const [categoryKey, category] of categoryByKey) {
+            const categoryOverwrite = await applyOverwrites(category, overwritePlan.category);
+            if (!categoryOverwrite.ok) {
+                overwriteFailures.push({
+                    name: category?.name || categoryKey,
+                    error: categoryOverwrite.error?.message || String(categoryOverwrite.error || 'Missing Permissions'),
+                });
+            }
         }
         if (!isSoloModeEnabled()) {
             await pruneUnsupportedSetupChannels(guild, cfg, activeChannelSpecs);
@@ -759,7 +764,7 @@ export async function execute(interaction) {
         for (const spec of activeChannelSpecs) {
             const parentCategory = spec.categoryKey
                 ? categoryByKey.get(spec.categoryKey)
-                : rootCategory;
+                : categoryByKey.get('LB Madden');
             const ch = await ensureTextChannelInCategoryWithRetry(guild, spec, parentCategory?.id || null);
             const overwriteResult = await applyOverwrites(ch, overwritePlan.channels[spec.key] || []);
             if (!overwriteResult.ok) {

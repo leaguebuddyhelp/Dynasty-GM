@@ -10,11 +10,13 @@ import {
 import fs from 'fs';
 import path from 'path';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
+import { getMaddenSeasonKey, loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
-import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { hasStaffRole } from '../madden/staff/staffUtils.js';
+import { stablePlayerKey } from '../madden/player_identity.js';
+import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 
 function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -46,6 +48,18 @@ function findPlayer(snapshot, name) {
     }
   }
   return null;
+}
+
+function findVerifiedPlayer(snapshot, name) {
+  const target = normalize(name);
+  if (!target) return null;
+  const matches = [];
+  for (const roster of Object.values(snapshot?.rosters?.teams || {})) {
+    for (const player of roster?.rosterInfoList || []) {
+      if (normalize(`${player.firstName || ''} ${player.lastName || ''}`) === target) matches.push(player);
+    }
+  }
+  return matches.length === 1 ? matches[0] : null;
 }
 
 function findTeam(snapshot, input) {
@@ -139,7 +153,9 @@ export async function execute_modal(interaction) {
   const snapshot = loadLeagueSnapshot(leagueId);
   const roleMap = loadRoleMap(interaction.guildId);
   const channelMap = loadMaddenChannelMap(interaction.guildId);
-  const awardsChannelId = channelMap['Yearly awards'] || channelMap['Yearly Awards'] || channelMap['Awards'];
+  const awardsChannelId = isSoloModeEnabled()
+    ? channelMap.Awards || channelMap['Yearly awards'] || channelMap['Yearly Awards']
+    : channelMap['Yearly awards'] || channelMap['Yearly Awards'] || channelMap.Awards;
   // Fallback season year: use config.json if snapshot lacks seasonYear
   let seasonYear =
     snapshot?.info?.careerHubInfo?.seasonInfo?.seasonYear ||
@@ -175,8 +191,20 @@ export async function execute_modal(interaction) {
   };
 
   const posts = [];
-  const addPlayerAward = (key, label) => {
+  const progressionAwards = [];
+  const seasonKey = getMaddenSeasonKey(snapshot);
+  const addPlayerAward = (key, label, type = 'major') => {
     const player = findPlayer(snapshot, inputs[key]);
+    const verifiedPlayer = findVerifiedPlayer(snapshot, inputs[key]);
+    const playerKey = verifiedPlayer ? stablePlayerKey(verifiedPlayer) : null;
+    if (playerKey) {
+      progressionAwards.push({
+        awardId: `${seasonKey}:${key}`,
+        name: label,
+        type,
+        playerKey,
+      });
+    }
     const teamId = player?.teamId;
     const team = (snapshot?.teams?.leagueTeamInfoList || []).find(t => t.teamId === teamId);
     const emoji = teamEmoji(team);
@@ -200,7 +228,7 @@ export async function execute_modal(interaction) {
   };
 
   try {
-    addPlayerAward('mvp', fields.mvp);
+    addPlayerAward('mvp', fields.mvp, 'mvp');
     addTeamAward('coy', fields.coy);
     const [opoyVal, dpoyVal] = splitPair(inputs.opdpoy);
     const [oroyVal, droyVal] = splitPair(inputs.rookies);
@@ -231,6 +259,29 @@ export async function execute_modal(interaction) {
     }
     for (const p of posts) {
       await channel.send({ content: p.content ?? null, embeds: [p.embed] });
+    }
+    if (progressionAwards.length) {
+      try {
+        const { recordSeasonAwards, refreshProgressionForSeasonAwardChange } = await import('../madden/progression.js');
+        await recordSeasonAwards({ leagueId, seasonKey, awards: progressionAwards });
+        if (isSoloModeEnabled()) {
+          try {
+            await refreshProgressionForSeasonAwardChange({
+              client: interaction.client,
+              guildId: interaction.guildId,
+              snapshot,
+            });
+          } catch (error) {
+            console.error('[madden_awards] saved annual awards but failed to refresh offseason progression:', error);
+            await interaction.editReply({ content: 'Yearly awards were posted and saved, but offseason recommendations could not be refreshed. Check the server logs.' });
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('[madden_awards] posted annual awards but failed to save progression records:', error);
+        await interaction.editReply({ content: 'Yearly awards were posted, but progression award history could not be saved. Check the server logs.' });
+        return;
+      }
     }
     await interaction.editReply({ content: 'Yearly awards posted.' });
   } catch (err) {

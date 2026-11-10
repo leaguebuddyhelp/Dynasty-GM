@@ -34,5 +34,276 @@
       "returnSpecialists": 0.2
     },
     "returnSpecialistCount": 2
+  },
+  "progression": {
+    "version": 1,
+    "weekly": {
+      "maximumRecommendations": 25,
+      "preferredRecommendationRange": [20, 25],
+      "minimumUpgradeSelectionScore": 58,
+      "performanceWeight": 0.8,
+      "expectationWeight": 0.2,
+      "individualGameWeight": 0.4,
+      "recentFourGameWeight": 0.35,
+      "seasonToDateWeight": 0.25,
+      "rollingGames": 4,
+      "strongGameScore": 68,
+      "poorGameScore": 34,
+      "consistencyBonusByStrongGames": {
+        "0": 0,
+        "1": 0,
+        "2": 2,
+        "3": 4,
+        "4": 6
+      },
+      "exceptionalConsistencyBonus": 2,
+      "exceptionalConsistencyAverage": 88,
+      "teamBalancePenalty": 3,
+      "positionBalancePenalty": 2,
+      "positiveChangeTiers": [
+        { "minimumScore": 72, "attributePoints": 1 },
+        { "minimumScore": 82, "attributePoints": 2 },
+        { "minimumScore": 90, "attributePoints": 3 },
+        { "minimumScore": 96, "attributePoints": 4 },
+        { "minimumScore": 99, "attributePoints": 5 }
+      ],
+      "negativeChangeTiers": [
+        { "maximumScore": 28, "attributePoints": -1 },
+        { "maximumScore": 20, "attributePoints": -2 },
+        { "maximumScore": 12, "attributePoints": -3 },
+        { "maximumScore": 5, "attributePoints": -4 },
+        { "maximumScore": 1, "attributePoints": -5 }
+      ],
+      "meaningfulOpportunityMinimums": {
+        "QB": { "passAtt": 8 },
+        "HB": { "rushAtt": 5, "recCatches": 2 },
+        "FB": { "rushAtt": 3, "recCatches": 2 },
+        "WR": { "recCatches": 2 },
+        "TE": { "recCatches": 2 },
+        "DEF": { "defTotalTackles": 2, "defSacks": 1, "defInts": 1, "defPassDeflections": 1 },
+        "K": { "fgAtt": 1, "xpAtt": 1 },
+        "P": { "pntAtt": 2 }
+      },
+      "negativeEvidence": {
+        "QB": [
+          { "attribute": "Throw Accuracy Short", "field": "passInts", "minimum": 1, "minimumOpportunities": 15, "opportunityField": "passAtt" },
+          { "attribute": "Throw Accuracy Short", "field": "passComp", "maximumRate": 0.45, "minimumOpportunities": 20, "opportunityField": "passAtt", "rateField": "passAtt" }
+        ],
+        "HB": [
+          { "attribute": "Carrying", "field": "fumbles", "minimum": 1, "minimumOpportunities": 8, "opportunityField": "rushAtt" },
+          { "attribute": "Ball Carrier Vision", "field": "rushYds", "maximumRate": 2.5, "minimumOpportunities": 12, "opportunityField": "rushAtt", "rateField": "rushAtt" }
+        ],
+        "FB": [
+          { "attribute": "Carrying", "field": "fumbles", "minimum": 1, "minimumOpportunities": 5, "opportunityField": "rushAtt" }
+        ],
+        "WR": [
+          { "attribute": "Route Running", "field": "recYds", "maximumRate": 5, "minimumOpportunities": 4, "opportunityField": "recCatches", "rateField": "recCatches" }
+        ],
+        "TE": [
+          { "attribute": "Route Running", "field": "recYds", "maximumRate": 5, "minimumOpportunities": 3, "opportunityField": "recCatches", "rateField": "recCatches" }
+        ],
+        "K": [
+          { "attribute": "Kick Accuracy", "field": "fgMade", "minimumMisses": 2, "minimumOpportunities": 3, "opportunityField": "fgAtt", "attemptsField": "fgAtt" }
+        ],
+        "P": [
+          { "attribute": "Kick Power", "field": "pntYds", "maximumRate": 38, "minimumOpportunities": 3, "opportunityField": "pntAtt", "rateField": "pntAtt" }
+        ]
+      },
+      "attributeFields": {
+        "Throw Accuracy Short": "throwAccuracyRating",
+        "Throw Accuracy Mid": "throwAccuracyRating",
+        "Throw Under Pressure": "throwUnderPressureRating",
+        "Ball Carrier Vision": "bCVRating",
+        "Carrying": "carryingRating",
+        "Catching": "catchRating",
+        "Run Blocking": "runBlockRating",
+        "Route Running": "shortRouteRunRating",
+        "Tackling": "tackleRating",
+        "Power Moves": "powerMovesRating",
+        "Zone Coverage": "zoneCoverageRating",
+        "Play Recognition": "playRecognitionRating",
+        "Kick Accuracy": "kickAccuracyRating",
+        "Kick Power": "kickPowerRating"
+      },
+      "awardPoints": {
+        "weeklyPlayerOfWeek": 3,
+        "maximumPerPlayer": 6
+      },
+      "consistencyBonusByPoorGames": {
+        "0": 0,
+        "1": 0,
+        "2": 2,
+        "3": 4,
+        "4": 6
+      },
+      "improvingTrendSelectionModifier": 0.1,
+      "decliningTrendSelectionModifier": 0.1,
+      "minimumUpgradePerformanceScore": 72,
+      "maximumDowngradePerformanceScore": 28,
+      "minimumDowngradeSelectionPriority": 60,
+      "positions": {
+        "QB": {
+          "scale": 25,
+          "expectedAt70": 10,
+          "expectedPerOvr": 0.2,
+          "weights": { "passYds": 0.02, "passTDs": 8, "passInts": -4, "rushYds": 0.03, "rushTDs": 6 },
+          "attributes": [
+            { "attribute": "Throw Accuracy Short", "evidence": "passYds", "minimum": 1 },
+            { "attribute": "Throw Accuracy Mid", "evidence": "passTDs", "minimum": 1 },
+            { "attribute": "Throw Under Pressure", "evidence": "rushYds", "minimum": 40 }
+          ]
+        },
+        "HB": {
+          "scale": 17,
+          "expectedAt70": 7,
+          "expectedPerOvr": 0.12,
+          "weights": { "rushYds": 0.06, "rushTDs": 7, "recYds": 0.03, "recTDs": 5, "fumbles": -4 },
+          "attributes": [
+            { "attribute": "Ball Carrier Vision", "evidence": "rushYds", "minimum": 50 },
+            { "attribute": "Carrying", "evidence": "rushAtt", "minimum": 8 },
+            { "attribute": "Catching", "evidence": "recCatches", "minimum": 2 }
+          ]
+        },
+        "FB": {
+          "scale": 14,
+          "expectedAt70": 5,
+          "expectedPerOvr": 0.1,
+          "weights": { "rushYds": 0.06, "rushTDs": 7, "recYds": 0.03, "recTDs": 5 },
+          "attributes": [
+            { "attribute": "Run Blocking", "evidence": "rushAtt", "minimum": 4 },
+            { "attribute": "Catching", "evidence": "recCatches", "minimum": 2 }
+          ]
+        },
+        "WR": {
+          "scale": 16,
+          "expectedAt70": 6,
+          "expectedPerOvr": 0.12,
+          "weights": { "recYds": 0.06, "recTDs": 7, "recCatches": 0.4, "rushYds": 0.03, "rushTDs": 4 },
+          "attributes": [
+            { "attribute": "Catching", "evidence": "recCatches", "minimum": 3 },
+            { "attribute": "Route Running", "evidence": "recYds", "minimum": 50 }
+          ]
+        },
+        "TE": {
+          "scale": 14,
+          "expectedAt70": 5,
+          "expectedPerOvr": 0.1,
+          "weights": { "recYds": 0.06, "recTDs": 7, "recCatches": 0.4, "rushYds": 0.02, "rushTDs": 3 },
+          "attributes": [
+            { "attribute": "Catching", "evidence": "recCatches", "minimum": 2 },
+            { "attribute": "Route Running", "evidence": "recYds", "minimum": 40 },
+            { "attribute": "Run Blocking", "evidence": "rushAtt", "minimum": 2 }
+          ]
+        },
+        "DEF": {
+          "scale": 18,
+          "expectedAt70": 6,
+          "expectedPerOvr": 0.12,
+          "weights": { "defTotalTackles": 0.35, "defSacks": 4, "defInts": 5, "defTacklesForLoss": 1, "defForcedFumbles": 3, "defRecoveredFumbles": 2, "defPassDeflections": 1.5, "defTDs": 7 },
+          "attributes": [
+            { "attribute": "Tackling", "evidence": "defTotalTackles", "minimum": 5 },
+            { "attribute": "Power Moves", "evidence": "defSacks", "minimum": 1 },
+            { "attribute": "Zone Coverage", "evidence": "defInts", "minimum": 1 },
+            { "attribute": "Play Recognition", "evidence": "defPassDeflections", "minimum": 1 }
+          ]
+        },
+        "K": {
+          "scale": 8,
+          "expectedAt70": 3,
+          "expectedPerOvr": 0.06,
+          "weights": { "fgMade": 2, "fgAtt": -0.5, "xpMade": 0.5, "xpAtt": -0.2 },
+          "attributes": [
+            { "attribute": "Kick Accuracy", "evidence": "fgMade", "minimum": 1 }
+          ]
+        },
+        "P": {
+          "scale": 12,
+          "expectedAt70": 4,
+          "expectedPerOvr": 0.08,
+          "weights": { "pntYds": 0.005, "pntInside20": 2, "pntAtt": 0.5 },
+          "attributes": [
+            { "attribute": "Kick Power", "evidence": "pntYds", "minimum": 100 }
+          ]
+        }
+      }
+    },
+    "offseason": {
+      "maximumRecommendations": 50,
+      "minimumUpgradeSelectionScore": 62,
+      "maximumDowngradePerformanceScore": 28,
+      "minimumDowngradeSelectionPriority": 60,
+      "seasonPerformanceWeight": 0.8,
+      "expectationWeight": 0.2,
+      "experienceBonusByYearsPro": {
+        "0": 12,
+        "1": 10,
+        "2": 8,
+        "3": 5,
+        "4": 2
+      },
+      "awardPoints": {
+        "mvp": 6,
+        "majorSeasonAward": 5,
+        "maximumPerPlayer": 12
+      },
+      "positiveChangeTiers": [
+        { "minimumScore": 0, "primaryPoints": 1, "secondaryPoints": 0, "tertiaryPoints": 0 },
+        { "minimumScore": 68, "primaryPoints": 2, "secondaryPoints": 0, "tertiaryPoints": 0 },
+        { "minimumScore": 76, "primaryPoints": 3, "secondaryPoints": 1, "tertiaryPoints": 0 },
+        { "minimumScore": 86, "primaryPoints": 4, "secondaryPoints": 2, "tertiaryPoints": 0 },
+        { "minimumScore": 95, "primaryPoints": 5, "secondaryPoints": 2, "tertiaryPoints": 1 }
+      ],
+      "negativeChangeTiers": [
+        { "maximumScore": 28, "primaryPoints": -1, "secondaryPoints": 0, "tertiaryPoints": 0 },
+        { "maximumScore": 20, "primaryPoints": -2, "secondaryPoints": 0, "tertiaryPoints": 0 },
+        { "maximumScore": 12, "primaryPoints": -3, "secondaryPoints": -1, "tertiaryPoints": 0 },
+        { "maximumScore": 5, "primaryPoints": -4, "secondaryPoints": -2, "tertiaryPoints": 0 },
+        { "maximumScore": 1, "primaryPoints": -5, "secondaryPoints": -2, "tertiaryPoints": -1 }
+      ],
+      "weeklyDowngradeAvoidanceWindow": 4,
+      "secondaryMinimumEvidenceScore": 65,
+      "tertiaryMinimumEvidenceScore": 85,
+      "attributePointGuidelinesByStartingOvr": [
+        { "minimumOvr": 60, "maximumOvr": 69, "minimumPoints": 10, "maximumPoints": 14 },
+        { "minimumOvr": 70, "maximumOvr": 79, "minimumPoints": 8, "maximumPoints": 12 },
+        { "minimumOvr": 80, "maximumOvr": 84, "minimumPoints": 6, "maximumPoints": 10 },
+        { "minimumOvr": 85, "maximumOvr": 89, "minimumPoints": 4, "maximumPoints": 8 },
+        { "minimumOvr": 90, "maximumOvr": 94, "minimumPoints": 3, "maximumPoints": 6 },
+        { "minimumOvr": 95, "maximumOvr": 99, "minimumPoints": 2, "maximumPoints": 4 }
+      ],
+      "softPenaltyPerPointOverGuidelineMidpoint": 1.5
+    },
+    "softBalancing": {
+      "teamPenaltyPerPriorSelection": 3,
+      "positionPenaltyPerPriorSelection": 2,
+      "global80PlusTarget": [325, 375],
+      "global90PlusTarget": [75, 90],
+      "quarterback80PlusTarget": [13, 18],
+      "quarterback70PlusTarget": [35, 40],
+      "populationOverTargetPenalty": 2
+    },
+    "monitoring": {
+      "informationalXFactorTarget": 30,
+      "informationalSuperstarTarget": 60
+    },
+    "discord": {
+      "playerUpgradesChannelKey": "Player Upgrades",
+      "franchiseManagerRoleIdEnv": "MADDEN_FRANCHISE_MANAGER_ROLE_ID",
+      "notificationRoleName": "Franchise Manager",
+      "threadAutoArchiveDuration": 10080,
+      "recommendationsPerThreadMessage": 10
+    },
+    "offensiveLine": {
+      "gradeScale": [0, 100],
+      "gradeBands": [
+        { "minimum": 90, "label": "Elite" },
+        { "minimum": 80, "label": "Excellent" },
+        { "minimum": 70, "label": "Good" },
+        { "minimum": 60, "label": "Average" },
+        { "minimum": 50, "label": "Below Average" },
+        { "minimum": 0, "label": "Poor" }
+      ],
+      "supportedIndividualStatFields": []
+    }
   }
 }
