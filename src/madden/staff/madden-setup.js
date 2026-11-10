@@ -14,6 +14,7 @@ import { getBillingSummary } from '../../leaguebuddy/manual_billing_service.js';
 import { getExplicitLeagueForGuild } from '../madden_config.js';
 import { loadLeagueSnapshot } from '../madden_data.js';
 import { inspectSetupReadiness } from './setup_readiness.js';
+import { isSoloModeEnabled } from '../../leaguebuddy/solo_mode.js';
 
 export const data = new SlashCommandBuilder()
     .setName('setup-channels')
@@ -97,6 +98,19 @@ const STANDARD_PLUS_CHANNEL_SPECS = [
     { key: 'Activity Checks', name: 'lb-activitycheck', type: ChannelType.GuildText },
 ];
 
+const SOLO_CHANNEL_SPECS = [
+    { key: 'Franchise Dashboard', name: 'franchise-dashboard', categoryKey: 'Franchise HQ' },
+    { key: 'Team Overalls', name: 'team-overalls', categoryKey: 'Franchise HQ' },
+    { key: 'Player Overalls', name: 'player-overalls', categoryKey: 'Franchise HQ' },
+    { key: 'Awards', name: 'awards', categoryKey: 'Franchise HQ' },
+    { key: 'Data Imports', name: 'data-imports', categoryKey: 'Franchise Management' },
+    { key: 'Weekly Progression', name: 'weekly-progression', categoryKey: 'Franchise Management' },
+    { key: 'Offseason Progression', name: 'offseason-progression', categoryKey: 'Franchise Management' },
+    { key: 'Franchise History', name: 'franchise-history', categoryKey: 'Franchise Management' },
+    { key: 'Draft Results', name: 'draft-results', categoryKey: 'Franchise Management' },
+    { key: 'Mock Draft', name: 'mock-draft', categoryKey: 'Franchise Management' },
+].map((spec) => ({ ...spec, type: ChannelType.GuildText }));
+
 const TRADE_CHANNEL_SPECS = [
     { key: 'tradeSubmit', name: 'lb-submit-trade', type: ChannelType.GuildText },
     { key: 'Trade Block', name: 'lb-trade-block', type: ChannelType.GuildText },
@@ -111,6 +125,11 @@ const DEFAULT_CATEGORY_SPECS = [
     { key: 'LB Madden', name: 'LEAGUEbuddy Madden' },
 ];
 
+const SOLO_CATEGORY_SPECS = [
+    { key: 'Franchise HQ', name: '🏈 FRANCHISE HQ' },
+    { key: 'Franchise Management', name: '⚙️ FRANCHISE MANAGEMENT' },
+];
+
 const LEGACY_UNSUPPORTED_CHANNEL_KEYS = ['rulesOps', 'breakdown', 'LG Logs'];
 
 function channelSpecsForTier(tier, tradeEnabled) {
@@ -118,6 +137,7 @@ function channelSpecsForTier(tier, tradeEnabled) {
         ...CORE_CHANNEL_SPECS,
         ...(tier === 'standard' || tier === 'premium' ? STANDARD_PLUS_CHANNEL_SPECS : []),
         ...(tradeEnabled ? TRADE_CHANNEL_SPECS : []),
+        ...(isSoloModeEnabled() ? SOLO_CHANNEL_SPECS : []),
     ];
 }
 
@@ -481,6 +501,16 @@ export function buildSetupOverwrites(guild, roleMap = {}) {
             'Yearly Awards': publicReadOnly,
             'Streaming links': publicInteractiveWithCoachAccess,
             'Draft Grades': publicReadOnly,
+            'Draft Results': publicReadOnly,
+            'Mock Draft': publicReadOnly,
+            'Franchise Dashboard': publicReadOnly,
+            'Team Overalls': publicReadOnly,
+            'Player Overalls': publicReadOnly,
+            Awards: publicReadOnly,
+            'Data Imports': publicReadOnly,
+            'Weekly Progression': publicReadOnly,
+            'Offseason Progression': publicReadOnly,
+            'Franchise History': publicReadOnly,
             'Transaction Log': publicReadOnly,
             'Injuries Log': publicReadOnly,
             'Player Change Log': publicReadOnly,
@@ -703,9 +733,15 @@ export async function execute(interaction) {
         // Category
         let rootCategory = null;
         const overwriteFailures = [];
-        for (const cat of DEFAULT_CATEGORY_SPECS) {
+        const categorySpecs = [
+            ...DEFAULT_CATEGORY_SPECS,
+            ...(isSoloModeEnabled() ? SOLO_CATEGORY_SPECS : []),
+        ];
+        const categoryByKey = new Map();
+        for (const cat of categorySpecs) {
             rootCategory = await ensureCategoryWithRetry(guild, cat);
             cfg.compat.maddenChannelMap[cat.key] = rootCategory.id;
+            categoryByKey.set(cat.key, rootCategory);
         }
         const overwritePlan = buildSetupOverwrites(guild, cfg.compat.maddenRoleMap);
         const categoryOverwrite = await applyOverwrites(rootCategory, overwritePlan.category);
@@ -715,11 +751,16 @@ export async function execute(interaction) {
                 error: categoryOverwrite.error?.message || String(categoryOverwrite.error || 'Missing Permissions'),
             });
         }
-        await pruneUnsupportedSetupChannels(guild, cfg, activeChannelSpecs);
+        if (!isSoloModeEnabled()) {
+            await pruneUnsupportedSetupChannels(guild, cfg, activeChannelSpecs);
+        }
 
         // Channels (created under category when possible)
         for (const spec of activeChannelSpecs) {
-            const ch = await ensureTextChannelInCategoryWithRetry(guild, spec, rootCategory?.id || null);
+            const parentCategory = spec.categoryKey
+                ? categoryByKey.get(spec.categoryKey)
+                : rootCategory;
+            const ch = await ensureTextChannelInCategoryWithRetry(guild, spec, parentCategory?.id || null);
             const overwriteResult = await applyOverwrites(ch, overwritePlan.channels[spec.key] || []);
             if (!overwriteResult.ok) {
                 overwriteFailures.push({

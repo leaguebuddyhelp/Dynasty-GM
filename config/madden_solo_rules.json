@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "teamOveralls": {
+    "unitStarterWeight": 0.75,
+    "offenseWeight": 0.45,
+    "defenseWeight": 0.45,
+    "specialTeamsWeight": 0.1,
+    "offenseSlots": {
+      "QB": 1,
+      "HB": 1,
+      "FB": 1,
+      "WR": 3,
+      "TE": 1,
+      "LT": 1,
+      "LG": 1,
+      "C": 1,
+      "RG": 1,
+      "RT": 1
+    },
+    "defenseSlots": {
+      "LE": 1,
+      "RE": 1,
+      "DT": 2,
+      "LOLB": 1,
+      "MLB": 1,
+      "ROLB": 1,
+      "CB": 2,
+      "FS": 1,
+      "SS": 1
+    },
+    "specialTeamsWeights": {
+      "kicker": 0.45,
+      "punter": 0.35,
+      "returnSpecialists": 0.2
+    },
+    "returnSpecialistCount": 2
+  }
+}

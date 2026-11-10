@@ -16,6 +16,23 @@ Node version: `.nvmrc` set to 21 to satisfy Snallabot; use `nvm use`.
 - Commands: `/sync league_id:<id>` pulls from EA and saves to `data/madden/leagues/<id>.json`, or under `LB_DATA_ROOT` when that env var is set. `/ping` checks the module.
 - Env required: `EA_ACCESS_TOKEN`, `EA_REFRESH_TOKEN`, optional `EA_ACCESS_TOKEN_EXPIRES_AT` (ms epoch), `EA_CONSOLE` (ps5/xbsx/xone/pc/ps4/stadia), `EA_BLAZE_ID` (persona id if known). Tokens expire ~4h; refresh token ~10 days.
 
+## Madden Franchise HQ solo mode
+Set the following environment variables to run a single-operator Madden franchise server:
+
+```env
+MADDEN_SOLO_MODE=true
+MADDEN_SOLO_USER_ID=<authorized Discord user ID>
+MADDEN_SOLO_GUILD_ID=<franchise Discord server ID>
+# Optional; defaults to config/madden_solo_rules.json
+MADDEN_SOLO_RULES_FILE=/path/to/madden_solo_rules.json
+```
+
+Solo mode requires both Discord IDs at startup and restricts commands and interactions to that user and server. Configure EA credentials as described above, then run `/setup-channels` in the authorized server. It creates the Franchise HQ and Franchise Management channel groups without pruning existing channels. Run `/sync league_id:<id>` to import and validate the franchise.
+
+Each successful sync writes the latest snapshot and an immutable history entry under the Madden data root. Replayed request IDs are deduplicated. Solo sync reports include 21 position-based top-ten lists, configured team-overall ratings, standings and playoff-picture refreshes, and a weekly mock draft when a reliable completed regular-season week advances. Use the report controls to browse prior rankings. `/draftexport` can export merged draft history as CSV, JSON, or both; selections without an authoritative overall pick are explicitly marked unresolved rather than inferred. Draft grades continue to use the existing grade calculation and wait for offseason plus a completion signal or a full rookie class.
+
+The team-rating formula and roster-slot counts are configured in [config/madden_solo_rules.json](./config/madden_solo_rules.json). Draft-result exports remain limited by what EA includes in the imported franchise data; the exporter does not invent missing selections. No automated player-attribute edits are made to an EA franchise.
+
 ## 2K note
 The repo still contains 2K code under `src/2k/**`, but **2K is not a buyable v2 option** and is not wired into the Madden v2 setup commands.
 

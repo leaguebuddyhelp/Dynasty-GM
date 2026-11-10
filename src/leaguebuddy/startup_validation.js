@@ -13,6 +13,7 @@ import {
   getMaddenLeaguesDir,
   getMaddenRoot,
 } from './paths.js';
+import { validateSoloModeConfig } from './solo_mode.js';
 
 function configured(value) {
   const trimmed = String(value || '').trim();
@@ -57,6 +58,7 @@ function seedBundledDraftClasses() {
 }
 
 export function validateStartupConfig() {
+  const soloMode = validateSoloModeConfig();
   const tokenConfigured = configured(process.env.DISCORD_TOKEN || process.env.TOKEN);
   const standardUrlConfigured = configured(process.env.LB_UPGRADE_URL_STANDARD || process.env.LB_UPGRADE_URL);
   const premiumUrlConfigured = configured(process.env.LB_UPGRADE_URL_PREMIUM || process.env.LB_UPGRADE_URL);
@@ -72,6 +74,7 @@ export function validateStartupConfig() {
   console.log('[startup] configuration', {
     appEnv: process.env.APP_ENV || process.env.NODE_ENV || 'undefined',
     dataRoot,
+    soloMode: soloMode.enabled ? 'enabled' : 'disabled',
     stripeStandardUrl: standardUrlConfigured ? 'configured' : 'missing',
     stripePremiumUrl: premiumUrlConfigured ? 'configured' : 'missing',
     botInviteUrl: botInviteConfigured ? 'configured' : 'missing',
@@ -86,7 +89,7 @@ export function validateStartupConfig() {
     throw new Error('DISCORD_TOKEN is not set in environment.');
   }
 
-  if (stripeClaimsEnabled) {
+  if (stripeClaimsEnabled && !soloMode.enabled) {
     const missing = [];
     if (!standardUrlConfigured) missing.push('LB_UPGRADE_URL_STANDARD');
     if (!premiumUrlConfigured) missing.push('LB_UPGRADE_URL_PREMIUM');
@@ -126,6 +129,7 @@ export function validateStartupConfig() {
 
   return {
     dataRoot,
+    soloMode: soloMode.enabled,
     tokenConfigured,
     standardUrlConfigured,
     premiumUrlConfigured,

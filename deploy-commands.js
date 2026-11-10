@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { readdirSync } from 'fs';
 import 'dotenv/config';
+import { isSoloCommandEnabled, isSoloModeEnabled, validateSoloModeConfig } from './src/leaguebuddy/solo_mode.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,6 +16,8 @@ const MADDEN_ONLY = String(process.env.MADDEN_ONLY ?? 'true').toLowerCase() !== 
 const APP_ENV = String(process.env.APP_ENV || process.env.NODE_ENV || '').toLowerCase();
 const DEPLOY_PROFILE = String(process.env.LB_DEPLOY_PROFILE || 'beta').toLowerCase();
 const BUYING_ENABLED = ['true', '1', 'yes', 'on'].includes(String(process.env.LB_BUYING_ENABLED || '').trim().toLowerCase());
+const SOLO_MODE = isSoloModeEnabled();
+if (SOLO_MODE) validateSoloModeConfig();
 
 const BETA_MADDEN_COMMANDS = new Set([
   'disconnectleague',
@@ -125,6 +128,10 @@ async function loadCommandsForDeployment() {
           }
           if (command?.skipDeploy) {
             console.log(`⏭️  Skipping ${label}/${file} (skipDeploy=true)`);
+            continue;
+          }
+          if (!isSoloCommandEnabled(commandName)) {
+            console.log(`⏭️  Skipping ${label}/${file} (disabled in solo mode)`);
             continue;
           }
           if (commandName === 'pricing' && !BUYING_ENABLED) {

@@ -39,6 +39,7 @@ import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../.
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 import { findMaddenDraftClassFile, formatMaddenProspectIdentity, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
+import { isSoloModeEnabled } from '../../leaguebuddy/solo_mode.js';
 
 export const featureKey = 'scouting_draft';
 
@@ -1826,15 +1827,18 @@ export async function execute(interaction) {
     .setColor(0x1e90ff)
     .setFooter({ text: `${coachVoiceFooter('mockdraft', 'Live board, live order, live class')} • league ${leagueId}` });
 
-  const controls = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('madden_mockdraft_live|create|auto')
-      .setLabel('Start Live Mock Draft')
-      .setStyle(ButtonStyle.Primary),
-  );
+  const controls = isSoloModeEnabled()
+    ? null
+    : new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('madden_mockdraft_live|create|auto')
+        .setLabel('Start Live Mock Draft')
+        .setStyle(ButtonStyle.Primary),
+    );
 
-  const payload = { embeds: [embed], components: [controls] };
+  const payload = { embeds: [embed], components: controls ? [controls] : [] };
   await interaction.editReply(payload);
+  return payload;
 }
 
 export { loadTeamEmojis, formatTeamEmoji, applyPickTrades, loadDraftClass, loadOfficialDraftOrderOverride, prospectGroup };

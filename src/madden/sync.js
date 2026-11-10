@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { randomUUID } from 'node:crypto';
 import { EmbedBuilder } from 'discord.js';
 import { createEAClientFromEnv, Stage } from './ea_client.js';
 import { getMessageForWeek } from './madden_utils.js';
@@ -15,12 +16,20 @@ import {
   getMaddenLeagueSnapshotPath,
   getMaddenLeaguesDir,
 } from '../leaguebuddy/paths.js';
+import {
+  findSyncByRequestId,
+  loadSyncSnapshot,
+  persistSyncHistory,
+  validateFranchiseSnapshot,
+} from './madden_sync_history.js';
+import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 
 const leagueDir = getMaddenLeaguesDir();
 const prevDir = path.join(leagueDir, 'previous');
 const tokenFile = getMaddenDataFilePath('tokens.json');
 const snapshotsDir = leagueDir;
 const useSnallabot = (process.env.MADDEN_SYNC_USE_SNALLABOT ?? 'true').toLowerCase() !== 'false';
+const activeSyncRequests = new Map();
 
 const data = new SlashCommandBuilder()
   .setName('sync')
@@ -121,7 +130,7 @@ async function loadTokens(guildId = null) {
   }
 }
 
-export async function runSync(leagueId, provider, options = {}) {
+async function runSyncInternal(leagueId, provider, options = {}) {
   const weekOverride = options.week ? Number(options.week) : null;
   const notifyChannelId = options.notifyChannelId;
   const notifyClient = options.client;
@@ -141,6 +150,8 @@ export async function runSync(leagueId, provider, options = {}) {
     }
   };
   try {
+    const previousRequest = await findSyncByRequestId(leagueId, options.requestId);
+    if (previousRequest) return previousRequest;
     await emitProgress(options, 'Preparing sync', 'Setting up storage and loading any existing snapshot.');
     await ensureDir();
     // Load existing snapshot (if any) so we can merge/retain weekly stats
@@ -455,7 +466,10 @@ export async function runSync(leagueId, provider, options = {}) {
     })();
 
     const seasonInfoFinal = info?.careerHubInfo?.seasonInfo || existingSnapshot?.info?.careerHubInfo?.seasonInfo || {};
+    const syncedAt = new Date().toISOString();
     const snapshot = {
+      syncId: randomUUID(),
+      syncedAt,
       fetchedAt: new Date().toISOString(),
       leagueId,
       stage,
@@ -470,6 +484,17 @@ export async function runSync(leagueId, provider, options = {}) {
       },
       weeklyStats: mergedWeekly,
     };
+    snapshot.season = seasonInfoFinal.seasonNumber ?? seasonInfoFinal.seasonIndex ?? null;
+    snapshot.week = currentWeek;
+    const validation = validateFranchiseSnapshot(snapshot, leagueId);
+    if (!validation.valid) {
+      throw new Error(`Madden sync returned an invalid franchise snapshot: ${validation.issues.join(', ')}`);
+    }
+    if (isSoloModeEnabled() && (!validation.has32Teams || validation.rosterTeamCount !== 32)) {
+      throw new Error(
+        `Solo sync requires all 32 teams and rosters; received ${validation.teamCount} teams and ${validation.rosterTeamCount} team rosters.`,
+      );
+    }
 
     const incompleteWeeks = mergedWeekly.filter(w => w.isIncomplete || (w.playerCount ?? 0) === 0);
     const coverage = {
@@ -498,7 +523,9 @@ export async function runSync(leagueId, provider, options = {}) {
       const existing = await fs.readFile(outPath, 'utf-8');
       await fs.writeFile(prevPath, existing, 'utf-8');
     } catch { /* no previous snapshot */ }
-    await fs.writeFile(outPath, JSON.stringify(snapshot, null, 2), 'utf-8');
+    const temporarySnapshotPath = `${outPath}.${process.pid}.${snapshot.syncId}.tmp`;
+    await fs.writeFile(temporarySnapshotPath, JSON.stringify(snapshot, null, 2), 'utf-8');
+    await fs.rename(temporarySnapshotPath, outPath);
 
     // Cleanup: keep only snapshots for this league to avoid accumulating old leagues.
     try {
@@ -514,8 +541,10 @@ export async function runSync(leagueId, provider, options = {}) {
       console.warn('[madden-sync] cleanup skipped:', e?.message || e);
     }
 
-    return {
+    const summary = {
       leagueId,
+      syncId: snapshot.syncId,
+      syncedAt,
       currentWeek,
       stage,
       teamsCount: teams?.leagueTeamInfoList?.length ?? 0,
@@ -529,6 +558,51 @@ export async function runSync(leagueId, provider, options = {}) {
       outPath,
       offSeasonStage: seasonInfoFinal.offSeasonStage ?? 0,
     };
+    const duplicate = await persistSyncHistory({
+      leagueId,
+      requestId: options.requestId,
+      snapshot,
+      summary,
+    });
+    const result = duplicate || { ...summary, validation };
+    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+      try {
+        const { publishSoloSyncReports } = await import('./solo_reports.js');
+        const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
+        result.soloReports = await publishSoloSyncReports({
+          client: options.client,
+          guildId: options.guildId,
+          snapshot: archivedSnapshot,
+        });
+      } catch (error) {
+        result.soloReports = { published: false, error: error?.message || String(error) };
+        console.error('[solo-reports] failed to publish sync reports', error);
+      }
+    }
+    if (!duplicate && options.requestId && options.client && options.guildId) {
+      try {
+        const { maybePostDraftGrades } = await import('./draft_grades_auto.js');
+        await maybePostDraftGrades(options.client, leagueId, options.guildId);
+      } catch (error) {
+        result.draftGrades = { posted: false, error: error?.message || String(error) };
+        console.error('[draft-grades-auto] sync-triggered grade check failed', error);
+      }
+    }
+    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+      try {
+        const { publishWeeklyMockDraft } = await import('./weekly_mock_draft.js');
+        result.weeklyMockDraft = await publishWeeklyMockDraft({
+          client: options.client,
+          guildId: options.guildId,
+          snapshot,
+          previousSnapshot: existingSnapshot,
+        });
+      } catch (error) {
+        result.weeklyMockDraft = { posted: false, error: error?.message || String(error) };
+        console.error('[weekly-mock-draft] failed to publish', error);
+      }
+    }
+    return result;
   } catch (err) {
     console.error('❌ Madden sync failed:', err);
     const msg = err?.message || String(err);
@@ -540,6 +614,21 @@ export async function runSync(leagueId, provider, options = {}) {
       await notify('Madden EA reconnect needed', `${msg}\nRun /setup and reconnect EA, then rerun the command.`);
     }
     throw err;
+  }
+}
+
+export async function runSync(leagueId, provider, options = {}) {
+  const requestId = options.requestId ? `${String(options.guildId || '')}:${String(options.requestId)}` : null;
+  if (!requestId) return runSyncInternal(leagueId, provider, options);
+  const existing = activeSyncRequests.get(requestId);
+  if (existing) return existing;
+
+  const pending = runSyncInternal(leagueId, provider, options);
+  activeSyncRequests.set(requestId, pending);
+  try {
+    return await pending;
+  } finally {
+    if (activeSyncRequests.get(requestId) === pending) activeSyncRequests.delete(requestId);
   }
 }
 
@@ -568,6 +657,7 @@ async function execute(interaction) {
     await interaction.editReply({ embeds: [renderProgressEmbed('Preparing sync', 'Starting the league sync for this server.')] });
     const summary = await runSync(leagueId, provider, {
       guildId: interaction.guildId,
+      requestId: interaction.id,
       client: interaction.client,
       notifyChannelId: '1460287771838255350',
       onProgress: async (phase, detail) => {
@@ -577,6 +667,16 @@ async function execute(interaction) {
     const weekLabel = summary.currentWeek === null || summary.currentWeek === undefined
       ? 'unknown'
       : getMessageForWeek(summary.currentWeek);
+    const soloReportStatus = summary.soloReports
+      ? summary.soloReports.playerOverallsPosted
+        ? `Player rankings posted${summary.soloReports.teamOverallsPosted ? '; team ratings updated' : ''}`
+        : summary.soloReports.error || summary.soloReports.errorMessage || 'Reports were not posted'
+      : null;
+    const weeklyMockStatus = summary.weeklyMockDraft
+      ? summary.weeklyMockDraft.posted
+        ? `Posted for week ${summary.weeklyMockDraft.weekNumber}`
+        : summary.weeklyMockDraft.reason || summary.weeklyMockDraft.error || 'Not posted'
+      : null;
     const embed = new EmbedBuilder()
       .setTitle('Madden Sync')
       .setColor(0x00cc66)
@@ -589,6 +689,8 @@ async function execute(interaction) {
         { name: 'Rosters', value: `${summary.rosterCount} teams${summary.hasFreeAgents ? ' + FA' : ''}`, inline: true },
         { name: 'Stats Weeks', value: String(summary.statsWeeks), inline: true },
         { name: 'Coverage', value: `Schedule weeks: ${summary.coverage?.scheduleWeeks ?? 0}\nMissing stat buckets: ${summary.coverage?.missingBuckets?.length ?? 0}`, inline: true },
+        ...(soloReportStatus ? [{ name: 'Solo reports', value: soloReportStatus, inline: false }] : []),
+        ...(weeklyMockStatus ? [{ name: 'Weekly mock draft', value: weeklyMockStatus, inline: false }] : []),
         { name: 'Saved', value: summary.outPath, inline: false },
         { name: 'Next', value: 'Return to `/setup` and press Check Again.', inline: false }
       );

@@ -19,6 +19,11 @@ import { removeCoachAssignment } from './shared/madden_coach_assignments.js';
 import { updateAvailableTeamsPin } from './madden/available_teams.js';
 import { resolveLeagueIdWithConfig } from './madden/madden_data.js';
 import { ensureStaffInteraction, hasStaffRole } from './madden/staff/staffUtils.js';
+import {
+  getSoloInteractionDenial,
+  isSoloCommandEnabled,
+  isSoloModeEnabled,
+} from './leaguebuddy/solo_mode.js';
 
 // --- ENVIRONMENT SAFEGUARD: Warn if test guilds are present in production ---
 import path from 'path';
@@ -183,7 +188,7 @@ await startOptionalService({
 });
 
 await startOptionalService({
-  enabled: envEnabled('MADDEN_AUTO_SYNC_ENABLED', false),
+  enabled: !isSoloModeEnabled() && envEnabled('MADDEN_AUTO_SYNC_ENABLED', false),
   label: 'madden-auto-sync',
   loader: async () => {
     const { startAutoSync } = await import('./madden/auto_sync.js');
@@ -192,7 +197,7 @@ await startOptionalService({
 });
 
 await startOptionalService({
-  enabled: envEnabled('SNALLA_SIDECAR_AUTOSTART', false),
+  enabled: !isSoloModeEnabled() && envEnabled('SNALLA_SIDECAR_AUTOSTART', false),
   label: 'madden-sidecar',
   loader: async () => {
     const { startLocalSidecar } = await import('./madden/local_sidecar.js');
@@ -201,7 +206,7 @@ await startOptionalService({
 });
 
 await startOptionalService({
-  enabled: envEnabled('LB_STRIPE_CLAIMS_WEBHOOK_ENABLED', false),
+  enabled: !isSoloModeEnabled() && envEnabled('LB_STRIPE_CLAIMS_WEBHOOK_ENABLED', false),
   label: 'stripe-claims',
   loader: async () => {
     const { startStripeClaimsWebhook } = await import('./leaguebuddy/stripe_claims_webhook.js');
@@ -255,6 +260,24 @@ for (const file of interactionFiles) {
 client.on('interactionCreate', async interaction => {
 
   // All interactions are now routed through the generic handler system below
+  const soloDenial = getSoloInteractionDenial({
+    userId: interaction.user?.id,
+    guildId: interaction.guildId,
+    commandName: interaction.isChatInputCommand?.() || interaction.isAutocomplete?.()
+      ? interaction.commandName
+      : null,
+    customId: interaction.customId,
+  });
+  if (soloDenial) {
+    if (interaction.isAutocomplete?.()) {
+      await interaction.respond([]).catch((error) => {
+        console.warn('[solo-mode] autocomplete denial response failed', error?.message || error);
+      });
+    } else {
+      await denyInteraction(interaction, soloDenial);
+    }
+    return;
+  }
 
   // Handle slash commands
   if (interaction.isChatInputCommand()) {
@@ -273,7 +296,7 @@ client.on('interactionCreate', async interaction => {
     // Otherwise we fall back to a small name->feature mapping for known pack-like features.
     try {
       const guildId = interaction.guildId;
-      if (guildId) {
+      if (guildId && !isSoloModeEnabled()) {
         /** @type {Record<string, string>} */
         const COMMAND_FEATURE_MAP = {
           // scouting/draft tools
@@ -306,7 +329,7 @@ client.on('interactionCreate', async interaction => {
       // Fail open to avoid breaking production if the gate throws for a corner case.
     }
 
-    if (command.__isMaddenStaffCommand && command.staffCommand !== false) {
+    if (!isSoloModeEnabled() && command.__isMaddenStaffCommand && command.staffCommand !== false) {
       const allowed = await ensureStaffInteraction(interaction);
       if (!allowed) return;
     }
@@ -370,7 +393,7 @@ client.on('interactionCreate', async interaction => {
       try { await interaction.respond([]); } catch { }
       return;
     }
-    if (command.__isMaddenStaffCommand && command.staffCommand !== false) {
+    if (!isSoloModeEnabled() && command.__isMaddenStaffCommand && command.staffCommand !== false) {
       let member = interaction.member || null;
       if (!member?.roles?.cache && interaction.guild?.members && interaction.user?.id) {
         member = await interaction.guild.members.fetch(interaction.user.id).catch(() => member);
@@ -428,7 +451,7 @@ client.on('interactionCreate', async interaction => {
   // interact with previously-posted buttons/modals without the plan.
   try {
     const accessMatch = resolveInteractionAccess(interaction);
-    if (accessMatch?.featureKey) {
+    if (accessMatch?.featureKey && !isSoloModeEnabled()) {
       const { featureKey, ruleId, customId } = accessMatch;
       const check = hasFeatureAccess(interaction.guildId, featureKey);
       if (!check.ok) {
@@ -661,7 +684,9 @@ client.once('clientReady', (readyClient) => {
   });
   try { initNotifier(client); } catch (e) { console.warn('[notifier] init failed', e?.message || e); }
   try { backfillAndRunPendingThreadReminders(client).catch(() => null); } catch (e) { console.warn('[notifier] startup backfill failed', e?.message || e); }
-  try { initMaddenStoryScheduler(client); } catch (e) { console.warn('[story scheduler] init failed', e?.message || e); }
+  if (!isSoloModeEnabled()) {
+    try { initMaddenStoryScheduler(client); } catch (e) { console.warn('[story scheduler] init failed', e?.message || e); }
+  }
   for (const guild of readyClient.guilds.cache.values()) {
     updateFairSimBoard(client, guild.id).catch((e) => {
       console.warn('[fairsim_board] startup refresh failed', guild.id, e?.message || e);
@@ -701,6 +726,7 @@ async function loadCommands() {
               ? { ...commandModule, ...commandModule.default }
               : { ...commandModule };
           if (cmd && cmd.data && cmd.execute) {
+            if (!isSoloCommandEnabled(cmd.data.name)) continue;
             cmd.__isMaddenStaffCommand = parts.length === 2 && parts[0] === 'madden' && parts[1] === 'staff';
             cmd.__commandPath = filePath;
             client.commands.set(cmd.data.name, cmd);
