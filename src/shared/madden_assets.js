@@ -104,14 +104,8 @@ export function getNflBrandAsset({ animated = false, attachmentName = null } = {
 }
 
 export function getLeagueBuddyBrandAsset({ attachmentName = null } = {}) {
-  const candidates = [
-    path.join(LB_LOGO_DIR, 'LB_Official_Logo.PNG'),
-    path.join(LB_LOGO_DIR, 'LB_Official_Logo.png'),
-    path.join(LB_LOGO_DIR, 'LB_Offical_Logo.PNG'),
-    path.join(LB_LOGO_DIR, 'LB_Offical_Logo.png'),
-  ];
-  const file = candidates.find((candidate) => fs.existsSync(candidate)) || null;
-  return fileAsset(file, attachmentName || 'leaguebuddy_logo.png');
+  const file = path.join(LB_LOGO_DIR, 'Dynasty_GM_Football_Shield.png');
+  return fileAsset(file, attachmentName || 'dynasty_gm_logo.png');
 }
 
 export function getDevTraitAsset(devTrait, attachmentName = null) {

@@ -10,7 +10,9 @@ function html(body, { script = '' } = {}) {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>LEAGUEbuddy Connect</title>
+      <meta name="theme-color" content="#05080e">
+      <title>Dynasty GM Connect</title>
+      <link rel="icon" type="image/png" href="/madden/assets/dynasty-gm-shield.png">
       <style>
         :root {
           --lb-bg: #111111;
@@ -954,6 +956,131 @@ function html(body, { script = '' } = {}) {
             padding-left: 16px;
           }
         }
+        :root {
+          --lb-bg: #05080e;
+          --lb-panel: #0c121c;
+          --lb-panel-soft: #101a28;
+          --lb-surface: #0c1420;
+          --lb-surface-soft: #101a28;
+          --lb-border: #334155;
+          --lb-text: #f5f8fc;
+          --lb-muted: #9baabd;
+          --lb-accent: #12a9ff;
+          --lb-accent-strong: #0878e8;
+          --lb-accent-ink: #06101e;
+          --lb-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+        }
+        body {
+          background:
+            radial-gradient(ellipse at 75% -15%, rgba(0, 130, 255, 0.18), transparent 42rem),
+            radial-gradient(ellipse at 0% 40%, rgba(24, 57, 100, 0.13), transparent 38rem),
+            var(--lb-bg);
+          color: var(--lb-text);
+        }
+        .hero {
+          background:
+            radial-gradient(circle at top right, rgba(18, 169, 255, 0.16), transparent 30%),
+            linear-gradient(135deg, #080d15 0%, #101a28 58%, #172438 100%);
+        }
+        .hero img {
+          background: transparent;
+          filter: drop-shadow(0 0 20px rgba(0, 153, 255, 0.28));
+        }
+        .hero p { color: #c3cedb; }
+        .panel,
+        .timeline-step,
+        .meta-card,
+        .mini-item,
+        .summary-item,
+        .check-item,
+        .source-card,
+        .check-grid label,
+        .guide-card,
+        .method-card,
+        .sync-progress-card {
+          border-color: var(--lb-border);
+          background: linear-gradient(145deg, rgba(17, 26, 40, 0.96), rgba(8, 13, 21, 0.97));
+          color: var(--lb-text);
+        }
+        .panel h2,
+        .panel h3,
+        .panel h4,
+        .panel h5,
+        .timeline-step strong,
+        .summary-item strong,
+        .guide-card h3,
+        .method-card h3 { color: var(--lb-text); }
+        .panel p,
+        .panel li,
+        .panel td,
+        .panel th,
+        .panel label,
+        .timeline-step span,
+        .summary-item p,
+        .summary-bullets,
+        .check-copy span,
+        .step-list,
+        .guide-card p,
+        .guide-card ul,
+        .method-card p,
+        .step-mobile-summary,
+        .progress-note,
+        .sync-progress-top span { color: var(--lb-muted); }
+        .eyebrow,
+        .step-kicker,
+        .stat strong { color: #79caff; }
+        .subtle,
+        .info {
+          border: 1px solid rgba(18, 169, 255, 0.24);
+          background: rgba(18, 169, 255, 0.08);
+          color: #b7ddf5;
+        }
+        .sync-progress-top strong { color: var(--lb-text); }
+        .progress-track { background: #172438; }
+        .progress-bar { background: linear-gradient(90deg, #0878e8 0%, #12a9ff 50%, #0878e8 100%); }
+        .timeline-step.active,
+        .summary-item.active,
+        .check-item.active {
+          border-color: #168de0;
+          background: rgba(18, 169, 255, 0.1);
+          box-shadow: 0 0 0 2px rgba(18, 169, 255, 0.14);
+        }
+        .timeline-step.done,
+        .summary-item.done,
+        .check-item.done { border-color: #168c65; background: rgba(16, 185, 129, 0.08); }
+        .summary-item.blocker { border-color: #a45b25; background: rgba(249, 115, 22, 0.1); }
+        .pill,
+        .method-badge,
+        .step-chip.active,
+        .step-state.active {
+          background: rgba(18, 169, 255, 0.12);
+          color: #a7dcff;
+        }
+        input,
+        textarea,
+        select {
+          border-color: var(--lb-border);
+          background: #070d15;
+          color: var(--lb-text);
+        }
+        input:focus,
+        textarea:focus,
+        select:focus { outline-color: rgba(18, 169, 255, 0.4); border-color: var(--lb-accent); }
+        button,
+        .button-link {
+          background: linear-gradient(110deg, var(--lb-accent-strong), var(--lb-accent));
+          color: #fff;
+          box-shadow: 0 10px 26px rgba(0, 130, 255, 0.18);
+        }
+        button.secondary { border-color: var(--lb-border); background: #162338; color: var(--lb-text); }
+        button.danger { border-color: rgba(255, 101, 117, 0.55); background: rgba(255, 101, 117, 0.1); color: #ff9aa5; }
+        @media (max-width: 520px) {
+          body {
+            background:
+              radial-gradient(ellipse at 75% -15%, rgba(0, 130, 255, 0.18), transparent 42rem),
+              var(--lb-bg);
+          }
+        }
       </style>
     </head>
     <body>
@@ -1016,22 +1143,22 @@ function describeSyncError(error) {
   if (!text) {
     return {
       title: 'First sync did not finish.',
-      detail: 'LEAGUEbuddy linked the league, but it could not pull the first batch of Madden data yet.',
+      detail: 'Dynasty GM linked the league, but it could not pull the first batch of Madden data yet.',
       next: 'Run /sync in Discord. If it fails again, reopen this dashboard and reconnect EA.',
     };
   }
   if (text.includes('temporary system error')) {
     return {
       title: 'EA is temporarily unavailable.',
-      detail: 'Your league is linked, but EA returned a temporary service error while LEAGUEbuddy tried to pull league data.',
+      detail: 'Your league is linked, but EA returned a temporary service error while Dynasty GM tried to pull league data.',
       next: 'Wait a moment, then run /sync in Discord.',
     };
   }
   if (/refresh token|100105/i.test(text)) {
     return {
       title: 'EA login expired.',
-      detail: 'EA rejected the saved refresh token, so LEAGUEbuddy needs a fresh EA login before it can sync again.',
-      next: 'Press Reconnect EA on this dashboard, then run /sync or /weeklyupdate in Discord.',
+      detail: 'EA rejected the saved refresh token, so Dynasty GM needs a fresh EA login before it can sync again.',
+      next: 'Press Reconnect EA on this dashboard, then run /sync or /sync in Discord.',
     };
   }
   if (text.includes('session expired') || text.includes('Reconnect EA')) {
@@ -1044,14 +1171,14 @@ function describeSyncError(error) {
   if (text.includes('taking too long')) {
     return {
       title: 'EA took too long to respond.',
-      detail: 'LEAGUEbuddy linked your league, but the first data pull timed out before EA finished responding.',
+      detail: 'Dynasty GM linked your league, but the first data pull timed out before EA finished responding.',
       next: 'Refresh this page, confirm the league is still linked, then run /sync in Discord.',
     };
   }
   if (text.includes('ENOENT') || text.includes('/data/madden/leagues/')) {
     return {
       title: 'League data was not created yet.',
-      detail: 'LEAGUEbuddy linked the correct league, but the first data snapshot file was not created during the initial sync.',
+      detail: 'Dynasty GM linked the correct league, but the first data snapshot file was not created during the initial sync.',
       next: 'Run /sync in Discord. If it still fails, reconnect EA from this dashboard and try the league connection again.',
     };
   }
@@ -1171,9 +1298,9 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
 
   const leagueStepCopy = hasLeague
     ? syncInProgress
-      ? `${selectedLeague?.leagueName || connection?.leagueName || 'League connected'} is linked to this Discord server. LEAGUEbuddy is still importing the first snapshot. Stay on this page until Final Check says Ready.`
+      ? `${selectedLeague?.leagueName || connection?.leagueName || 'League connected'} is linked to this Discord server. Dynasty GM is still importing the first snapshot. Stay on this page until Final Check says Ready.`
       : `${selectedLeague?.leagueName || connection?.leagueName || 'League connected'} is linked to this Discord server.`
-    : 'Choose the Madden league LEAGUEbuddy should manage.';
+    : 'Choose the Madden league Dynasty GM should manage.';
 
   const setupChecks = [
     {
@@ -1232,7 +1359,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
         : !hasLeague
           ? 'Choose the league to connect to this Discord server.'
           : syncInProgress
-            ? 'Wait on this page while LEAGUEbuddy imports the first league snapshot.'
+            ? 'Wait on this page while Dynasty GM imports the first league snapshot.'
           : status === 'sync_error'
         ? syncErrorSummary.next
         : 'Go back to Discord and run /setup.';
@@ -1274,10 +1401,10 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
           const data = await res.json();
           if (!res.ok || !data.ok) return;
           if (phaseEl) phaseEl.textContent = data.phase || 'Syncing now';
-          if (detailEl) detailEl.textContent = data.detail || 'LEAGUEbuddy is still pulling your first league snapshot.';
+          if (detailEl) detailEl.textContent = data.detail || 'Dynasty GM is still pulling your first league snapshot.';
           if (data.status === 'running') {
             noteEls.forEach((el) => {
-              el.textContent = 'Stay on this page. LEAGUEbuddy is still importing your league data.';
+              el.textContent = 'Stay on this page. Dynasty GM is still importing your league data.';
             });
             window.setTimeout(poll, 2500);
             return;
@@ -1310,9 +1437,9 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
 
   return html(`
     <section class="hero">
-      <img src="/madden/assets/lb-official-logo.png" alt="LEAGUEbuddy logo" />
+      <img src="/madden/assets/dynasty-gm-shield.png" alt="Dynasty GM football shield" />
       <div>
-        <span class="eyebrow">LEAGUEbuddy Madden</span>
+        <span class="eyebrow">Dynasty GM Madden</span>
         <h1>Connect Your League</h1>
         <p>Follow the highlighted step. When this page says Ready, go back to Discord and run /setup.</p>
       </div>
@@ -1349,7 +1476,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             ${syncInProgress ? `
               <div class="summary-item active">
                 <strong>Import Progress</strong>
-                <p><strong data-sync-phase>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br /><span data-sync-detail>${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your league data. Stay on this page while it updates.')}</span></p>
+                <p><strong data-sync-phase>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br /><span data-sync-detail>${escapeHtml(syncProgress?.detail || 'Dynasty GM is pulling your league data. Stay on this page while it updates.')}</span></p>
               </div>
             ` : ''}
             ${syncError ? `
@@ -1530,12 +1657,12 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
               <strong>${escapeHtml(selectedLeague.leagueName || 'Connected League')}</strong>
               <div class="source-meta">
                 <div>League ID: <code>${escapeHtml(selectedLeague.leagueId || 'unknown')}</code></div>
-                <div>This is the league LEAGUEbuddy will connect to <strong>${escapeHtml(guildName)}</strong>.</div>
+                <div>This is the league Dynasty GM will connect to <strong>${escapeHtml(guildName)}</strong>.</div>
               </div>
               ${syncInProgress ? `
                 <div class="warning" style="margin-top:12px;">
                   <strong>Wait for the import to finish.</strong><br />
-                  LEAGUEbuddy is still importing the first league snapshot. Stay on this page until the Final Check card says <strong>Ready</strong>.
+                  Dynasty GM is still importing the first league snapshot. Stay on this page until the Final Check card says <strong>Ready</strong>.
                 </div>
               ` : ''}
               <div class="inline-actions">
@@ -1578,17 +1705,17 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
               <div class="sync-progress-top">
                 <div>
                   <strong data-sync-phase>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong>
-                  <span data-sync-detail>${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is pulling your first league snapshot.')}</span>
+                  <span data-sync-detail>${escapeHtml(syncProgress?.detail || 'Dynasty GM is pulling your first league snapshot.')}</span>
                 </div>
                 <span class="step-chip active">Working</span>
               </div>
               <div class="progress-track">
                 <div class="progress-bar" data-sync-bar></div>
               </div>
-              <div class="progress-note" data-sync-note>Stay on this page. LEAGUEbuddy is still importing your league data.</div>
+              <div class="progress-note" data-sync-note>Stay on this page. Dynasty GM is still importing your league data.</div>
             </div>
             <div class="info">
-              Stay on this page while LEAGUEbuddy finishes the first import. This section will update automatically without reloading the whole page.
+              Stay on this page while Dynasty GM finishes the first import. This section will update automatically without reloading the whole page.
             </div>
             <div class="inline-actions">
               <a class="button-link" href="/madden/connect?token=${encodeURIComponent(token)}">Refresh Status</a>
@@ -1668,7 +1795,7 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
             ${syncInProgress ? `
               <div class="summary-item active">
                 <strong>Import Progress</strong>
-                <p><strong data-sync-phase>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br /><span data-sync-detail>${escapeHtml(syncProgress?.detail || 'LEAGUEbuddy is still importing your league data.')}</span></p>
+                <p><strong data-sync-phase>${escapeHtml(syncProgress?.phase || 'Syncing now')}</strong><br /><span data-sync-detail>${escapeHtml(syncProgress?.detail || 'Dynasty GM is still importing your league data.')}</span></p>
               </div>
             ` : ''}
             ${syncError ? `
@@ -1703,13 +1830,11 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
 export function startConnectServer() {
   registerHttpRoute({
     method: 'GET',
-    path: '/madden/assets/lb-official-logo.png',
+    path: '/madden/assets/dynasty-gm-shield.png',
     handler: async (_req, res) => {
-      const primaryPath = path.join(process.cwd(), 'nfl_logos', 'lb logo', 'LB_Offical_Logo.PNG');
-      const fallbackPath = path.join(process.cwd(), 'ghost_logos', 'ghost_legacy.png');
+      const primaryPath = path.join(process.cwd(), 'nfl_logos', 'lb logo', 'Dynasty_GM_Football_Shield.png');
       try {
-        const filePath = fs.existsSync(primaryPath) ? primaryPath : fallbackPath;
-        const file = fs.readFileSync(filePath);
+        const file = fs.readFileSync(primaryPath);
         res.writeHead(200, {
           'content-type': 'image/png',
           'cache-control': 'public, max-age=3600',
