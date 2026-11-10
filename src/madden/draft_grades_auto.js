@@ -5,10 +5,12 @@ import { loadLeagueSnapshot } from './madden_data.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { deriveTeamNeeds } from './coach/mockdraft.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
+import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 
 const STATE_FILE = getMaddenDataFilePath(path.join('draft_exports', 'posted_draft_grades.json'));
 const DRAFT_GRADES_FORMULA_VERSION = 2;
@@ -195,6 +197,9 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
       return;
     }
     const channelMap = loadMaddenChannelMap(guildId);
+    const roleMap = (getGuildRoleMap(guildId) && Object.keys(getGuildRoleMap(guildId)).length)
+      ? getGuildRoleMap(guildId)
+      : loadJson(path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json'));
     const draftChannelId = channelMap['Draft Results']
       || channelMap['draft-results']
       || channelMap['Draft Grades']
@@ -221,7 +226,11 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
 
     const channel = await client.channels.fetch(draftChannelId).catch(() => null);
     if (channel && channel.isTextBased()) {
-      await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
+      const coachRoleId = isSoloModeEnabled()
+        ? null
+        : roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
+      const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
+      await channel.send({ content: coachTag ?? undefined, embeds: [embed] });
       state[leagueId][seasonKey] = {
         posted: true,
         fetchedAt: snapshot.fetchedAt,
