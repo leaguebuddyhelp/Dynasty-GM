@@ -12,7 +12,7 @@ client.interactionHandlers = await loadSoloInteractionHandlers();
 
 if (String(process.env.MADDEN_CONNECT_ENABLED ?? 'true').toLowerCase() !== 'false') {
   const { startConnectServer } = await import('./madden/connect_server.js');
-  startConnectServer();
+  startConnectServer(client);
 }
 
 async function replyError(interaction, content) {

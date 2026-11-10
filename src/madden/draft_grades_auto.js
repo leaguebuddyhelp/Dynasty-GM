@@ -67,11 +67,10 @@ export function isDraftReadyForGrades(snapshot) {
     weekType === 3 ||
     weekType === 8 ||
     seasonTitle.includes('offseason') ||
-    (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && weekType !== 1);
-  const isPreseason = weekType === 0 || (seasonInfo.seasonWeekType === undefined && (seasonInfo.seasonWeek || 0) >= 1 && (seasonInfo.preseasonWeekCount || 0) > 0);
+    (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true);
   const draftMarkedComplete = seasonInfo.isDraftActive === false;
   const hasExpectedDraftClass = rookieCount >= 224;
-  return isOffseason && !isPreseason && (draftMarkedComplete || hasExpectedDraftClass) && rookieCount >= 32;
+  return isOffseason && (draftMarkedComplete || hasExpectedDraftClass) && rookieCount >= 32;
 }
 
 export function computeDraftGrades(snapshot) {

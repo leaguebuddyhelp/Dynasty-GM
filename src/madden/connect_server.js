@@ -1827,7 +1827,8 @@ function renderDashboard({ token, dashboard, notice = '', pulse = 0 }) {
   `, { script: syncScript });
 }
 
-export function startConnectServer() {
+export function startConnectServer(client = null) {
+  connectionService.setConnectionDiscordClient(client);
   registerHttpRoute({
     method: 'GET',
     path: '/madden/assets/dynasty-gm-shield.png',

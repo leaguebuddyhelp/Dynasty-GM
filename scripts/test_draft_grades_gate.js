@@ -23,6 +23,10 @@ assert.equal(isDraftReadyForGrades(snapshot({
   seasonInfo: { seasonWeekType: 3, isDraftActive: false },
 })), true);
 assert.equal(isDraftReadyForGrades(snapshot({
+  yearsPro: Array.from({ length: 32 }, () => 0),
+  seasonInfo: { seasonWeekType: 0, isDraftActive: false, isLeagueStarted: true },
+})), true);
+assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: Array.from({ length: 31 }, () => 0),
   seasonInfo: { seasonWeekType: 3, isDraftActive: false },
 })), false);

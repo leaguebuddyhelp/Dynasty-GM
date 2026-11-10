@@ -28,6 +28,11 @@ import { SnallabotProvider } from '../providers/SnallabotProvider.js';
 
 const CONNECT_SESSION_TTL_MS = 1000 * 60 * 60 * 24;
 const LEAGUE_FETCH_TIMEOUT_MS = 12000;
+let discordClient = null;
+
+export function setConnectionDiscordClient(client) {
+  discordClient = client;
+}
 
 function nowPlus(ms) {
   return new Date(Date.now() + ms).toISOString();
@@ -228,6 +233,7 @@ async function performInitialLeagueSync({ token, guildId, leagueId, leagueSummar
   const provider = useSnallabot ? new SnallabotProvider() : null;
   const syncResult = await runSync(leagueId, provider, {
     guildId,
+    client: discordClient,
     onProgress: async (phase, detail) => {
       updateSessionSyncProgress(token, {
         status: 'running',
@@ -236,6 +242,10 @@ async function performInitialLeagueSync({ token, guildId, leagueId, leagueSummar
       });
     },
   });
+  if (discordClient?.isReady?.()) {
+    const { maybePostDraftGrades } = await import('../draft_grades_auto.js');
+    await maybePostDraftGrades(discordClient, leagueId, guildId);
+  }
   const liveSnapshot = loadLeagueSnapshot(leagueId);
   const summary = summarizeLiveSnapshot(liveSnapshot, leagueSummary);
   const repositorySnapshot = connectionRepository.createSnapshot({
@@ -1433,6 +1443,7 @@ export function ingestImportedPayload({ token, rawPayload }) {
 }
 
 export default {
+  setConnectionDiscordClient,
   beginLeagueConnection,
   getLeagueConnectionDashboard,
   getLeagueConnectionDashboardState,
