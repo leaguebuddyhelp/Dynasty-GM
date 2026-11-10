@@ -39,6 +39,7 @@
     "version": 1,
     "weekly": {
       "maximumRecommendations": 25,
+      "attributesPerRecommendation": 3,
       "preferredRecommendationRange": [20, 25],
       "minimumUpgradeSelectionScore": 58,
       "performanceWeight": 0.8,
@@ -97,10 +98,12 @@
           { "attribute": "Carrying", "field": "fumbles", "minimum": 1, "minimumOpportunities": 5, "opportunityField": "rushAtt" }
         ],
         "WR": [
-          { "attribute": "Route Running", "field": "recYds", "maximumRate": 5, "minimumOpportunities": 4, "opportunityField": "recCatches", "rateField": "recCatches" }
+          { "attribute": "Catching", "field": "recDrops", "minimum": 1, "minimumOpportunities": 3, "opportunityField": "recCatches" },
+          { "attribute": "Medium Route Running", "field": "recYds", "maximumRate": 5, "minimumOpportunities": 4, "opportunityField": "recCatches", "rateField": "recCatches" }
         ],
         "TE": [
-          { "attribute": "Route Running", "field": "recYds", "maximumRate": 5, "minimumOpportunities": 3, "opportunityField": "recCatches", "rateField": "recCatches" }
+          { "attribute": "Catching", "field": "recDrops", "minimum": 1, "minimumOpportunities": 3, "opportunityField": "recCatches" },
+          { "attribute": "Medium Route Running", "field": "recYds", "maximumRate": 5, "minimumOpportunities": 3, "opportunityField": "recCatches", "rateField": "recCatches" }
         ],
         "K": [
           { "attribute": "Kick Accuracy", "field": "fgMade", "minimumMisses": 2, "minimumOpportunities": 3, "opportunityField": "fgAtt", "attemptsField": "fgAtt" }
@@ -110,20 +113,62 @@
         ]
       },
       "attributeFields": {
-        "Throw Accuracy Short": "throwAccuracyRating",
-        "Throw Accuracy Mid": "throwAccuracyRating",
+        "Throw Accuracy": "throwAccRating",
+        "Throw Accuracy Short": "throwAccShortRating",
+        "Throw Accuracy Mid": "throwAccMidRating",
+        "Throw Accuracy Deep": "throwAccDeepRating",
+        "Throw Power": "throwPowerRating",
         "Throw Under Pressure": "throwUnderPressureRating",
+        "Throw on Run": "throwOnRunRating",
+        "Play Action": "playActionRating",
+        "Break Sack": "breakSackRating",
         "Ball Carrier Vision": "bCVRating",
-        "Carrying": "carryingRating",
+        "Carrying": "carryRating",
         "Catching": "catchRating",
+        "Catch in Traffic": "cITRating",
+        "Spectacular Catch": "specCatchRating",
+        "Short Route Running": "routeRunShortRating",
+        "Medium Route Running": "routeRunMedRating",
+        "Deep Route Running": "routeRunDeepRating",
+        "Release": "releaseRating",
+        "Jump": "jumpRating",
+        "Speed": "speedRating",
+        "Acceleration": "accelRating",
+        "Agility": "agilityRating",
+        "Change of Direction": "changeOfDirectionRating",
+        "Strength": "strengthRating",
+        "Injury": "injuryRating",
+        "Stamina": "staminaRating",
+        "Toughness": "toughRating",
+        "Confidence": "confRating",
+        "Break Tackle": "breakTackleRating",
+        "Trucking": "truckRating",
+        "Juke Move": "jukeMoveRating",
+        "Spin Move": "spinMoveRating",
+        "Stiff Arm": "stiffArmRating",
         "Run Blocking": "runBlockRating",
-        "Route Running": "shortRouteRunRating",
+        "Run Block Power": "runBlockPowerRating",
+        "Run Block Finesse": "runBlockFinesseRating",
+        "Impact Blocking": "impactBlockRating",
+        "Lead Blocking": "leadBlockRating",
+        "Pass Blocking": "passBlockRating",
+        "Pass Block Power": "passBlockPowerRating",
+        "Pass Block Finesse": "passBlockFinesseRating",
         "Tackling": "tackleRating",
+        "Hit Power": "hitPowerRating",
         "Power Moves": "powerMovesRating",
-        "Zone Coverage": "zoneCoverageRating",
-        "Play Recognition": "playRecognitionRating",
-        "Kick Accuracy": "kickAccuracyRating",
-        "Kick Power": "kickPowerRating"
+        "Finesse Moves": "finesseMovesRating",
+        "Block Shedding": "blockShedRating",
+        "Zone Coverage": "zoneCoverRating",
+        "Man Coverage": "manCoverRating",
+        "Play Recognition": "playRecRating",
+        "Pursuit": "pursuitRating",
+        "Press": "pressRating",
+        "Awareness": "awareRating",
+        "Kick Accuracy": "kickAccRating",
+        "Kick Power": "kickPowerRating",
+        "Kick Return": "kickRetRating",
+        "Long Snap": "longSnapRating"
       },
       "awardPoints": {
         "weeklyPlayerOfWeek": 3,
@@ -148,9 +193,11 @@
           "expectedPerOvr": 0.2,
           "weights": { "passYds": 0.02, "passTDs": 8, "passInts": -4, "rushYds": 0.03, "rushTDs": 6 },
           "attributes": [
-            { "attribute": "Throw Accuracy Short", "evidence": "passYds", "minimum": 1 },
-            { "attribute": "Throw Accuracy Mid", "evidence": "passTDs", "minimum": 1 },
-            { "attribute": "Throw Under Pressure", "evidence": "rushYds", "minimum": 40 }
+            { "attribute": "Throw Accuracy Short", "evidence": "passCompPct", "minimum": 60 },
+            { "attribute": "Throw Accuracy Mid", "evidence": "passYdsPerAtt", "minimum": 7 },
+            { "attribute": "Throw Accuracy Deep", "evidence": "passLongest", "minimum": 40 },
+            { "attribute": "Play Action", "evidence": "passTDs", "minimum": 1 },
+            { "attribute": "Throw on Run", "evidence": "rushYds", "minimum": 20 }
           ]
         },
         "HB": {
@@ -161,7 +208,10 @@
           "attributes": [
             { "attribute": "Ball Carrier Vision", "evidence": "rushYds", "minimum": 50 },
             { "attribute": "Carrying", "evidence": "rushAtt", "minimum": 8 },
-            { "attribute": "Catching", "evidence": "recCatches", "minimum": 2 }
+            { "attribute": "Catching", "evidence": "recCatches", "minimum": 2 },
+            { "attribute": "Break Tackle", "evidence": "rushBrokenTackles", "minimum": 1 },
+            { "attribute": "Trucking", "evidence": "rushYdsAfterContact", "minimum": 30 },
+            { "attribute": "Speed", "evidence": "rush20PlusYds", "minimum": 1 }
           ]
         },
         "FB": {
@@ -180,8 +230,11 @@
           "expectedPerOvr": 0.12,
           "weights": { "recYds": 0.06, "recTDs": 7, "recCatches": 0.4, "rushYds": 0.03, "rushTDs": 4 },
           "attributes": [
-            { "attribute": "Catching", "evidence": "recCatches", "minimum": 3 },
-            { "attribute": "Route Running", "evidence": "recYds", "minimum": 50 }
+            { "attribute": "Catching", "evidence": "recCatchPct", "minimum": 55 },
+            { "attribute": "Short Route Running", "evidence": "recCatches", "minimum": 3 },
+            { "attribute": "Medium Route Running", "evidence": "recYdsPerCatch", "minimum": 9 },
+            { "attribute": "Deep Route Running", "evidence": "recLongest", "minimum": 25 },
+            { "attribute": "Spectacular Catch", "evidence": "recTDs", "minimum": 1 }
           ]
         },
         "TE": {
@@ -190,39 +243,45 @@
           "expectedPerOvr": 0.1,
           "weights": { "recYds": 0.06, "recTDs": 7, "recCatches": 0.4, "rushYds": 0.02, "rushTDs": 3 },
           "attributes": [
-            { "attribute": "Catching", "evidence": "recCatches", "minimum": 2 },
-            { "attribute": "Route Running", "evidence": "recYds", "minimum": 40 },
+            { "attribute": "Catching", "evidence": "recCatchPct", "minimum": 55 },
+            { "attribute": "Short Route Running", "evidence": "recCatches", "minimum": 2 },
+            { "attribute": "Medium Route Running", "evidence": "recYdsPerCatch", "minimum": 8 },
+            { "attribute": "Deep Route Running", "evidence": "recLongest", "minimum": 20 },
+            { "attribute": "Spectacular Catch", "evidence": "recTDs", "minimum": 1 },
             { "attribute": "Run Blocking", "evidence": "rushAtt", "minimum": 2 }
           ]
         },
         "DEF": {
-          "scale": 18,
+          "scale": 14,
           "expectedAt70": 6,
           "expectedPerOvr": 0.12,
-          "weights": { "defTotalTackles": 0.35, "defSacks": 4, "defInts": 5, "defTacklesForLoss": 1, "defForcedFumbles": 3, "defRecoveredFumbles": 2, "defPassDeflections": 1.5, "defTDs": 7 },
+          "weights": { "defTotalTackles": 0.75, "defSacks": 4, "defInts": 5, "defForcedFumbles": 3, "defRecoveredFumbles": 2, "defPassDeflections": 2, "defTDs": 7, "defSafeties": 7 },
           "attributes": [
             { "attribute": "Tackling", "evidence": "defTotalTackles", "minimum": 5 },
             { "attribute": "Power Moves", "evidence": "defSacks", "minimum": 1 },
             { "attribute": "Zone Coverage", "evidence": "defInts", "minimum": 1 },
-            { "attribute": "Play Recognition", "evidence": "defPassDeflections", "minimum": 1 }
+            { "attribute": "Play Recognition", "evidence": "defPassDeflections", "minimum": 1 },
+            { "attribute": "Hit Power", "evidence": "defForcedFumbles", "minimum": 1 }
           ]
         },
         "K": {
           "scale": 8,
           "expectedAt70": 3,
           "expectedPerOvr": 0.06,
-          "weights": { "fgMade": 2, "fgAtt": -0.5, "xpMade": 0.5, "xpAtt": -0.2 },
+          "weights": { "fgMade": 2, "fgAtt": -0.5, "fg50PlusMade": 2, "xpMade": 0.5, "xpAtt": -0.2 },
           "attributes": [
-            { "attribute": "Kick Accuracy", "evidence": "fgMade", "minimum": 1 }
+            { "attribute": "Kick Accuracy", "evidence": "fgCompPct", "minimum": 80 },
+            { "attribute": "Kick Power", "evidence": "fgLongest", "minimum": 50 }
           ]
         },
         "P": {
           "scale": 12,
           "expectedAt70": 4,
           "expectedPerOvr": 0.08,
-          "weights": { "pntYds": 0.005, "pntInside20": 2, "pntAtt": 0.5 },
+          "weights": { "pntYdsPerAtt": 0.5, "pntNetYdsPerAtt": 0.5, "pntInside20": 2, "pntAtt": 0.5, "puntsBlocked": -3 },
           "attributes": [
-            { "attribute": "Kick Power", "evidence": "pntYds", "minimum": 100 }
+            { "attribute": "Kick Power", "evidence": "pntYdsPerAtt", "minimum": 42 },
+            { "attribute": "Kick Accuracy", "evidence": "pntInside20", "minimum": 1 }
           ]
         }
       }

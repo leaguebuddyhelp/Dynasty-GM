@@ -64,7 +64,7 @@ function player(overrides = {}) {
     lastName: 'Quarterback',
     position: 'QB',
     playerBestOvr: 80,
-    throwAccuracyRating: 80,
+    throwAccShortRating: 80,
     yearsPro: 2,
     ...overrides,
   };
@@ -107,7 +107,12 @@ function recommendations(stats, weekIndex) {
   }).recommendations;
 }
 
-const upgrade = recommendations([week(0, { passYds: 90 })], 0)[0];
+const rawWithDuplicateTotals = week(0, { passYds: 90 });
+rawWithDuplicateTotals.playerTotals = [{
+  rosterId: 'qb-1',
+  totals: { passYds: 900 },
+}];
+const upgrade = recommendations([rawWithDuplicateTotals], 0)[0];
 assert.equal(upgrade.direction, 'upgrade');
 assert.equal(upgrade.attributes[0].points, 3);
 assert.equal(upgrade.windows.currentGame, 90);
@@ -137,6 +142,131 @@ assert.equal(byeWeek.consistency.observedGames, 2);
 assert.equal(byeWeek.windows.recentFourGames, 45);
 
 assert.equal(recommendations([week(0, { passYds: 0, passInts: 3, passAtt: 0 })], 0).length, 0);
+
+const receiver = {
+  rosterId: 'wr-1',
+  firstName: 'Test',
+  lastName: 'Receiver',
+  position: 'WR',
+  playerBestOvr: 80,
+  catchRating: 70,
+  routeRunShortRating: 70,
+  routeRunMedRating: 70,
+  routeRunDeepRating: 70,
+  specCatchRating: 70,
+};
+const receivingWeek = {
+  weekIndex: 0,
+  stage: 1,
+  receiving: {
+    playerReceivingStatInfoList: [{
+      rosterId: 'wr-1',
+      position: 'WR',
+      recCatches: 5,
+      recYds: 100,
+      recTDs: 1,
+      recLongest: 35,
+      recYdsPerCatch: 20,
+      recCatchPct: 83,
+    }],
+  },
+};
+const receiverRecommendations = buildWeeklyProgressionRecommendations(
+  snapshot([receivingWeek], receiver),
+  { weekIndex: 0, rules, history: { periods: {}, seasonAwards: {} } },
+).recommendations;
+assert.equal(receiverRecommendations.length, 1);
+assert.equal(receiverRecommendations[0].attributes.length, 3);
+assert.ok(receiverRecommendations[0].attributes.some((attribute) => attribute.attribute === 'Catching'));
+assert.ok(receiverRecommendations[0].attributes.some((attribute) => attribute.attribute === 'Medium Route Running'));
+
+const defensiveRules = structuredClone(rules);
+defensiveRules.weekly.meaningfulOpportunityMinimums.DEF = { defPassDeflections: 1 };
+defensiveRules.weekly.positions.DEF = {
+  scale: 10,
+  expectedAt70: 1,
+  expectedPerOvr: 0,
+  weights: {
+    defForcedFumbles: 1,
+    defRecoveredFumbles: 1,
+    defPassDeflections: 1,
+  },
+  attributes: [
+    { attribute: 'Hit Power', evidence: 'defForcedFumbles', minimum: 1 },
+    { attribute: 'Play Recognition', evidence: 'defPassDeflections', minimum: 1 },
+    { attribute: 'Tackling', evidence: 'defTotalTackles', minimum: 1 },
+    { attribute: 'Zone Coverage', evidence: 'defInts', minimum: 1 },
+  ],
+};
+defensiveRules.weekly.negativeEvidence.DEF = [];
+const defensivePlayer = {
+  rosterId: 'cb-1',
+  firstName: 'Test',
+  lastName: 'Cornerback',
+  position: 'CB',
+  playerBestOvr: 80,
+  hitPowerRating: 70,
+  playRecRating: 70,
+  tackleRating: 70,
+  zoneCoverRating: 70,
+};
+const defensiveWeek = {
+  weekIndex: 0,
+  stage: 1,
+  defense: {
+    playerDefensiveStatInfoList: [{
+      rosterId: 'cb-1',
+      position: 'CB',
+      defTotalTackles: 1,
+      defInts: 1,
+      defForcedFum: 1,
+      defFumRec: 1,
+      defDeflections: 3,
+    }],
+  },
+  playerTotals: [{
+    rosterId: 'cb-1',
+    totals: {
+      defForcedFumbles: 100,
+      defRecoveredFumbles: 100,
+      defPassDeflections: 100,
+    },
+  }],
+};
+const defensiveRecommendations = buildWeeklyProgressionRecommendations(
+  snapshot([defensiveWeek], defensivePlayer),
+  { weekIndex: 0, rules: defensiveRules, history: { periods: {}, seasonAwards: {} } },
+).recommendations;
+assert.equal(defensiveRecommendations.length, 1);
+assert.equal(defensiveRecommendations[0].windows.currentGame, 50);
+assert.equal(defensiveRecommendations[0].attributes.length, 3);
+assert.ok(defensiveRecommendations[0].attributes.some((attribute) => attribute.evidence === 'defPassDeflections'));
+
+const totalsOnlyDefensiveWeek = {
+  weekIndex: 0,
+  stage: 1,
+  playerTotals: [{
+    rosterId: 'cb-1',
+    position: 'CB',
+    totals: {
+      defForcedFum: 1,
+      defFumRec: 1,
+      defDeflections: 3,
+    },
+  }],
+};
+const totalsOnlyRecommendation = buildWeeklyProgressionRecommendations(
+  snapshot([totalsOnlyDefensiveWeek], defensivePlayer),
+  { weekIndex: 0, rules: defensiveRules, history: { periods: {}, seasonAwards: {} } },
+).recommendations[0];
+assert.equal(totalsOnlyRecommendation.windows.currentGame, 50);
+assert.equal(totalsOnlyRecommendation.attributes.length, 2);
+
+const unknownPosition = buildWeeklyProgressionRecommendations(
+  snapshot([defensiveWeek], { ...defensivePlayer, position: 'UNKNOWN' }),
+  { weekIndex: 0, rules: defensiveRules, history: { periods: {}, seasonAwards: {} } },
+).recommendations;
+assert.equal(unknownPosition.length, 0);
 
 const appliedRecommendation = {
   recommendationId: 'prior-applied',

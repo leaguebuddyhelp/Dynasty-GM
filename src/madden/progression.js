@@ -13,6 +13,7 @@ import { getSoloModeConfig, isSoloModeEnabled } from '../leaguebuddy/solo_mode.j
 import { getMaddenChannelId, getMaddenSeasonKey } from '../shared/madden_metadata.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
+import { getMaddenStatValue, normalizeMaddenStatField } from './madden_stat_fields.js';
 import { stablePlayerKey } from './player_identity.js';
 import { getLatestReliableRegularSeasonWeekIndex } from './top_players.js';
 
@@ -24,17 +25,55 @@ const HISTORY_DIR = getDataFilePath(path.join('madden', 'progression_history'));
 const THREADS_DIR = getDataFilePath(path.join('madden', 'progression_threads'));
 
 const STAT_BUCKETS = [
-  ['passing', 'playerPassingStatInfoList', ['passAtt', 'passComp', 'passYds', 'passTDs', 'passInts', 'passSacks']],
-  ['rushing', 'playerRushingStatInfoList', ['rushAtt', 'rushYds', 'rushTDs', 'fumbles']],
-  ['receiving', 'playerReceivingStatInfoList', ['recCatches', 'recYds', 'recTDs']],
-  ['defense', 'playerDefensiveStatInfoList', [
-    'defTotalTackles', 'defSoloTackles', 'defSacks', 'defTacklesForLoss', 'defInts',
-    'defForcedFumbles', 'defRecoveredFumbles', 'defPassDeflections', 'defTDs',
+  ['passing', 'playerPassingStatInfoList', [
+    'passAtt', 'passComp', 'passCompPct', 'passYds', 'passYdsPerAtt',
+    'passYdsPerGame', 'passTDs', 'passInts', 'passSacks', 'passerRating', 'passLongest', 'passPts',
   ]],
-  ['kicking', 'playerKickingStatInfoList', ['fgMade', 'fgAtt', 'xpMade', 'xpAtt']],
-  ['punting', 'playerPuntingStatInfoList', ['pntAtt', 'pntYds', 'pntInside20']],
+  ['rushing', 'playerRushingStatInfoList', [
+    'rushAtt', 'rushYds', 'rushTDs', 'fumbles', 'rushBrokenTackles',
+    'rushYdsAfterContact', 'rush20PlusYds', 'rushLongest', 'rushYdsPerAtt',
+    'rushYdsPerGame', 'rushToPct', 'rushPts',
+  ]],
+  ['receiving', 'playerReceivingStatInfoList', [
+    'recCatches', 'recYds', 'recTDs', 'recDrops', 'recLongest',
+    'recYdsAfterCatch', 'recYacPerCatch', 'recYdsPerCatch', 'recCatchPct',
+    'recYdsPerGame', 'recToPct', 'recPts',
+  ]],
+  ['defense', 'playerDefensiveStatInfoList', [
+    'defTotalTackles', 'defSacks', 'defInts', 'defForcedFumbles',
+    'defRecoveredFumbles', 'defPassDeflections', 'defTDs', 'defCatchAllowed',
+    'defIntReturnYds', 'defSafeties', 'defPts',
+  ]],
+  ['kicking', 'playerKickingStatInfoList', [
+    'fgMade', 'fgAtt', 'fg50PlusMade', 'fg50PlusAtt', 'fgCompPct',
+    'fgLongest', 'xpMade', 'xpAtt', 'xpCompPct', 'kickPts', 'kickoffAtt', 'kickoffTBs',
+  ]],
+  ['punting', 'playerPuntingStatInfoList', [
+    'pntAtt', 'pntYds', 'pntYdsPerAtt', 'pntNetYds', 'pntNetYdsPerAtt',
+    'pntInside20', 'pntLongest', 'pntTBs', 'puntsBlocked',
+  ]],
 ];
 const OFFENSIVE_LINE_POSITIONS = new Set(['LT', 'LG', 'C', 'RG', 'RT']);
+const DEFENSIVE_POSITIONS = new Set([
+  'LE', 'RE', 'DT', 'LOLB', 'MLB', 'ROLB', 'CB', 'FS', 'SS',
+  'DE', 'EDGE', 'NT', 'DL', 'LB', 'ILB', 'OLB', 'DB', 'S',
+]);
+const POSITION_ALIASES = new Map([
+  ['RB', 'HB'],
+  ['TB', 'HB'],
+  ['HALFBACK', 'HB'],
+  ['RUNNINGBACK', 'HB'],
+  ['FULLBACK', 'FB'],
+]);
+
+function progressionPositionKey(position, positionRules) {
+  const normalized = String(position || '').toUpperCase().replace(/[\s_-]/g, '');
+  const canonical = POSITION_ALIASES.get(normalized) || normalized;
+  if (OFFENSIVE_LINE_POSITIONS.has(canonical)) return null;
+  if (positionRules[canonical]) return canonical;
+  if (DEFENSIVE_POSITIONS.has(canonical) && positionRules.DEF) return 'DEF';
+  return null;
+}
 
 function readRules() {
   const parsed = JSON.parse(readFileSync(RULES_PATH, 'utf8'));
@@ -191,13 +230,16 @@ function buildWeeklyPlayerStats(snapshot, aliases, { requestedWeekIndex = null, 
     if (requestedWeekIndex !== null && sourceWeekIndex > requestedWeekIndex) continue;
     const weekIndex = sourceWeekIndex + (stage === 2 ? 1000 : 0);
     const week = byWeek.get(weekIndex) || new Map();
+    const rawRows = STAT_BUCKETS.flatMap(([bucket, listKey, fields]) =>
+      (entry?.[bucket]?.[listKey] || []).map((player) => [player, fields, false]));
     const hasTotals = Array.isArray(entry.playerTotals) && entry.playerTotals.length > 0;
-    const rows = hasTotals
-      ? entry.playerTotals.map((player) => [player, Object.keys(player?.totals || {})])
-      : STAT_BUCKETS.flatMap(([bucket, listKey, fields]) =>
-        (entry?.[bucket]?.[listKey] || []).map((player) => [player, fields]));
+    const rows = rawRows.length
+      ? rawRows
+      : hasTotals
+        ? entry.playerTotals.map((player) => [player, Object.keys(player?.totals || {}), true])
+        : [];
     const touched = new Set();
-    for (const [row, fields] of rows) {
+    for (const [row, fields, hasPlayerTotals] of rows) {
       const key = rosterKeyFor(row, aliases);
       if (!key) continue;
       const target = week.get(key) || {
@@ -206,14 +248,17 @@ function buildWeeklyPlayerStats(snapshot, aliases, { requestedWeekIndex = null, 
         games: 0,
         totals: {},
       };
-      if (hasTotals && row.totals) {
-        for (const [field, raw] of Object.entries(row.totals)) {
-          const value = numberOrNull(raw);
-          if (value !== null) target.totals[field] = (target.totals[field] || 0) + value;
+      if (hasPlayerTotals && row.totals) {
+        const fields = new Set(Object.keys(row.totals).map(normalizeMaddenStatField));
+        for (const field of fields) {
+          const value = numberOrNull(getMaddenStatValue(row.totals, field));
+          if (value !== null) {
+            target.totals[field] = (target.totals[field] || 0) + value;
+          }
         }
       } else {
         for (const field of fields) {
-          const value = numberOrNull(row?.[field]);
+          const value = numberOrNull(getMaddenStatValue(row, field));
           if (value !== null) target.totals[field] = (target.totals[field] || 0) + value;
         }
       }
@@ -265,7 +310,9 @@ function opportunityConfirmed(stats, position, rules) {
     Number(stats?.[field] || 0) >= Number(minimum));
 }
 
-function getEvidenceAttributes(stats, player, rules, positionRule, maxAttributes = 1) {
+function getEvidenceAttributes(stats, player, rules, positionRule, maxAttributes = 3) {
+  const seenFields = new Set();
+  const seenEvidence = new Set();
   const attrs = (positionRule?.attributes || [])
     .map((rule) => ({
       ...rule,
@@ -277,6 +324,13 @@ function getEvidenceAttributes(stats, player, rules, positionRule, maxAttributes
       && rule.currentValue >= 0
       && rule.currentValue <= 99)
     .sort((a, b) => (b.evidenceValue / Number(b.minimum)) - (a.evidenceValue / Number(a.minimum)))
+    .filter((rule) => {
+      const field = rules.attributeFields?.[rule.attribute];
+      if (!field || seenFields.has(field) || seenEvidence.has(rule.evidence)) return false;
+      seenFields.add(field);
+      seenEvidence.add(rule.evidence);
+      return true;
+    })
     .slice(0, maxAttributes);
   return attrs.map((rule) => ({
     attribute: rule.attribute,
@@ -287,9 +341,7 @@ function getEvidenceAttributes(stats, player, rules, positionRule, maxAttributes
 }
 
 function getNegativeEvidence(stats, rules, position, games = 1) {
-  const checks = rules.negativeEvidence?.[position]
-    || rules.negativeEvidence?.DEF
-    || [];
+  const checks = rules.negativeEvidence?.[position] || [];
   for (const check of checks) {
     const opportunities = Number(stats?.[check.opportunityField] || 0);
     const minimumOpportunities = Number(check.minimumOpportunities || 0) * Math.max(1, games);
@@ -569,14 +621,13 @@ function selectWithSoftBalance(candidates, rules, maximum) {
   return selected;
 }
 
-function getPlayerWindowScores(playerKey, player, byWeek, endWeek, positionRules, weeklyRules) {
+function getPlayerWindowScores(playerKey, player, byWeek, endWeek, positionKey, weeklyRules) {
   const gameRows = [...byWeek.entries()]
     .filter(([weekIndex]) => weekIndex <= endWeek)
     .sort(([a], [b]) => a - b)
     .map(([weekIndex, players]) => ({ weekIndex, row: players.get(playerKey) }))
     .filter(({ row }) => row?.games);
-  const positionRule = positionRules[player.position]
-    || (OFFENSIVE_LINE_POSITIONS.has(player.position) ? null : positionRules.DEF);
+  const positionRule = weeklyRules.positions[positionKey];
   const metrics = gameRows.map(({ weekIndex, row }) => ({
     weekIndex,
     row,
@@ -612,8 +663,10 @@ function getPlayerWindowScores(playerKey, player, byWeek, endWeek, positionRules
   };
 }
 
-function selectNegativeAttribute(stats, player, position, rules, games = 1) {
-  const checks = rules.negativeEvidence?.[position] || rules.negativeEvidence?.DEF || [];
+function selectNegativeAttributes(stats, player, position, rules, games = 1, maxAttributes = 3) {
+  const checks = rules.negativeEvidence?.[position] || [];
+  const selected = [];
+  const usedFields = new Set();
   for (const check of checks) {
     const opportunities = Number(stats?.[check.opportunityField] || 0);
     if (opportunities < Number(check.minimumOpportunities || 0) * Math.max(1, games)) continue;
@@ -630,11 +683,13 @@ function selectNegativeAttribute(stats, player, position, rules, games = 1) {
     }
     const field = rules.attributeFields?.[check.attribute];
     const currentValue = numberOrNull(player[field]);
-    if (field && currentValue !== null && currentValue > 0 && currentValue <= 99) {
-      return { attribute: check.attribute, field, evidence: check.field, currentValue };
+    if (field && !usedFields.has(field) && currentValue !== null && currentValue > 0 && currentValue <= 99) {
+      selected.push({ attribute: check.attribute, field, evidence: check.field, currentValue });
+      usedFields.add(field);
+      if (selected.length >= maxAttributes) break;
     }
   }
-  return null;
+  return selected;
 }
 
 function allTotals(rows) {
@@ -678,19 +733,19 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   for (const player of players) {
     if (player.ovr === null) continue;
     const positionRules = weeklyRules.positions;
-    const positionRule = positionRules[player.position]
-      || (OFFENSIVE_LINE_POSITIONS.has(player.position) ? null : positionRules.DEF);
+    const positionKey = progressionPositionKey(player.position, positionRules);
+    const positionRule = positionKey ? positionRules[positionKey] : null;
     if (!positionRule) continue;
     const current = weekPlayers.get(player.key);
-    if (!current || !opportunityConfirmed(current.totals, positionRules[player.position] ? player.position : 'DEF', weeklyRules)) continue;
-    const windows = getPlayerWindowScores(player.key, player, byWeek, Number(weekIndex), positionRules, weeklyRules);
+    if (!current || !opportunityConfirmed(current.totals, positionKey, weeklyRules)) continue;
+    const windows = getPlayerWindowScores(player.key, player, byWeek, Number(weekIndex), positionKey, weeklyRules);
     const currentMetrics = performanceMetrics(current.totals, player.ovr, positionRule, weeklyRules);
     const currentAttributeEvidence = getEvidenceAttributes(
       current.totals,
       player,
       weeklyRules,
       positionRule,
-      1,
+      Number(weeklyRules.attributesPerRecommendation || 3),
     );
     const seasonKeyOvr = numberOrNull(startingOveralls[player.key]) ?? player.ovr;
     const positivePointsUsed = sumAttributePoints(history, seasonKey, player.key, 'positive');
@@ -720,7 +775,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       ratingPopulationSoftPenalty: 0,
     };
     let points = 0;
-    let evidence = null;
+    let evidence = [];
     let priorityBase = 0;
     if (windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore)
       && currentAttributeEvidence.length) {
@@ -728,31 +783,33 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       if (tier) {
         direction = 'upgrade';
         points = Number(tier.attributePoints);
-        evidence = currentAttributeEvidence[0];
+        evidence = currentAttributeEvidence;
         priorityBase = windows.performanceScore + consistencyBonus + improvingTrendBonus
             + exceptionalConsistencyBonus + weeklyAwards
           - soft.penalty - populationAdjustment;
       }
     } else if (windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)) {
-      const negative = selectNegativeAttribute(
+      const negative = selectNegativeAttributes(
         current.totals,
         player,
-        positionRules[player.position] ? player.position : 'DEF',
+        positionKey,
         weeklyRules,
+        1,
+        Number(weeklyRules.attributesPerRecommendation || 3),
       );
       const tier = getNegativeTier(windows.performanceScore, weeklyRules.negativeChangeTiers);
-      if (negative && tier) {
+      if (negative.length && tier) {
         direction = 'downgrade';
         points = Number(tier.attributePoints);
         evidence = negative;
         priorityBase = 100 - windows.performanceScore + poorConsistencyBonus + decliningTrendBonus;
       }
     }
-    if (!direction || !evidence || !points) continue;
+    if (!direction || !evidence.length || !points) continue;
     selectionAdjustments.consistency = direction === 'downgrade'
       ? poorConsistencyBonus + decliningTrendBonus
       : consistencyBonus + improvingTrendBonus + exceptionalConsistencyBonus;
-    const allocation = attributeAllocation(evidence, points);
+    const allocation = evidence.flatMap((attribute) => attributeAllocation(attribute, points));
     if (!allocation.length) continue;
     const selected = recommendation({
       player,
@@ -774,7 +831,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       seasonToDateScore: windows.seasonScore,
       explanation: direction === 'upgrade'
         ? `Performance score ${windows.performanceScore.toFixed(1)} combined the current game, recent played games, and season-to-date output.`
-        : `Sustained or game-level underperformance score ${windows.performanceScore.toFixed(1)} with verified evidence for ${evidence.attribute}.`,
+        : `Sustained or game-level underperformance score ${windows.performanceScore.toFixed(1)} with verified evidence for ${allocation.map((item) => item.attribute).join(', ')}.`,
     });
     selected.minimumSelectionScore = direction === 'upgrade'
       ? Number(weeklyRules.minimumUpgradeSelectionScore)
@@ -801,12 +858,17 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   });
 }
 
-function makeOffseasonAttributes(player, stats, rules, position, direction, tier, seasonGames) {
-  const positionRule = rules.weekly.positions[position]
-    || (OFFENSIVE_LINE_POSITIONS.has(position) ? null : rules.weekly.positions.DEF);
+function makeOffseasonAttributes(player, stats, rules, positionKey, direction, tier, seasonGames) {
+  const positionRule = rules.weekly.positions[positionKey];
   if (!positionRule) return [];
   if (direction === 'upgrade') {
-    const positives = getEvidenceAttributes(stats, player, rules.weekly, positionRule, 3);
+    const positives = getEvidenceAttributes(
+      stats,
+      player,
+      rules.weekly,
+      positionRule,
+      Number(rules.weekly.attributesPerRecommendation || 3),
+    );
     const allocations = [];
     for (const [index, points] of [
       Number(tier.primaryPoints),
@@ -819,15 +881,15 @@ function makeOffseasonAttributes(player, stats, rules, position, direction, tier
     }
     return allocations;
   }
-  const negative = selectNegativeAttribute(
+  const negatives = selectNegativeAttributes(
     stats,
     player,
-    rules.weekly.positions[position] ? position : 'DEF',
+    positionKey,
     rules.weekly,
     seasonGames,
+    Number(rules.weekly.attributesPerRecommendation || 3),
   );
-  if (!negative) return [];
-  return attributeAllocation(negative, Number(tier.primaryPoints));
+  return negatives.flatMap((evidence) => attributeAllocation(evidence, Number(tier.primaryPoints)));
 }
 
 export function buildOffseasonProgressionRecommendations(snapshot, {
@@ -844,10 +906,10 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
   for (const player of players) {
     if (player.ovr === null) continue;
     const positionRules = rules.weekly.positions;
-    const positionRule = positionRules[player.position]
-      || (OFFENSIVE_LINE_POSITIONS.has(player.position) ? null : positionRules.DEF);
+    const positionKey = progressionPositionKey(player.position, positionRules);
+    const positionRule = positionKey ? positionRules[positionKey] : null;
     if (!positionRule) continue;
-    const windows = getPlayerWindowScores(player.key, player, byWeek, maxWeek, positionRules, rules.weekly);
+    const windows = getPlayerWindowScores(player.key, player, byWeek, maxWeek, positionKey, rules.weekly);
     const rows = windows.metrics.map((entry) => entry.row);
     if (!rows.length) continue;
     const totalStats = allTotals(rows);
@@ -898,7 +960,7 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
       }
     }
     if (!direction) continue;
-    const attributes = makeOffseasonAttributes(player, totalStats, rules, player.position, direction, tier, games);
+    const attributes = makeOffseasonAttributes(player, totalStats, rules, positionKey, direction, tier, games);
     if (!attributes.length) continue;
     const minimumSelectionScore = direction === 'upgrade'
       ? Number(rules.offseason.minimumUpgradeSelectionScore)
@@ -920,7 +982,7 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
       seasonToDateScore: seasonScore,
       explanation: direction === 'upgrade'
         ? `Full-season performance score ${seasonScore.toFixed(1)}, including OVR-adjusted expectations and ${games} played games.`
-        : `Full-season performance score ${seasonScore.toFixed(1)} with verified attribute-specific evidence for ${attributes[0].attribute}.`,
+        : `Full-season performance score ${seasonScore.toFixed(1)} with verified attribute-specific evidence for ${attributes.map((item) => item.attribute).join(', ')}.`,
     }));
     candidates.at(-1).minimumSelectionScore = minimumSelectionScore;
     candidates.at(-1).pointTracking = {
