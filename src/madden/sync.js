@@ -24,6 +24,7 @@ import {
 } from './madden_sync_history.js';
 import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 import { getMaddenChannelId } from '../shared/madden_metadata.js';
+import { getMaddenStatValue } from './madden_stat_fields.js';
 
 const leagueDir = getMaddenLeaguesDir();
 const prevDir = path.join(leagueDir, 'previous');
@@ -95,7 +96,7 @@ function buildPlayerTotals(week) {
         totals: {},
       };
       fields.forEach(f => {
-        const val = Number(p[f] ?? 0);
+        const val = Number(getMaddenStatValue(p, f) ?? 0);
         cur.totals[f] = (cur.totals[f] || 0) + (Number.isFinite(val) ? val : 0);
       });
       agg.set(id, cur);
