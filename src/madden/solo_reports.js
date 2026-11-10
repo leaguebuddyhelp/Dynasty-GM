@@ -1,3 +1,4 @@
+import { ensureBoardPinMessage } from './board_pin_utils.js';
 import { readFileSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -6,6 +7,7 @@ import { stablePlayerKey } from './player_identity.js';
 import { getDataFilePath } from '../leaguebuddy/paths.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getMaddenChannelId } from '../shared/madden_metadata.js';
+import { formatTeamLabelWithEmoji } from '../shared/madden_visuals.js';
 
 export const SOLO_POSITION_ORDER = [
   'QB', 'HB', 'FB', 'WR', 'TE',
@@ -224,21 +226,26 @@ function buildLeaderboardComponents(report, positionIndex = 0) {
   return [new ActionRowBuilder().addComponents(select), nav];
 }
 
+function rankBadge(rank) {
+  return ({ 1: '🥇', 2: '🥈', 3: '🥉' })[rank] || `**${String(rank).padStart(2, '0')}**`;
+}
+
 export function buildLeaderboardEmbed(report, positionIndex = 0) {
   const position = SOLO_POSITION_ORDER[positionIndex] || SOLO_POSITION_ORDER[0];
   const entries = report.leaderboards?.[position] || [];
   const lines = entries.length
-    ? entries.map((entry) => `**${entry.rank}.** ${entry.player} — ${entry.team} — **${entry.ovr} OVR**`)
-    : ['No imported players with a Madden OVR for this position.'];
+    ? entries.map((entry) => `${rankBadge(entry.rank)} **${entry.player}** · ${formatTeamLabelWithEmoji(entry.team)} · **${entry.ovr} OVR**`)
+    : ['No players at this position have imported ratings yet.'];
   return new EmbedBuilder()
-    .setTitle(`Top 10 ${position}`)
-    .setDescription(lines.join('\n'))
-    .addFields(
-      { name: 'Season', value: String(report.season ?? 'Unknown'), inline: true },
-      { name: 'Week', value: String(report.week ?? 'Unknown'), inline: true },
-      { name: 'Synced', value: report.syncedAt, inline: true },
-    )
-    .setFooter({ text: `Position ${positionIndex + 1}/${SOLO_POSITION_ORDER.length} • Snapshot ${report.syncId}` });
+    .setTitle(`🏈 Player Overalls · ${position}`)
+    .setDescription(`**Top players by Madden OVR**\n\n${lines.join('\n')}`)
+    .addFields({
+      name: 'Season · Week',
+      value: `${report.season ?? 'Unknown'} · ${report.week ?? 'Unknown'}`,
+      inline: true,
+    })
+    .setFooter({ text: `Dynasty GM · Position ${positionIndex + 1} of ${SOLO_POSITION_ORDER.length}` })
+    .setTimestamp(new Date(report.syncedAt));
 }
 
 async function saveTeamMessageId(leagueId, guildId, channelId, messageId) {
@@ -252,24 +259,32 @@ async function saveTeamMessageId(leagueId, guildId, channelId, messageId) {
   await atomicJsonWrite(TEAM_MESSAGE_INDEX, index);
 }
 
+export function buildTeamOverallsEmbed(report) {
+  const lines = report.teamOveralls.map((team) => {
+    const rating = (value) => value === null ? '—' : String(Math.round(value));
+    return `${rankBadge(team.rank)} ${formatTeamLabelWithEmoji(team.team)}\nOFF **${rating(team.offense)}** · DEF **${rating(team.defense)}** · ST **${rating(team.specialTeams)}** · OVR **${rating(team.total)}**`;
+  });
+  return new EmbedBuilder()
+    .setTitle('🏟️ Madden Team Overalls')
+    .setDescription(lines.length ? lines.join('\n\n') : 'No team ratings are available yet.')
+    .addFields({
+      name: 'Season · Week',
+      value: `${report.season ?? 'Unknown'} · ${report.week ?? 'Unknown'}`,
+      inline: true,
+    }, {
+      name: 'Complete teams',
+      value: `${report.sourceValidation.completeTeamRatings} / ${report.sourceValidation.teamCount}`,
+      inline: true,
+    })
+    .setFooter({ text: 'OFF · DEF · ST · overall rating' })
+    .setTimestamp(new Date(report.syncedAt));
+}
+
 async function updateTeamOverallMessage(client, guildId, report) {
   const channelId = getMaddenChannelId('Team Overalls', guildId);
   if (!channelId) return { posted: false, reason: 'Team Overalls channel is not configured.' };
   const channel = await client.channels.fetch(channelId);
   if (!channel?.isTextBased()) throw new Error('Configured Team Overalls channel is not text-based.');
-  const text = report.teamOveralls.map((team) =>
-    `${team.rank}. ${team.team} | ${team.offense === null ? 'N/A' : Math.round(team.offense)} | ${team.defense === null ? 'N/A' : Math.round(team.defense)} | ${team.specialTeams === null ? 'N/A' : Math.round(team.specialTeams)} | ${team.total === null ? 'N/A' : Math.round(team.total)}`
-  ).join('\n');
-  const embed = new EmbedBuilder()
-    .setTitle('Madden Team Overalls')
-    .setDescription(`RANK | TEAM | OFF | DEF | ST | TOTAL\n\`\`\`\n${text.slice(0, 3900)}\n\`\`\``)
-    .addFields(
-      { name: 'Season / Week', value: `${report.season ?? 'Unknown'} / ${report.week ?? 'Unknown'}`, inline: true },
-      { name: 'Snapshot', value: report.syncId, inline: true },
-      { name: 'Complete teams', value: `${report.sourceValidation.completeTeamRatings}/${report.sourceValidation.teamCount}`, inline: true },
-    )
-    .setTimestamp(new Date(report.syncedAt));
-
   let previous = null;
   try {
     const index = JSON.parse(await fs.readFile(TEAM_MESSAGE_INDEX, 'utf8'));
@@ -277,18 +292,15 @@ async function updateTeamOverallMessage(client, guildId, report) {
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error;
   }
-  if (previous?.channelId === channelId && previous.messageId) {
-    try {
-      const message = await channel.messages.fetch(previous.messageId);
-      await message.edit({ embeds: [embed] });
-      return { posted: true, updated: true };
-    } catch (error) {
-      if (error?.code !== 10008) throw error;
-    }
-  }
-  const message = await channel.send({ embeds: [embed] });
+  const message = await ensureBoardPinMessage(channel, {
+    pinKey: 'solo_team_overalls',
+    guildId,
+    matchTitle: 'Madden Team Overalls',
+    existingMessageId: previous?.channelId === channelId ? previous.messageId : null,
+    payload: { embeds: [buildTeamOverallsEmbed(report)] },
+  });
   await saveTeamMessageId(report.leagueId, guildId, channelId, message.id);
-  return { posted: true, updated: false };
+  return { posted: true, updated: Boolean(previous?.messageId) };
 }
 
 export async function publishSoloSyncReports({ client, guildId, snapshot }) {
@@ -311,9 +323,17 @@ export async function publishSoloSyncReports({ client, guildId, snapshot }) {
   }
   const channel = await client.channels.fetch(channelId);
   if (!channel?.isTextBased()) throw new Error('Configured Player Overalls channel is not text-based.');
-  const message = await channel.send({
-    embeds: [buildLeaderboardEmbed(report)],
-    components: buildLeaderboardComponents(report),
+  const message = await ensureBoardPinMessage(channel, {
+    pinKey: 'solo_player_overalls',
+    guildId,
+    matchTitle: 'Top 10 QB',
+    existingMessageId: existing?.playerOverallsChannelId === channelId
+      ? existing.playerOverallsMessageId
+      : null,
+    payload: {
+      embeds: [buildLeaderboardEmbed(report)],
+      components: buildLeaderboardComponents(report),
+    },
   });
   report.playerOverallsMessageId = message.id;
   report.playerOverallsChannelId = channelId;
@@ -329,6 +349,11 @@ export async function publishSoloSyncReports({ client, guildId, snapshot }) {
   for (const [label, modulePath, exportName] of [
     ['standings', './standings_pin.js', 'updateStandings'],
     ['playoffPicture', './playoff_picture.js', 'updatePlayoffPicture'],
+    ['statLeaders', './stat_leaders.js', 'updateStatLeaders'],
+    ['powerRankings', './power_rankings.js', 'updatePowerRankings'],
+    ['transactions', './transactions.js', 'updateTransactions'],
+    ['injuries', './injuries.js', 'updateInjuries'],
+    ['playerChanges', './player_changes.js', 'updatePlayerChanges'],
   ]) {
     try {
       const reportModule = await import(modulePath);
@@ -337,6 +362,26 @@ export async function publishSoloSyncReports({ client, guildId, snapshot }) {
     } catch (error) {
       refreshedReports[label] = { updated: false, error: error?.message || String(error) };
       console.error(`[solo-reports] failed to update ${label}`, error);
+    }
+  }
+  const dashboardChannelId = getMaddenChannelId('Franchise Dashboard', guildId);
+  if (dashboardChannelId) {
+    try {
+      const dashboard = await client.channels.fetch(dashboardChannelId);
+      await ensureBoardPinMessage(dashboard, {
+        pinKey: 'franchise_dashboard', guildId, matchTitle: 'Madden Franchise HQ',
+        payload: { embeds: [new EmbedBuilder().setTitle('Madden Franchise HQ').setColor(0x5865f2)
+          .setDescription('Your franchise data is synced. Run `/sync` after advancing in Madden.')
+          .addFields(
+            { name: 'Franchise', value: String(report.leagueId), inline: true },
+            { name: 'Season / Week', value: `${report.season ?? 'Unknown'} / ${report.week ?? 'Unknown'}`, inline: true },
+            { name: 'Teams', value: String(report.sourceValidation.teamCount), inline: true },
+            { name: 'Tools', value: '`/roster` · `/schedule` · `/playersearch` · `/awards` · `/bigboard` · `/mockdraft`' },
+          ).setTimestamp(new Date(report.syncedAt))], allowedMentions: { parse: [] } },
+      });
+      refreshedReports.dashboard = { updated: true };
+    } catch (error) {
+      refreshedReports.dashboard = { updated: false, error: error.message };
     }
   }
   return {

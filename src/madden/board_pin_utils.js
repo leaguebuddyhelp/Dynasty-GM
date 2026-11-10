@@ -1,7 +1,17 @@
 import { getPinId, setPinId } from './pins_store.js';
 import { upsertGuildPin } from '../shared/madden_guild_config.js';
 
-async function findBoardMessage(channel, pinKey, guildId, matchTitle) {
+async function findBoardMessage(channel, pinKey, guildId, matchTitle, existingMessageId) {
+  const botId = channel.client.user?.id;
+  if (existingMessageId) {
+    try {
+      const direct = await channel.messages.fetch(existingMessageId);
+      if (direct.author?.id === botId) return direct;
+    } catch (error) {
+      if (error?.code !== 10008) throw error;
+    }
+  }
+
   const pinId = getPinId(pinKey, guildId);
   if (pinId) {
     const direct = await channel.messages.fetch(pinId).catch(() => null);
@@ -26,20 +36,21 @@ export async function ensureBoardPinMessage(channel, {
   pinKey,
   guildId = null,
   matchTitle,
+  existingMessageId = null,
   payload,
 }) {
   if (!channel || !channel.isTextBased()) {
     throw new Error('Board channel not accessible');
   }
 
-  const existing = await findBoardMessage(channel, pinKey, guildId, matchTitle);
+  const existing = await findBoardMessage(channel, pinKey, guildId, matchTitle, existingMessageId);
   if (existing) {
     const editPayload = Array.isArray(payload?.files) && payload.files.length > 0
       ? payload
       : { ...payload, attachments: [] };
     await existing.edit(editPayload);
     if (!existing.pinned) {
-      await existing.pin().catch(() => null);
+      await existing.pin();
     }
     if (guildId) upsertGuildPin(guildId, pinKey, existing.id);
     setPinId(pinKey, existing.id, guildId);
@@ -47,7 +58,7 @@ export async function ensureBoardPinMessage(channel, {
   }
 
   const created = await channel.send(payload);
-  await created.pin().catch(() => null);
+  await created.pin();
   if (guildId) upsertGuildPin(guildId, pinKey, created.id);
   setPinId(pinKey, created.id, guildId);
   return created;

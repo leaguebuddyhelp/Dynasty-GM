@@ -944,30 +944,27 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
   });
 }
 
-function recordEmbed(record, item, rules) {
+function recordEmbed(record, item) {
   const upgrade = item.direction === 'upgrade';
   const emoji = getTeamEmojiByName(item.team);
   const attributeLines = item.attributes.map((attribute) =>
-    `${attribute.attribute}: ${attribute.currentValue} → ${attribute.targetValue} (${attribute.points > 0 ? '+' : ''}${attribute.points})`).join('\n');
+    `**${attribute.attribute}** ${attribute.currentValue} → ${attribute.targetValue} (${attribute.points > 0 ? '+' : ''}${attribute.points})`).join('\n');
   const statistics = Object.entries(item.stats || {})
     .filter(([, value]) => Number.isFinite(Number(value)) && Number(value) !== 0)
-    .map(([key, value]) => `${key}: ${Math.round(Number(value) * 10) / 10}`)
-    .slice(0, 8)
+    .map(([key, value]) => `${key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, (letter) => letter.toUpperCase())}: ${Math.round(Number(value) * 10) / 10}`)
+    .slice(0, 5)
     .join(' • ') || 'No supported statistics';
   const status = record.statusById?.[item.recommendationId]?.status || 'pending';
   const embed = new EmbedBuilder()
-    .setTitle(`${upgrade ? '↑ Upgrade recommendation' : '↓ Downgrade recommendation'} — ${item.player}`)
-    .setDescription(`${emoji ? `${emoji} ` : ''}${item.team} • ${item.position} • ${item.currentOvr} OVR\n${attributeLines}`)
+    .setTitle(`${upgrade ? '📈 Upgrade' : '📉 Downgrade'} · ${item.player}`)
+    .setDescription(`${emoji ? `${emoji} ` : ''}**${item.team}** · ${item.position} · ${item.currentOvr} OVR\n\n${attributeLines}`)
     .addFields(
-      { name: 'Season / Week', value: `${record.seasonKey}${record.weekNumber ? ` / Week ${record.weekNumber}` : ' / Offseason'}`, inline: true },
-      { name: 'Performance windows', value: `Game: ${item.windows.currentGame ?? 'N/A'} • 4-game: ${item.windows.recentFourGames ?? 'N/A'} • season: ${item.windows.seasonToDate ?? 'N/A'}`, inline: true },
-      { name: 'Performance evidence', value: statistics.slice(0, 1024), inline: false },
-      { name: 'Reason', value: item.explanation.slice(0, 1024), inline: false },
-      { name: 'Status', value: status === 'applied' ? 'Marked manually applied in Madden' : status === 'skipped' ? 'Skipped by operator' : 'Pending manual Madden action', inline: true },
-      { name: 'OVR impact', value: 'Not predicted; attribute points do not guarantee an OVR change.', inline: true },
+      { name: 'Why', value: item.explanation.slice(0, 1024), inline: false },
+      { name: 'Recent performance', value: statistics.slice(0, 1024), inline: false },
+      { name: 'Status', value: status === 'applied' ? '✅ Applied in Madden' : status === 'skipped' ? '⏭️ Skipped' : '🕒 Waiting for your Madden update', inline: true },
     )
     .setColor(upgrade ? 0x2ecc71 : 0xe74c3c)
-    .setFooter({ text: `Recommendation ${item.recommendationId} • ${record.syncId}` })
+    .setFooter({ text: `${seasonLabel(record.seasonKey)} · ${record.weekNumber ? `Week ${record.weekNumber}` : 'Offseason'} · Changes are manual in Madden` })
     .setTimestamp(new Date(record.generatedAt));
   if (typeof item.playerImage === 'string' && /^https?:\/\//i.test(item.playerImage)) {
     embed.setThumbnail(item.playerImage);
@@ -977,8 +974,9 @@ function recordEmbed(record, item, rules) {
   return embed;
 }
 
-function targetRange(value) {
-  return Array.isArray(value) ? `${value[0]}-${value[1]}` : 'Informational';
+function seasonLabel(value) {
+  const match = /^year_(\d+)$/i.exec(String(value || ''));
+  return match ? `Season ${match[1]}` : String(value || 'Season');
 }
 
 function populationSummaryEmbed(record) {
@@ -987,18 +985,34 @@ function populationSummaryEmbed(record) {
   const upgrades = recommendations.filter((item) => item.direction === 'upgrade').length;
   const downgrades = recommendations.length - upgrades;
   return new EmbedBuilder()
-    .setTitle('Player progression status')
-    .setDescription(`${record.seasonKey}${record.weekNumber ? ` • Week ${record.weekNumber}` : ' • Offseason'} — ${upgrades} upgrade and ${downgrades} downgrade recommendation(s).\nAll changes are manual in Madden; population targets are soft and never force attribute changes.`)
+    .setTitle('🏈 Franchise Progression')
+    .setDescription(`**${seasonLabel(record.seasonKey)} · ${record.weekNumber ? `Week ${record.weekNumber}` : 'Offseason'}**\n\n📈 **${upgrades}** upgrade${upgrades === 1 ? '' : 's'}　 ·　 📉 **${downgrades}** downgrade${downgrades === 1 ? '' : 's'}\n\nReview team threads below. Apply every change manually in Madden.`)
     .addFields(
-      { name: 'League OVR 80+', value: `${population.overall80Plus ?? 0} / ${targetRange(population.targets?.overall80Plus)}`, inline: true },
-      { name: 'League OVR 90+', value: `${population.overall90Plus ?? 0} / ${targetRange(population.targets?.overall90Plus)}`, inline: true },
-      { name: 'QB OVR 70+', value: `${population.quarterbacks70Plus ?? 0} / ${targetRange(population.targets?.quarterbacks70Plus)}`, inline: true },
-      { name: 'QB OVR 80+', value: `${population.quarterbacks80Plus ?? 0} / ${targetRange(population.targets?.quarterbacks80Plus)}`, inline: true },
-      { name: 'X-Factors / Superstars', value: `${population.xFactors ?? 0} / ${population.superstars ?? 0} (informational)`, inline: true },
+      { name: 'Players rated 80+', value: String(population.overall80Plus ?? 0), inline: true },
+      { name: 'Players rated 90+', value: String(population.overall90Plus ?? 0), inline: true },
     )
     .setColor(0x5865f2)
-    .setFooter({ text: `Sync ${record.latestSyncId || record.syncId}` })
+    .setFooter({ text: 'Dynasty GM · Updated after each sync' })
     .setTimestamp(new Date(record.generatedAt));
+}
+
+function progressionCardEmbed(record, item) {
+  const upgrade = item.direction === 'upgrade';
+  const emoji = getTeamEmojiByName(item.team);
+  const attributes = item.attributes.map((attribute) =>
+    `**${attribute.attribute}** ${attribute.currentValue} → ${attribute.targetValue} (${attribute.points > 0 ? '+' : ''}${attribute.points})`
+  ).join('\n');
+  const status = record.statusById?.[item.recommendationId]?.status || 'pending';
+  const embed = new EmbedBuilder()
+    .setTitle(`${upgrade ? '🟢 Upgrade' : '🟠 Downgrade'} · ${item.player}`)
+    .setDescription(`${emoji ? `${emoji} ` : ''}**${item.team}** · ${item.position} · ${item.currentOvr} OVR\n\n${attributes}`)
+    .setColor(upgrade ? 0x2ecc71 : 0xe67e22)
+    .setFooter({ text: `${seasonLabel(record.seasonKey)} · ${record.weekNumber ? `Week ${record.weekNumber}` : 'Offseason'} · ${status === 'applied' ? 'Applied' : status === 'skipped' ? 'Skipped' : 'Needs review'}` })
+    .setTimestamp(new Date(record.generatedAt));
+  if (typeof item.playerImage === 'string' && /^https?:\/\//i.test(item.playerImage)) {
+    embed.setThumbnail(item.playerImage);
+  }
+  return embed;
 }
 
 function controlsForRecommendations(record, teamId, page, entries) {
@@ -1150,7 +1164,7 @@ async function publishTeamThreadReports(client, guildId, snapshot, record, histo
         : undefined;
       const payload = {
         content,
-        embeds: batch.map((item) => recordEmbed(record, item, rules)),
+        embeds: batch.map((item) => progressionCardEmbed(record, item)),
         components: controlsForRecommendations(record, teamId, page, batch),
         allowedMentions: content ? { parse: [], roles: [managerRoleId] } : { parse: [] },
       };
@@ -1207,6 +1221,7 @@ async function publishTeamThreadReports(client, guildId, snapshot, record, histo
   const persistedSummary = summaryMessage
     ? await summaryMessage.edit(summaryPayload)
     : await upgradesChannel.send(summaryPayload);
+  if (!persistedSummary.pinned) await persistedSummary.pin();
   registry.summaryMessageId = persistedSummary.id;
   await atomicJsonWrite(threadsFile(guildId), registry);
   await saveHistory(record.leagueId, history);
@@ -1412,7 +1427,7 @@ export async function refreshProgressionMessages({ client, guildId, leagueId, pe
       const batch = recommendations.slice(page * maxEmbeds, (page + 1) * maxEmbeds);
       await message.edit({
         content: message.content,
-        embeds: batch.map((item) => recordEmbed(record, item, rules)),
+        embeds: batch.map((item) => progressionCardEmbed(record, item)),
         components: controlsForRecommendations(record, teamId, page, batch),
         allowedMentions: { parse: [] },
       });
@@ -1421,8 +1436,8 @@ export async function refreshProgressionMessages({ client, guildId, leagueId, pe
   return record;
 }
 
-export function buildRecommendationEmbed(record, item, rules = readRules().progression) {
-  return recordEmbed(record, item, rules);
+export function buildRecommendationEmbed(record, item) {
+  return recordEmbed(record, item);
 }
 
 export function buildRecommendationStatusButtons(record, item) {

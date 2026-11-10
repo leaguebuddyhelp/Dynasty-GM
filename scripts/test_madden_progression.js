@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
+  buildRecommendationEmbed,
   buildOffseasonProgressionRecommendations,
   buildRecommendationStatusButtons,
   buildWeeklyProgressionRecommendations,
@@ -162,6 +163,10 @@ assert.equal(offseason.recommendations[0].pointTracking.positivePreviouslyConfir
 assert.equal(offseason.recommendations[0].pointTracking.negativePreviouslyConfirmed, 0);
 assert.equal(offseason.population.overall80Plus, 1);
 assert.equal(offseason.population.quarterbacks80Plus, 1);
+const recommendationEmbed = buildRecommendationEmbed(offseason, offseason.recommendations[0]).toJSON();
+assert.match(recommendationEmbed.title, /Upgrade/);
+assert.match(recommendationEmbed.footer.text, /Season 2026/);
+assert.doesNotMatch(JSON.stringify(recommendationEmbed), /prior-applied|sync-test|Performance windows|OVR impact/);
 
 const buttons = buildRecommendationStatusButtons(offseason, offseason.recommendations[0]);
 assert.deepEqual(

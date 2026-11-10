@@ -30,7 +30,7 @@ Setup creates private **Franchise HQ** and **Franchise Management** channel grou
 
 Sync stores the latest franchise snapshot and immutable history with request deduplication. Reports include 21 positional player leaderboards, configurable team ratings, standings, playoff picture, progression recommendations, and a weekly mock draft when a reliable completed regular-season week advances. Draft grading waits for an offseason completion signal or a full rookie class. Draft exports preserve unresolved selections instead of inventing missing picks.
 
-Progression uses team threads in `#player-upgrades`. Apply changes manually in Madden, then mark recommendations Applied or Skipped. The bot does not edit EA player attributes. Rules and rating formulas live in `config/madden_solo_rules.json`.
+Progression uses team threads in `#player-upgrades`. Weekly recommendations stay in their team threads, while the pinned progression summary and report boards refresh in place. Apply changes manually in Madden, then mark recommendations Applied or Skipped. The bot does not edit EA player attributes. Rules and rating formulas live in `config/madden_solo_rules.json`.
 
 ## Storage and hosting
 
