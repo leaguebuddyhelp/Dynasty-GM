@@ -1,3 +1,4 @@
+import { getSoloInteractionDenial } from '../../leaguebuddy/solo_mode.js';
 import fs from 'fs';
 
 import connectionRepository from '../../leaguebuddy/repositories/madden_connection_repository.js';
@@ -85,7 +86,7 @@ function getExportUrlReachabilityError(value) {
     return 'Export URL must be a real http:// or https:// link.';
   }
   if (isPrivateHost(parsed.hostname)) {
-    return 'This link points to your local or private network. LEAGUEbuddy runs on Railway and can only import from public internet-reachable URLs.';
+    return 'This link points to your local or private network. Dynasty GM can only import from public internet-reachable URLs.';
   }
   return null;
 }
@@ -287,7 +288,19 @@ async function buildPersonaChoices(loginAccessToken) {
 
 function publicBaseUrl() {
   const explicit = safeString(process.env.LB_PUBLIC_BASE_URL);
-  if (explicit) return explicit.replace(/\/+$/, '');
+  if (explicit) {
+    const candidate = /^[a-z][a-z\d+.-]*:\/\//i.test(explicit) ? explicit : `https://${explicit}`;
+    let parsed;
+    try {
+      parsed = new URL(candidate);
+    } catch (error) {
+      throw new Error('LB_PUBLIC_BASE_URL must be a valid HTTP(S) URL or hostname.', { cause: error });
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) {
+      throw new Error('LB_PUBLIC_BASE_URL must be a valid HTTP(S) URL or hostname.');
+    }
+    return parsed.toString().replace(/\/+$/, '');
+  }
   const callbackUrl = safeString(process.env.EA_REDIRECT_URL);
   if (callbackUrl) {
     const parsed = new URL(callbackUrl);
@@ -409,6 +422,8 @@ function demoPayloadForGuild(guildId) {
 }
 
 export function beginLeagueConnection({ guildId, guildName, createdByUserId }) {
+  const denial = getSoloInteractionDenial({ guildId, userId: createdByUserId });
+  if (denial) throw new Error(denial);
   const session = connectionRepository.createConnectSession({
     guildId,
     guildName,
@@ -433,6 +448,9 @@ export function getLeagueConnectionDashboard(token) {
   if (session.expiresAt && new Date(session.expiresAt).getTime() < Date.now()) {
     return { ok: false, code: 'expired_token', message: 'This setup link has expired. Run /setup again.' };
   }
+
+  const denial = getSoloInteractionDenial({ guildId: session.guildId, userId: session.createdByUserId });
+  if (denial) return { ok: false, code: 'unauthorized_session', message: denial };
 
   const connection = connectionRepository.getLeagueConnectionByGuildId(session.guildId);
   const exportSources = connectionRepository.getExportSourcesByGuildId(session.guildId);
@@ -793,7 +811,7 @@ export async function selectEaLeague({
       syncProgress: {
         status: 'running',
         phase: 'Starting sync',
-        detail: 'LEAGUEbuddy is opening your league and pulling the first data snapshot.',
+        detail: 'Dynasty GM is opening your league and pulling the first data snapshot.',
         updatedAt: nowIso(),
       },
     });
@@ -855,7 +873,7 @@ export async function selectEaLeague({
 
     return {
       ok: true,
-      message: 'League connected. LEAGUEbuddy is now pulling your first data snapshot. Stay on this page while it updates.',
+      message: 'League connected. Dynasty GM is now pulling your first data snapshot. Stay on this page while it updates.',
       syncing: true,
     };
   } catch (error) {
@@ -954,7 +972,7 @@ export async function quickReconnectLeagueByToken(token) {
       syncProgress: {
         status: 'running',
         phase: 'Quick reconnect started',
-        detail: 'LEAGUEbuddy is reusing the saved EA account and saved league, then pulling a fresh snapshot.',
+        detail: 'Dynasty GM is reusing the saved EA account and saved league, then pulling a fresh snapshot.',
         updatedAt: nowIso(),
       },
     });
@@ -987,7 +1005,7 @@ export async function quickReconnectLeagueByToken(token) {
         updateSessionSyncProgress(token, {
           status: 'succeeded',
           phase: 'Quick reconnect complete',
-          detail: 'League data is refreshed. Return to Discord and run /setup or /weeklyupdate.',
+          detail: 'League data is refreshed. Return to Discord and run /setup or /sync.',
         });
       } catch (error) {
         connectionRepository.upsertLeagueConnection({

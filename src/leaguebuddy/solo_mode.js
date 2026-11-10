@@ -1,52 +1,38 @@
-const SOLO_MODE_COMMAND_BLOCKLIST = new Set([
-  'activateplan',
-  'activitycheck',
-  'assignrole',
-  'claim-plan',
-  'deactivateplan',
-  'draftclass',
-  'draftprimer',
-  'enablepack',
-  'disablepack',
-  'member',
-  'myscouts',
-  'onboard',
-  'pricing',
-  'recruiting',
-  'scout',
-  'setplan',
-  'setsubscriptionstatus',
-  'setup',
-  'setup-check',
-  'setup-reset',
-  'setup-roles',
-  'streamlink',
-  'tradeblock',
-  'tradevalue',
-  'viewbilling',
+// Solo operation is permanent; the old mode switch cannot restore other features.
+export function isSoloModeEnabled() { return true; }
+
+export const SOLO_COMMAND_MODULES = Object.freeze([
+  ['setup', '../madden/staff/setup_dashboard.js'],
+  ['disconnectleague', '../madden/staff/disconnectleague.js'],
+  ['league-status', '../madden/staff/league-status.js'],
+  ['sync', '../madden/sync.js'],
+  ['ping', '../madden/ping.js'],
+  ['help', '../madden/coach/mycommands.js'],
+  ['roster', '../madden/coach/roster.js'],
+  ['playersearch', '../madden/coach/playersearch.js'],
+  ['schedule', '../madden/coach/schedule.js'],
+  ['bigboard', '../madden/coach/bigboard.js'],
+  ['mockdraft', '../madden/coach/mockdraft.js'],
+  ['draftexport', '../madden/staff/draftexport.js'],
+  ['awards', '../madden/staff/awards.js'],
 ]);
 
-const SOLO_MODE_COMMAND_PREFIX_BLOCKLIST = ['madden-setup'];
-
-const SOLO_MODE_INTERACTION_BLOCKLIST = [
-  /^(?:madden_)?(?:trade|trade_builder|trade_for|trade_preview|trade_modal|committee_|trade_dm_)/i,
-  /^(?:submit_score|game_complete|madden_game_complete|madden_game_status|set_game_info_modal_)/i,
-  /^(?:madden_myscouts_|madden_bigboard_|madden_mockdraft|madden_recruiting_page_|scout_select_|mergedraft_)/i,
-  /^(?:madden_content_review|madden_franchisehub_|madden_sportsbook_)/i,
-  /^(?:lb_plan_|claim_|setup_claim_)/i,
-];
-
-function envFlag(value) {
-  return ['true', '1', 'yes', 'on'].includes(String(value || '').trim().toLowerCase());
-}
-
-export function isSoloModeEnabled() {
-  return envFlag(process.env.MADDEN_SOLO_MODE);
-}
+export const SOLO_INTERACTION_MODULES = Object.freeze([
+  '../interactions/madden_setup_dashboard.js',
+  '../interactions/madden_solo_rankings.js',
+  '../interactions/madden_progression.js',
+  '../interactions/madden_roster_page.js',
+  '../interactions/madden_roster_select.js',
+  '../interactions/madden_schedule_page.js',
+  '../interactions/madden_schedule_game.js',
+  '../interactions/madden_schedule_back.js',
+  '../interactions/madden_bigboard_page.js',
+  '../interactions/madden_awards_button.js',
+]);
 
 export function getSoloModeConfig() {
   return {
-    enabled: isSoloModeEnabled(),
+    enabled: true,
     userId: String(process.env.MADDEN_SOLO_USER_ID || '').trim(),
     guildId: String(process.env.MADDEN_SOLO_GUILD_ID || '').trim(),
   };
@@ -54,49 +40,50 @@ export function getSoloModeConfig() {
 
 export function validateSoloModeConfig() {
   const config = getSoloModeConfig();
-  if (!config.enabled) return config;
   const missing = [];
   if (!config.userId) missing.push('MADDEN_SOLO_USER_ID');
   if (!config.guildId) missing.push('MADDEN_SOLO_GUILD_ID');
-  if (missing.length) {
-    throw new Error(`MADDEN_SOLO_MODE requires ${missing.join(' and ')}.`);
-  }
+  if (missing.length) throw new Error(`Solo app requires ${missing.join(' and ')}.`);
   return config;
 }
 
 export function isSoloCommandEnabled(commandName) {
-  if (!isSoloModeEnabled()) return true;
-  const normalized = String(commandName || '').trim().toLowerCase();
-  if (SOLO_MODE_COMMAND_BLOCKLIST.has(normalized)) return false;
-  return !SOLO_MODE_COMMAND_PREFIX_BLOCKLIST.some((prefix) => normalized.startsWith(prefix));
+  return SOLO_COMMAND_MODULES.some(([name]) => name === String(commandName || '').trim().toLowerCase());
 }
 
-export function getSoloInteractionDenial({ userId, guildId, commandName, customId } = {}) {
+export function getSoloInteractionDenial({ userId, guildId, commandName } = {}) {
   const config = getSoloModeConfig();
-  if (!config.enabled) return null;
-  if (!config.userId || !config.guildId) {
-    return 'Solo mode is not configured. Set MADDEN_SOLO_USER_ID and MADDEN_SOLO_GUILD_ID.';
-  }
-  if (String(guildId || '') !== config.guildId) {
-    return 'This bot is configured for a different Madden franchise server.';
-  }
-  if (String(userId || '') !== config.userId) {
-    return 'This Madden Franchise HQ is restricted to its authorized operator.';
-  }
-  if (commandName && !isSoloCommandEnabled(commandName)) {
-    return 'That multiplayer or customer-management command is disabled in solo mode.';
-  }
-  const interactionId = String(customId || '');
-  if (interactionId && SOLO_MODE_INTERACTION_BLOCKLIST.some((pattern) => pattern.test(interactionId))) {
-    return 'That multiplayer or customer-management interaction is disabled in solo mode.';
-  }
+  if (!config.userId || !config.guildId) return 'Set MADDEN_SOLO_USER_ID and MADDEN_SOLO_GUILD_ID to configure your franchise.';
+  if (String(guildId || '') !== config.guildId) return 'This app is configured for a different Madden franchise server.';
+  if (String(userId || '') !== config.userId) return 'This Madden Franchise HQ is restricted to its authorized operator.';
+  if (commandName && !isSoloCommandEnabled(commandName)) return 'That command is no longer available in this solo app.';
   return null;
 }
 
-export default {
-  getSoloModeConfig,
-  getSoloInteractionDenial,
-  isSoloCommandEnabled,
-  isSoloModeEnabled,
-  validateSoloModeConfig,
-};
+export async function loadSoloCommands() {
+  const commands = new Map();
+  for (const [name, modulePath] of SOLO_COMMAND_MODULES) {
+    const module = await import(new URL(modulePath, import.meta.url));
+    const command = { ...module, ...module.default };
+    if (command.data?.name !== name || typeof command.execute !== 'function') throw new Error(`Invalid solo command module: ${modulePath}`);
+    command.data.setDefaultMemberPermissions(null).setDMPermission(false);
+    commands.set(name, command);
+  }
+  return commands;
+}
+
+export async function loadSoloInteractionHandlers() {
+  const handlers = [];
+  for (const modulePath of SOLO_INTERACTION_MODULES) {
+    const module = await import(new URL(modulePath, import.meta.url));
+    const handler = { ...module, ...module.default };
+    if (handler.customId && typeof handler.execute === 'function') handlers.push(handler);
+    for (const key of Object.keys(handler).filter((key) => key.startsWith('customId_'))) {
+      const execute = handler[`execute_${key.slice('customId_'.length)}`] || handler.execute;
+      if (typeof execute === 'function') handlers.push({ customId: handler[key], execute });
+    }
+  }
+  return handlers;
+}
+
+export default { getSoloModeConfig, getSoloInteractionDenial, isSoloCommandEnabled, isSoloModeEnabled, validateSoloModeConfig };
