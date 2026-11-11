@@ -627,8 +627,8 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     }
     if (!duplicate && options.client && options.guildId) {
       try {
-        const { isDraftCompletionSync, maybePostDraftGrades } = await import('./draft_grades_auto.js');
-        if (isDraftCompletionSync(existingSnapshot, snapshot)) {
+        const { isDraftReadyForGrades, maybePostDraftGrades } = await import('./draft_grades_auto.js');
+        if (isDraftReadyForGrades(snapshot)) {
           result.draftGrades = await maybePostDraftGrades(options.client, leagueId, options.guildId);
         }
       } catch (error) {

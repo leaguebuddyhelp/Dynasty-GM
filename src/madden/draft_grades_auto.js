@@ -59,25 +59,19 @@ function countDraftedRookies(snapshot) {
 
 export function isDraftReadyForGrades(snapshot) {
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-  const weekType = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? snapshot?.stage ?? 1);
+  const rawWeekType = seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId;
+  const weekType = Number(rawWeekType ?? snapshot?.stage ?? 1);
+  const hasExplicitWeekType = rawWeekType !== undefined && rawWeekType !== null;
   const seasonTitle = String(seasonInfo.seasonTitle || '').toLowerCase();
   const rookieCount = countDraftedRookies(snapshot);
-  const isRegularSeason = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId) === 1;
-  const isOffseason = !isRegularSeason && (
-    Number(seasonInfo.offSeasonStage || 0) > 0 ||
-    weekType === 3 ||
-    weekType === 8 ||
-    seasonTitle.includes('offseason') ||
-    (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true)
-  );
-  const draftMarkedComplete = seasonInfo.isDraftActive === false;
-  const hasExpectedDraftClass = rookieCount >= 224;
-  return isOffseason && (draftMarkedComplete || hasExpectedDraftClass) && rookieCount >= 32;
-}
-
-export function isDraftCompletionSync(previousSnapshot, currentSnapshot) {
-  return isDraftReadyForGrades(currentSnapshot)
-    && !isDraftReadyForGrades(previousSnapshot);
+  const isOffseason = Number(seasonInfo.offSeasonStage || 0) > 0
+    || seasonTitle.includes('offseason')
+    || weekType === 3
+    || weekType === 8
+    || ((!hasExplicitWeekType || weekType !== 1)
+      && seasonInfo.isDraftActive === false
+      && seasonInfo.isLeagueStarted === true);
+  return isOffseason && seasonInfo.isDraftActive !== true && rookieCount >= 32;
 }
 
 export function computeDraftGrades(snapshot) {
@@ -191,9 +185,9 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
     const weekType = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? snapshot?.stage ?? 1);
     const rookieCount = countDraftedRookies(snapshot);
-    // Do not finalize until Madden marks the draft complete or the full rookie class is imported.
+    // Keep checking eligible offseason syncs until grades post successfully.
     if (!isDraftReadyForGrades(snapshot)) {
-      console.warn('[draft-grades-auto] skipped: not in draft recap/offseason window', {
+      console.warn('[draft-grades-auto] skipped: draft completion criteria were not met', {
         leagueId,
         guildId,
         weekType,

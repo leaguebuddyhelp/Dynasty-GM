@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import {
-  isDraftCompletionSync,
   isDraftReadyForGrades,
 } from '../src/madden/draft_grades_auto.js';
 
@@ -27,7 +26,27 @@ assert.equal(isDraftReadyForGrades(snapshot({
 })), true);
 assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: Array.from({ length: 32 }, () => 0),
+  seasonInfo: { seasonWeekType: 8, isDraftActive: false },
+})), true);
+assert.equal(isDraftReadyForGrades(snapshot({
+  yearsPro: Array.from({ length: 32 }, () => 0),
   seasonInfo: { seasonWeekType: 0, isDraftActive: false, isLeagueStarted: true },
+})), true);
+assert.equal(isDraftReadyForGrades(snapshot({
+  yearsPro: Array.from({ length: 32 }, () => 0),
+  seasonInfo: { seasonWeekType: 1, offSeasonStage: 1, isDraftActive: false, isLeagueStarted: true },
+})), true);
+assert.equal(isDraftReadyForGrades(snapshot({
+  yearsPro: Array.from({ length: 32 }, () => 0),
+  seasonInfo: { seasonWeekType: 1, seasonTitle: 'Offseason', isDraftActive: false },
+})), true);
+assert.equal(isDraftReadyForGrades(snapshot({
+  yearsPro: Array.from({ length: 32 }, () => 0),
+  seasonInfo: { offSeasonStage: 3, isDraftActive: false },
+})), true);
+assert.equal(isDraftReadyForGrades(snapshot({
+  yearsPro: Array.from({ length: 32 }, () => 0),
+  seasonInfo: { isDraftActive: false, isLeagueStarted: true },
 })), true);
 assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: Array.from({ length: 32 }, () => 0),
@@ -35,7 +54,7 @@ assert.equal(isDraftReadyForGrades(snapshot({
 })), false);
 assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 1, offSeasonStage: 1, isDraftActive: false, isLeagueStarted: true },
+  seasonInfo: { seasonWeekType: 1, offSeasonStage: 0, isDraftActive: false, isLeagueStarted: true },
 })), false);
 assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: Array.from({ length: 31 }, () => 0),
@@ -45,10 +64,8 @@ assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: Array.from({ length: 224 }, () => 0),
   seasonInfo: { seasonWeekType: 0, isDraftActive: false },
 })), false);
-const postDraft = snapshot({
+assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 0, isDraftActive: false, isLeagueStarted: true },
-});
-assert.equal(isDraftCompletionSync(null, postDraft), true);
-assert.equal(isDraftCompletionSync(postDraft, postDraft), false);
-console.log('PASS draft grades wait for authoritative completion or a full rookie class');
+  seasonInfo: { offSeasonStage: 1, isDraftActive: true },
+})), false);
+console.log('PASS draft grades recognize offseason weeks and wait until the draft is complete');
