@@ -150,4 +150,26 @@ assert.equal(cards.filter((card) => card.title.startsWith('🟠')).length, 1);
 assert.match(cards[0].description, /→/);
 await publishProgressionReports({ client, guildId, snapshot: seasonEnd });
 assert.equal(falcons.storedMessages.size, totalBefore + 14, 'A repeat sync edits existing offseason cards');
+
+const lineWeek = makeSnapshot('line-week', 1, 2, 2030);
+lineWeek.rosters.teams[1].rosterInfoList = [{
+  rosterId: 'season-lt', firstName: 'Season', lastName: 'Lineman', position: 'LT',
+  playerBestOvr: 75, runBlockRating: 75,
+}];
+lineWeek.rosters.teams[2].rosterInfoList = [];
+lineWeek.weeklyStats = [{ stage: 1, weekIndex: 0,
+  passing: { playerPassingStatInfoList: [{ rosterId: 'other-qb', teamId: 1, passAtt: 30, passSacks: 1 }] },
+  rushing: { playerRushingStatInfoList: [{ rosterId: 'other-hb', teamId: 1, rushAtt: 25, rushYds: 150 }] },
+}];
+await persistSyncHistory({ leagueId, snapshot: lineWeek, summary: {} });
+await publishProgressionReports({ client, guildId, snapshot: lineWeek });
+const lineEnd = structuredClone(lineWeek);
+lineEnd.syncId = 'line-offseason';
+lineEnd.info.careerHubInfo.seasonInfo.seasonWeekType = 3;
+await persistSyncHistory({ leagueId, snapshot: lineEnd, summary: {} });
+const beforeLine = falcons.storedMessages.size;
+const lineReport = await publishProgressionReports({ client, guildId, snapshot: lineEnd });
+assert.equal(lineReport.recommendationCount, 1, 'Offseason should use the line starter observed during a weekly sync');
+const lineCards = [...falcons.storedMessages.values()].slice(beforeLine).flatMap((entry) => entry.payload.embeds.map((item) => item.toJSON()));
+assert.ok(lineCards.some((entry) => /Season Lineman/.test(entry.title) && /proxy, not individual blocking stats/.test(JSON.stringify(entry))));
 console.log('PASS season OVR comparisons, partial baselines, team threads, repeat updates, and season rollover');

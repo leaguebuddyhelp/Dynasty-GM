@@ -954,6 +954,38 @@ function allTotals(rows) {
   return totals;
 }
 
+function seasonStatSummaries(rows) {
+  const totals = allTotals(rows);
+  const averages = {};
+  const counts = {};
+  for (const { totals: stats } of rows) {
+    for (const [field, value] of Object.entries(stats)) {
+      if (!Number.isFinite(Number(value))) continue;
+      counts[field] = (counts[field] || 0) + 1;
+    }
+  }
+  for (const [field, value] of Object.entries(totals)) averages[field] = value / counts[field];
+  for (const [field, numerator, denominator, scale] of [
+    ['passCompPct', 'passComp', 'passAtt', 100],
+    ['passYdsPerAtt', 'passYds', 'passAtt', 1],
+    ['recYdsPerCatch', 'recYds', 'recCatches', 1],
+    ['fgCompPct', 'fgMade', 'fgAtt', 100],
+    ['pntYdsPerAtt', 'pntYds', 'pntAtt', 1],
+    ['pntNetYdsPerAtt', 'pntNetYds', 'pntAtt', 1],
+  ]) {
+    if (counts[numerator] === counts[denominator] && counts[denominator] === rows.length && totals[denominator] > 0) {
+      averages[field] = totals[numerator] / totals[denominator] * scale;
+    } else {
+      delete averages[field];
+    }
+  }
+  for (const field of ['passLongest', 'rushLongest', 'recLongest', 'fgLongest', 'pntLongest']) {
+    const values = rows.map((row) => numberOrNull(row.totals[field])).filter((value) => value !== null);
+    if (values.length) averages[field] = Math.max(...values);
+  }
+  return { totals, averages };
+}
+
 function getPopulationSoftPenalty(player, population, rules) {
   const balance = rules.softBalancing;
   const penalty = Number(balance.populationOverTargetPenalty);
@@ -1214,12 +1246,12 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   return record;
 }
 
-function makeOffseasonAttributes(player, stats, rules, positionKey, direction, tier, seasonGames) {
+function makeOffseasonAttributes(player, stats, averages, rules, positionKey, direction, tier, seasonGames) {
   const positionRule = rules.weekly.positions[positionKey];
   if (!positionRule) return [];
   if (direction === 'upgrade') {
     const positives = getEvidenceAttributes(
-      stats,
+      averages,
       player,
       rules.weekly,
       positionRule,
@@ -1251,11 +1283,20 @@ function makeOffseasonAttributes(player, stats, rules, positionKey, direction, t
 export function buildOffseasonProgressionRecommendations(snapshot, {
   history = { periods: {}, seasonAwards: {} },
   startingOveralls = {},
+  lineObservations = [],
   rules = readRules().progression,
 } = {}) {
   const seasonKey = getMaddenSeasonKey(snapshot);
   const { players, aliases } = getRosterPlayers(snapshot);
   const byWeek = buildWeeklyPlayerStats(snapshot, aliases, { includePostseason: true });
+  const currentPlayers = new Map(players.map((player) => [player.key, player]));
+  for (const observation of lineObservations) {
+    const player = currentPlayers.get(observation.playerKey);
+    if (!player || player.teamId !== observation.teamId || player.position !== observation.position) continue;
+    const week = byWeek.get(observation.weekIndex) || new Map();
+    week.set(player.key, { playerKey: player.key, position: player.position, games: 1, totals: observation.totals });
+    byWeek.set(observation.weekIndex, week);
+  }
   const population = populationSnapshot(players, rules);
   const maxWeek = Math.max(-1, ...byWeek.keys());
   const candidates = [];
@@ -1266,11 +1307,12 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
     const positionRule = positionKey ? positionRules[positionKey] : null;
     if (!positionRule) continue;
     const windows = getPlayerWindowScores(player.key, player, byWeek, maxWeek, positionKey, rules.weekly);
-    const rows = windows.metrics.map((entry) => entry.row);
+    const observedMetrics = windows.metrics.filter((entry) =>
+      opportunityConfirmed(entry.row.totals, positionKey, rules.weekly));
+    const rows = observedMetrics.map((entry) => entry.row);
     if (!rows.length) continue;
-    const totalStats = allTotals(rows);
+    const { totals: totalStats, averages: avgStats } = seasonStatSummaries(rows);
     const games = rows.length;
-    const avgStats = Object.fromEntries(Object.entries(totalStats).map(([field, value]) => [field, value / games]));
     const seasonMetrics = performanceMetrics(avgStats, player.ovr, positionRule, rules.weekly);
     const seasonScore = seasonMetrics.score;
     const youngBonus = Number(rules.offseason.experienceBonusByYearsPro[String(player.yearsPro)] || 0);
@@ -1289,7 +1331,9 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
     const negativeUsed = sumAttributePoints(history, seasonKey, player.key, 'negative');
     const soft = positiveSeasonPenalty(positiveUsed, startingOvr, rules.offseason);
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
-    const consistency = windows.seasonConsistency;
+    const consistency = getStrongPoorCounts(observedMetrics.map((entry) => entry.score), rules.weekly);
+    const recentScores = observedMetrics.slice(-Number(rules.weekly.rollingGames)).map((entry) => entry.score);
+    const recentScore = recentScores.reduce((sum, score) => sum + score, 0) / recentScores.length;
     const selectionAdjustments = {
       youthExperience: youngBonus,
       awards: awards,
@@ -1316,7 +1360,7 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
       }
     }
     if (!direction) continue;
-    const attributes = makeOffseasonAttributes(player, totalStats, rules, positionKey, direction, tier, games);
+    const attributes = makeOffseasonAttributes(player, totalStats, avgStats, rules, positionKey, direction, tier, games);
     if (!attributes.length) continue;
     const minimumSelectionScore = direction === 'upgrade'
       ? Number(rules.offseason.minimumUpgradeSelectionScore)
@@ -1331,16 +1375,20 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
       selectionAdjustments,
       consistency,
       awardPoints: direction === 'upgrade' ? awards : 0,
-      stats: totalStats,
+      stats: {
+        ...Object.fromEntries(Object.entries(totalStats).filter(([field]) => !/Pct$|PerAtt$|PerCatch$|Longest$/.test(field))),
+        ...Object.fromEntries(Object.entries(avgStats).filter(([field]) => /Pct$|PerAtt$|PerCatch$|Longest$/.test(field))),
+      },
       attributes,
       currentGameScore: null,
-      recentFourGameScore: windows.recentScore,
+      recentFourGameScore: recentScore,
       seasonToDateScore: seasonScore,
       explanation: direction === 'upgrade'
         ? `Full-season performance score ${seasonScore.toFixed(1)}, including OVR-adjusted expectations and ${games} played games.`
         : `Full-season performance score ${seasonScore.toFixed(1)} with verified attribute-specific evidence for ${attributes.map((item) => item.attribute).join(', ')}.`,
     }));
     candidates.at(-1).minimumSelectionScore = minimumSelectionScore;
+    if (positionKey === 'OL') candidates.at(-1).changeContext = { teamLineProxy: true };
     candidates.at(-1).pointTracking = {
       positivePreviouslyConfirmed: positiveUsed,
       negativePreviouslyConfirmed: negativeUsed,
@@ -1756,6 +1804,28 @@ async function startingOveralls(leagueId, snapshot, seasonKey) {
   return Object.fromEntries(result);
 }
 
+async function historicalLineObservations(leagueId, seasonKey, history) {
+  const directory = path.join(getMaddenLeaguesDir(), 'history', safeId(leagueId, 'Madden league ID'));
+  const observations = [];
+  for (const period of Object.values(history.periods || {})) {
+    if (period.type !== 'weekly' || period.seasonKey !== seasonKey || !Number.isInteger(period.weekIndex)) continue;
+    const syncId = period.latestSyncId || period.syncId;
+    if (!syncId) continue;
+    const archived = await loadJsonFile(path.join(directory, `${safeId(syncId, 'sync ID')}.json`), null);
+    if (!archived) throw new Error(`Missing archived snapshot for ${seasonKey} week ${period.weekIndex + 1}.`);
+    if (getMaddenSeasonKey(archived) !== seasonKey) throw new Error(`Archived snapshot has the wrong season for week ${period.weekIndex + 1}.`);
+    const { players, aliases } = getRosterPlayers(archived);
+    const weekly = new Map();
+    addOffensiveLineProxies(archived, players, aliases, weekly, period.weekIndex);
+    for (const player of players) {
+      if (!OFFENSIVE_LINE_POSITIONS.has(player.position)) continue;
+      const row = weekly.get(period.weekIndex)?.get(player.key);
+      if (row) observations.push({ playerKey: player.key, teamId: player.teamId, position: player.position, weekIndex: period.weekIndex, totals: row.totals });
+    }
+  }
+  return observations;
+}
+
 async function seasonComparisonBaseline(leagueId, seasonKey) {
   const file = path.join(getMaddenLeaguesDir(), 'history', safeId(leagueId, 'Madden league ID'), 'index.json');
   const index = await loadJsonFile(file, { records: [] });
@@ -1871,6 +1941,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
     : buildOffseasonProgressionRecommendations(snapshot, {
       history,
       startingOveralls: starting,
+      lineObservations: await historicalLineObservations(leagueId, seasonKey, history),
       rules,
     });
   const old = history.periods[current.periodKey];

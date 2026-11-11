@@ -13,6 +13,44 @@ import {
 
 const baseRules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
 
+const offseasonRoster = [
+  { rosterId: 'mixed-qb', firstName: 'Mixed', lastName: 'QB', position: 'QB', playerBestOvr: 75, throwAccShortRating: 75 },
+  { rosterId: 'mixed-hb', firstName: 'Mixed', lastName: 'HB', position: 'HB', playerBestOvr: 75, bCVRating: 75 },
+  { rosterId: 'mixed-wr', firstName: 'Mixed', lastName: 'WR', position: 'WR', playerBestOvr: 75, routeRunShortRating: 75 },
+  { rosterId: 'mixed-cb', firstName: 'Mixed', lastName: 'CB', position: 'CB', playerBestOvr: 75, tackleRating: 75 },
+  { rosterId: 'mixed-lt', firstName: 'Mixed', lastName: 'LT', position: 'LT', playerBestOvr: 75, runBlockRating: 75 },
+  { rosterId: 'mixed-k', firstName: 'Mixed', lastName: 'K', position: 'K', playerBestOvr: 75, kickAccRating: 75 },
+  { rosterId: 'mixed-p', firstName: 'Mixed', lastName: 'P', position: 'P', playerBestOvr: 75, kickPowerRating: 75 },
+];
+const mixedSeason = {
+  leagueId: 'mixed-season', syncId: 'mixed', calendarYear: 2026,
+  teams: { leagueTeamInfoList: [{ teamId: 1, cityName: 'Test', nickName: 'Team' }] },
+  rosters: { teams: { 1: { rosterInfoList: offseasonRoster } } },
+  weeklyStats: Array.from({ length: 4 }, (_, weekIndex) => ({
+    stage: 1, weekIndex,
+    passing: { playerPassingStatInfoList: [{ rosterId: 'mixed-qb', teamId: 1, passAtt: 30, passComp: 24, passYds: 400, passTDs: 4, passInts: 0 }] },
+    rushing: { playerRushingStatInfoList: [{ rosterId: 'mixed-hb', teamId: 1, rushAtt: 20, rushYds: 150, rushTDs: 2 }] },
+    receiving: { playerReceivingStatInfoList: [{ rosterId: 'mixed-wr', teamId: 1, recCatches: 8, recYds: 150, recTDs: 2 }] },
+    defense: { playerDefensiveStatInfoList: [{ rosterId: 'mixed-cb', teamId: 1, defTotalTackles: 10, defInts: 2, defPassDeflections: 3 }] },
+    kicking: { playerKickingStatInfoList: [{ rosterId: 'mixed-k', teamId: 1, fGAtt: 3, fGMade: 3, xPAtt: 3, xPMade: 3 }] },
+    punting: { playerPuntingStatInfoList: [{ rosterId: 'mixed-p', teamId: 1, puntAtt: 4, puntYds: 200, puntNetYds: 180, puntsIn20: 2 }] },
+  })),
+};
+const mixedLineHistory = Array.from({ length: 4 }, (_, weekIndex) => ({
+  playerKey: 'roster:mixed-lt', teamId: '1', position: 'LT', weekIndex,
+  totals: { teamRushAtt: 25, teamRushYds: 150, teamRunScore: 100, teamLineScore: 100 },
+}));
+const mixedOffseason = buildOffseasonProgressionRecommendations(mixedSeason, { rules: baseRules, lineObservations: mixedLineHistory });
+for (const position of ['QB', 'HB', 'WR', 'CB', 'LT', 'K', 'P']) {
+  assert.ok(mixedOffseason.recommendations.some((item) => item.position === position), `Missing offseason ${position}`);
+}
+const kicker = mixedOffseason.recommendations.find((item) => item.position === 'K');
+assert.equal(kicker.stats.fgCompPct, 100, 'Season accuracy must not sum weekly percentages');
+assert.match(JSON.stringify(buildProgressionCardEmbed(mixedOffseason, mixedOffseason.recommendations.find((item) => item.position === 'LT')).toJSON()), /proxy, not individual blocking stats/);
+assert.ok(!buildOffseasonProgressionRecommendations(mixedSeason, { rules: baseRules }).recommendations.some((item) => item.position === 'LT'));
+const wrongTeamLines = mixedLineHistory.map((row) => ({ ...row, teamId: '2' }));
+assert.ok(!buildOffseasonProgressionRecommendations(mixedSeason, { rules: baseRules, lineObservations: wrongTeamLines }).recommendations.some((item) => item.position === 'LT'));
+
 const lineRoster = [
   { rosterId: 'line-lt', position: 'LT', playerBestOvr: 80, runBlockRating: 80, runBlockPowerRating: 80, runBlockFinesseRating: 80, passBlockRating: 80, passBlockPowerRating: 80, passBlockFinesseRating: 80, impactBlockRating: 80 },
   { rosterId: 'line-backup', position: 'LT', playerBestOvr: 70, runBlockRating: 70 },
