@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import {
+  getDraftClassStateKey,
   isDraftReadyForGrades,
 } from '../src/madden/draft_grades_auto.js';
 
@@ -58,4 +59,15 @@ const rookieFlagWithExperienceSnapshot = snapshot({
 });
 rookieFlagWithExperienceSnapshot.rosters.teams['1'].rosterInfoList = [{ yearsPro: 1, isRookie: true }];
 assert.equal(isDraftReadyForGrades(rookieFlagWithExperienceSnapshot), true);
+const firstClass = snapshot({ yearsPro: [0, 0] });
+firstClass.rosters.teams['1'].rosterInfoList[0].rosterId = 1001;
+firstClass.rosters.teams['1'].rosterInfoList[1].rosterId = 1002;
+const reorderedClass = snapshot({ yearsPro: [0, 0] });
+reorderedClass.rosters.teams['1'].rosterInfoList[0].rosterId = 1002;
+reorderedClass.rosters.teams['1'].rosterInfoList[1].rosterId = 1001;
+const secondClass = snapshot({ yearsPro: [0, 0] });
+secondClass.rosters.teams['1'].rosterInfoList[0].rosterId = 2001;
+secondClass.rosters.teams['1'].rosterInfoList[1].rosterId = 2002;
+assert.equal(getDraftClassStateKey(firstClass), getDraftClassStateKey(reorderedClass));
+assert.notEqual(getDraftClassStateKey(firstClass), getDraftClassStateKey(secondClass));
 console.log('PASS draft grades post-ready after any rookie appears and the draft is not active');

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'node:crypto';
 import { EmbedBuilder } from 'discord.js';
 import { loadLeagueSnapshot } from './madden_data.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
@@ -63,6 +64,26 @@ function countDraftedRookies(snapshot) {
     .flatMap((team) => team?.rosterInfoList || team?.rosterPlayerInfoList || [])
     .filter(isDraftRookie)
     .length;
+}
+
+export function getDraftClassStateKey(snapshot) {
+  const rookieKeys = Object.values(snapshot?.rosters?.teams || {})
+    .flatMap((team) => team?.rosterInfoList || team?.rosterPlayerInfoList || [])
+    .filter(isDraftRookie)
+    .map((player) => {
+      if (player?.rosterId !== undefined && player?.rosterId !== null) {
+        return `roster:${player.rosterId}`;
+      }
+      const name = normalizeName(player?.fullName || `${player?.firstName || ''} ${player?.lastName || ''}`);
+      const position = String(player?.position || '').toUpperCase();
+      const birthYear = player?.birthYear ?? '';
+      return name ? `player:${name}:${position}:${birthYear}` : null;
+    })
+    .filter(Boolean)
+    .sort();
+  if (!rookieKeys.length) return null;
+  const fingerprint = createHash('sha256').update(rookieKeys.join('|')).digest('hex').slice(0, 16);
+  return `draft_${getMaddenDraftYear(snapshot)}_${fingerprint}`;
 }
 
 export function isDraftReadyForGrades(snapshot) {
@@ -218,11 +239,11 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
 
     const state = loadJson(STATE_FILE, {});
     const seasonYear = Number(seasonInfo.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear());
-    const seasonKey = `year_${seasonYear}`;
+    const draftClassKey = getDraftClassStateKey(snapshot);
     state[leagueId] = state[leagueId] || {};
-    const lastPosted = state[leagueId]?.[seasonKey] || state[leagueId];
+    const lastPosted = state[leagueId]?.[draftClassKey];
     if (lastPosted?.formulaVersion === DRAFT_GRADES_FORMULA_VERSION) {
-      return { posted: false, reason: 'Draft grades were already posted for this season.' };
+      return { posted: false, reason: 'Draft grades were already posted for this rookie class.' };
     }
 
     const grades = computeDraftGrades(snapshot);
@@ -237,10 +258,12 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
         : roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
       const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
       await channel.send({ content: coachTag ?? undefined, embeds: [embed] });
-      state[leagueId][seasonKey] = {
+      state[leagueId][draftClassKey] = {
         posted: true,
         fetchedAt: snapshot.fetchedAt,
         seasonYear,
+        draftYear: getMaddenDraftYear(snapshot),
+        rookieCount,
         formulaVersion: DRAFT_GRADES_FORMULA_VERSION,
         postedAt: new Date().toISOString(),
       };
