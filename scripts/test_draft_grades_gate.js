@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import {
+  computeDraftGrades,
   getDraftClassStateKey,
   isDraftReadyForGrades,
 } from '../src/madden/draft_grades_auto.js';
@@ -58,7 +59,15 @@ const rookieFlagWithExperienceSnapshot = snapshot({
   seasonInfo: { isDraftActive: false },
 });
 rookieFlagWithExperienceSnapshot.rosters.teams['1'].rosterInfoList = [{ yearsPro: 1, isRookie: true }];
-assert.equal(isDraftReadyForGrades(rookieFlagWithExperienceSnapshot), true);
+assert.equal(isDraftReadyForGrades(rookieFlagWithExperienceSnapshot), false);
+const gradeSnapshot = snapshot({ yearsPro: [0] });
+gradeSnapshot.teams = { leagueTeamInfoList: [{ teamId: 1, displayName: 'Test' }] };
+gradeSnapshot.rosters.teams['1'].rosterInfoList[0].playerBestOvr = 70;
+const currentGrades = computeDraftGrades(gradeSnapshot);
+gradeSnapshot.rosters.teams['1'].rosterInfoList.push({
+  yearsPro: 1, isRookie: true, playerBestOvr: 99,
+});
+assert.deepEqual(computeDraftGrades(gradeSnapshot), currentGrades);
 const firstClass = snapshot({ yearsPro: [0, 0] });
 firstClass.rosters.teams['1'].rosterInfoList[0].rosterId = 1001;
 firstClass.rosters.teams['1'].rosterInfoList[1].rosterId = 1002;
@@ -70,4 +79,4 @@ secondClass.rosters.teams['1'].rosterInfoList[0].rosterId = 2001;
 secondClass.rosters.teams['1'].rosterInfoList[1].rosterId = 2002;
 assert.equal(getDraftClassStateKey(firstClass), getDraftClassStateKey(reorderedClass));
 assert.notEqual(getDraftClassStateKey(firstClass), getDraftClassStateKey(secondClass));
-console.log('PASS draft grades post-ready after any rookie appears and the draft is not active');
+console.log('PASS draft grading identifies current rookies and ignores stale rookie flags');

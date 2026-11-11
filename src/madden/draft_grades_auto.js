@@ -12,6 +12,7 @@ import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
+import { isDraftRookie } from './draft_rookies.js';
 
 const STATE_FILE = getMaddenDataFilePath(path.join('draft_exports', 'posted_draft_grades.json'));
 const DRAFT_GRADES_FORMULA_VERSION = 2;
@@ -49,14 +50,6 @@ function resolveTeamNeedsForDraftGrades(teamName, needsByTeam = {}) {
   if (needsByTeam[normalized]) return needsByTeam[normalized];
   const hit = Object.entries(needsByTeam).find(([key]) => key === normalized || key.includes(normalized) || normalized.includes(key));
   return hit?.[1] || ['BPA'];
-}
-
-function isDraftRookie(player) {
-  if (player?.isRookie === true) return true;
-  if (player?.yearsPro !== undefined && player?.yearsPro !== null) {
-    return Number(player.yearsPro) === 0;
-  }
-  return false;
 }
 
 function countDraftedRookies(snapshot) {

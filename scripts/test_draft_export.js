@@ -94,7 +94,7 @@ assert.doesNotMatch(csv, /Draft Grade|Roster ID|Pick Verification|Presentation I
 assert.equal(csv.split('\r\n').length, 3);
 
 const released = collectDraft([previous, { ...current, rosters: { teams: {} } }]);
-assert.equal(released[0].currentRosterStatus, 'Not on current roster; last seen team shown');
+assert.equal(released.length, 0);
 
 const otherSeason = {
   season: 2024,
@@ -116,4 +116,42 @@ const otherSeason = {
 const currentSeasonExport = collectDraft([otherSeason, previous, current]);
 assert.equal(currentSeasonExport.length, 2);
 assert.equal(currentSeasonExport.some((player) => player.rosterId === 3003), false);
+
+const sameSeasonOldClass = { ...otherSeason, season: 2025 };
+const sameSeasonExport = collectDraft([sameSeasonOldClass, previous, current]);
+assert.equal(sameSeasonExport.length, 2);
+assert.equal(sameSeasonExport.some((player) => player.rosterId === 3003), false);
+assert.equal(sameSeasonExport.find((player) => player.rosterId === 1001).height, `6'4"`);
+const withStaleRookieFlag = structuredClone(current);
+withStaleRookieFlag.rosters.teams[2].rosterInfoList.push({
+  rosterId: 3003, firstName: 'Earlier', lastName: 'Class',
+  position: 'WR', yearsPro: 1, isRookie: true,
+});
+assert.equal(collectDraft([sameSeasonOldClass, withStaleRookieFlag]).length, 2);
+
+function classSnapshot(firstId, count) {
+  return {
+    season: 2025,
+    teams: { leagueTeamInfoList: teams },
+    rosters: {
+      teams: {
+        1: {
+          rosterInfoList: Array.from({ length: count }, (_, index) => ({
+            rosterId: firstId + index,
+            firstName: 'Player',
+            lastName: String(firstId + index),
+            position: 'WR',
+            yearsPro: 0,
+          })),
+        },
+      },
+    },
+  };
+}
+const oldClass = classSnapshot(10000, 416);
+const newClass = classSnapshot(20000, 224);
+const latestClass = collectDraft([oldClass, newClass]);
+assert.equal(latestClass.length, 224);
+assert.equal(draftCsvRows(latestClass).split('\r\n').length, 225);
+assert.equal(latestClass.every((player) => player.rosterId >= 20000), true);
 console.log('PASS draft export identity, trade/current-team distinction, unresolved picks, and CSV escaping');

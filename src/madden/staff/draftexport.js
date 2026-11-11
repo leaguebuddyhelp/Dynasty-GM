@@ -5,6 +5,7 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden_data.js
 import { getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
+import { isDraftRookie } from '../draft_rookies.js';
 import { stablePlayerKey } from '../player_identity.js';
 import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 import { isSoloModeEnabled } from '../../leaguebuddy/solo_mode.js';
@@ -53,6 +54,13 @@ function snapshotSeasonKey(snapshot) {
 export function collectDraft(snapshot) {
   const snapshots = Array.isArray(snapshot) ? snapshot : [snapshot];
   const latestSnapshot = snapshots.at(-1);
+  const currentRookieKeys = new Set(
+    Object.values(latestSnapshot?.rosters?.teams || {})
+      .flatMap((roster) => roster?.rosterInfoList || roster?.rosterPlayerInfoList || [])
+      .filter(isDraftRookie)
+      .map((player) => stablePlayerKey(player))
+      .filter(Boolean),
+  );
   const latestSeasonKey = snapshotSeasonKey(latestSnapshot);
   const currentSeasonSnapshots = latestSeasonKey === null
     ? [latestSnapshot]
@@ -67,10 +75,10 @@ export function collectDraft(snapshot) {
     const rosters = currentSnapshot?.rosters?.teams || {};
     for (const [currentTeamId, roster] of Object.entries(rosters)) {
       for (const player of roster?.rosterInfoList || roster?.rosterPlayerInfoList || []) {
-        if (Number(player?.yearsPro ?? 1) !== 0) continue;
+        if (!isDraftRookie(player)) continue;
         const key = stablePlayerKey(player)
           || (player.rosterId != null ? `roster:${player.rosterId}` : '');
-        if (!key) continue;
+        if (!key || !currentRookieKeys.has(key)) continue;
         const explicitDraftTeamId = player.draftingTeamId
           ?? player.draftTeamId
           ?? player.draftedByTeamId
