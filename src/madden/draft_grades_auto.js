@@ -65,8 +65,7 @@ function countDraftedRookies(snapshot) {
 }
 
 export function isDraftReadyForGrades(snapshot) {
-  const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-  return seasonInfo.isDraftActive !== true && countDraftedRookies(snapshot) > 0;
+  return countDraftedRookies(snapshot) > 0;
 }
 
 export function computeDraftGrades(snapshot) {

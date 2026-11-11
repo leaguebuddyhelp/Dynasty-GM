@@ -19,7 +19,7 @@ function snapshot({ yearsPro = [], seasonInfo = {} } = {}) {
 assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: Array.from({ length: 224 }, () => 0),
   seasonInfo: { seasonWeekType: 1, isDraftActive: true },
-})), false);
+})), true);
 assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: [0],
   seasonInfo: { seasonWeekType: 1, isDraftActive: false },
@@ -35,7 +35,7 @@ assert.equal(isDraftReadyForGrades(snapshot({
 assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: [0],
   seasonInfo: { isDraftActive: true },
-})), false);
+})), true);
 assert.equal(isDraftReadyForGrades(snapshot({
   yearsPro: [1, 2, 3],
   seasonInfo: { isDraftActive: false },
