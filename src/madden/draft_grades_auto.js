@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { createHash } from 'node:crypto';
 import { EmbedBuilder } from 'discord.js';
 import { loadLeagueSnapshot } from './madden_data.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
@@ -9,7 +8,7 @@ import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
-import { getMaddenDraftYear } from '../shared/madden_draft_class.js';
+import { getMaddenDraftYear, getMaddenSeasonCalendarYear, getMaddenSeasonOrdinal } from '../shared/madden_draft_class.js';
 import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 import { isDraftRookie } from './draft_rookies.js';
@@ -60,27 +59,30 @@ function countDraftedRookies(snapshot) {
 }
 
 export function getDraftClassStateKey(snapshot) {
-  const rookieKeys = Object.values(snapshot?.rosters?.teams || {})
-    .flatMap((team) => team?.rosterInfoList || team?.rosterPlayerInfoList || [])
-    .filter(isDraftRookie)
-    .map((player) => {
-      if (player?.rosterId !== undefined && player?.rosterId !== null) {
-        return `roster:${player.rosterId}`;
-      }
-      const name = normalizeName(player?.fullName || `${player?.firstName || ''} ${player?.lastName || ''}`);
-      const position = String(player?.position || '').toUpperCase();
-      const birthYear = player?.birthYear ?? '';
-      return name ? `player:${name}:${position}:${birthYear}` : null;
-    })
-    .filter(Boolean)
-    .sort();
-  if (!rookieKeys.length) return null;
-  const fingerprint = createHash('sha256').update(rookieKeys.join('|')).digest('hex').slice(0, 16);
-  return `draft_${getMaddenDraftYear(snapshot)}_${fingerprint}`;
+  if (getMaddenSeasonOrdinal(snapshot) === null && getMaddenSeasonCalendarYear(snapshot) === null) return null;
+  return `draft_${getMaddenDraftYear(snapshot)}`;
+}
+
+export function hasPostedDraftGrades(leagueState, snapshot) {
+  const key = getDraftClassStateKey(snapshot);
+  if (!key || !leagueState || typeof leagueState !== 'object') return false;
+  const draftYear = getMaddenDraftYear(snapshot);
+  return Object.entries(leagueState).some(([recordKey, record]) => {
+    if (!record || typeof record !== 'object' || (!record.posted && !record.formulaVersion)) return false;
+    return recordKey === key
+      || recordKey.startsWith(`${key}_`)
+      || Number(record.draftYear) === draftYear;
+  });
 }
 
 export function isDraftReadyForGrades(snapshot) {
-  return countDraftedRookies(snapshot) > 0;
+  const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
+  const weekType = seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId;
+  return Number(weekType) === 8
+    && Number(seasonInfo.offSeasonStage) === 10
+    && seasonInfo.isDraftActive === false
+    && getDraftClassStateKey(snapshot) !== null
+    && countDraftedRookies(snapshot) > 0;
 }
 
 export function computeDraftGrades(snapshot) {
@@ -214,7 +216,7 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
         seasonTitle: seasonInfo.seasonTitle,
         rookieCount,
       });
-      return { posted: false, reason: 'Draft completion criteria were not met.' };
+      return { posted: false, reason: 'Waiting for the completed draft offseason stage and rookie rosters; grades do not post during preseason.' };
     }
     const channelMap = loadMaddenChannelMap(guildId);
     const roleMap = (getGuildRoleMap(guildId) && Object.keys(getGuildRoleMap(guildId)).length)
@@ -234,9 +236,8 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     const seasonYear = Number(seasonInfo.calendarYear || snapshot?.info?.calendarYear || new Date().getFullYear());
     const draftClassKey = getDraftClassStateKey(snapshot);
     state[leagueId] = state[leagueId] || {};
-    const lastPosted = state[leagueId]?.[draftClassKey];
-    if (lastPosted?.formulaVersion === DRAFT_GRADES_FORMULA_VERSION) {
-      return { posted: false, reason: 'Draft grades were already posted for this rookie class.' };
+    if (hasPostedDraftGrades(state[leagueId], snapshot)) {
+      return { posted: false, reason: 'Draft grades were already posted for this draft year.' };
     }
 
     const grades = computeDraftGrades(snapshot);

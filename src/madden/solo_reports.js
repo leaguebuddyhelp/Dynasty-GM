@@ -26,18 +26,26 @@ function readRules() {
   const parsed = JSON.parse(readFileSync(SOLO_RULES_PATH, 'utf8'));
   const weights = parsed?.teamOveralls;
   const sum = Number(weights?.offenseWeight) + Number(weights?.defenseWeight) + Number(weights?.specialTeamsWeight);
-  if (!weights || Math.abs(sum - 1) > 0.000001 || !(Number(weights.unitStarterWeight) >= 0 && Number(weights.unitStarterWeight) <= 1)) {
+  const teamWeights = [weights?.offenseWeight, weights?.defenseWeight, weights?.specialTeamsWeight].map(Number);
+  if (!weights || !teamWeights.every((weight) => Number.isFinite(weight) && weight >= 0)
+    || Math.abs(sum - 1) > 0.000001 || !(Number(weights.unitStarterWeight) >= 0 && Number(weights.unitStarterWeight) <= 1)) {
     throw new Error(`Invalid solo team-overall weights in ${SOLO_RULES_PATH}.`);
   }
+  if (![weights.ratingAnchor, weights.ratingAnchorOutput, weights.ratingSpread].every(Number.isFinite)
+    || weights.ratingSpread <= 0) {
+    throw new Error(`Invalid solo team-overall rating scale in ${SOLO_RULES_PATH}.`);
+  }
   const specialWeights = weights.specialTeamsWeights || {};
-  const specialSum = Number(specialWeights.kicker) + Number(specialWeights.punter) + Number(specialWeights.returnSpecialists);
-  if (Math.abs(specialSum - 1) > 0.000001) {
+  const specialComponents = [specialWeights.kicker, specialWeights.punter, specialWeights.returnSpecialists].map(Number);
+  const specialSum = specialComponents.reduce((sum, weight) => sum + weight, 0);
+  if (!specialComponents.every((weight) => Number.isFinite(weight) && weight >= 0) || Math.abs(specialSum - 1) > 0.000001) {
     throw new Error(`Invalid solo special-teams weights in ${SOLO_RULES_PATH}.`);
   }
   return parsed;
 }
 
 function playerOvr(player) {
+  if (player?.playerBestOvr === null || player?.playerBestOvr === undefined || player?.playerBestOvr === '') return null;
   const value = Number(player?.playerBestOvr);
   return Number.isFinite(value) ? value : null;
 }
@@ -75,6 +83,16 @@ function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+const TEAM_POSITION_ALIASES = {
+  LEDGE: 'LE', LEDG: 'LE', LDE: 'LE',
+  REDGE: 'RE', REDG: 'RE', RDE: 'RE',
+  SAM: 'LOLB', MIKE: 'MLB', WILL: 'ROLB',
+};
+
+function scaledTeamRating(value, rules) {
+  return Math.max(0, Math.min(99, rules.ratingAnchorOutput + (value - rules.ratingAnchor) * rules.ratingSpread));
+}
+
 function unitOverall(players, slots, starterWeight) {
   const starters = [];
   const depth = [];
@@ -82,15 +100,15 @@ function unitOverall(players, slots, starterWeight) {
     const count = Number(countValue);
     if (!Number.isInteger(count) || count < 1) throw new Error(`Invalid roster slot count for ${position}.`);
     const atPosition = players
-      .filter((player) => player.position === position)
+      .filter((player) => (TEAM_POSITION_ALIASES[player.position] || player.position) === position)
       .sort((a, b) => b.ovr - a.ovr || a.playerKey.localeCompare(b.playerKey));
     starters.push(...atPosition.slice(0, count).map((player) => player.ovr));
     depth.push(...atPosition.slice(count, count * 2).map((player) => player.ovr));
   }
-  if (starters.length === 0 || depth.length === 0) return null;
+  if (starters.length === 0) return null;
   const starterAverage = average(starters);
   const depthAverage = average(depth);
-  if (depthAverage === null) return null;
+  if (depthAverage === null) return starterAverage;
   return starterAverage * starterWeight + depthAverage * (1 - starterWeight);
 }
 
@@ -106,13 +124,18 @@ function specialTeamsOverall(players, rules) {
   const returners = players
     .filter((player) => player.kickReturnRating !== undefined
       && player.kickReturnRating !== null
+      && player.kickReturnRating !== ''
       && Number.isFinite(Number(player.kickReturnRating)))
     .sort((a, b) => Number(b.kickReturnRating) - Number(a.kickReturnRating) || b.ovr - a.ovr)
     .slice(0, returnCount);
-  if (!kicker || !punter || !returners.length) return null;
-  return kicker.ovr * weights.kicker
-    + punter.ovr * weights.punter
-    + average(returners.map((player) => player.ovr)) * weights.returnSpecialists;
+  const components = [
+    { value: kicker?.ovr, weight: Number(weights.kicker) },
+    { value: punter?.ovr, weight: Number(weights.punter) },
+    { value: average(returners.map((player) => Number(player.kickReturnRating))), weight: Number(weights.returnSpecialists) },
+  ].filter((component) => component.value !== null && component.value !== undefined && component.weight > 0);
+  const weight = components.reduce((sum, component) => sum + component.weight, 0);
+  if (!weight) return null;
+  return components.reduce((sum, component) => sum + component.value * component.weight, 0) / weight;
 }
 
 export function buildSoloReportSnapshot(snapshot, { syncId = snapshot?.syncId, rules = readRules() } = {}) {
@@ -144,9 +167,12 @@ export function buildSoloReportSnapshot(snapshot, { syncId = snapshot?.syncId, r
   const teamOveralls = teams.map((team) => {
     const teamId = String(team.teamId);
     const roster = players.filter((player) => player.teamId === teamId);
-    const offense = unitOverall(roster, rules.teamOveralls.offenseSlots, rules.teamOveralls.unitStarterWeight);
-    const defense = unitOverall(roster, rules.teamOveralls.defenseSlots, rules.teamOveralls.unitStarterWeight);
-    const specialTeams = specialTeamsOverall(roster, rules.teamOveralls);
+    const rawOffense = unitOverall(roster, rules.teamOveralls.offenseSlots, rules.teamOveralls.unitStarterWeight);
+    const rawDefense = unitOverall(roster, rules.teamOveralls.defenseSlots, rules.teamOveralls.unitStarterWeight);
+    const rawSpecialTeams = specialTeamsOverall(roster, rules.teamOveralls);
+    const offense = rawOffense === null ? null : scaledTeamRating(rawOffense, rules.teamOveralls);
+    const defense = rawDefense === null ? null : scaledTeamRating(rawDefense, rules.teamOveralls);
+    const specialTeams = rawSpecialTeams === null ? null : scaledTeamRating(rawSpecialTeams, rules.teamOveralls);
     const complete = [offense, defense, specialTeams].every((rating) => rating !== null);
     const total = complete
       ? offense * rules.teamOveralls.offenseWeight
@@ -166,7 +192,7 @@ export function buildSoloReportSnapshot(snapshot, { syncId = snapshot?.syncId, r
     if (a.total === null) return b.total === null ? a.team.localeCompare(b.team) : 1;
     if (b.total === null) return -1;
     return b.total - a.total || a.team.localeCompare(b.team);
-  }).map((team, index) => ({ rank: index + 1, ...team }));
+  }).map((team, index) => ({ rank: team.total === null ? null : index + 1, ...team }));
 
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   return {
@@ -262,7 +288,7 @@ async function saveTeamMessageId(leagueId, guildId, channelId, messageId) {
 export function buildTeamOverallsEmbed(report) {
   const lines = report.teamOveralls.map((team) => {
     const rating = (value) => value === null ? '—' : String(Math.round(value));
-    return `${rankBadge(team.rank)} ${formatTeamLabelWithEmoji(team.team)}\nOFF **${rating(team.offense)}** · DEF **${rating(team.defense)}** · ST **${rating(team.specialTeams)}** · OVR **${rating(team.total)}**`;
+    return `${team.rank === null ? '—' : rankBadge(team.rank)} ${formatTeamLabelWithEmoji(team.team)}\nOFF **${rating(team.offense)}** · DEF **${rating(team.defense)}** · ST **${rating(team.specialTeams)}** · OVR **${rating(team.total)}**`;
   });
   return new EmbedBuilder()
     .setTitle('🏟️ Madden Team Overalls')
@@ -276,7 +302,7 @@ export function buildTeamOverallsEmbed(report) {
       value: `${report.sourceValidation.completeTeamRatings} / ${report.sourceValidation.teamCount}`,
       inline: true,
     })
-    .setFooter({ text: 'OFF · DEF · ST · overall rating' })
+    .setFooter({ text: 'Talent-scaled ratings · ST uses available specialist data' })
     .setTimestamp(new Date(report.syncedAt));
 }
 

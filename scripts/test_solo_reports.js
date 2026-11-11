@@ -60,6 +60,48 @@ const teamOverallsEmbed = buildTeamOverallsEmbed(report).toJSON();
 assert.match(teamOverallsEmbed.description, /OFF \*\*\d+\*\* · DEF \*\*\d+\*\*/);
 assert.doesNotMatch(teamOverallsEmbed.description, /Snapshot/);
 assert.ok(teamOverallsEmbed.description.length < 4096);
+
+const variedTeams = Array.from({ length: 32 }, (_, index) => ({
+  teamId: index + 1, cityName: `City${index + 1}`, displayName: `Team${index + 1}`,
+}));
+const modernPositions = ['QB', 'HB', 'WR', 'WR', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT',
+  'LEDGE', 'REDGE', 'DT', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'CB', 'FS', 'SS', 'K', 'P'];
+const variedRosters = Object.fromEntries(variedTeams.map((team, index) => [
+  String(team.teamId),
+  { rosterInfoList: modernPositions.map((position, playerIndex) => ({
+    rosterId: 10000 + index * 100 + playerIndex,
+    firstName: position, lastName: `Player${playerIndex}`, position,
+    playerBestOvr: 74 + (index * 9 / 31),
+  })) },
+]));
+const variedReport = buildSoloReportSnapshot({
+  ...snapshot, teams: { leagueTeamInfoList: variedTeams }, rosters: { teams: variedRosters },
+});
+assert.equal(variedReport.sourceValidation.completeTeamRatings, 32);
+assert.equal(variedReport.teamOveralls[0].teamId, '32');
+assert.equal(variedReport.teamOveralls.at(-1).teamId, '1');
+assert.equal(Math.round(variedReport.teamOveralls[0].total), 92);
+assert.equal(Math.round(variedReport.teamOveralls.at(-1).total), 74);
+assert.equal(new Set(variedReport.teamOveralls.map((team) => Math.round(team.total))).size >= 15, true);
+assert.equal(Math.round(variedReport.teamOveralls[0].defense), 92, 'Modern Madden defensive positions must be included');
+assert.equal(Math.round(variedReport.teamOveralls[0].specialTeams), 92, 'Missing return ratings must not hide special teams');
+const sameRoster = modernPositions.map((position, index) => ({
+  rosterId: 90000 + index, firstName: position, lastName: String(index),
+  position, playerBestOvr: 80,
+}));
+const tiedReport = buildSoloReportSnapshot({
+  ...snapshot,
+  teams: { leagueTeamInfoList: teams.slice(0, 2) },
+  rosters: { teams: { 1: { rosterInfoList: sameRoster }, 2: { rosterInfoList: sameRoster } } },
+});
+assert.equal(tiedReport.teamOveralls[0].total, tiedReport.teamOveralls[1].total, 'Identical rosters must not be separated by rank');
+const incompleteReport = buildSoloReportSnapshot({
+  ...snapshot,
+  teams: { leagueTeamInfoList: teams.slice(0, 1) },
+  rosters: { teams: { 1: { rosterInfoList: [] } } },
+});
+assert.equal(incompleteReport.teamOveralls[0].rank, null);
+assert.match(buildTeamOverallsEmbed(incompleteReport).toJSON().description, /^— /);
 console.log('PASS 32-team output, configured team formula, and 21 distinct positional leaderboards');
 
 // Exercise the complete sync-report pipeline without Discord or EA services.

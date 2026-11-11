@@ -1,7 +1,10 @@
 {
   "version": 1,
   "teamOveralls": {
-    "unitStarterWeight": 0.75,
+    "unitStarterWeight": 0.9,
+    "ratingAnchor": 78,
+    "ratingAnchorOutput": 82,
+    "ratingSpread": 2,
     "offenseWeight": 0.45,
     "defenseWeight": 0.45,
     "specialTeamsWeight": 0.1,
@@ -39,7 +42,7 @@
     "version": 1,
     "weekly": {
       "maximumRecommendations": 25,
-      "attributesPerRecommendation": 3,
+      "attributesPerRecommendation": 5,
       "preferredRecommendationRange": [20, 25],
       "minimumUpgradeSelectionScore": 58,
       "performanceWeight": 0.8,
@@ -60,20 +63,19 @@
       "exceptionalConsistencyBonus": 2,
       "exceptionalConsistencyAverage": 88,
       "teamBalancePenalty": 3,
-      "positionBalancePenalty": 2,
+      "positionBalancePenalty": 6,
+      "streakGamesForExtraPoint": 3,
+      "maximumWeeklyAttributePoints": 5,
       "positiveChangeTiers": [
-        { "minimumScore": 72, "attributePoints": 1 },
-        { "minimumScore": 82, "attributePoints": 2 },
-        { "minimumScore": 90, "attributePoints": 3 },
-        { "minimumScore": 96, "attributePoints": 4 },
-        { "minimumScore": 99, "attributePoints": 5 }
+        { "minimumScore": 65, "attributePoints": 1 },
+        { "minimumScore": 82, "attributePoints": 1 },
+        { "minimumScore": 90, "attributePoints": 1 }
       ],
       "negativeChangeTiers": [
         { "maximumScore": 28, "attributePoints": -1 },
-        { "maximumScore": 20, "attributePoints": -2 },
-        { "maximumScore": 12, "attributePoints": -3 },
-        { "maximumScore": 5, "attributePoints": -4 },
-        { "maximumScore": 1, "attributePoints": -5 }
+        { "maximumScore": 20, "attributePoints": -1 },
+        { "maximumScore": 12, "attributePoints": -1 },
+        { "maximumScore": 5, "attributePoints": -1 }
       ],
       "meaningfulOpportunityMinimums": {
         "QB": { "passAtt": 8 },
@@ -183,7 +185,7 @@
       },
       "improvingTrendSelectionModifier": 0.1,
       "decliningTrendSelectionModifier": 0.1,
-      "minimumUpgradePerformanceScore": 72,
+      "minimumUpgradePerformanceScore": 65,
       "maximumDowngradePerformanceScore": 28,
       "minimumDowngradeSelectionPriority": 60,
       "positions": {
@@ -288,6 +290,7 @@
     },
     "offseason": {
       "maximumRecommendations": 50,
+      "attributesPerRecommendation": 2,
       "minimumUpgradeSelectionScore": 62,
       "maximumDowngradePerformanceScore": 28,
       "minimumDowngradeSelectionPriority": 60,
@@ -350,7 +353,7 @@
       "franchiseManagerRoleIdEnv": "MADDEN_FRANCHISE_MANAGER_ROLE_ID",
       "notificationRoleName": "Franchise Manager",
       "threadAutoArchiveDuration": 10080,
-      "recommendationsPerThreadMessage": 10
+      "recommendationsPerThreadMessage": 5
     },
     "offensiveLine": {
       "gradeScale": [0, 100],

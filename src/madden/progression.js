@@ -57,6 +57,7 @@ const OFFENSIVE_LINE_POSITIONS = new Set(['LT', 'LG', 'C', 'RG', 'RT']);
 const DEFENSIVE_POSITIONS = new Set([
   'LE', 'RE', 'DT', 'LOLB', 'MLB', 'ROLB', 'CB', 'FS', 'SS',
   'DE', 'EDGE', 'NT', 'DL', 'LB', 'ILB', 'OLB', 'DB', 'S',
+  'LEDGE', 'REDGE', 'LEDG', 'REDG', 'LDE', 'RDE', 'SAM', 'MIKE', 'WILL',
 ]);
 const POSITION_ALIASES = new Map([
   ['RB', 'HB'],
@@ -265,8 +266,21 @@ function buildWeeklyPlayerStats(snapshot, aliases, { requestedWeekIndex = null, 
       week.set(key, target);
       touched.add(key);
     }
-    for (const key of touched) week.get(key).games = 1;
+    for (const key of touched) {
+      week.get(key).games = 1;
+    }
     byWeek.set(weekIndex, week);
+  }
+  for (const week of byWeek.values()) {
+    for (const { totals: stats } of week.values()) {
+      if (stats.passAtt > 0) {
+        if (stats.passCompPct == null && stats.passComp != null) stats.passCompPct = 100 * stats.passComp / stats.passAtt;
+        if (stats.passYdsPerAtt == null && stats.passYds != null) stats.passYdsPerAtt = stats.passYds / stats.passAtt;
+      }
+      if (stats.recCatches > 0 && stats.recYdsPerCatch == null && stats.recYds != null) {
+        stats.recYdsPerCatch = stats.recYds / stats.recCatches;
+      }
+    }
   }
   return byWeek;
 }
@@ -594,11 +608,12 @@ function stableHash(value) {
   return `${(hash >>> 0).toString(16).padStart(8, '0')}${(second >>> 0).toString(16).padStart(8, '0')}`;
 }
 
-function selectWithSoftBalance(candidates, rules, maximum) {
+function selectWithSoftBalance(candidates, rules, maximum, { balanceDirections = false } = {}) {
   const remaining = [...candidates];
   const selected = [];
   const teamCount = new Map();
   const positionCount = new Map();
+  const directionCount = { upgrade: 0, downgrade: 0 };
   while (selected.length < maximum && remaining.length) {
     remaining.sort((a, b) => {
       const aPriority = a.selectionScore
@@ -609,12 +624,20 @@ function selectWithSoftBalance(candidates, rules, maximum) {
         - Number(positionCount.get(b.position) || 0) * Number(rules.positionBalancePenalty);
       return bPriority - aPriority || a.player.localeCompare(b.player);
     });
-    const next = remaining.shift();
+    const preferred = directionCount.upgrade <= directionCount.downgrade ? 'upgrade' : 'downgrade';
+    const eligibleIndex = balanceDirections ? remaining.findIndex((candidate) => {
+      const adjusted = candidate.selectionScore
+        - Number(teamCount.get(candidate.teamId) || 0) * Number(rules.teamBalancePenalty)
+        - Number(positionCount.get(candidate.position) || 0) * Number(rules.positionBalancePenalty);
+      return candidate.direction === preferred && adjusted >= Number(candidate.minimumSelectionScore);
+    }) : -1;
+    const next = remaining.splice(eligibleIndex < 0 ? 0 : eligibleIndex, 1)[0];
     const selectionScore = next.selectionScore
       - Number(teamCount.get(next.teamId) || 0) * Number(rules.teamBalancePenalty)
       - Number(positionCount.get(next.position) || 0) * Number(rules.positionBalancePenalty);
     if (selectionScore < Number(next.minimumSelectionScore)) continue;
     selected.push({ ...next, selectionScore: Math.round(selectionScore * 10) / 10 });
+    directionCount[next.direction] += 1;
     teamCount.set(next.teamId, (teamCount.get(next.teamId) || 0) + 1);
     positionCount.set(next.position, (positionCount.get(next.position) || 0) + 1);
   }
@@ -636,6 +659,15 @@ function getPlayerWindowScores(playerKey, player, byWeek, endWeek, positionKey, 
   const recent = metrics.slice(-Number(weeklyRules.rollingGames));
   const seasonScores = metrics.map((item) => item.score);
   const recentScores = recent.map((item) => item.score);
+  const consecutive = (predicate) => {
+    let count = 0;
+    for (let index = metrics.length - 1; index >= 0; index -= 1) {
+      if (!opportunityConfirmed(metrics[index].row.totals, positionKey, weeklyRules)
+        || !predicate(metrics[index].score)) break;
+      count += 1;
+    }
+    return count;
+  };
   const latest = metrics.at(-1) || null;
   const currentScore = latest?.score ?? null;
   const recentScore = recentScores.length
@@ -658,7 +690,11 @@ function getPlayerWindowScores(playerKey, player, byWeek, endWeek, positionKey, 
     recentScore,
     seasonScore,
     performanceScore: performanceScore ?? 0,
-    consistency: getStrongPoorCounts(recentScores, weeklyRules),
+    consistency: {
+      ...getStrongPoorCounts(recentScores, weeklyRules),
+      strongStreak: consecutive((score) => score >= Number(weeklyRules.strongGameScore)),
+      poorStreak: consecutive((score) => score <= Number(weeklyRules.poorGameScore)),
+    },
     seasonConsistency: getStrongPoorCounts(seasonScores, weeklyRules),
   };
 }
@@ -668,6 +704,10 @@ function selectNegativeAttributes(stats, player, position, rules, games = 1, max
   const selected = [];
   const usedFields = new Set();
   for (const check of checks) {
+    const requiredFields = [check.field, check.opportunityField];
+    if (check.minimumMisses !== undefined) requiredFields.push(check.attemptsField);
+    if (check.maximumRate !== undefined) requiredFields.push(check.rateField);
+    if (requiredFields.some((field) => !field || stats?.[field] == null)) continue;
     const opportunities = Number(stats?.[check.opportunityField] || 0);
     if (opportunities < Number(check.minimumOpportunities || 0) * Math.max(1, games)) continue;
     if (check.minimum !== undefined
@@ -809,7 +849,11 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     selectionAdjustments.consistency = direction === 'downgrade'
       ? poorConsistencyBonus + decliningTrendBonus
       : consistencyBonus + improvingTrendBonus + exceptionalConsistencyBonus;
-    const allocation = evidence.flatMap((attribute) => attributeAllocation(attribute, points));
+    const streak = direction === 'upgrade' ? windows.consistency.strongStreak : windows.consistency.poorStreak;
+    const maxPoints = Number(weeklyRules.maximumWeeklyAttributePoints ?? 5);
+    const streakThreshold = Number(weeklyRules.streakGamesForExtraPoint ?? 3);
+    const magnitude = Math.min(maxPoints, 1 + Math.max(0, streak - streakThreshold + 1));
+    const allocation = evidence.flatMap((attribute) => attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude));
     if (!allocation.length) continue;
     const selected = recommendation({
       player,
@@ -829,9 +873,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       currentWeekScore: windows.currentScore,
       recentFourGameScore: windows.recentScore,
       seasonToDateScore: windows.seasonScore,
-      explanation: direction === 'upgrade'
-        ? `Performance score ${windows.performanceScore.toFixed(1)} combined the current game, recent played games, and season-to-date output.`
-        : `Sustained or game-level underperformance score ${windows.performanceScore.toFixed(1)} with verified evidence for ${allocation.map((item) => item.attribute).join(', ')}.`,
+      explanation: `${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. The combined score weights this game, recent games, and the season. ${streak >= streakThreshold ? `A ${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased the change.` : 'A single-week change is limited to 1 point per attribute.'}`,
     });
     selected.minimumSelectionScore = direction === 'upgrade'
       ? Number(weeklyRules.minimumUpgradeSelectionScore)
@@ -847,6 +889,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     candidates,
     weeklyRules,
     Number(weeklyRules.maximumRecommendations),
+    { balanceDirections: true },
   );
   return makeRecord({
     snapshot,
@@ -867,7 +910,7 @@ function makeOffseasonAttributes(player, stats, rules, positionKey, direction, t
       player,
       rules.weekly,
       positionRule,
-      Number(rules.weekly.attributesPerRecommendation || 3),
+      Number(rules.offseason.attributesPerRecommendation ?? rules.weekly.attributesPerRecommendation ?? 3),
     );
     const allocations = [];
     for (const [index, points] of [
@@ -887,7 +930,7 @@ function makeOffseasonAttributes(player, stats, rules, positionKey, direction, t
     positionKey,
     rules.weekly,
     seasonGames,
-    Number(rules.weekly.attributesPerRecommendation || 3),
+    Number(rules.offseason.attributesPerRecommendation ?? rules.weekly.attributesPerRecommendation ?? 3),
   );
   return negatives.flatMap((evidence) => attributeAllocation(evidence, Number(tier.primaryPoints)));
 }
@@ -1006,16 +1049,30 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
   });
 }
 
+function recommendationEvidence(item) {
+  const fields = [...new Set([
+    ...item.attributes.map((attribute) => attribute.evidence),
+    ...Object.keys(item.stats || {}),
+  ])];
+  return fields
+    .filter((key) => key && item.stats?.[key] != null && Number.isFinite(Number(item.stats[key])))
+    .slice(0, 6)
+    .map((key) => `${key.replace(/([a-z0-9])([A-Z])/g, '$1 $2')}: ${Math.round(Number(item.stats[key]) * 10) / 10}`)
+    .join(' · ') || 'No supported statistics';
+}
+
+function recommendationBreakdown(item) {
+  const score = (value) => value == null ? 'N/A' : String(Math.round(Number(value) * 10) / 10);
+  const streak = item.direction === 'upgrade' ? item.consistency?.strongStreak : item.consistency?.poorStreak;
+  return `Game ${score(item.windows?.currentGame)} · Recent ${score(item.windows?.recentFourGames)} · Season ${score(item.windows?.seasonToDate)} · Combined ${score(item.performanceScore)}\n${item.direction === 'upgrade' ? 'Strong' : 'Poor'} streak: ${streak ?? 'N/A'} played games`;
+}
+
 function recordEmbed(record, item) {
   const upgrade = item.direction === 'upgrade';
   const emoji = getTeamEmojiByName(item.team);
   const attributeLines = item.attributes.map((attribute) =>
     `**${attribute.attribute}** ${attribute.currentValue} → ${attribute.targetValue} (${attribute.points > 0 ? '+' : ''}${attribute.points})`).join('\n');
-  const statistics = Object.entries(item.stats || {})
-    .filter(([, value]) => Number.isFinite(Number(value)) && Number(value) !== 0)
-    .map(([key, value]) => `${key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, (letter) => letter.toUpperCase())}: ${Math.round(Number(value) * 10) / 10}`)
-    .slice(0, 5)
-    .join(' • ') || 'No supported statistics';
+  const statistics = recommendationEvidence(item);
   const status = record.statusById?.[item.recommendationId]?.status || 'pending';
   const embed = new EmbedBuilder()
     .setTitle(`${upgrade ? '📈 Upgrade' : '📉 Downgrade'} · ${item.player}`)
@@ -1023,6 +1080,7 @@ function recordEmbed(record, item) {
     .addFields(
       { name: 'Why', value: item.explanation.slice(0, 1024), inline: false },
       { name: 'Recent performance', value: statistics.slice(0, 1024), inline: false },
+      { name: 'Score breakdown', value: recommendationBreakdown(item).slice(0, 1024), inline: false },
       { name: 'Status', value: status === 'applied' ? '✅ Applied in Madden' : status === 'skipped' ? '⏭️ Skipped' : '🕒 Waiting for your Madden update', inline: true },
     )
     .setColor(upgrade ? 0x2ecc71 : 0xe74c3c)
@@ -1068,6 +1126,11 @@ function progressionCardEmbed(record, item) {
   const embed = new EmbedBuilder()
     .setTitle(`${upgrade ? '🟢 Upgrade' : '🟠 Downgrade'} · ${item.player}`)
     .setDescription(`${emoji ? `${emoji} ` : ''}**${item.team}** · ${item.position} · ${item.currentOvr} OVR\n\n${attributes}`)
+    .addFields(
+      { name: 'Why', value: item.explanation.slice(0, 400), inline: false },
+      { name: 'Stats', value: recommendationEvidence(item).slice(0, 300), inline: false },
+      { name: 'Score breakdown', value: recommendationBreakdown(item).slice(0, 250), inline: false },
+    )
     .setColor(upgrade ? 0x2ecc71 : 0xe67e22)
     .setFooter({ text: `${seasonLabel(record.seasonKey)} · ${record.weekNumber ? `Week ${record.weekNumber}` : 'Offseason'} · ${status === 'applied' ? 'Applied' : status === 'skipped' ? 'Skipped' : 'Needs review'}` })
     .setTimestamp(new Date(record.generatedAt));
@@ -1500,6 +1563,10 @@ export async function refreshProgressionMessages({ client, guildId, leagueId, pe
 
 export function buildRecommendationEmbed(record, item) {
   return recordEmbed(record, item);
+}
+
+export function buildProgressionCardEmbed(record, item) {
+  return progressionCardEmbed(record, item);
 }
 
 export function buildRecommendationStatusButtons(record, item) {
