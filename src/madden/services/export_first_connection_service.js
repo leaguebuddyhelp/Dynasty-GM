@@ -242,10 +242,6 @@ async function performInitialLeagueSync({ token, guildId, leagueId, leagueSummar
       });
     },
   });
-  if (discordClient?.isReady?.()) {
-    const { maybePostDraftGrades } = await import('../draft_grades_auto.js');
-    await maybePostDraftGrades(discordClient, leagueId, guildId);
-  }
   const liveSnapshot = loadLeagueSnapshot(leagueId);
   const summary = summarizeLiveSnapshot(liveSnapshot, leagueSummary);
   const repositorySnapshot = connectionRepository.createSnapshot({

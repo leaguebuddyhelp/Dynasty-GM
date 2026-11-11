@@ -24,6 +24,9 @@ const previous = {
           draftPick: 7,
           overallPick: 7,
           draftTeamId: 1,
+          height: 76,
+          weight: 218,
+          age: 21,
         }],
       },
     },
@@ -58,6 +61,9 @@ const current = {
           devTrait: 0,
           draftRound: 2,
           draftPick: 5,
+          height: 72,
+          weight: 195,
+          age: 22,
         }],
       },
     },
@@ -77,12 +83,12 @@ assert.equal(unresolved.overallPick, null);
 assert.equal(unresolved.pickVerification, 'Round/pick available; overall pick unresolved');
 assert.equal(unresolved.devLabel, 'Normal');
 
-const csv = draftCsvRows(draft, { 'Alpha Owls': 88.5 });
-assert.match(csv, /^"Overall Pick","Pick Verification","Round"/);
+const csv = draftCsvRows(draft);
+assert.match(csv, /^"Round","Pick","R\/P","Team","Player","Pos","OVR","Dev Trait","College","Height","Weight","Age"/);
 assert.match(csv, /"Test, College"/);
 assert.match(csv, /"Alpha Owls"/);
-assert.match(csv, /"Beta Bears"/);
-assert.match(csv, /"88.5"/);
+assert.match(csv, /"6'4""/);
+assert.doesNotMatch(csv, /Draft Grade|Roster ID|Pick Verification|Presentation ID/);
 assert.equal(csv.split('\r\n').length, 3);
 
 const released = collectDraft([previous, { ...current, rosters: { teams: {} } }]);

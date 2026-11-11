@@ -625,10 +625,12 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         console.error('[madden-sync] failed to post data import summary', error);
       }
     }
-    if (!duplicate && options.requestId && options.client && options.guildId) {
+    if (!duplicate && options.client && options.guildId) {
       try {
-        const { maybePostDraftGrades } = await import('./draft_grades_auto.js');
-        await maybePostDraftGrades(options.client, leagueId, options.guildId);
+        const { isDraftCompletionSync, maybePostDraftGrades } = await import('./draft_grades_auto.js');
+        if (isDraftCompletionSync(existingSnapshot, snapshot)) {
+          result.draftGrades = await maybePostDraftGrades(options.client, leagueId, options.guildId);
+        }
       } catch (error) {
         result.draftGrades = { posted: false, error: error?.message || String(error) };
         console.error('[draft-grades-auto] sync-triggered grade check failed', error);
@@ -727,6 +729,11 @@ async function execute(interaction) {
       ? summary.progression.published
         ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads`
         : summary.progression.error || summary.progression.reason || 'No recommendations met evidence thresholds'
+    const draftGradesStatus = summary.draftGrades
+      ? summary.draftGrades.posted
+        ? 'Draft grades posted in Draft Results'
+        : summary.draftGrades.error || summary.draftGrades.reason || 'Draft grades were not posted'
+      : null;
       : null;
     const importSummaryStatus = summary.dataImportSummary
       ? summary.dataImportSummary.posted
@@ -746,6 +753,7 @@ async function execute(interaction) {
         { name: 'Stats Weeks', value: String(summary.statsWeeks), inline: true },
         { name: 'Coverage', value: `Schedule weeks: ${summary.coverage?.scheduleWeeks ?? 0}\nMissing stat buckets: ${summary.coverage?.missingBuckets?.length ?? 0}`, inline: true },
         ...(soloReportStatus ? [{ name: 'Solo reports', value: soloReportStatus, inline: false }] : []),
+        ...(draftGradesStatus ? [{ name: 'Draft grades', value: draftGradesStatus, inline: false }] : []),
         ...(progressionStatus ? [{ name: 'Player progression', value: progressionStatus, inline: false }] : []),
         ...(importSummaryStatus ? [{ name: 'Data import summary', value: importSummaryStatus, inline: false }] : []),
         ...(weeklyMockStatus ? [{ name: 'Weekly mock draft', value: weeklyMockStatus, inline: false }] : []),

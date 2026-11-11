@@ -62,15 +62,22 @@ export function isDraftReadyForGrades(snapshot) {
   const weekType = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? snapshot?.stage ?? 1);
   const seasonTitle = String(seasonInfo.seasonTitle || '').toLowerCase();
   const rookieCount = countDraftedRookies(snapshot);
-  const isOffseason =
+  const isRegularSeason = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId) === 1;
+  const isOffseason = !isRegularSeason && (
     Number(seasonInfo.offSeasonStage || 0) > 0 ||
     weekType === 3 ||
     weekType === 8 ||
     seasonTitle.includes('offseason') ||
-    (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true && weekType !== 1);
+    (seasonInfo.isDraftActive === false && seasonInfo.isLeagueStarted === true)
+  );
   const draftMarkedComplete = seasonInfo.isDraftActive === false;
   const hasExpectedDraftClass = rookieCount >= 224;
   return isOffseason && (draftMarkedComplete || hasExpectedDraftClass) && rookieCount >= 32;
+}
+
+export function isDraftCompletionSync(previousSnapshot, currentSnapshot) {
+  return isDraftReadyForGrades(currentSnapshot)
+    && !isDraftReadyForGrades(previousSnapshot);
 }
 
 export function computeDraftGrades(snapshot) {
@@ -180,7 +187,7 @@ export function buildDraftGradesEmbed(grades = [], leagueId = null, snapshot = n
 export async function maybePostDraftGrades(client, leagueId, guildId = null) {
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
-    if (!snapshot) return;
+    if (!snapshot) return { posted: false, reason: 'No league snapshot was found.' };
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
     const weekType = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? snapshot?.stage ?? 1);
     const rookieCount = countDraftedRookies(snapshot);
@@ -194,7 +201,7 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
         seasonTitle: seasonInfo.seasonTitle,
         rookieCount,
       });
-      return;
+      return { posted: false, reason: 'Draft completion criteria were not met.' };
     }
     const channelMap = loadMaddenChannelMap(guildId);
     const roleMap = (getGuildRoleMap(guildId) && Object.keys(getGuildRoleMap(guildId)).length)
@@ -207,7 +214,7 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
       || null;
     if (!draftChannelId) {
       console.warn('[draft-grades-auto] skipped: Draft Grades channel is not mapped', { leagueId, guildId });
-      return;
+      return { posted: false, reason: 'Draft Results channel is not configured.' };
     }
 
     const state = loadJson(STATE_FILE, {});
@@ -216,11 +223,11 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     state[leagueId] = state[leagueId] || {};
     const lastPosted = state[leagueId]?.[seasonKey] || state[leagueId];
     if (lastPosted?.formulaVersion === DRAFT_GRADES_FORMULA_VERSION) {
-      return; // already posted for this draft year with the current formula
+      return { posted: false, reason: 'Draft grades were already posted for this season.' };
     }
 
     const grades = computeDraftGrades(snapshot);
-    if (!grades.length) return;
+    if (!grades.length) return { posted: false, reason: 'No drafted rookies were found to grade.' };
 
     const embed = buildDraftGradesEmbed(grades, leagueId, snapshot);
 
@@ -240,10 +247,13 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
       };
       fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
       fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+      return { posted: true, channelId: draftChannelId };
     } else {
       console.warn('[draft-grades-auto] skipped: Draft Grades channel could not be fetched', { leagueId, guildId, draftChannelId });
+      return { posted: false, reason: 'Draft Results channel could not be fetched.' };
     }
   } catch (e) {
     console.warn('[draft-grades-auto] skipped:', e?.message || e);
+    return { posted: false, error: e?.message || String(e) };
   }
 }

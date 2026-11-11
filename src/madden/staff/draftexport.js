@@ -6,7 +6,6 @@ import { getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { stablePlayerKey } from '../player_identity.js';
-import { computeDraftGrades } from '../draft_grades_auto.js';
 import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
 import { isSoloModeEnabled } from '../../leaguebuddy/solo_mode.js';
 
@@ -27,6 +26,12 @@ function numberFrom(value, fallback = null) {
   if (value === null || value === undefined || value === '') return fallback;
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
+}
+
+function heightLabel(value) {
+  const inches = numberFrom(value);
+  if (inches === null) return value ?? '';
+  return `${Math.floor(inches / 12)}'${inches % 12}"`;
 }
 
 function playerName(player = {}) {
@@ -87,6 +92,9 @@ export function collectDraft(snapshot) {
       presentationId: player.presentationId ?? null,
       draftingTeamId: player.draftingTeamId,
       draftingTeam: player.draftingTeamName,
+      team: player.draftingTeamName === 'Unresolved'
+        ? player.currentTeamName
+        : player.draftingTeamName,
       currentTeamId: player.currentTeamId,
       currentTeam: player.currentTeamName,
       currentRosterStatus: player.observedInCurrentSnapshot ? 'On current roster' : 'Not on current roster; last seen team shown',
@@ -98,6 +106,9 @@ export function collectDraft(snapshot) {
       ovr: numberFrom(player.playerBestOvr),
       devTrait: numberFrom(player.devTrait),
       devLabel: devLabel(player.devTrait),
+      height: heightLabel(player.height),
+      weight: numberFrom(player.weight, ''),
+      age: numberFrom(player.age, ''),
       draftRound: player.draftRound,
       draftPickInRound: player.draftPickInRound,
       overallPick: player.overallPick,
@@ -119,30 +130,24 @@ function csvCell(value) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-export function draftCsvRows(draft, gradesByTeam = {}) {
+export function draftCsvRows(draft) {
   const columns = [
-    ['Overall Pick', 'overallPick'],
-    ['Pick Verification', 'pickVerification'],
     ['Round', 'draftRound'],
-    ['Pick in Round', 'draftPickInRound'],
-    ['Drafting Team', 'draftingTeam'],
-    ['Current Team', 'currentTeam'],
-    ['Current Roster Status', 'currentRosterStatus'],
+    ['Pick', 'draftPickInRound'],
+    ['R/P', 'overallPick'],
+    ['Team', 'team'],
     ['Player', 'name'],
-    ['Position', 'position'],
+    ['Pos', 'position'],
+    ['OVR', 'ovr'],
+    ['Dev Trait', 'devLabel'],
     ['College', 'college'],
-    ['Rookie OVR', 'ovr'],
-    ['Development Trait', 'devLabel'],
-    ['Draft Grade', 'draftGrade'],
-    ['Roster ID', 'rosterId'],
-    ['Presentation ID', 'presentationId'],
+    ['Height', 'height'],
+    ['Weight', 'weight'],
+    ['Age', 'age'],
   ];
   const rows = [columns.map(([label]) => label)];
   for (const player of draft) {
-    const grade = player.draftingTeam === 'Unresolved'
-      ? ''
-      : gradesByTeam[player.draftingTeam] ?? '';
-    rows.push(columns.map(([, key]) => key === 'draftGrade' ? grade : player[key] ?? ''));
+    rows.push(columns.map(([, key]) => player[key] ?? ''));
   }
   return rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
 }
@@ -158,10 +163,6 @@ export const data = new SlashCommandBuilder()
       { name: 'CSV for Google Sheets', value: 'csv' },
       { name: 'JSON', value: 'json' },
     ))
-  .setDefaultMemberPermissions(null);
-
-async function execute(interaction) {
-  await interaction.deferReply({ ephemeral: true });
   if (!isSoloModeEnabled()) {
     const roleMap = loadRoleMapForGuild(interaction.guildId);
     const member = await interaction.guild.members.fetch(interaction.user.id);
@@ -170,6 +171,10 @@ async function execute(interaction) {
       return;
     }
   }
+  .setDefaultMemberPermissions(null);
+
+async function execute(interaction) {
+  await interaction.deferReply({ ephemeral: true });
   const leagueId = resolveLeagueIdWithConfig(interaction.guildId);
   if (!leagueId) {
     await interaction.editReply({ content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.' });
@@ -178,7 +183,7 @@ async function execute(interaction) {
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
     if (!snapshot) {
-      await interaction.editReply({ content: 'No snapshot found. Run /weeklyupdate first.' });
+      await interaction.editReply({ content: 'No snapshot found. Run /sync first.' });
       return;
     }
     const historyDirectory = path.join(getMaddenLeaguesDir(), 'history', String(leagueId));
@@ -203,8 +208,6 @@ async function execute(interaction) {
       .sort((a, b) => String(a.syncedAt || a.fetchedAt || '').localeCompare(String(b.syncedAt || b.fetchedAt || '')));
     exportSnapshots.push(snapshot);
     const draft = collectDraft(exportSnapshots);
-    const computedGrades = computeDraftGrades(snapshot);
-    const gradesByTeam = Object.fromEntries(computedGrades.map((grade) => [grade.teamName, grade.grade]));
     fs.mkdirSync(EXPORT_DIR, { recursive: true });
     const filePath = path.join(EXPORT_DIR, `${leagueId}_draft_export.json`);
     const payload = {
@@ -221,7 +224,7 @@ async function execute(interaction) {
     }
     if (format === 'csv' || format === 'both') {
       const csvPath = path.join(EXPORT_DIR, `${leagueId}_draft_export.csv`);
-      fs.writeFileSync(csvPath, draftCsvRows(draft, gradesByTeam), 'utf8');
+      fs.writeFileSync(csvPath, draftCsvRows(draft), 'utf8');
       files.push(csvPath);
     }
     await interaction.editReply({
