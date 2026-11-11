@@ -729,11 +729,11 @@ async function execute(interaction) {
       ? summary.progression.published
         ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads`
         : summary.progression.error || summary.progression.reason || 'No recommendations met evidence thresholds'
+      : null;
     const draftGradesStatus = summary.draftGrades
       ? summary.draftGrades.posted
         ? 'Draft grades posted in Draft Results'
         : summary.draftGrades.error || summary.draftGrades.reason || 'Draft grades were not posted'
-      : null;
       : null;
     const importSummaryStatus = summary.dataImportSummary
       ? summary.dataImportSummary.posted
