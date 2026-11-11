@@ -83,6 +83,10 @@ function readRules() {
   if (!weekly || !offseason || !progression?.discord) {
     throw new Error(`Missing solo progression rules in ${RULES_PATH}.`);
   }
+  if (!Number.isFinite(Number(offseason.minimumUpgradePerformanceScore))
+    || offseason.minimumUpgradePerformanceScore == null) {
+    throw new Error(`Missing offseason minimum upgrade performance score in ${RULES_PATH}.`);
+  }
   if (Math.abs(Number(weekly.performanceWeight) + Number(weekly.expectationWeight) - 1) > 0.000001) {
     throw new Error(`Progression performance weights must total 1 in ${RULES_PATH}.`);
   }
@@ -1343,11 +1347,8 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
       softGuideline: soft.guideline,
     };
   }
-  const selected = selectWithSoftBalance(
-    candidates,
-    rules.offseason,
-    Number(rules.offseason.maximumRecommendations),
-  );
+  const selected = candidates.sort((a, b) => b.selectionScore - a.selectionScore
+    || a.player.localeCompare(b.player) || a.playerKey.localeCompare(b.playerKey));
   return makeRecord({
     snapshot,
     type: 'offseason',

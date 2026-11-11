@@ -117,4 +117,37 @@ assert.deepEqual(completeBaseline.seasonChanges, { teamCount: 2, baseline: 'Week
 const completeEmbed = [...falcons.storedMessages.values()][2].payload.embeds[0].toJSON();
 assert.doesNotMatch(completeEmbed.description, /Partial-season/);
 assert.match(completeEmbed.fields[0].value, /70 → 74 \(\+4\)/);
+
+const seasonStart = makeSnapshot('season-start', 1, 1, 2029);
+const seasonEnd = makeSnapshot('season-end', 3, 19, 2029);
+const seasonPlayers = Array.from({ length: 61 }, (_, index) => ({
+  ...makePlayer(`season-${index}`, 75), throwAccShortRating: 75,
+}));
+seasonStart.rosters.teams[1].rosterInfoList = structuredClone(seasonPlayers);
+seasonEnd.rosters.teams[1].rosterInfoList = structuredClone(seasonPlayers);
+seasonStart.rosters.teams[2].rosterInfoList = [];
+seasonEnd.rosters.teams[2].rosterInfoList = [];
+seasonEnd.weeklyStats = Array.from({ length: 4 }, (_, weekIndex) => ({
+  stage: 1, weekIndex,
+  passing: { playerPassingStatInfoList: seasonPlayers.map((player, index) => ({
+    rosterId: player.rosterId, teamId: 1, position: 'QB', passAtt: 30,
+    passComp: index === 60 ? 5 : 24, passYds: index === 60 ? 20 : 400,
+    passTDs: index === 60 ? 0 : 4, passInts: index === 60 ? 4 : 0,
+  })) },
+}));
+await persistSyncHistory({ leagueId, snapshot: seasonStart, summary: {} });
+await persistSyncHistory({ leagueId, snapshot: seasonEnd, summary: {} });
+const totalBefore = falcons.storedMessages.size;
+const published = await publishProgressionReports({ client, guildId, snapshot: seasonEnd });
+assert.equal(published.recommendationCount, 61, 'All qualifying players should receive offseason recommendations');
+const newMessages = [...falcons.storedMessages.values()].slice(totalBefore);
+assert.equal(newMessages.length, 14, '61 recommendations require 13 pages plus a separate Top 10 summary');
+const cards = newMessages.flatMap((entry) => entry.payload.embeds.map((item) => item.toJSON()))
+  .filter((entry) => /^(🟢 Upgrade|🟠 Downgrade)/u.test(entry.title));
+assert.equal(cards.length, 61);
+assert.equal(cards.filter((card) => card.title.startsWith('🟢')).length, 60);
+assert.equal(cards.filter((card) => card.title.startsWith('🟠')).length, 1);
+assert.match(cards[0].description, /→/);
+await publishProgressionReports({ client, guildId, snapshot: seasonEnd });
+assert.equal(falcons.storedMessages.size, totalBefore + 14, 'A repeat sync edits existing offseason cards');
 console.log('PASS season OVR comparisons, partial baselines, team threads, repeat updates, and season rollover');

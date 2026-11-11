@@ -334,8 +334,8 @@
       }
     },
     "offseason": {
-      "maximumRecommendations": 50,
       "attributesPerRecommendation": 2,
+      "minimumUpgradePerformanceScore": 65,
       "minimumUpgradeSelectionScore": 62,
       "maximumDowngradePerformanceScore": 28,
       "minimumDowngradeSelectionPriority": 60,
