@@ -93,6 +93,7 @@
         "WR": { "recCatches": 2 },
         "TE": { "recCatches": 2 },
         "DEF": { "defTotalTackles": 2, "defSacks": 1, "defInts": 1, "defPassDeflections": 1 },
+        "OL": { "teamRushAtt": 10, "teamPassAtt": 10 },
         "K": { "fgAtt": 1, "xpAtt": 1 },
         "P": { "pntAtt": 2 }
       },
@@ -115,6 +116,10 @@
         "TE": [
           { "attribute": "Catching", "field": "recDrops", "minimum": 1, "minimumOpportunities": 3, "opportunityField": "recCatches" },
           { "attribute": "Medium Route Running", "field": "recYds", "maximumRate": 5, "minimumOpportunities": 3, "opportunityField": "recCatches", "rateField": "recCatches" }
+        ],
+        "OL": [
+          { "attribute": "Run Blocking", "field": "teamRushYds", "maximumRate": 2.5, "minimumOpportunities": 10, "opportunityField": "teamRushAtt", "rateField": "teamRushAtt" },
+          { "attribute": "Pass Blocking", "field": "teamSacks", "minimum": 4, "minimumOpportunities": 10, "opportunityField": "teamPassAtt" }
         ],
         "K": [
           { "attribute": "Kick Accuracy", "field": "fgMade", "minimumMisses": 2, "minimumOpportunities": 3, "opportunityField": "fgAtt", "attemptsField": "fgAtt" }
@@ -208,7 +213,8 @@
             { "attribute": "Throw Accuracy Mid", "evidence": "passYdsPerAtt", "minimum": 7 },
             { "attribute": "Throw Accuracy Deep", "evidence": "passLongest", "minimum": 40 },
             { "attribute": "Play Action", "evidence": "passTDs", "minimum": 1 },
-            { "attribute": "Throw on Run", "evidence": "rushYds", "minimum": 20 }
+            { "attribute": "Throw on Run", "evidence": "rushYds", "minimum": 20 },
+            { "attribute": "Throw Power", "evidence": "passLongest", "minimum": 50 }
           ]
         },
         "HB": {
@@ -222,7 +228,9 @@
             { "attribute": "Catching", "evidence": "recCatches", "minimum": 2 },
             { "attribute": "Break Tackle", "evidence": "rushBrokenTackles", "minimum": 1 },
             { "attribute": "Trucking", "evidence": "rushYdsAfterContact", "minimum": 30 },
-            { "attribute": "Speed", "evidence": "rush20PlusYds", "minimum": 1 }
+            { "attribute": "Speed", "evidence": "rush20PlusYds", "minimum": 1 },
+            { "attribute": "Juke Move", "evidence": "rushBrokenTackles", "minimum": 2 },
+            { "attribute": "Stiff Arm", "evidence": "rushYdsAfterContact", "minimum": 40 }
           ]
         },
         "FB": {
@@ -269,15 +277,34 @@
           "weights": { "defTotalTackles": 0.75, "defSacks": 4, "defInts": 5, "defForcedFumbles": 3, "defRecoveredFumbles": 2, "defPassDeflections": 2, "defTDs": 7, "defSafeties": 7 },
           "attributes": [
             { "attribute": "Tackling", "evidence": "defTotalTackles", "minimum": 5 },
-            { "attribute": "Power Moves", "evidence": "defSacks", "minimum": 1 },
-            { "attribute": "Zone Coverage", "evidence": "defInts", "minimum": 1 },
+            { "attribute": "Power Moves", "evidence": "defSacks", "minimum": 1, "positions": ["LE", "RE", "DT", "DE", "EDGE", "NT", "DL", "LEDGE", "REDGE", "LEDG", "REDG", "LDE", "RDE", "LOLB", "ROLB", "OLB", "SAM", "WILL"] },
+            { "attribute": "Zone Coverage", "evidence": "defInts", "minimum": 1, "positions": ["CB", "FS", "SS", "DB", "S", "MLB", "LB", "ILB", "MIKE", "LOLB", "ROLB", "OLB", "SAM", "WILL"] },
             { "attribute": "Play Recognition", "evidence": "defPassDeflections", "minimum": 1 },
-            { "attribute": "Hit Power", "evidence": "defForcedFumbles", "minimum": 1 }
+            { "attribute": "Hit Power", "evidence": "defForcedFumbles", "minimum": 1 },
+            { "attribute": "Pursuit", "evidence": "defTotalTackles", "minimum": 6 },
+            { "attribute": "Finesse Moves", "evidence": "defSacks", "minimum": 1, "positions": ["LE", "RE", "DT", "DE", "EDGE", "NT", "DL", "LEDGE", "REDGE", "LEDG", "REDG", "LDE", "RDE", "LOLB", "ROLB", "OLB", "SAM", "WILL"] },
+            { "attribute": "Man Coverage", "evidence": "defPassDeflections", "minimum": 1, "positions": ["CB", "FS", "SS", "DB", "S", "MLB", "LB", "ILB", "MIKE"] }
+          ]
+        },
+        "OL": {
+          "scale": 100,
+          "expectedAt70": 65,
+          "expectedPerOvr": 0.25,
+          "weights": { "teamLineScore": 1 },
+          "allowRepeatedEvidence": true,
+          "attributes": [
+            { "attribute": "Run Blocking", "evidence": "teamRunScore", "minimum": 80 },
+            { "attribute": "Run Block Power", "evidence": "teamRunScore", "minimum": 80 },
+            { "attribute": "Run Block Finesse", "evidence": "teamRunScore", "minimum": 80 },
+            { "attribute": "Impact Blocking", "evidence": "teamRunScore", "minimum": 90 },
+            { "attribute": "Pass Blocking", "evidence": "teamPassScore", "minimum": 80 },
+            { "attribute": "Pass Block Power", "evidence": "teamPassScore", "minimum": 80 },
+            { "attribute": "Pass Block Finesse", "evidence": "teamPassScore", "minimum": 80 }
           ]
         },
         "K": {
-          "scale": 8,
-          "expectedAt70": 3,
+          "scale": 5,
+          "expectedAt70": 2.5,
           "expectedPerOvr": 0.06,
           "weights": { "fgMade": 2, "fgAtt": -0.5, "fg50PlusMade": 2, "xpMade": 0.5, "xpAtt": -0.2 },
           "attributes": [
@@ -286,9 +313,9 @@
           ]
         },
         "P": {
-          "scale": 12,
-          "expectedAt70": 4,
-          "expectedPerOvr": 0.08,
+          "scale": 65,
+          "expectedAt70": 40,
+          "expectedPerOvr": 0.12,
           "weights": { "pntYdsPerAtt": 0.5, "pntNetYdsPerAtt": 0.5, "pntInside20": 2, "pntAtt": 0.5, "puntsBlocked": -3 },
           "attributes": [
             { "attribute": "Kick Power", "evidence": "pntYdsPerAtt", "minimum": 42 },

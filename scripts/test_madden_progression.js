@@ -11,6 +11,104 @@ import {
 } from '../src/madden/progression.js';
 
 const baseRules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
+
+const lineRoster = [
+  { rosterId: 'line-lt', position: 'LT', playerBestOvr: 80, runBlockRating: 80, runBlockPowerRating: 80, runBlockFinesseRating: 80, passBlockRating: 80, passBlockPowerRating: 80, passBlockFinesseRating: 80, impactBlockRating: 80 },
+  { rosterId: 'line-backup', position: 'LT', playerBestOvr: 70, runBlockRating: 70 },
+  { rosterId: 'line-injured', position: 'LG', playerBestOvr: 90, injuryLength: 2, runBlockRating: 90 },
+  { rosterId: 'line-lg', position: 'LG', playerBestOvr: 75, runBlockRating: 75 },
+];
+const lineWeek = {
+  stage: 1, weekIndex: 0,
+  passing: { playerPassingStatInfoList: [{ teamId: 1, passAtt: 30, passSacks: 1 }] },
+  rushing: { playerRushingStatInfoList: [{ teamId: 1, rushAtt: 25, rushYds: 150 }] },
+};
+const lineSnapshot = {
+  leagueId: 'line-test', syncId: 'sync-line', calendarYear: 2026,
+  teams: { leagueTeamInfoList: [{ teamId: 1, cityName: 'Test', nickName: 'Team' }] },
+  rosters: { teams: { 1: { rosterInfoList: lineRoster } } }, weeklyStats: [lineWeek],
+};
+const lineRecord = buildWeeklyProgressionRecommendations(lineSnapshot, { weekIndex: 0, rules: baseRules });
+const lineResult = lineRecord.recommendations.find((item) => item.playerKey === 'roster:line-lt');
+assert.ok(lineResult);
+assert.ok(lineResult.attributes.length > 1);
+assert.ok(lineResult.changeContext.teamLineProxy);
+assert.equal(lineResult.consistency.strongStreak, 1);
+assert.ok(lineRecord.recommendations.some((item) => item.playerKey === 'roster:line-lg'));
+assert.ok(!lineRecord.recommendations.some((item) => ['roster:line-backup', 'roster:line-injured'].includes(item.playerKey)));
+const lineCard = JSON.stringify(buildProgressionCardEmbed(lineRecord, lineResult).toJSON());
+assert.match(lineCard, /proxy, not individual blocking stats/);
+assert.match(lineCard, /Starter estimated/);
+assert.match(lineCard, /Team carries/);
+const unavailableLine = structuredClone(lineSnapshot);
+delete unavailableLine.weeklyStats[0].rushing;
+delete unavailableLine.weeklyStats[0].passing.playerPassingStatInfoList[0].passSacks;
+assert.equal(buildWeeklyProgressionRecommendations(unavailableLine, { weekIndex: 0, rules: baseRules }).recommendations.length, 0);
+const rushingOnly = structuredClone(lineSnapshot);
+delete rushingOnly.weeklyStats[0].passing;
+const rushingRecord = buildWeeklyProgressionRecommendations(rushingOnly, { weekIndex: 0, rules: baseRules });
+const rushingLine = rushingRecord.recommendations.find((item) => item.playerKey === 'roster:line-lt');
+assert.ok(rushingLine);
+assert.match(JSON.stringify(buildProgressionCardEmbed(rushingRecord, rushingLine).toJSON()), /Team rushing performance is a proxy/);
+assert.ok(rushingLine.attributes.every((attribute) => attribute.evidence === 'teamRunScore'));
+const lineHistory = structuredClone(lineSnapshot);
+lineHistory.weeklyStats = [{ ...lineWeek, weekIndex: 0 }, { ...lineWeek, weekIndex: 1 }];
+const currentLine = buildWeeklyProgressionRecommendations(lineHistory, { weekIndex: 1, rules: baseRules }).recommendations.find((item) => item.playerKey === 'roster:line-lt');
+assert.equal(currentLine.consistency.strongStreak, 1, 'Current roster must not be used to infer historical starters');
+const lineVariations = new Set(Array.from({ length: 7 }, (_, index) => {
+  const data = structuredClone(lineSnapshot);
+  data.weeklyStats[0].weekIndex = index;
+  const item = buildWeeklyProgressionRecommendations(data, { weekIndex: index, rules: baseRules }).recommendations.find((result) => result.playerKey === 'roster:line-lt');
+  return item.attributes.map((attribute) => attribute.attribute).join(',');
+}));
+assert.ok(lineVariations.size > 1, 'Eligible line attributes should vary over time');
+const maxLine = structuredClone(lineSnapshot);
+maxLine.rosters.teams[1].rosterInfoList[0].passBlockRating = 99;
+for (const item of buildWeeklyProgressionRecommendations(maxLine, { weekIndex: 0, rules: baseRules }).recommendations.flatMap((recommendation) => recommendation.attributes)) {
+  assert.ok(item.targetValue >= 0 && item.targetValue <= 99);
+}
+const badLine = structuredClone(lineSnapshot);
+badLine.weeklyStats[0].rushing.playerRushingStatInfoList[0].rushYds = 20;
+badLine.weeklyStats[0].passing.playerPassingStatInfoList[0].passSacks = 9;
+assert.equal(buildWeeklyProgressionRecommendations(badLine, { weekIndex: 0, rules: baseRules }).recommendations.find((item) => item.playerKey === 'roster:line-lt')?.direction, 'downgrade');
+
+const specialistSnapshot = {
+  ...lineSnapshot,
+  rosters: { teams: { 1: { rosterInfoList: [
+    { rosterId: 'kicker', position: 'K', playerBestOvr: 75, kickAccRating: 75, kickPowerRating: 75 },
+    { rosterId: 'punter', position: 'P', playerBestOvr: 75, kickAccRating: 75, kickPowerRating: 75 },
+  ] } } },
+  weeklyStats: [{
+    weekIndex: 0, stage: 1,
+    kicking: { playerKickingStatInfoList: [{ rosterId: 'kicker', fGAtt: 2, fGMade: 2, xPAtt: 2, xPMade: 2, fGLongest: 52 }] },
+    punting: { playerPuntingStatInfoList: [{ rosterId: 'punter', puntAtt: 3, puntYds: 135, puntNetYds: 120, puntsIn20: 1 }] },
+  }],
+};
+const specialists = buildWeeklyProgressionRecommendations(specialistSnapshot, { weekIndex: 0, rules: baseRules }).recommendations;
+assert.equal(specialists.find((item) => item.playerKey === 'roster:kicker')?.stats.fgCompPct, 100);
+assert.equal(specialists.find((item) => item.playerKey === 'roster:punter')?.stats.pntYdsPerAtt, 45);
+assert.equal(specialists.find((item) => item.playerKey === 'roster:punter')?.stats.pntNetYdsPerAtt, 40);
+const noKicks = structuredClone(specialistSnapshot);
+noKicks.weeklyStats[0].kicking.playerKickingStatInfoList[0].fGAtt = 0;
+noKicks.weeklyStats[0].kicking.playerKickingStatInfoList[0].xPAtt = 0;
+assert.ok(!buildWeeklyProgressionRecommendations(noKicks, { weekIndex: 0, rules: baseRules }).recommendations.some((item) => item.playerKey === 'roster:kicker'));
+const specialistDiversitySnapshot = structuredClone(specialistSnapshot);
+const passing = [];
+for (let index = 0; index < 12; index += 1) {
+  const id = `diverse-qb-${index}`;
+  specialistDiversitySnapshot.rosters.teams[1].rosterInfoList.push({
+    rosterId: id, firstName: 'Quarterback', lastName: String(index),
+    position: 'QB', playerBestOvr: 75, throwAccShortRating: 75,
+  });
+  passing.push({ rosterId: id, passAtt: 30, passComp: 24, passYds: 400, passTDs: 4, passInts: 0 });
+}
+specialistDiversitySnapshot.weeklyStats[0].passing = { playerPassingStatInfoList: passing };
+const specialistDiversityRules = structuredClone(baseRules);
+specialistDiversityRules.weekly.maximumRecommendations = 4;
+const diverseSpecialists = buildWeeklyProgressionRecommendations(specialistDiversitySnapshot, { weekIndex: 0, rules: specialistDiversityRules }).recommendations;
+assert.ok(diverseSpecialists.some((item) => item.position === 'QB'));
+assert.ok(diverseSpecialists.some((item) => item.position === 'K'));
+assert.ok(diverseSpecialists.some((item) => item.position === 'P'));
 for (const weekType of [0, 1, 2]) {
   assert.equal(isOffseason({ info: { careerHubInfo: { seasonInfo: { seasonWeekType: weekType, offSeasonStage: 10 } } } }), false);
 }

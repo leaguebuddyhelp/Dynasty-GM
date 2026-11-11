@@ -341,6 +341,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         entry?.receiving?.playerReceivingStatInfoList,
         entry?.defense?.playerDefensiveStatInfoList,
         entry?.kicking?.playerKickingStatInfoList,
+        entry?.punting?.playerPuntingStatInfoList,
       ];
       return buckets.some(b => Array.isArray(b) && b.length > 0);
     };
@@ -351,6 +352,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         entry?.receiving?.playerReceivingStatInfoList,
         entry?.defense?.playerDefensiveStatInfoList,
         entry?.kicking?.playerKickingStatInfoList,
+        entry?.punting?.playerPuntingStatInfoList,
       ];
       return buckets.reduce((acc, b) => acc + (Array.isArray(b) ? b.length : 0), 0);
     };
@@ -360,8 +362,8 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       if (!b) return a;
       const merged = { ...a, ...b };
       const mergeList = (key) => {
-        const listA = (a[key] && a[key].playerPassingStatInfoList) || (a[key] && a[key].playerRushingStatInfoList) || (a[key] && a[key].playerReceivingStatInfoList) || (a[key] && a[key].playerDefensiveStatInfoList) || (a[key] && a[key].playerKickingStatInfoList) || [];
-        const listB = (b[key] && b[key].playerPassingStatInfoList) || (b[key] && b[key].playerRushingStatInfoList) || (b[key] && b[key].playerReceivingStatInfoList) || (b[key] && b[key].playerDefensiveStatInfoList) || (b[key] && b[key].playerKickingStatInfoList) || [];
+        const listA = (a[key] && a[key].playerPassingStatInfoList) || (a[key] && a[key].playerRushingStatInfoList) || (a[key] && a[key].playerReceivingStatInfoList) || (a[key] && a[key].playerDefensiveStatInfoList) || (a[key] && a[key].playerKickingStatInfoList) || (a[key] && a[key].playerPuntingStatInfoList) || [];
+        const listB = (b[key] && b[key].playerPassingStatInfoList) || (b[key] && b[key].playerRushingStatInfoList) || (b[key] && b[key].playerReceivingStatInfoList) || (b[key] && b[key].playerDefensiveStatInfoList) || (b[key] && b[key].playerKickingStatInfoList) || (b[key] && b[key].playerPuntingStatInfoList) || [];
         const combined = [...listA, ...listB];
         // If both are empty, keep structure from b if present
         if (!combined.length) return b[key] ?? a[key];
@@ -371,6 +373,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         if (b[key]?.playerReceivingStatInfoList || a[key]?.playerReceivingStatInfoList) return { ...(b[key] || a[key]), playerReceivingStatInfoList: combined };
         if (b[key]?.playerDefensiveStatInfoList || a[key]?.playerDefensiveStatInfoList) return { ...(b[key] || a[key]), playerDefensiveStatInfoList: combined };
         if (b[key]?.playerKickingStatInfoList || a[key]?.playerKickingStatInfoList) return { ...(b[key] || a[key]), playerKickingStatInfoList: combined };
+        if (b[key]?.playerPuntingStatInfoList || a[key]?.playerPuntingStatInfoList) return { ...(b[key] || a[key]), playerPuntingStatInfoList: combined };
         return b[key] ?? a[key];
       };
       merged.passing = mergeList('passing');
@@ -378,6 +381,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       merged.receiving = mergeList('receiving');
       merged.defense = mergeList('defense');
       merged.kicking = mergeList('kicking');
+      merged.punting = mergeList('punting');
       merged.teamstats = b.teamstats || a.teamstats;
       merged.isIncomplete = !isWeekComplete(merged);
       merged.playerCount = countPlayers(merged);
