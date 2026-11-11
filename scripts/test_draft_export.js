@@ -7,6 +7,7 @@ const teams = [
   { teamId: 2, cityName: 'Beta', displayName: 'Bears' },
 ];
 const previous = {
+  season: 2025,
   teams: { leagueTeamInfoList: teams },
   rosters: {
     teams: {
@@ -33,6 +34,7 @@ const previous = {
   },
 };
 const current = {
+  season: 2025,
   teams: { leagueTeamInfoList: teams },
   rosters: {
     teams: {
@@ -93,4 +95,25 @@ assert.equal(csv.split('\r\n').length, 3);
 
 const released = collectDraft([previous, { ...current, rosters: { teams: {} } }]);
 assert.equal(released[0].currentRosterStatus, 'Not on current roster; last seen team shown');
+
+const otherSeason = {
+  season: 2024,
+  teams: { leagueTeamInfoList: teams },
+  rosters: {
+    teams: {
+      1: {
+        rosterInfoList: [{
+          rosterId: 3003,
+          firstName: 'Earlier',
+          lastName: 'Class',
+          yearsPro: 0,
+          position: 'WR',
+        }],
+      },
+    },
+  },
+};
+const currentSeasonExport = collectDraft([otherSeason, previous, current]);
+assert.equal(currentSeasonExport.length, 2);
+assert.equal(currentSeasonExport.some((player) => player.rosterId === 3003), false);
 console.log('PASS draft export identity, trade/current-team distinction, unresolved picks, and CSV escaping');

@@ -38,10 +38,27 @@ function playerName(player = {}) {
   return [player.firstName, player.lastName].map((part) => String(part || '').trim()).filter(Boolean).join(' ').trim();
 }
 
+function snapshotSeasonKey(snapshot) {
+  const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
+  const season = snapshot?.season
+    ?? seasonInfo.seasonNumber
+    ?? seasonInfo.seasonIndex
+    ?? seasonInfo.seasonYear
+    ?? seasonInfo.calendarYear
+    ?? snapshot?.info?.calendarYear
+    ?? snapshot?.calendarYear;
+  return season === null || season === undefined || season === '' ? null : String(season);
+}
+
 export function collectDraft(snapshot) {
   const snapshots = Array.isArray(snapshot) ? snapshot : [snapshot];
+  const latestSnapshot = snapshots.at(-1);
+  const latestSeasonKey = snapshotSeasonKey(latestSnapshot);
+  const currentSeasonSnapshots = latestSeasonKey === null
+    ? [latestSnapshot]
+    : snapshots.filter((entry) => snapshotSeasonKey(entry) === latestSeasonKey);
   const playersByKey = new Map();
-  for (const [snapshotIndex, currentSnapshot] of snapshots.entries()) {
+  for (const [snapshotIndex, currentSnapshot] of currentSeasonSnapshots.entries()) {
     const teams = currentSnapshot?.teams?.leagueTeamInfoList || [];
     const teamNames = new Map(teams.map((team) => [
       String(team.teamId),
@@ -79,7 +96,7 @@ export function collectDraft(snapshot) {
           draftRound: round ?? prior?.draftRound ?? null,
           draftPickInRound: pickInRound ?? prior?.draftPickInRound ?? null,
           overallPick: overallPick ?? prior?.overallPick ?? null,
-          observedInCurrentSnapshot: snapshotIndex === snapshots.length - 1,
+          observedInCurrentSnapshot: snapshotIndex === currentSeasonSnapshots.length - 1,
           lastSeenSnapshotIndex: snapshotIndex,
         });
       }
