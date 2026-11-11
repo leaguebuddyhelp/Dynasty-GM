@@ -251,7 +251,13 @@ function buildWeeklyPlayerStats(snapshot, aliases, { requestedWeekIndex = null, 
         position: String(row.position || '').toUpperCase(),
         games: 0,
         totals: {},
+        observedTeamIds: new Set(),
+        observedPositions: new Set(),
+        missingTeamId: false,
       };
+      if (row.teamId == null || String(row.teamId).trim() === '') target.missingTeamId = true;
+      else target.observedTeamIds.add(String(row.teamId));
+      if (row.position) target.observedPositions.add(String(row.position).toUpperCase());
       if (hasPlayerTotals && row.totals) {
         const fields = new Set(Object.keys(row.totals).map(normalizeMaddenStatField));
         for (const field of fields) {
@@ -1246,7 +1252,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   return record;
 }
 
-function makeOffseasonAttributes(player, stats, averages, rules, positionKey, direction, tier, seasonGames) {
+function makeOffseasonAttributes(player, stats, averages, rules, positionKey, direction, tier, seasonGames, sustainedPoor) {
   const positionRule = rules.weekly.positions[positionKey];
   if (!positionRule) return [];
   if (direction === 'upgrade') {
@@ -1277,6 +1283,14 @@ function makeOffseasonAttributes(player, stats, averages, rules, positionKey, di
     seasonGames,
     Number(rules.offseason.attributesPerRecommendation ?? rules.weekly.attributesPerRecommendation ?? 3),
   );
+  const awarenessField = rules.weekly.attributeFields?.Awareness;
+  const awareness = numberOrNull(player[awarenessField]);
+  if (!negatives.length && sustainedPoor && awareness !== null && awareness > 0 && awareness <= 99) {
+    return attributeAllocation({
+      attribute: 'Awareness', field: awarenessField, evidence: 'seasonPoorGames',
+      currentValue: awareness, evidenceRatio: 1,
+    }, -1);
+  }
   return negatives.flatMap((evidence) => attributeAllocation(evidence, Number(tier.primaryPoints)));
 }
 
@@ -1332,6 +1346,12 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
     const soft = positiveSeasonPenalty(positiveUsed, startingOvr, rules.offseason);
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
     const consistency = getStrongPoorCounts(observedMetrics.map((entry) => entry.score), rules.weekly);
+    const identityVerified = observedMetrics.every(({ row }) =>
+      !row.missingTeamId && row.observedTeamIds?.size === 1 && row.observedTeamIds.has(player.teamId)
+      && [...(row.observedPositions || [])].every((position) => position === player.position));
+    const sustainedPoor = positionKey !== 'OL' && identityVerified
+      && consistency.poor >= Number(rules.weekly.poorPerformanceMinimumGames ?? 3)
+      && consistency.poor * 2 >= consistency.observedGames;
     const recentScores = observedMetrics.slice(-Number(rules.weekly.rollingGames)).map((entry) => entry.score);
     const recentScore = recentScores.reduce((sum, score) => sum + score, 0) / recentScores.length;
     const selectionAdjustments = {
@@ -1360,7 +1380,7 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
       }
     }
     if (!direction) continue;
-    const attributes = makeOffseasonAttributes(player, totalStats, avgStats, rules, positionKey, direction, tier, games);
+    const attributes = makeOffseasonAttributes(player, totalStats, avgStats, rules, positionKey, direction, tier, games, sustainedPoor);
     if (!attributes.length) continue;
     const minimumSelectionScore = direction === 'upgrade'
       ? Number(rules.offseason.minimumUpgradeSelectionScore)
@@ -1378,6 +1398,7 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
       stats: {
         ...Object.fromEntries(Object.entries(totalStats).filter(([field]) => !/Pct$|PerAtt$|PerCatch$|Longest$/.test(field))),
         ...Object.fromEntries(Object.entries(avgStats).filter(([field]) => /Pct$|PerAtt$|PerCatch$|Longest$/.test(field))),
+        ...(attributes.some((attribute) => attribute.evidence === 'seasonPoorGames') ? { seasonPoorGames: consistency.poor } : {}),
       },
       attributes,
       currentGameScore: null,
@@ -1409,6 +1430,7 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
 
 const STAT_LABELS = {
   currentGameScore: 'Game performance score',
+  seasonPoorGames: 'Games with low tracked production',
   missingStatGames: 'Consecutive team games without recorded stats',
   teamRushAtt: 'Team carries', teamRushYds: 'Team rushing yards', teamRushYpc: 'Team yards per carry',
   teamPassAtt: 'Team pass attempts', teamSacks: 'Team sacks allowed', teamSackRate: 'Team sack rate',
@@ -1477,6 +1499,9 @@ function recommendationWhy(record, item) {
   if (record.type === 'weekly' && item.awardPoints > 0) reasons.push('Won a weekly award.');
   if (item.attributes.some((attribute) => attribute.attribute === 'Awareness' && attribute.evidence === 'currentGameScore')) {
     reasons.push('Awareness is estimated from game performance, not measured directly.');
+  }
+  if (item.attributes.some((attribute) => attribute.evidence === 'seasonPoorGames')) {
+    reasons[0] = `${item.consistency.poor} of ${item.consistency.observedGames} observed games had low tracked production. This is an estimate, not a direct measurement of Awareness or individual performance.`;
   }
   if (item.changeContext?.breakout) {
     reasons.push('Exceptional play for a lower-rated player earned a larger boost.');

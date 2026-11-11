@@ -51,6 +51,72 @@ assert.ok(!buildOffseasonProgressionRecommendations(mixedSeason, { rules: baseRu
 const wrongTeamLines = mixedLineHistory.map((row) => ({ ...row, teamId: '2' }));
 assert.ok(!buildOffseasonProgressionRecommendations(mixedSeason, { rules: baseRules, lineObservations: wrongTeamLines }).recommendations.some((item) => item.position === 'LT'));
 
+const balancedSeason = structuredClone(mixedSeason);
+balancedSeason.rosters.teams[1].rosterInfoList.push(
+  { rosterId: 'poor-qb', firstName: 'Poor', lastName: 'QB', position: 'QB', playerBestOvr: 85, throwAccShortRating: 80 },
+  { rosterId: 'poor-hb', firstName: 'Poor', lastName: 'HB', position: 'HB', playerBestOvr: 85, bCVRating: 80 },
+  { rosterId: 'poor-wr', firstName: 'Poor', lastName: 'WR', position: 'WR', playerBestOvr: 85, routeRunMedRating: 80 },
+  { rosterId: 'poor-cb', firstName: 'Poor', lastName: 'CB', position: 'CB', playerBestOvr: 85, awareRating: 80 },
+  { rosterId: 'poor-lt', firstName: 'Poor', lastName: 'LT', position: 'LT', playerBestOvr: 85, runBlockRating: 80 },
+  { rosterId: 'poor-k', firstName: 'Poor', lastName: 'K', position: 'K', playerBestOvr: 85, kickAccRating: 80 },
+  { rosterId: 'poor-p', firstName: 'Poor', lastName: 'P', position: 'P', playerBestOvr: 85, kickPowerRating: 80 },
+);
+for (const week of balancedSeason.weeklyStats) {
+  week.passing.playerPassingStatInfoList.push({ rosterId: 'poor-qb', teamId: 1, position: 'QB', passAtt: 30, passComp: 8, passYds: 40, passTDs: 0, passInts: 3 });
+  week.rushing.playerRushingStatInfoList.push({ rosterId: 'poor-hb', teamId: 1, position: 'HB', rushAtt: 15, rushYds: 20, rushTDs: 0 });
+  week.receiving.playerReceivingStatInfoList.push({ rosterId: 'poor-wr', teamId: 1, position: 'WR', recCatches: 4, recYds: 8, recTDs: 0 });
+  week.defense.playerDefensiveStatInfoList.push({ rosterId: 'poor-cb', teamId: 1, position: 'CB', defTotalTackles: 2 });
+  week.kicking.playerKickingStatInfoList.push({ rosterId: 'poor-k', teamId: 1, position: 'K', fGAtt: 3, fGMade: 0 });
+  week.punting.playerPuntingStatInfoList.push({ rosterId: 'poor-p', teamId: 1, position: 'P', puntAtt: 4, puntYds: 80, puntNetYds: 32, puntsIn20: 0 });
+}
+const balancedLines = [
+  ...mixedLineHistory,
+  ...mixedLineHistory.map((row) => ({
+    ...row, playerKey: 'roster:poor-lt',
+    totals: { teamRushAtt: 25, teamRushYds: 20, teamRunScore: 16, teamLineScore: 16 },
+  })),
+];
+const balancedResult = buildOffseasonProgressionRecommendations(balancedSeason, { rules: baseRules, lineObservations: balancedLines });
+for (const position of ['QB', 'HB', 'WR', 'CB', 'LT', 'K', 'P']) {
+  for (const direction of ['upgrade', 'downgrade']) {
+    assert.ok(balancedResult.recommendations.some((item) => item.position === position && item.direction === direction),
+      `Missing ${position} offseason ${direction}`);
+  }
+}
+const poorCb = balancedResult.recommendations.find((item) => item.playerKey === 'roster:poor-cb');
+assert.equal(poorCb.attributes[0].attribute, 'Awareness');
+assert.equal(poorCb.attributes[0].points, -1);
+assert.match(JSON.stringify(buildProgressionCardEmbed(balancedResult, poorCb).toJSON()), /not a direct measurement/);
+for (const mutation of [
+  (week) => { delete week.defense.playerDefensiveStatInfoList[1].teamId; },
+  (week) => { week.defense.playerDefensiveStatInfoList[1].teamId = 2; },
+  (week) => { week.defense.playerDefensiveStatInfoList[1].position = 'FS'; },
+  (week) => { week.defense.playerDefensiveStatInfoList[1].defTotalTackles = 0; },
+]) {
+  const incomplete = structuredClone(balancedSeason);
+  incomplete.weeklyStats.forEach(mutation);
+  assert.ok(!buildOffseasonProgressionRecommendations(incomplete, { rules: baseRules }).recommendations
+    .some((item) => item.playerKey === 'roster:poor-cb'));
+}
+const tooFew = structuredClone(balancedSeason);
+tooFew.weeklyStats = tooFew.weeklyStats.slice(0, 2);
+assert.ok(!buildOffseasonProgressionRecommendations(tooFew, { rules: baseRules }).recommendations
+  .some((item) => item.playerKey === 'roster:poor-cb'));
+const missingAwareness = structuredClone(balancedSeason);
+delete missingAwareness.rosters.teams[1].rosterInfoList.find((player) => player.rosterId === 'poor-cb').awareRating;
+assert.ok(!buildOffseasonProgressionRecommendations(missingAwareness, { rules: baseRules }).recommendations
+  .some((item) => item.playerKey === 'roster:poor-cb'));
+const mostlyStrong = structuredClone(balancedSeason);
+mostlyStrong.weeklyStats.push(...Array.from({ length: 4 }, (_, index) => {
+  const week = structuredClone(mostlyStrong.weeklyStats[0]);
+  week.weekIndex = index + 4;
+  week.defense.playerDefensiveStatInfoList[1].defTotalTackles = 10;
+  week.defense.playerDefensiveStatInfoList[1].defInts = 2;
+  return week;
+}));
+assert.ok(!buildOffseasonProgressionRecommendations(mostlyStrong, { rules: baseRules }).recommendations
+  .some((item) => item.playerKey === 'roster:poor-cb' && item.direction === 'downgrade'));
+
 const lineRoster = [
   { rosterId: 'line-lt', position: 'LT', playerBestOvr: 80, runBlockRating: 80, runBlockPowerRating: 80, runBlockFinesseRating: 80, passBlockRating: 80, passBlockPowerRating: 80, passBlockFinesseRating: 80, impactBlockRating: 80 },
   { rosterId: 'line-backup', position: 'LT', playerBestOvr: 70, runBlockRating: 70 },
