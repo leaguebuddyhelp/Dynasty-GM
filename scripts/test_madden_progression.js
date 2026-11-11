@@ -6,9 +6,17 @@ import {
   buildOffseasonProgressionRecommendations,
   buildRecommendationStatusButtons,
   buildWeeklyProgressionRecommendations,
+  isOffseason,
 } from '../src/madden/progression.js';
 
 const baseRules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
+for (const weekType of [0, 1, 2]) {
+  assert.equal(isOffseason({ info: { careerHubInfo: { seasonInfo: { seasonWeekType: weekType, offSeasonStage: 10 } } } }), false);
+}
+for (const weekType of [3, 8]) {
+  assert.equal(isOffseason({ info: { careerHubInfo: { seasonInfo: { seasonWeekType: weekType } } } }), true);
+}
+assert.equal(isOffseason({ info: { careerHubInfo: { seasonInfo: { offSeasonStage: 10 } } } }), true);
 const rules = structuredClone(baseRules);
 rules.weekly.performanceWeight = 1;
 rules.weekly.expectationWeight = 0;
@@ -396,6 +404,40 @@ const mixedPlayers = [
   player({ rosterId: 'down1', firstName: 'Down One' }),
   player({ rosterId: 'down2', firstName: 'Down Two' }),
 ];
+const league = snapshot([], player());
+league.teams.leagueTeamInfoList = [];
+league.rosters.teams = {};
+const leagueStats = [];
+for (let index = 0; index < 36; index += 1) {
+  const teamId = String(index + 1);
+  const rosterId = `league-qb-${index}`;
+  league.teams.leagueTeamInfoList.push({ teamId, cityName: 'Test', nickName: `Team ${teamId}` });
+  league.rosters.teams[teamId] = { rosterInfoList: [player({ rosterId, firstName: `Player ${index}` })] };
+  if (index >= 32) continue;
+  leagueStats.push({
+    rosterId, teamId, position: 'QB',
+    passYds: index < 24 ? 300 : 0,
+    passTDs: index < 24 ? 3 : 0,
+    passInts: index < 24 ? 0 : 3,
+    passAtt: 30, passComp: index < 24 ? 21 : 10,
+  });
+}
+league.weeklyStats = [{ weekIndex: 1, stage: 1, passing: { playerPassingStatInfoList: leagueStats } }];
+const leagueRecord = buildWeeklyProgressionRecommendations(league, {
+  weekIndex: 1, rules: baseRules, history: { periods: {}, seasonAwards: {} },
+});
+assert.equal(leagueRecord.recommendations.length, 30);
+assert.equal(leagueRecord.selectionDiagnostics.eligibleCandidates, 32);
+assert.ok(leagueRecord.recommendations.some((item) => item.direction === 'upgrade'));
+assert.ok(leagueRecord.recommendations.some((item) => item.direction === 'downgrade'));
+assert.ok(leagueRecord.recommendations.every((item) => item.attributes.length > 0));
+const limitedLeague = structuredClone(league);
+limitedLeague.weeklyStats[0].passing.playerPassingStatInfoList = leagueStats.slice(0, 4);
+const limitedRecord = buildWeeklyProgressionRecommendations(limitedLeague, {
+  weekIndex: 1, rules: baseRules, history: { periods: {}, seasonAwards: {} },
+});
+assert.equal(limitedRecord.recommendations.length, 4);
+assert.equal(limitedRecord.selectionDiagnostics.eligibleCandidates, 4);
 const mixedSnapshot = snapshot([{
   weekIndex: 0,
   stage: 1,

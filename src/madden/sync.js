@@ -300,8 +300,8 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       for (const wk of weekBuckets.preseason) await collectSchedule(wk, Stage.PRESEASON);
       for (const wk of weekBuckets.season) {
         await collectSchedule(wk, Stage.SEASON);
-        // Playoffs can be exposed as a different stage; try stage 2 (and 0 as a fallback) for postseason weeks (19+)
-        if (wk >= 19) {
+        // Playoffs can be exposed as a different stage beginning at week index 18.
+        if (wk >= 18) {
           await collectSchedule(wk, 2);
           await collectSchedule(wk, Stage.PRESEASON); // some exports mark playoff games as stage 0
         }
@@ -331,7 +331,9 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     // Fetch weekly stats for all weeks up to currentWeek (season) and preseason weeks 0-3
     await emitProgress(options, 'Loading weekly stats', 'Pulling weekly stat buckets and merging them into the current snapshot.');
     const weeklyStats = [];
-    const maxSeasonWeek = Math.max(1, currentWeek ?? 1);
+    const maxSeasonWeek = [3, 8].includes(Number(seasonInfo?.seasonWeekType))
+      ? 22
+      : Math.max(1, currentWeek ?? 1);
     const isWeekComplete = (entry) => {
       const buckets = [
         entry?.passing?.playerPassingStatInfoList,
@@ -408,7 +410,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     for (let wk = 0; wk <= maxWeekToFetch; wk++) {
       await collectWeek(wk, Stage.SEASON);
       // Also pull potential playoff stats that may be exposed as stage 2 or stage 0 (fallback)
-      if (wk >= 19) {
+      if (wk >= 18) {
         await collectWeek(wk, 2);
         await collectWeek(wk, Stage.PRESEASON);
       }
@@ -607,6 +609,17 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     }
     if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
       try {
+        const { publishWeeklyAwards } = await import('./awards.js');
+        result.weeklyAwards = await publishWeeklyAwards({
+          client: options.client, guildId: options.guildId, snapshot,
+        });
+      } catch (error) {
+        result.weeklyAwards = { posted: false, error: error?.message || String(error) };
+        console.error('[awards] failed to publish weekly awards', error);
+      }
+    }
+    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+      try {
         const { publishProgressionReports } = await import('./progression.js');
         const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
         result.progression = await publishProgressionReports({
@@ -725,8 +738,13 @@ async function execute(interaction) {
       : null;
     const progressionStatus = summary.progression
       ? summary.progression.published
-        ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads`
+        ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads${summary.progression.type === 'weekly' && summary.progression.recommendationCount < (summary.progression.selectionDiagnostics?.preferredMinimum || 0) ? `; fewer than the target because only ${summary.progression.selectionDiagnostics.eligibleCandidates} eligible player(s) were found` : ''}`
         : summary.progression.error || summary.progression.reason || 'No recommendations met evidence thresholds'
+      : null;
+    const weeklyAwardsStatus = summary.weeklyAwards
+      ? summary.weeklyAwards.posted
+        ? `Posted for week ${summary.weeklyAwards.weekNumber}`
+        : summary.weeklyAwards.error || summary.weeklyAwards.reason || 'Not posted'
       : null;
     const draftGradesStatus = summary.draftGrades
       ? summary.draftGrades.posted
@@ -751,8 +769,9 @@ async function execute(interaction) {
         { name: 'Stats Weeks', value: String(summary.statsWeeks), inline: true },
         { name: 'Coverage', value: `Schedule weeks: ${summary.coverage?.scheduleWeeks ?? 0}\nMissing stat buckets: ${summary.coverage?.missingBuckets?.length ?? 0}`, inline: true },
         ...(soloReportStatus ? [{ name: 'Solo reports', value: soloReportStatus, inline: false }] : []),
-        ...(draftGradesStatus ? [{ name: 'Draft grades', value: draftGradesStatus, inline: false }] : []),
         ...(progressionStatus ? [{ name: 'Player progression', value: progressionStatus, inline: false }] : []),
+        ...(weeklyAwardsStatus ? [{ name: 'Weekly awards', value: weeklyAwardsStatus, inline: false }] : []),
+        ...(draftGradesStatus ? [{ name: 'Draft grades', value: draftGradesStatus, inline: false }] : []),
         ...(importSummaryStatus ? [{ name: 'Data import summary', value: importSummaryStatus, inline: false }] : []),
         ...(weeklyMockStatus ? [{ name: 'Weekly mock draft', value: weeklyMockStatus, inline: false }] : []),
         { name: 'Saved', value: summary.outPath, inline: false },

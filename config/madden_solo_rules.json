@@ -41,9 +41,9 @@
   "progression": {
     "version": 1,
     "weekly": {
-      "maximumRecommendations": 25,
+      "maximumRecommendations": 30,
       "attributesPerRecommendation": 5,
-      "preferredRecommendationRange": [20, 25],
+      "preferredRecommendationRange": [20, 30],
       "minimumUpgradeSelectionScore": 58,
       "performanceWeight": 0.8,
       "expectationWeight": 0.2,

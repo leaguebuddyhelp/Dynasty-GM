@@ -625,18 +625,21 @@ function selectWithSoftBalance(candidates, rules, maximum, { balanceDirections =
       return bPriority - aPriority || a.player.localeCompare(b.player);
     });
     const preferred = directionCount.upgrade <= directionCount.downgrade ? 'upgrade' : 'downgrade';
-    const eligibleIndex = balanceDirections ? remaining.findIndex((candidate) => {
-      const adjusted = candidate.selectionScore
-        - Number(teamCount.get(candidate.teamId) || 0) * Number(rules.teamBalancePenalty)
-        - Number(positionCount.get(candidate.position) || 0) * Number(rules.positionBalancePenalty);
-      return candidate.direction === preferred && adjusted >= Number(candidate.minimumSelectionScore);
-    }) : -1;
+    const eligibleIndex = balanceDirections ? remaining.findIndex((candidate) =>
+      candidate.direction === preferred && candidate.selectionScore >= Number(candidate.minimumSelectionScore)) : -1;
     const next = remaining.splice(eligibleIndex < 0 ? 0 : eligibleIndex, 1)[0];
     const selectionScore = next.selectionScore
       - Number(teamCount.get(next.teamId) || 0) * Number(rules.teamBalancePenalty)
       - Number(positionCount.get(next.position) || 0) * Number(rules.positionBalancePenalty);
-    if (selectionScore < Number(next.minimumSelectionScore)) continue;
-    selected.push({ ...next, selectionScore: Math.round(selectionScore * 10) / 10 });
+    if ((balanceDirections ? next.selectionScore : selectionScore) < Number(next.minimumSelectionScore)) continue;
+    selected.push({
+      ...next,
+      selectionScore: Math.round(selectionScore * 10) / 10,
+      selectionAdjustments: {
+        ...next.selectionAdjustments,
+        teamAndPositionBalance: Math.round((selectionScore - next.selectionScore) * 10) / 10,
+      },
+    });
     directionCount[next.direction] += 1;
     teamCount.set(next.teamId, (teamCount.get(next.teamId) || 0) + 1);
     positionCount.set(next.position, (positionCount.get(next.position) || 0) + 1);
@@ -891,7 +894,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     Number(weeklyRules.maximumRecommendations),
     { balanceDirections: true },
   );
-  return makeRecord({
+  const record = makeRecord({
     snapshot,
     type: 'weekly',
     weekIndex: Number(weekIndex),
@@ -899,6 +902,12 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     population,
     rules,
   });
+  record.selectionDiagnostics = {
+    eligibleCandidates: candidates.filter((candidate) =>
+      candidate.selectionScore >= candidate.minimumSelectionScore).length,
+    preferredMinimum: Number(weeklyRules.preferredRecommendationRange?.[0] || 0),
+  };
+  return record;
 }
 
 function makeOffseasonAttributes(player, stats, rules, positionKey, direction, tier, seasonGames) {
@@ -1358,12 +1367,14 @@ async function publishTeamThreadReports(client, guildId, snapshot, record, histo
   };
 }
 
-function isOffseason(snapshot) {
+export function isOffseason(snapshot) {
   const info = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-  const weekType = Number(info.seasonWeekType ?? info.seasonWeekTypeId ?? snapshot?.stage ?? 1);
-  return Number(info.offSeasonStage || 0) > 0
-    || weekType === 3
+  const rawWeekType = info.seasonWeekType ?? info.seasonWeekTypeId ?? snapshot?.stage;
+  const weekType = rawWeekType == null ? null : Number(rawWeekType);
+  if ([0, 1, 2].includes(weekType)) return false;
+  return weekType === 3
     || weekType === 8
+    || Number(info.offSeasonStage || 0) > 0
     || String(info.seasonTitle || '').toLowerCase().includes('offseason');
 }
 
@@ -1437,6 +1448,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
     ...(record.recommendations.length ? {} : { reason: 'No players met the configured evidence threshold.' }),
     periodKey: record.periodKey,
     type: record.type,
+    ...(record.selectionDiagnostics ? { selectionDiagnostics: record.selectionDiagnostics } : {}),
   };
 }
 

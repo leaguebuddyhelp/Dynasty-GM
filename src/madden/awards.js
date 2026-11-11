@@ -1,11 +1,11 @@
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import fs from 'fs';
 import path from 'path';
 import { EmbedBuilder } from 'discord.js';
 import { getPinId } from './pins_store.js'; // unused but kept in case future pinning is desired
-import { computeGradeFromRank } from './top_players.js';
-import { computeWeeklyList } from './top_players.js';
+import { computeGradeFromRank, computeWeeklyList, getLatestReliableRegularSeasonWeekIndex } from './top_players.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
-import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
+import { getMaddenSeasonKey, loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
@@ -13,9 +13,11 @@ import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 import { stablePlayerKey } from './player_identity.js';
 
-const LEAGUE_DIR = path.join(process.cwd(), 'data', 'madden', 'leagues');
-const AWARDS_FILE = path.join(process.cwd(), 'data', 'madden', 'awards.json');
-const SEASON_STATE_FILE = path.join(process.cwd(), 'data', 'madden', 'season_state.json');
+const LEAGUE_DIR = getMaddenDataFilePath('leagues');
+const AWARDS_FILE = getMaddenDataFilePath('awards.json');
+const SEASON_STATE_FILE = getMaddenDataFilePath('season_state.json');
+const AUTO_AWARDS_DIR = getMaddenDataFilePath('weekly_awards_posts');
+const activeAutoAwards = new Map();
 
 // Cache of yearsPro by rosterId to correctly determine rookie status even when stats omit the field.
 const rosterYearsPro = new Map();
@@ -29,12 +31,12 @@ function loadChannelMap(guildId = null) {
 }
 
 function loadRoleMap(guildId = null) {
-  // Prefer per-guild overlay when complete, otherwise fall back to v1 global role ids file.
   const overlay = getGuildRoleMap(guildId);
   if (overlay && Object.keys(overlay).length) return overlay;
-  const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-  return loadJson(ROLE_MAP_FILE, {});
+  const roleMapFile = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
+  return loadJson(roleMapFile, {});
 }
+
 
 function saveJson(file, data) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -82,6 +84,7 @@ function reverseTeamLookup(teamNameMapObj) {
   return rev;
 }
 
+
 function coachMention(teamName, roleMap) {
   if (!teamName) return null;
   const target = teamName.toLowerCase();
@@ -101,7 +104,7 @@ function teamEmoji(teamName) {
 }
 
 function loadGradedWeek(leagueId, weekNumber, minMtimeMs = null) {
-  const base = path.join(process.cwd(), 'data', 'madden', 'top_players_history', String(leagueId));
+  const base = getMaddenDataFilePath(path.join('top_players_history', String(leagueId)));
   const candidates = [
     path.join(base, `week-${weekNumber}-top.json`),
     path.join(base, `week-${weekNumber}-all.json`),
@@ -161,10 +164,10 @@ function buildRosterYearsPro(snapshot) {
   addList(snapshot?.rosters?.freeAgents?.rosterInfoList || snapshot?.rosters?.freeAgents);
 }
 
-export function gatherWeeklyStats(snapshot, weekIndex) {
+export function gatherWeeklyStats(snapshot, weekIndex, stage = 1) {
   const list = snapshot?.weeklyStats || [];
   const matches = list.filter(w => Number(w.weekIndex) === Number(weekIndex));
-  const stageOneCurrent = list.filter(w => Number(w.weekIndex) === Number(weekIndex) && Number(w.stage ?? w.stageIndex ?? 0) === 1);
+  const stageOneCurrent = list.filter(w => Number(w.weekIndex) === Number(weekIndex) && Number(w.stage ?? w.stageIndex ?? 0) === stage);
   const pickHighestStage = (arr) => {
     const copy = [...arr];
     copy.sort((a, b) => (Number(b.stage ?? b.stageIndex ?? 0)) - (Number(a.stage ?? a.stageIndex ?? 0)));
@@ -234,7 +237,7 @@ export function gatherWeeklyStats(snapshot, weekIndex) {
     if (stageOneWithData.length) {
       return stageOneWithData.reduce((merged, wk) => mergeWeekEntries(merged, wk), null);
     }
-    console.warn('[gatherWeeklyStats] no stage 1 found for week', weekIndex);
+    console.warn('[gatherWeeklyStats] no player stats found for stage', stage, 'week', weekIndex);
   }
 
   return null;
@@ -488,10 +491,10 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   const interaction = options.interaction || null;
   const isPublic = options.isPublic || false;
   const guildId = options.guildId || interaction?.guildId || null;
-  const snapshot = loadSnapshot(leagueId);
+  const snapshot = options.snapshot || loadSnapshot(leagueId);
   if (!snapshot && weekOverride == null) {
     console.warn('[awards] Snapshot missing; run weekly update first or supply weekOverride.');
-    return;
+    return { posted: false, reason: 'Snapshot is missing.' };
   }
   const snapshotMtime = snapshotMtimeMs(leagueId);
   buildRosterYearsPro(snapshot);
@@ -500,13 +503,13 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   const awardsChannelId = isSoloModeEnabled()
     ? channelMap.Awards || channelMap['Weekly Awards'] || channelMap['Yearly Awards']
     : channelMap['Weekly Awards'] || channelMap['Yearly Awards'] || channelMap.Awards;
-  const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId).catch(() => null) : null);
+  const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId) : null);
   if (!interaction && !targetChannel?.isTextBased()) {
     console.warn('[awards] Awards channel not text-based or missing.');
-    return;
+    return { posted: false, reason: 'Awards channel is missing or not text-based.' };
   }
 
-  const seasonYear = snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear;
+  const seasonYear = Number(snapshot?.info?.careerHubInfo?.seasonInfo?.calendarYear || snapshot?.info?.calendarYear || snapshot?.calendarYear) || null;
   const currentWeek = Number(weekOverride ?? snapshot?.currentWeek ?? 0);
   const seasonWeekType = snapshot?.info?.careerHubInfo?.seasonInfo?.seasonWeekType;
   const offSeasonStage = snapshot?.info?.careerHubInfo?.seasonInfo?.offSeasonStage || 0;
@@ -526,7 +529,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   // offSeasonStage can linger; don't block on that alone.
   if (!weekOverride && seasonWeekType !== 1) {
     await replySkip('[awards] skipping: snapshot indicates preseason/offseason for this export');
-    return;
+    return { posted: false, reason: 'Snapshot indicates preseason or offseason.' };
   }
   // Pick the latest Stage 1 week with player data (regular season) to avoid stale/offseason pulls
   const latestStage1Week = (() => {
@@ -550,35 +553,38 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   const awardsWeek = targetWeekIdx != null ? targetWeekIdx + 1 : null;
   if (awardsWeek === null || awardsWeek < 1) {
     await replySkip('[awards] skipping: no completed Stage 1 week with stats found');
-    return;
+    return { posted: false, reason: 'No completed regular-season week with stats found.' };
   }
   // New season start: clear last season's cached awards and graded history to avoid bleed
   if (!weekOverride && awardsWeek === 1) {
     try {
-      const histDir = path.join(process.cwd(), 'data', 'madden', 'top_players_history', String(leagueId));
+      const histDir = getMaddenDataFilePath(path.join('top_players_history', String(leagueId)));
       fs.rmSync(histDir, { recursive: true, force: true });
     } catch (e) {
       console.warn('[awards] Week 1 history clear skipped:', e?.message || e);
     }
   }
-  const isPlayoffs = awardsWeek >= 19; // assume weeks 19+ are playoffs
+  const targetStage = options.stage ?? 1;
+  const isPlayoffs = targetStage === 2 || awardsWeek >= 19;
 
   // Load existing winners if present (allow re-post)
   const awardsStore = loadJson(AWARDS_FILE, {});
-  const leagueStore = awardsStore[leagueId] || {};
+  let leagueStore = awardsStore[leagueId] || {};
   // Season rollover guard: clear stale history/awards when the calendar year bumps
   try {
     const seasonState = loadJson(SEASON_STATE_FILE, {});
-    const prevYear = seasonState[leagueId]?.calendarYear;
+    const prevYear = Number(seasonState[leagueId]?.calendarYear) || null;
     const forceStartOfSeason = currentWeek === 1 && awardsWeek === 1 && (snapshot?.info?.careerHubInfo?.seasonInfo?.offSeasonStage || 0) > 0;
     if (seasonYear && prevYear && seasonYear !== prevYear) {
-      const histDir = path.join(process.cwd(), 'data', 'madden', 'top_players_history', String(leagueId));
+      const histDir = getMaddenDataFilePath(path.join('top_players_history', String(leagueId)));
       fs.rmSync(histDir, { recursive: true, force: true });
       delete awardsStore[leagueId];
+      leagueStore = {};
     } else if (!prevYear && forceStartOfSeason) {
-      const histDir = path.join(process.cwd(), 'data', 'madden', 'top_players_history', String(leagueId));
+      const histDir = getMaddenDataFilePath(path.join('top_players_history', String(leagueId)));
       fs.rmSync(histDir, { recursive: true, force: true });
       delete awardsStore[leagueId];
+      leagueStore = {};
     }
     seasonState[leagueId] = { calendarYear: seasonYear };
     saveJson(SEASON_STATE_FILE, seasonState);
@@ -588,7 +594,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   // Always recompute winners to reflect latest grading/formula
   let winners = null;
   {
-    let weekly = gatherWeeklyStats(snapshot, targetWeekIdx);
+    let weekly = gatherWeeklyStats(snapshot, targetWeekIdx, targetStage);
     if (!weekly) {
       console.warn('[awards] No weekly stats found for week', currentWeek, '; continuing with graded list only if available.');
       weekly = null;
@@ -629,7 +635,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       }
     });
 
-    const gradedList = loadGradedWeek(leagueId, awardsWeek, snapshotMtime);
+    const gradedList = targetStage === 2 ? null : loadGradedWeek(leagueId, awardsWeek, snapshotMtime);
     const offensePositions = new Set(['QB', 'HB', 'RB', 'FB', 'TB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'K', 'P']);
     const defPositions = new Set(['CB', 'FS', 'SS', 'ROLB', 'LOLB', 'MLB', 'LB', 'RE', 'LE', 'DT', 'EDGE', 'EDG', 'LEDGE', 'REDGE', 'LEDG', 'REDG', 'OLB', 'LDE', 'RDE', 'EDGE_R', 'EDGE_L', 'EDGE-R', 'EDGE-L', 'DE']);
     const normalizedGraded = (gradedList || []).map(p => {
@@ -651,7 +657,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     const pickTop = (arr) => arr.sort((a, b) => (b.grade || 0) - (a.grade || 0))[0];
     if (!weekly && (!normalizedGraded.length)) {
       await replySkip('[awards] skipping: no current-week player data or graded list');
-      return;
+      return { posted: false, reason: 'No player statistics or graded list for this week.' };
     }
     const fillMissing = (target = {}, fallback = {}) => {
       Object.entries(fallback || {}).forEach(([key, value]) => {
@@ -700,29 +706,6 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       if (!winners.rookie_offense && !isPlayoffs) winners.rookie_offense = fallbackOff(all.filter(p => isRookie(p)));
       if (!winners.rookie_defense && !isPlayoffs) winners.rookie_defense = fallbackDef(all.filter(p => isRookie(p)));
 
-      // If rookie still missing, broaden to all weeks in the snapshot and pick best rookie by totals
-      if ((!winners.rookie_offense || !winners.rookie_defense) && !isPlayoffs) {
-        const agg = new Map();
-        const addPlayerTotals = (wk) => {
-          const mp = mergePlayerStats(wk);
-          mp.forEach((val, key) => {
-            const existing = agg.get(key) || { ...val, totals: {} };
-            Object.entries(val.totals || {}).forEach(([k, v]) => {
-              existing.totals[k] = (existing.totals[k] || 0) + (Number(v) || 0);
-            });
-            agg.set(key, existing);
-          });
-        };
-        (snapshot?.weeklyStats || []).forEach(addPlayerTotals);
-        agg.forEach(p => {
-          p.teamName = teamNames[p.teamId] || 'Unknown';
-          p.conference = confMap[p.teamId] || null;
-          p.fullName = p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim();
-        });
-        const rookiesAllWeeks = new Map(Array.from(agg.entries()).filter(([, p]) => isRookie(p)));
-        if (!winners.rookie_offense) winners.rookie_offense = pickWinner(rookiesAllWeeks, null);
-        if (!winners.rookie_defense) winners.rookie_defense = pickDefWinner(rookiesAllWeeks, null);
-      }
     }
   }
 
@@ -730,7 +713,14 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   // Also pull weekly top list grades for tighter alignment with top100 output
   const weeklyTopList = (() => {
     try {
-      const list = computeWeeklyList(snapshot, targetWeekIdx);
+      const gradingSnapshot = targetStage === 2 ? {
+        ...snapshot,
+        weeklyStats: (snapshot?.weeklyStats || [])
+          .filter((entry) => Number(entry.weekIndex) !== targetWeekIdx || Number(entry.stage ?? entry.stageIndex ?? 0) !== 1)
+          .map((entry) => Number(entry.weekIndex) === targetWeekIdx && Number(entry.stage ?? entry.stageIndex ?? 0) === 2
+            ? { ...entry, stage: 1 } : entry),
+      } : snapshot;
+      const list = computeWeeklyList(gradingSnapshot, targetWeekIdx);
       return Array.isArray(list) ? list : (list?.top100 || []);
     } catch {
       return [];
@@ -795,7 +785,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   const gradeMap = (() => {
     const list = [];
     const idFor = (p) => stablePlayerKey(p) || p?.id || `${p?.fullName || p?.name || ''}-${p?.teamId || p?.teamName || ''}`;
-    const weeklyStats = gatherWeeklyStats(snapshot, targetWeekIdx);
+    const weeklyStats = gatherWeeklyStats(snapshot, targetWeekIdx, targetStage);
     const merged = mergePlayerStats(weeklyStats || {});
     merged.forEach(p => {
       const pos = (p.position || '').toUpperCase();
@@ -832,7 +822,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     ((isPlayoffs) || (!winners.rookie_offense && !winners.rookie_defense));
   if (allMissing) {
     console.warn('[awards] Computed awards are empty for week', currentWeek, '; will retry on next update.');
-    return;
+    return { posted: false, reason: 'No eligible weekly award winners were found.' };
   }
 
   const makeField = (label, p) => {
@@ -873,6 +863,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   let files = [];
   files = applyEmbedThumbnailFromAsset(embed, files, getLeagueBuddyBrandAsset({ attachmentName: 'leaguebuddy_logo.png' }));
 
+  let message = null;
   if (interaction) {
     const content = isPublic ? coachTag : null;
     const payload = { content, embeds: [embed], files, allowedMentions: isPublic && coachTag ? { parse: [], roles: [coachRoleId] } : { parse: [] } };
@@ -882,16 +873,16 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       await interaction.reply({ ...payload, flags: isPublic ? undefined : 64 });
     }
   } else if (targetChannel?.isTextBased()) {
-    await targetChannel.send({
+    message = await targetChannel.send({
       content: coachTag || null,
       embeds: [embed],
       files,
       allowedMentions: coachTag ? { parse: [], roles: [coachRoleId] } : { parse: [] },
-    }).catch(() => null);
+    });
   }
   awardsStore[leagueId] = { ...leagueStore, [awardsWeek]: winners };
   saveJson(AWARDS_FILE, awardsStore);
-  if (isSoloModeEnabled() && guildId) {
+  if (isSoloModeEnabled() && guildId && options.refreshProgression !== false) {
     try {
       const { refreshProgressionForAwardChange } = await import('./progression.js');
       await refreshProgressionForAwardChange({
@@ -906,6 +897,88 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       console.error('[progression] failed to refresh after weekly award update', error);
     }
   }
+  return { posted: true, weekNumber: awardsWeek, messageId: message?.id || null, winners };
 }
 
-export default { updateAwards };
+export async function publishWeeklyAwards({ client, guildId, snapshot }) {
+  const info = snapshot?.info?.careerHubInfo?.seasonInfo || {};
+  const weekType = Number(info.seasonWeekType);
+  if (![1, 2, 3, 8].includes(weekType)) {
+    return { posted: false, reason: 'Weekly awards are not posted during preseason.' };
+  }
+  const year = Number(info.calendarYear ?? snapshot?.info?.calendarYear ?? snapshot?.calendarYear);
+  if (!Number.isInteger(year) || year <= 0) return { posted: false, reason: 'Season year is missing.' };
+  const currentWeek = Number(snapshot?.currentWeek);
+  if ([1, 2].includes(weekType) && (!Number.isInteger(currentWeek) || currentWeek < 1)) {
+    return { posted: false, reason: 'Current franchise week is missing.' };
+  }
+  const schedule = snapshot?.schedule?.schedules || [];
+  const completedPlayoffRound = (index, stage) => {
+    const games = schedule.filter((game) =>
+      Number(game.weekIndex) === index && Number(game.stageIndex ?? game.stage ?? -1) === stage);
+    return games.length > 0 && games.every((game) => {
+      const home = Number(game.homeScore);
+      const away = Number(game.awayScore);
+      return game.homeScore != null && game.awayScore != null
+        && Number.isFinite(home) && Number.isFinite(away)
+        && (Number(game.status ?? 0) >= 2 || home > 0 || away > 0);
+    });
+  };
+  const playoffCandidates = (snapshot?.weeklyStats || [])
+    .map((entry) => ({ index: Number(entry.weekIndex), stage: Number(entry.stage ?? entry.stageIndex ?? 0) }))
+    .filter(({ index, stage }) => Number.isInteger(index) && index >= 18 && index <= 22 && (stage === 1 || stage === 2))
+    .filter(({ index, stage }) => (weekType <= 2 && index < currentWeek - 1)
+      || ((weekType !== 1 || currentWeek >= 19) && completedPlayoffRound(index, stage)))
+    .sort((a, b) => b.index - a.index || b.stage - a.stage);
+  const playoff = playoffCandidates.find(({ index, stage }) => gatherWeeklyStats(snapshot, index, stage));
+  const regularCap = weekType === 1 ? Math.min(17, currentWeek - 2) : 17;
+  const regularIndex = [1, 2].includes(weekType)
+    ? getLatestReliableRegularSeasonWeekIndex(snapshot, regularCap) : null;
+  const weekIndex = playoff?.index ?? regularIndex;
+  const targetStage = playoff?.stage ?? 1;
+  if (weekIndex === null || weekIndex === undefined || weekIndex < 0) {
+    return { posted: false, reason: 'No reliable completed week with player statistics is available.' };
+  }
+  const leagueId = String(snapshot?.leagueId || '');
+  const safeId = (id) => /^[a-zA-Z0-9_-]+$/.test(String(id || ''));
+  if (!safeId(leagueId) || !safeId(guildId)) throw new Error('Invalid league or guild ID for weekly awards.');
+  const weekNumber = weekIndex + 1;
+  const phase = playoff ? 'playoffs' : 'regular';
+  const file = path.join(AUTO_AWARDS_DIR, String(guildId), leagueId, `${getMaddenSeasonKey(snapshot)}_${phase}_week_${weekNumber}.json`);
+  if (activeAutoAwards.has(file)) return activeAutoAwards.get(file);
+  const pending = (async () => {
+    try {
+      const record = JSON.parse(await fs.promises.readFile(file, 'utf8'));
+      if (!record.messageId) throw new Error(`Invalid weekly awards post record: ${file}`);
+      return { posted: false, duplicate: true, weekNumber, reason: `Week ${weekNumber} awards already posted.` };
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+    }
+    const result = await updateAwards(client, leagueId, weekNumber, {
+      guildId, snapshot, stage: targetStage, refreshProgression: false,
+    });
+    if (!result.posted) return result;
+    if (!result.messageId) throw new Error('Weekly awards were sent but Discord returned no message ID.');
+    await fs.promises.mkdir(path.dirname(file), { recursive: true });
+    const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
+    try {
+      await fs.promises.writeFile(temporary, JSON.stringify({
+        leagueId, guildId: String(guildId), seasonKey: getMaddenSeasonKey(snapshot),
+        weekNumber, messageId: result.messageId, syncId: snapshot.syncId || null,
+      }), { flag: 'wx' });
+      await fs.promises.rename(temporary, file);
+    } catch (error) {
+      await fs.promises.rm(temporary, { force: true });
+      throw new Error(`Weekly awards were posted but their deduplication record could not be saved: ${error.message}`);
+    }
+    return { posted: true, weekNumber, messageId: result.messageId };
+  })();
+  activeAutoAwards.set(file, pending);
+  try {
+    return await pending;
+  } finally {
+    activeAutoAwards.delete(file);
+  }
+}
+
+export default { updateAwards, publishWeeklyAwards };
