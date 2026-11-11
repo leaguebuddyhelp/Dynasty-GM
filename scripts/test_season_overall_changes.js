@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
-import { buildSeasonOverallChanges, publishProgressionReports } from '../src/madden/progression.js';
+import fs from 'node:fs/promises';
+import { buildSeasonOverallChanges, publishProgressionReports, refreshProgressionForAwardChange } from '../src/madden/progression.js';
 import { persistSyncHistory } from '../src/madden/madden_sync_history.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
+import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
 
 if (!process.env.LB_DATA_ROOT) throw new Error('Set LB_DATA_ROOT to an isolated test directory.');
 process.env.MADDEN_SOLO_USER_ID = 'operator';
@@ -48,13 +50,17 @@ const guild = {
 };
 const channels = new Map();
 const threadByName = new Map();
+const summaries = [];
 let sequence = 0;
 const channel = {
   id: 'upgrades', guild, isTextBased: () => true,
   threads: { fetchActive: async () => ({ threads: [] }), fetchArchived: async () => ({ threads: [] }) },
   messages: { fetch: async () => { throw Object.assign(new Error('Missing'), { code: 10008 }); } },
   send: async (payload) => {
-    if (payload.embeds) return { id: `summary-${++sequence}`, pinned: false, pin: async () => {} };
+    if (payload.embeds) {
+      summaries.push(payload);
+      return { id: `summary-${++sequence}`, pinned: false, pin: async () => {} };
+    }
     return {
       startThread: async ({ name }) => {
         const messages = new Map();
@@ -178,4 +184,33 @@ const lineReport = await publishProgressionReports({ client, guildId, snapshot: 
 assert.equal(lineReport.recommendationCount, 1, 'Offseason should use the line starter observed during a weekly sync');
 const lineCards = [...falcons.storedMessages.values()].slice(beforeLine).flatMap((entry) => entry.payload.embeds.map((item) => item.toJSON()));
 assert.ok(lineCards.some((entry) => /Season Lineman/.test(entry.title) && /proxy, not individual blocking stats/.test(JSON.stringify(entry))));
+
+const playoffWeek = makeSnapshot('playoff-week', 2, 20, 2031);
+playoffWeek.rosters.teams[1].rosterInfoList = [
+  { rosterId: 'playoff-winner', firstName: 'Playoff', lastName: 'Winner', position: 'QB', yearsPro: 0, playerBestOvr: 90, throwAccShortRating: 80 },
+  { rosterId: 'playoff-missing', firstName: 'Missing', lastName: 'Winner', position: 'QB', yearsPro: 0, playerBestOvr: 90 },
+];
+playoffWeek.rosters.teams[2].rosterInfoList = [];
+playoffWeek.weeklyStats = [{ stage: 2, weekIndex: 18, passing: { playerPassingStatInfoList: [
+  { rosterId: 'playoff-winner', teamId: 1, position: 'QB', passAtt: 5, passComp: 3, passYds: 10 },
+  { rosterId: 'playoff-missing', teamId: 1, position: 'QB', passAtt: 5, passComp: 3, passYds: 10 },
+] } }];
+await persistSyncHistory({ leagueId, snapshot: playoffWeek, summary: {} });
+const beforePlayoff = falcons.storedMessages.size;
+const playoffReport = await refreshProgressionForAwardChange({
+  client, guildId, leagueId, snapshot: playoffWeek, weekNumber: 19,
+  winners: { afc_offense: { rosterId: 'playoff-winner' }, nfc_offense: { rosterId: 'playoff-missing' } },
+});
+assert.equal(playoffReport.recommendationCount, 1);
+assert.equal(playoffReport.unupgradedAwardWinners[0].player, 'Missing Winner');
+const playoffCards = [...falcons.storedMessages.values()].slice(beforePlayoff).flatMap((entry) => entry.payload.embeds.map((item) => item.toJSON()));
+assert.ok(playoffCards.some((card) => /Playoff Winner/.test(card.title) && /weekly award/i.test(JSON.stringify(card))));
+assert.match(JSON.stringify(summaries.at(-1).embeds[0].toJSON()), /Missing Winner/);
+await fs.writeFile(getMaddenDataFilePath('awards.json'), JSON.stringify({
+  [leagueId]: { 19: { afc_offense: { rosterId: 'playoff-winner' }, nfc_offense: { rosterId: 'playoff-missing' } }, __seasonByWeek: { 19: 'year_2031' } },
+}));
+const afterPlayoff = falcons.storedMessages.size;
+const retry = await refreshProgressionForAwardChange({ client, guildId, leagueId, snapshot: playoffWeek, weekNumber: 19 });
+assert.equal(retry.recommendationCount, 1, 'A sync retry must read the stored playoff awards');
+assert.equal(falcons.storedMessages.size, afterPlayoff, 'Retry must edit the existing team post');
 console.log('PASS season OVR comparisons, partial baselines, team threads, repeat updates, and season rollover');

@@ -565,10 +565,11 @@ function awardIdentity(award, players, aliases) {
   return matches.length === 1 ? matches[0].key : null;
 }
 
+const WEEKLY_AWARD_CATEGORIES = ['afc_offense', 'nfc_offense', 'afc_defense', 'nfc_defense', 'rookie_offense', 'rookie_defense'];
+
 function getWeeklyAwardPoints(winners, player, players, aliases, rules) {
-  const categories = ['afc_offense', 'nfc_offense', 'afc_defense', 'nfc_defense', 'rookie_offense', 'rookie_defense'];
   const awardIds = new Set();
-  for (const category of categories) {
+  for (const category of WEEKLY_AWARD_CATEGORIES) {
     const winner = winners?.[category];
     if (winner && awardIdentity(winner, players, aliases) === player.key) awardIds.add(category);
   }
@@ -1026,14 +1027,26 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       : readWeeklyAwardResults(snapshot.leagueId, weekNumber - index, seasonKey));
   const population = populationSnapshot(players, rules);
   const candidates = [];
+  const awardReasons = new Map();
   for (const player of players) {
-    if (player.ovr === null) continue;
+    const weeklyAwards = getWeeklyAwardPoints(awardWinners, player, players, aliases, weeklyRules);
+    if (player.ovr === null) {
+      if (weeklyAwards) awardReasons.set(player.key, 'Missing overall rating.');
+      continue;
+    }
     const positionRules = weeklyRules.positions;
     const positionKey = progressionPositionKey(player.position, positionRules);
     const positionRule = positionKey ? positionRules[positionKey] : null;
-    if (!positionRule) continue;
+    if (!positionRule) {
+      if (weeklyAwards) awardReasons.set(player.key, 'No progression rules for this position.');
+      continue;
+    }
     const current = weekPlayers.get(player.key);
-    if (!current || !opportunityConfirmed(current.totals, positionKey, weeklyRules)) {
+    if (!current || (!weeklyAwards && !opportunityConfirmed(current.totals, positionKey, weeklyRules))) {
+      if (weeklyAwards) {
+        awardReasons.set(player.key, 'No matching weekly statistics.');
+        continue;
+      }
       const streak = inactivityStreak(player, observations, history, seasonKey, Number(weekIndex), snapshot?.schedule?.schedules);
       const awareness = numberOrNull(player[weeklyRules.attributeFields?.Awareness]);
       if (streak >= Number(weeklyRules.inactivityMinimumGames ?? 4) && awareness !== null && awareness > 0 && awareness <= 99) {
@@ -1091,7 +1104,11 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const negativePointsUsed = sumAttributePoints(history, seasonKey, player.key, 'negative');
     const soft = positiveSeasonPenalty(positivePointsUsed, seasonKeyOvr, rules.offseason);
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
-    const weeklyAwards = getWeeklyAwardPoints(awardWinners, player, players, aliases, weeklyRules);
+    const awardEvidence = currentAttributeEvidence.some((item) => item.evidence !== 'currentGameScore');
+    if (weeklyAwards && !awardEvidence) {
+      awardReasons.set(player.key, 'No supported stat and available attribute rating for an upgrade.');
+      continue;
+    }
     const awardWeeks = recentAwardWinners.filter((winners) =>
       getWeeklyAwardPoints(winners, player, players, aliases, weeklyRules) > 0).length;
     const breakout = weeklyAwards > 0
@@ -1121,9 +1138,10 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     let points = 0;
     let evidence = [];
     let priorityBase = 0;
-    if ((windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout)
+    if ((windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
       && currentAttributeEvidence.length) {
-      const tier = getTier(breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore, weeklyRules.positiveChangeTiers, 'minimumScore');
+      const tier = getTier(breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore, weeklyRules.positiveChangeTiers, 'minimumScore')
+        || (weeklyAwards ? { attributePoints: 1 } : null);
       if (tier) {
         direction = 'upgrade';
         points = Number(tier.attributePoints);
@@ -1229,12 +1247,14 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     };
     candidates.push(selected);
   }
-  const selected = selectWithSoftBalance(
-    candidates,
+  const awardCandidates = candidates.filter((candidate) => candidate.direction === 'upgrade' && candidate.awardPoints > 0);
+  const otherCandidates = candidates.filter((candidate) => !awardCandidates.includes(candidate));
+  const selected = [...awardCandidates, ...selectWithSoftBalance(
+    otherCandidates,
     weeklyRules,
-    Number(weeklyRules.maximumRecommendations),
+    Math.max(0, Number(weeklyRules.maximumRecommendations) - awardCandidates.length),
     { balanceDirections: true },
-  );
+  )];
   const record = makeRecord({
     snapshot,
     type: 'weekly',
@@ -1248,6 +1268,23 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       candidate.selectionScore >= candidate.minimumSelectionScore).length,
     preferredMinimum: Number(weeklyRules.preferredRecommendationRange?.[0] || 0),
   };
+  const missingAwards = new Map();
+  for (const category of WEEKLY_AWARD_CATEGORIES) {
+    const winner = awardWinners?.[category];
+    if (!winner) continue;
+    const key = awardIdentity(winner, players, aliases);
+    if (key && selected.some((item) => item.playerKey === key && item.direction === 'upgrade')) continue;
+    const label = key || `${winner.rosterId ?? ''}|${winner.fullName || winner.name || winner.playerName || category}`;
+    if (!missingAwards.has(label)) {
+      const player = players.find((entry) => entry.key === key);
+      missingAwards.set(label, {
+        playerKey: key,
+        player: player?.name || winner.fullName || winner.name || winner.playerName || `Award winner (${category.replaceAll('_', ' ')})`,
+        reason: key ? awardReasons.get(key) || 'No supported attribute upgrade was available.' : 'Could not uniquely match winner to the current roster.',
+      });
+    }
+  }
+  record.unupgradedAwardWinners = [...missingAwards.values()];
   record.inactivityObservations = observations;
   return record;
 }
@@ -1556,7 +1593,7 @@ function populationSummaryEmbed(record) {
   const recommendations = record.recommendations || [];
   const upgrades = recommendations.filter((item) => item.direction === 'upgrade').length;
   const downgrades = recommendations.length - upgrades;
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setTitle('🏈 Franchise Progression')
     .setDescription(`**${seasonLabel(record.seasonKey)} · ${record.weekNumber ? `Week ${record.weekNumber}` : 'Offseason'}**\n\n📈 **${upgrades}** upgrade${upgrades === 1 ? '' : 's'}　 ·　 📉 **${downgrades}** downgrade${downgrades === 1 ? '' : 's'}\n\nReview team threads below. Apply every change manually in Madden.`)
     .addFields(
@@ -1566,6 +1603,14 @@ function populationSummaryEmbed(record) {
     .setColor(0x5865f2)
     .setFooter({ text: 'Dynasty GM · Updated after each sync' })
     .setTimestamp(new Date(record.generatedAt));
+  if (record.unupgradedAwardWinners?.length) {
+    embed.addFields({
+      name: 'Award winners needing review',
+      value: record.unupgradedAwardWinners.map((winner) => `${winner.player}: ${winner.reason}`).join('\n').slice(0, 1024),
+      inline: false,
+    });
+  }
+  return embed;
 }
 
 function progressionCardEmbed(record, item) {
@@ -1979,6 +2024,21 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
       syncIds: [...new Set([...(old.syncIds || [old.syncId]), current.syncId].filter(Boolean))],
       updatedAt: new Date().toISOString(),
     };
+    if (type === 'weekly') {
+      record.recommendations = [...old.recommendations];
+      record.unupgradedAwardWinners = current.unupgradedAwardWinners.filter((winner) =>
+        !winner.playerKey || !record.recommendations.some((item) => item.playerKey === winner.playerKey && item.direction === 'upgrade'));
+      for (const winner of current.recommendations.filter((item) => item.awardPoints > 0 && item.direction === 'upgrade')) {
+        const index = record.recommendations.findIndex((item) => item.playerKey === winner.playerKey);
+        if (index < 0) record.recommendations.push(winner);
+        else if (record.recommendations[index].direction !== 'upgrade') {
+          const existing = record.recommendations[index];
+          if (old.statusById?.[existing.recommendationId]?.status === 'applied') {
+            record.unupgradedAwardWinners.push({ player: winner.player, reason: 'A prior downgrade was marked applied; review before changing it.' });
+          } else record.recommendations[index] = winner;
+        }
+      }
+    }
   } else {
     record = {
       ...old,
@@ -2004,6 +2064,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
     periodKey: record.periodKey,
     type: record.type,
     ...(record.selectionDiagnostics ? { selectionDiagnostics: record.selectionDiagnostics } : {}),
+    ...(record.unupgradedAwardWinners?.length ? { unupgradedAwardWinners: record.unupgradedAwardWinners } : {}),
   };
 }
 
@@ -2031,10 +2092,17 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
 export async function refreshProgressionForAwardChange({ client, guildId, leagueId, snapshot, weekNumber, winners }) {
   const weekIndex = Number(weekNumber) - 1;
   if (!Number.isInteger(weekIndex) || weekIndex < 0) return { published: false, reason: 'Invalid award week.' };
+  const progressionSnapshot = weekIndex >= 18 ? {
+    ...snapshot,
+    weeklyStats: (snapshot?.weeklyStats || [])
+      .filter((entry) => Number(entry.weekIndex) !== weekIndex || Number(entry.stage ?? entry.stageIndex ?? 0) !== 1)
+      .map((entry) => Number(entry.weekIndex) === weekIndex && Number(entry.stage ?? entry.stageIndex ?? 0) === 2
+        ? { ...entry, stage: 1, stageIndex: 1 } : entry),
+  } : snapshot;
   return publishProgression({
     client,
     guildId,
-    snapshot,
+    snapshot: progressionSnapshot,
     type: 'weekly',
     weekIndex,
     awardWinners: winners,

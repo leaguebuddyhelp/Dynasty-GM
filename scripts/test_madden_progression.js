@@ -558,6 +558,56 @@ const unsupportedBreakout = buildWeeklyProgressionRecommendations(snapshot([brea
   weekIndex: 2, rules: baseRules, awardWinners: breakoutAwards, history: { periods: {}, seasonAwards: {} },
 }).recommendations;
 assert.equal(unsupportedBreakout.length, 0);
+const awardRoster = Array.from({ length: 5 }, (_, index) => player({
+  rosterId: `award-${index}`, firstName: `Winner${index}`, yearsPro: index === 1 ? 0 : 5,
+  playerBestOvr: 90, throwAccShortRating: index === 3 ? null : 80,
+}));
+const awardSnapshot = snapshot([]);
+awardSnapshot.rosters.teams[1].rosterInfoList = awardRoster;
+awardSnapshot.weeklyStats = [{ stage: 1, weekIndex: 0, passing: { playerPassingStatInfoList:
+  awardRoster.slice(0, 4).map((entry) => ({
+    rosterId: entry.rosterId, position: 'QB', passAtt: 5, passComp: 3, passYds: 10, passInts: 2,
+  })),
+} }];
+const awardRules = structuredClone(baseRules);
+awardRules.weekly.maximumRecommendations = 1;
+const sixAwards = {
+  afc_offense: { rosterId: 'award-0' },
+  nfc_offense: { rosterId: 'award-0' },
+  afc_defense: { rosterId: 'award-2' },
+  nfc_defense: { rosterId: 'award-3' },
+  rookie_offense: { rosterId: 'award-1' },
+  rookie_defense: { rosterId: 'award-4' },
+};
+const awardResult = buildWeeklyProgressionRecommendations(awardSnapshot, {
+  weekIndex: 0, awardWinners: sixAwards, rules: awardRules,
+});
+assert.equal(awardResult.recommendations.length, 3, 'Award winners with evidence must survive the weekly cap');
+for (const id of ['award-0', 'award-1', 'award-2']) {
+  const result = awardResult.recommendations.find((item) => item.playerKey === `roster:${id}`);
+  assert.equal(result?.direction, 'upgrade');
+  assert.ok(result.attributes.every((attribute) => attribute.points > 0 && attribute.evidence !== 'currentGameScore'));
+}
+assert.equal(awardResult.recommendations.filter((item) => item.playerKey === 'roster:award-0').length, 1);
+assert.equal(awardResult.unupgradedAwardWinners.length, 2);
+assert.match(awardResult.unupgradedAwardWinners.find((item) => item.player === 'Winner3 Quarterback').reason, /supported stat/);
+assert.match(awardResult.unupgradedAwardWinners.find((item) => item.player === 'Winner4 Quarterback').reason, /weekly statistics/);
+const unmatchedAward = buildWeeklyProgressionRecommendations(awardSnapshot, {
+  weekIndex: 0, rules: awardRules, awardWinners: { rookie_defense: { name: 'Unknown Winner' } },
+});
+assert.match(unmatchedAward.unupgradedAwardWinners[0].reason, /match winner/);
+const rookieDefender = {
+  rosterId: 'award-rookie-cb', firstName: 'Rookie', lastName: 'Defender',
+  position: 'CB', playerBestOvr: 75, yearsPro: 0, zoneCoverRating: 70,
+};
+const rookieSnapshot = snapshot([{ stage: 1, weekIndex: 0, defense: { playerDefensiveStatInfoList: [
+  { rosterId: 'award-rookie-cb', position: 'CB', defInts: 1 },
+] } }], rookieDefender);
+const rookieResult = buildWeeklyProgressionRecommendations(rookieSnapshot, {
+  weekIndex: 0, rules: awardRules, awardWinners: { rookie_defense: { rosterId: 'award-rookie-cb' } },
+});
+assert.equal(rookieResult.recommendations[0]?.direction, 'upgrade');
+assert.equal(rookieResult.recommendations[0].attributes[0].attribute, 'Zone Coverage');
 const severeDowngrade = buildWeeklyProgressionRecommendations(
   snapshot([week(0, { passYds: 0, passInts: 3, passAtt: 30 })]),
   { weekIndex: 0, rules: baseRules, history: { periods: {}, seasonAwards: {} } },
