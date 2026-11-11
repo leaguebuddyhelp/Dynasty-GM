@@ -5,7 +5,8 @@ import { getMaddenConfigPath, getMaddenLeagueSnapshotPath } from '../src/leagueb
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
 import { loadMaddenDraftClassArray } from '../src/shared/madden_draft_class_files.js';
 import { getNewlyCompletedMockWeek, publishWeeklyMockDraft } from '../src/madden/weekly_mock_draft.js';
-import { execute as mockDraft } from '../src/madden/coach/mockdraft.js';
+import { applyPickTrades, execute as mockDraft } from '../src/madden/coach/mockdraft.js';
+import { upsertPickOverride } from '../src/madden/pick_overrides_store.js';
 
 if (!process.env.LB_DATA_ROOT) throw new Error('Set LB_DATA_ROOT to an isolated test directory.');
 const leagueId = 'weekly-mock-test';
@@ -13,11 +14,16 @@ const guildId = 'weekly-mock-guild';
 const teams = Array.from({ length: 32 }, (_, index) => ({
   teamId: index + 1, cityName: `City${index + 1}`, nickName: `Club${index + 1}`,
 }));
+teams[0] = { teamId: 1, cityName: 'New York', nickName: 'Giants' };
+teams[1] = { teamId: 2, cityName: 'Cleveland', nickName: 'Browns' };
 const snapshot = {
   leagueId, syncId: 'week1', currentWeek: 2,
   info: { careerHubInfo: { seasonInfo: { calendarYear: 2025, seasonYear: 0, seasonWeekType: 1 } } },
   teams: { leagueTeamInfoList: teams },
-  standings: { teamStandingInfoList: teams.map((team) => ({ teamId: team.teamId, totalWins: 0, totalLosses: 1 })) },
+  standings: { teamStandingInfoList: teams.map((team) => ({
+    teamId: team.teamId, teamName: `${team.cityName} ${team.nickName}`, teamNickName: team.nickName,
+    totalWins: 0, totalLosses: 1,
+  })) },
   rosters: { teams: {} },
   weeklyStats: [{
     stage: 1, weekIndex: 0,
@@ -44,6 +50,13 @@ fs.writeFileSync(getMaddenLeagueSnapshotPath(leagueId), JSON.stringify(secondSea
 await mockDraft({ guildId, user: { id: 'operator' }, deferred: true, editReply: async (value) => { commandPayload = value; } });
 const secondBoard = loadMaddenDraftClassArray('CUS02');
 assert.ok(secondBoard.some((prospect) => commandPayload.embeds[0].toJSON().description.includes(prospect.name)));
+assert.match(commandPayload.embeds[0].toJSON().description, /New York Giants/);
+assert.doesNotMatch(commandPayload.embeds[0].toJSON().description, /\(via NYG\)/i);
+const originalPick = [{ name: 'New York Giants', nick: 'Giants', guildId }];
+assert.equal(applyPickTrades(originalPick, 2027)[0].name, 'New York Giants');
+const tradedGuildId = `${guildId}-trade`;
+upsertPickOverride({ fromTeam: 'Giants', toTeam: 'Cleveland Browns', year: 2027, scopeKey: tradedGuildId });
+assert.equal(applyPickTrades([{ ...originalPick[0], guildId: tradedGuildId }], 2027)[0].name, 'Cleveland Browns', 'A recorded trade must still be honored');
 fs.writeFileSync(getMaddenLeagueSnapshotPath(leagueId), JSON.stringify(snapshot));
 
 const emptyPrevious = { ...snapshot, weeklyStats: [] };
@@ -77,5 +90,10 @@ weekTwo.weeklyStats.push({ ...weekTwo.weeklyStats[0], weekIndex: 1 });
 fs.writeFileSync(getMaddenLeagueSnapshotPath(leagueId), JSON.stringify(weekTwo));
 assert.equal((await publishWeeklyMockDraft({ client, guildId, snapshot: weekTwo, previousSnapshot: snapshot })).weekNumber, 2);
 assert.equal(sent.length, 2);
+fs.writeFileSync(getMaddenLeagueSnapshotPath(leagueId), JSON.stringify(secondSeason));
+assert.equal((await publishWeeklyMockDraft({ client, guildId, snapshot: secondSeason, previousSnapshot: snapshot })).posted, true);
+const secondWeeklyDescription = sent[2].embeds[0].toJSON().description;
+assert.match(secondWeeklyDescription, /New York Giants/);
+assert.doesNotMatch(secondWeeklyDescription, /\(via NYG\)/i);
 
-console.log('PASS first-year class mock command, automatic first week, retry, and duplicate protection');
+console.log('PASS mock class selection, 2027 Giants pick ownership, recorded trades, weekly publication, retry, and duplicate protection');
