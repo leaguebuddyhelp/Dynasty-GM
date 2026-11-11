@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   buildRecommendationEmbed,
+  buildRecommendationSelect,
   buildProgressionCardEmbed,
   buildOffseasonProgressionRecommendations,
   buildRecommendationStatusButtons,
@@ -29,6 +30,9 @@ rules.weekly.maximumDowngradePerformanceScore = 20;
 rules.weekly.minimumDowngradeSelectionPriority = 0;
 rules.weekly.teamBalancePenalty = 0;
 rules.weekly.positionBalancePenalty = 0;
+rules.weekly.outstandingGameScore = 101;
+rules.weekly.severeGameScore = -1;
+rules.weekly.streakEvidenceRatio = 0;
 rules.weekly.attributesPerRecommendation = 3;
 rules.weekly.meaningfulOpportunityMinimums.QB = { passAtt: 1 };
 rules.weekly.positions.QB = {
@@ -218,6 +222,75 @@ assert.equal(realDefault.direction, 'upgrade');
 assert.equal(realDefault.attributes[0].evidence, 'passCompPct');
 assert.equal(realDefault.attributes[0].points, 1);
 
+const breakoutPlayer = player({
+  rosterId: 'falcons-qb',
+  firstName: 'Breakout',
+  playerBestOvr: 65,
+  throwAccShortRating: 68,
+  throwAccMidRating: 67,
+  throwAccDeepRating: 66,
+  playActionRating: 65,
+  throwOnRunRating: 64,
+});
+const breakoutWeek = {
+  weekIndex: 2,
+  stage: 1,
+  passing: { playerPassingStatInfoList: [{
+    rosterId: 'falcons-qb', position: 'QB', passYds: 390, passAtt: 32, passComp: 26,
+    passTDs: 4, passInts: 0, passLongest: 52,
+  }] },
+  rushing: { playerRushingStatInfoList: [{ rosterId: 'falcons-qb', position: 'QB', rushYds: 32 }] },
+};
+const priorBadWeek = {
+  weekIndex: 0, stage: 1,
+  passing: { playerPassingStatInfoList: [{
+    rosterId: 'falcons-qb', position: 'QB', passYds: 0, passAtt: 25, passComp: 9, passInts: 3,
+  }] },
+};
+const breakoutSnapshot = snapshot([priorBadWeek, { ...priorBadWeek, weekIndex: 1 }, breakoutWeek], breakoutPlayer);
+const breakoutAwards = { nfc_offense: { rosterId: 'falcons-qb' } };
+const breakoutRecord = buildWeeklyProgressionRecommendations(breakoutSnapshot, {
+  weekIndex: 2, rules: baseRules, awardWinners: breakoutAwards, history: { periods: {}, seasonAwards: {} },
+});
+const breakout = breakoutRecord.recommendations[0];
+assert.equal(breakout.direction, 'upgrade');
+assert.equal(breakout.attributes.length, 5);
+assert.deepEqual(new Set(breakout.attributes.map((attribute) => attribute.points)), new Set([3, 4, 5]));
+assert.ok(breakout.performanceScore < baseRules.weekly.minimumUpgradePerformanceScore);
+assert.match(breakout.explanation, /65 OVR, weekly award/);
+const breakoutCard = buildProgressionCardEmbed(breakoutRecord, breakout).toJSON();
+assert.match(JSON.stringify(breakoutCard), /weekly award/i);
+assert.match(JSON.stringify(breakoutCard), /Passing yards: 390/);
+
+const noAward = buildWeeklyProgressionRecommendations(breakoutSnapshot, {
+  weekIndex: 2, rules: baseRules, history: { periods: {}, seasonAwards: {} },
+}).recommendations;
+assert.equal(noAward.length, 0);
+const wrongAward = buildWeeklyProgressionRecommendations(breakoutSnapshot, {
+  weekIndex: 2, rules: baseRules, awardWinners: { nfc_offense: { rosterId: 'different-player' } },
+  history: { periods: {}, seasonAwards: {} },
+}).recommendations;
+assert.equal(wrongAward.length, 0);
+const highRated = buildWeeklyProgressionRecommendations(snapshot([breakoutWeek], {
+  ...breakoutPlayer, playerBestOvr: 85,
+}), {
+  weekIndex: 2, rules: baseRules, awardWinners: breakoutAwards, history: { periods: {}, seasonAwards: {} },
+}).recommendations[0];
+assert.ok(highRated.attributes.every((attribute) => attribute.points <= 2));
+assert.doesNotMatch(highRated.explanation, /Breakout/);
+const unsupportedBreakout = buildWeeklyProgressionRecommendations(snapshot([breakoutWeek], {
+  ...breakoutPlayer, throwAccShortRating: null, throwAccMidRating: null,
+  throwAccDeepRating: null, playActionRating: null, throwOnRunRating: null,
+}), {
+  weekIndex: 2, rules: baseRules, awardWinners: breakoutAwards, history: { periods: {}, seasonAwards: {} },
+}).recommendations;
+assert.equal(unsupportedBreakout.length, 0);
+const severeDowngrade = buildWeeklyProgressionRecommendations(
+  snapshot([week(0, { passYds: 0, passInts: 3, passAtt: 30 })]),
+  { weekIndex: 0, rules: baseRules, history: { periods: {}, seasonAwards: {} } },
+).recommendations[0];
+assert.equal(severeDowngrade.attributes[0].points, -2);
+
 const receiver = {
   rosterId: 'wr-1',
   firstName: 'Test',
@@ -259,13 +332,13 @@ const fullReceiverRecord = buildWeeklyProgressionRecommendations(
   { weekIndex: 0, rules: baseRules, history: { periods: {}, seasonAwards: {} } },
 );
 assert.equal(fullReceiverRecord.recommendations[0].attributes.length, 5);
-assert.ok(fullReceiverRecord.recommendations[0].attributes.every((attribute) => attribute.points === 1));
+assert.deepEqual(new Set(fullReceiverRecord.recommendations[0].attributes.map((attribute) => attribute.points)), new Set([1, 2]));
 const fullReceiverCard = buildProgressionCardEmbed(fullReceiverRecord, fullReceiverRecord.recommendations[0]).toJSON();
 for (const attribute of fullReceiverRecord.recommendations[0].attributes) {
   assert.ok(fullReceiverCard.description.includes(attribute.attribute));
-  assert.ok(fullReceiverCard.fields.find((field) => field.name === 'Stats').value.includes(
-    attribute.evidence.replace(/([a-z0-9])([A-Z])/g, '$1 $2'),
-  ));
+}
+for (const label of ['Catch rate', 'Receptions', 'Yards per catch', 'Longest reception', 'Receiving touchdowns']) {
+  assert.ok(fullReceiverCard.fields.find((field) => field.name === 'Stats').value.includes(label));
 }
 const sixReceiverWeeks = Array.from({ length: 6 }, (_, index) => ({ ...receivingWeek, weekIndex: index }));
 const sustainedReceiver = buildWeeklyProgressionRecommendations(
@@ -273,7 +346,7 @@ const sustainedReceiver = buildWeeklyProgressionRecommendations(
   { weekIndex: 5, rules: baseRules, history: { periods: {}, seasonAwards: {} } },
 ).recommendations[0];
 assert.equal(sustainedReceiver.attributes.length, 5);
-assert.ok(sustainedReceiver.attributes.every((attribute) => attribute.points === 5));
+assert.deepEqual(new Set(sustainedReceiver.attributes.map((attribute) => attribute.points)), new Set([1, 5]));
 
 const multiNegativeRules = structuredClone(rules);
 multiNegativeRules.weekly.attributesPerRecommendation = 5;
@@ -491,13 +564,15 @@ const diverse = buildWeeklyProgressionRecommendations(diversitySnapshot, {
 assert.deepEqual(new Set(diverse.map((item) => item.position)), new Set(['QB', 'WR']));
 assert.equal(new Set(diverse.map((item) => item.teamId)).size, 2);
 const card = buildProgressionCardEmbed(mixedRecord, mixedRecord.recommendations.find((item) => item.direction === 'upgrade')).toJSON();
-assert.match(JSON.stringify(card), /pass Yds: 90/);
-assert.match(JSON.stringify(card), /Game 90/);
+assert.match(JSON.stringify(card), /Passing yards: 90/);
+assert.match(JSON.stringify(card), /This game: 90/);
 assert.match(JSON.stringify(card), /Strong streak: 1/);
 assert.ok(card.fields.some((field) => field.name === 'Why'));
 const negativeCard = buildProgressionCardEmbed(mixedRecord, mixedRecord.recommendations.find((item) => item.direction === 'downgrade')).toJSON();
-assert.match(JSON.stringify(negativeCard), /pass Ints: 3/);
-assert.match(JSON.stringify(negativeCard), /pass Att: 30/);
+assert.match(JSON.stringify(negativeCard), /Interceptions thrown: 3/);
+assert.match(JSON.stringify(negativeCard), /Pass attempts: 30/);
+assert.doesNotMatch(JSON.stringify(card), /passYds|recCatches|defInts|Needs review/);
+assert.deepEqual(buildRecommendationSelect(mixedRecord, '1', 0, mixedRecord.recommendations), []);
 const legacy = structuredClone(mixedRecord.recommendations[0]);
 delete legacy.consistency;
 delete legacy.windows;

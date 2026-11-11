@@ -8,9 +8,9 @@ function unique(values = []) {
 
 export function normalizeMaddenDraftClassId(value = '') {
   const text = String(value || '').trim().toLowerCase();
-  const direct = text.match(/cus[_\s-]?(\d{1,2})/i);
+  const direct = text.match(/cus[_\s-]?(\d+)/i);
   if (direct) return `cus_${String(Number(direct[1])).padStart(2, '0')}`;
-  const digits = text.match(/^(\d{1,2})$/);
+  const digits = text.match(/^(\d+)$/);
   if (digits) return `cus_${String(Number(digits[1])).padStart(2, '0')}`;
   return text.replace(/[^a-z0-9]/g, '') || null;
 }
@@ -52,12 +52,13 @@ export function formatMaddenProspectIdentity(player = null, fallbackPosition = '
 }
 
 function bundledDraftClassDir() {
-  return path.join(process.cwd(), 'bundled_data', 'draft_classes', 'madden');
+  return path.join(process.cwd(), 'bundled_data', 'draft_classes');
 }
 
 function dataDraftClassDirs() {
   return unique([
     getDataFilePath(path.join('draft_classes', 'madden')),
+    getDataFilePath('draft_classes'),
     path.join(process.cwd(), 'data', 'draft_classes', 'madden'),
   ]);
 }
@@ -68,8 +69,9 @@ function jsonFilesInDir(dir) {
     let entries = [];
     try {
       entries = fs.readdirSync(current, { withFileTypes: true });
-    } catch {
-      return;
+    } catch (error) {
+      if (error?.code === 'ENOENT') return;
+      throw error;
     }
     for (const entry of entries) {
       const fullPath = path.join(current, entry.name);
@@ -81,11 +83,14 @@ function jsonFilesInDir(dir) {
     }
   };
   walk(dir);
-  return out.sort((a, b) => a.localeCompare(b));
+  return out.sort((a, b) => {
+    const depth = (file) => path.relative(dir, file).split(path.sep).length;
+    return depth(a) - depth(b) || a.localeCompare(b);
+  });
 }
 
 function classIdFromFile(fileName = '') {
-  const match = String(fileName || '').match(/CUS[_\s-]?(\d{1,2})/i);
+  const match = String(fileName || '').match(/CUS[_\s-]?(\d+)/i);
   if (!match) return null;
   return `cus_${String(Number(match[1])).padStart(2, '0')}`;
 }
@@ -99,10 +104,7 @@ function fileKindPattern(kind = 'bigboard') {
 export function listMaddenDraftClassFiles(kind = 'bigboard') {
   const byClass = new Map();
   const bundledDir = bundledDraftClassDir();
-  const bundledFiles = fs.existsSync(bundledDir)
-    ? jsonFilesInDir(bundledDir).filter((filePath) => fileKindPattern(kind).test(path.basename(filePath)))
-    : [];
-  const dirs = bundledFiles.length ? [bundledDir] : dataDraftClassDirs();
+  const dirs = [bundledDir, ...dataDraftClassDirs()];
 
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue;
@@ -137,11 +139,7 @@ export function findMaddenDraftClassFile(classId, kind = 'bigboard') {
 export function loadMaddenDraftClassRaw(classId, kind = 'bigboard') {
   const file = findMaddenDraftClassFile(classId, kind);
   if (!file) return null;
-  try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {
-    return null;
-  }
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
 export function loadMaddenDraftClassArray(classId, kind = 'bigboard') {

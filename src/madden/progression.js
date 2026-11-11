@@ -6,7 +6,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
-  StringSelectMenuBuilder,
 } from 'discord.js';
 import { getDataFilePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 import { getSoloModeConfig, isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
@@ -350,6 +349,7 @@ function getEvidenceAttributes(stats, player, rules, positionRule, maxAttributes
     attribute: rule.attribute,
     field: rules.attributeFields[rule.attribute],
     evidence: rule.evidence,
+    evidenceRatio: rule.evidenceValue / Number(rule.minimum),
     currentValue: rule.currentValue,
   }));
 }
@@ -430,10 +430,12 @@ function getWeeklyAwardPoints(winners, player, players, aliases, rules) {
   );
 }
 
-function readWeeklyAwardResults(leagueId, weekNumber) {
+export function readWeeklyAwardResults(leagueId, weekNumber, seasonKey) {
   try {
     const store = JSON.parse(readFileSync(AWARDS_PATH, 'utf8'));
-    return store?.[String(leagueId)]?.[String(weekNumber)] || {};
+    const league = store?.[String(leagueId)];
+    if (!seasonKey || league?.__seasonByWeek?.[String(weekNumber)] !== seasonKey) return {};
+    return league?.[String(weekNumber)] || {};
   } catch (error) {
     if (error?.code === 'ENOENT') return {};
     throw error;
@@ -727,7 +729,14 @@ function selectNegativeAttributes(stats, player, position, rules, games = 1, max
     const field = rules.attributeFields?.[check.attribute];
     const currentValue = numberOrNull(player[field]);
     if (field && !usedFields.has(field) && currentValue !== null && currentValue > 0 && currentValue <= 99) {
-      selected.push({ attribute: check.attribute, field, evidence: check.field, currentValue });
+      let evidenceRatio = 1;
+      if (Number(check.minimum) > 0) evidenceRatio = Number(stats[check.field]) / (Number(check.minimum) * Math.max(1, games));
+      else if (Number(check.minimumMisses) > 0) evidenceRatio = (Number(stats[check.attemptsField]) - Number(stats[check.field])) / Number(check.minimumMisses);
+      else if (Number(check.maximumRate) > 0) {
+        const rate = Number(stats[check.field]) / Number(stats[check.rateField]);
+        evidenceRatio = rate > 0 ? Number(check.maximumRate) / rate : Number.MAX_SAFE_INTEGER;
+      }
+      selected.push({ attribute: check.attribute, field, evidence: check.field, evidenceRatio, currentValue });
       usedFields.add(field);
       if (selected.length >= maxAttributes) break;
     }
@@ -796,6 +805,9 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const soft = positiveSeasonPenalty(positivePointsUsed, seasonKeyOvr, rules.offseason);
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
     const weeklyAwards = getWeeklyAwardPoints(awardWinners, player, players, aliases, weeklyRules);
+    const breakout = weeklyAwards > 0
+      && player.ovr <= Number(weeklyRules.breakoutMaximumOvr ?? 70)
+      && currentMetrics.score >= Number(weeklyRules.breakoutMinimumGameScore ?? 85);
     const consistencyBonus = Number(
       weeklyRules.consistencyBonusByStrongGames[String(windows.consistency.strong)] || 0,
     );
@@ -820,14 +832,14 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     let points = 0;
     let evidence = [];
     let priorityBase = 0;
-    if (windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore)
+    if ((windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout)
       && currentAttributeEvidence.length) {
-      const tier = getTier(windows.performanceScore, weeklyRules.positiveChangeTiers, 'minimumScore');
+      const tier = getTier(breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore, weeklyRules.positiveChangeTiers, 'minimumScore');
       if (tier) {
         direction = 'upgrade';
         points = Number(tier.attributePoints);
         evidence = currentAttributeEvidence;
-        priorityBase = windows.performanceScore + consistencyBonus + improvingTrendBonus
+        priorityBase = (breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore) + consistencyBonus + improvingTrendBonus
             + exceptionalConsistencyBonus + weeklyAwards
           - soft.penalty - populationAdjustment;
       }
@@ -855,8 +867,27 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const streak = direction === 'upgrade' ? windows.consistency.strongStreak : windows.consistency.poorStreak;
     const maxPoints = Number(weeklyRules.maximumWeeklyAttributePoints ?? 5);
     const streakThreshold = Number(weeklyRules.streakGamesForExtraPoint ?? 3);
-    const magnitude = Math.min(maxPoints, 1 + Math.max(0, streak - streakThreshold + 1));
-    const allocation = evidence.flatMap((attribute) => attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude));
+    const streakBonus = Math.max(0, streak - streakThreshold + 1);
+    const allocation = evidence.flatMap((attribute, index) => {
+      const ratio = attribute.evidenceRatio ?? 1;
+      let magnitude = 1;
+      if (breakout && direction === 'upgrade') {
+        magnitude = Number(weeklyRules.breakoutBasePoints ?? 3)
+          + (ratio >= Number(weeklyRules.strongEvidenceRatio ?? 1.5) ? 1 : 0)
+          + (currentMetrics.score >= Number(weeklyRules.breakoutEliteGameScore ?? 95) && ratio >= 2 ? 1 : 0);
+      } else if (direction === 'upgrade'
+        && currentMetrics.score >= Number(weeklyRules.outstandingGameScore ?? 90)
+        && ratio >= Number(weeklyRules.strongEvidenceRatio ?? 1.5)) {
+        magnitude += 1;
+      } else if (direction === 'downgrade'
+        && currentMetrics.score <= Number(weeklyRules.severeGameScore ?? 15)
+        && ratio >= Number(weeklyRules.severeEvidenceRatio ?? 2)) {
+        magnitude += 1;
+      }
+      if (index === 0 || ratio >= Number(weeklyRules.streakEvidenceRatio ?? 1.3)) magnitude += streakBonus;
+      magnitude = Math.min(maxPoints, magnitude);
+      return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
+    });
     if (!allocation.length) continue;
     const selected = recommendation({
       player,
@@ -876,8 +907,9 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       currentWeekScore: windows.currentScore,
       recentFourGameScore: windows.recentScore,
       seasonToDateScore: windows.seasonScore,
-      explanation: `${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. The combined score weights this game, recent games, and the season. ${streak >= streakThreshold ? `A ${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased the change.` : 'A single-week change is limited to 1 point per attribute.'}`,
+      explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
+    selected.changeContext = { breakout, streakBonus };
     selected.minimumSelectionScore = direction === 'upgrade'
       ? Number(weeklyRules.minimumUpgradeSelectionScore)
       : Number(weeklyRules.minimumDowngradeSelectionPriority);
@@ -1058,22 +1090,74 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
   });
 }
 
+const STAT_LABELS = {
+  passAtt: 'Pass attempts', passComp: 'Completions', passCompPct: 'Completion rate',
+  passYds: 'Passing yards', passYdsPerAtt: 'Yards per pass', passTDs: 'Passing touchdowns',
+  passInts: 'Interceptions thrown', passSacks: 'Sacks taken', passLongest: 'Longest pass',
+  rushAtt: 'Carries', rushYds: 'Rushing yards', rushTDs: 'Rushing touchdowns',
+  fumbles: 'Fumbles', rushBrokenTackles: 'Broken tackles', rushYdsAfterContact: 'Yards after contact',
+  rush20PlusYds: 'Runs of 20+ yards', rushLongest: 'Longest run',
+  recCatches: 'Receptions', recYds: 'Receiving yards', recTDs: 'Receiving touchdowns',
+  recDrops: 'Drops', recLongest: 'Longest reception', recYdsPerCatch: 'Yards per catch',
+  recCatchPct: 'Catch rate', recYdsAfterCatch: 'Yards after catch',
+  defTotalTackles: 'Tackles', defSacks: 'Sacks', defInts: 'Interceptions',
+  defForcedFumbles: 'Forced fumbles', defRecoveredFumbles: 'Fumble recoveries',
+  defPassDeflections: 'Pass deflections', defTDs: 'Defensive touchdowns',
+  defSafeties: 'Safeties', defCatchAllowed: 'Catches allowed',
+  fgMade: 'Field goals made', fgAtt: 'Field goal attempts', fgCompPct: 'Field goal rate',
+  fgLongest: 'Longest field goal', fg50PlusMade: 'Field goals from 50+ yards',
+  xpMade: 'Extra points made', xpAtt: 'Extra point attempts',
+  pntAtt: 'Punts', pntYds: 'Punting yards', pntYdsPerAtt: 'Yards per punt',
+  pntNetYdsPerAtt: 'Net yards per punt', pntInside20: 'Punts inside the 20',
+  passYdsPerGame: 'Passing yards per game', passerRating: 'Passer rating', passPts: 'Passing points',
+  rushYdsPerAtt: 'Yards per carry', rushYdsPerGame: 'Rushing yards per game',
+  rushToPct: 'Rushing turnover rate', rushPts: 'Rushing points',
+  recYacPerCatch: 'Yards after catch per reception', recYdsPerGame: 'Receiving yards per game',
+  recToPct: 'Receiving turnover rate', recPts: 'Receiving points',
+  defIntReturnYds: 'Interception return yards', defPts: 'Defensive points',
+  fg50PlusAtt: 'Field goal attempts from 50+ yards', xpCompPct: 'Extra point rate',
+  kickPts: 'Kicking points', kickoffAtt: 'Kickoffs', kickoffTBs: 'Kickoff touchbacks',
+  pntNetYds: 'Net punting yards', pntLongest: 'Longest punt', pntTBs: 'Punt touchbacks',
+  puntsBlocked: 'Punts blocked',
+};
+
+function statLabel(field) {
+  if (STAT_LABELS[field]) return STAT_LABELS[field];
+  return String(field || '').replace(/^(pass|rush|rec|def|fg|xp|pnt)/, '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/^./, (letter) => letter.toUpperCase());
+}
+
 function recommendationEvidence(item) {
   const fields = [...new Set([
     ...item.attributes.map((attribute) => attribute.evidence),
+    ...['passYds', 'passAtt', 'passComp', 'passTDs', 'passInts', 'rushYds', 'recYds', 'defTotalTackles'],
     ...Object.keys(item.stats || {}),
   ])];
   return fields
     .filter((key) => key && item.stats?.[key] != null && Number.isFinite(Number(item.stats[key])))
-    .slice(0, 6)
-    .map((key) => `${key.replace(/([a-z0-9])([A-Z])/g, '$1 $2')}: ${Math.round(Number(item.stats[key]) * 10) / 10}`)
-    .join(' · ') || 'No supported statistics';
+    .slice(0, 10)
+    .map((key) => `${statLabel(key)}: ${Math.round(Number(item.stats[key]) * 10) / 10}${/Pct$/.test(key) ? '%' : ''}`)
+    .join(' · ') || 'No statistics available';
+}
+
+function recommendationWhy(record, item) {
+  const labels = [...new Set((item.attributes || []).map((attribute) => statLabel(attribute.evidence)).filter(Boolean))];
+  const evidence = labels.length ? labels.join(', ').toLowerCase() : 'the available game statistics';
+  const reasons = [`${item.direction === 'upgrade' ? 'Strong' : 'Poor'} performance in ${evidence}.`];
+  if (record.type === 'weekly' && item.awardPoints > 0) reasons.push('Won a weekly award.');
+  if (item.changeContext?.breakout) {
+    reasons.push('Exceptional play for a lower-rated player earned a larger boost.');
+  }
+  const streak = item.direction === 'upgrade' ? item.consistency?.strongStreak : item.consistency?.poorStreak;
+  if (item.changeContext?.streakBonus > 0) reasons.push(`${streak} consecutive ${item.direction === 'upgrade' ? 'strong' : 'poor'} games increased some changes.`);
+  return reasons.join(' ');
 }
 
 function recommendationBreakdown(item) {
-  const score = (value) => value == null ? 'N/A' : String(Math.round(Number(value) * 10) / 10);
+  const score = (value) => value == null || !Number.isFinite(Number(value)) ? 'N/A' : `${Math.round(Number(value) * 10) / 10}/100`;
   const streak = item.direction === 'upgrade' ? item.consistency?.strongStreak : item.consistency?.poorStreak;
-  return `Game ${score(item.windows?.currentGame)} · Recent ${score(item.windows?.recentFourGames)} · Season ${score(item.windows?.seasonToDate)} · Combined ${score(item.performanceScore)}\n${item.direction === 'upgrade' ? 'Strong' : 'Poor'} streak: ${streak ?? 'N/A'} played games`;
+  return `This game: ${score(item.windows?.currentGame)} · Recent: ${score(item.windows?.recentFourGames)} · Season: ${score(item.windows?.seasonToDate)}\n${item.direction === 'upgrade' ? 'Strong' : 'Poor'} streak: ${streak ?? 'N/A'} played games`;
 }
 
 function recordEmbed(record, item) {
@@ -1087,7 +1171,7 @@ function recordEmbed(record, item) {
     .setTitle(`${upgrade ? '📈 Upgrade' : '📉 Downgrade'} · ${item.player}`)
     .setDescription(`${emoji ? `${emoji} ` : ''}**${item.team}** · ${item.position} · ${item.currentOvr} OVR\n\n${attributeLines}`)
     .addFields(
-      { name: 'Why', value: item.explanation.slice(0, 1024), inline: false },
+      { name: 'Why', value: recommendationWhy(record, item).slice(0, 1024), inline: false },
       { name: 'Recent performance', value: statistics.slice(0, 1024), inline: false },
       { name: 'Score breakdown', value: recommendationBreakdown(item).slice(0, 1024), inline: false },
       { name: 'Status', value: status === 'applied' ? '✅ Applied in Madden' : status === 'skipped' ? '⏭️ Skipped' : '🕒 Waiting for your Madden update', inline: true },
@@ -1131,17 +1215,16 @@ function progressionCardEmbed(record, item) {
   const attributes = item.attributes.map((attribute) =>
     `**${attribute.attribute}** ${attribute.currentValue} → ${attribute.targetValue} (${attribute.points > 0 ? '+' : ''}${attribute.points})`
   ).join('\n');
-  const status = record.statusById?.[item.recommendationId]?.status || 'pending';
   const embed = new EmbedBuilder()
     .setTitle(`${upgrade ? '🟢 Upgrade' : '🟠 Downgrade'} · ${item.player}`)
     .setDescription(`${emoji ? `${emoji} ` : ''}**${item.team}** · ${item.position} · ${item.currentOvr} OVR\n\n${attributes}`)
     .addFields(
-      { name: 'Why', value: item.explanation.slice(0, 400), inline: false },
+      { name: 'Why', value: recommendationWhy(record, item).slice(0, 400), inline: false },
       { name: 'Stats', value: recommendationEvidence(item).slice(0, 300), inline: false },
       { name: 'Score breakdown', value: recommendationBreakdown(item).slice(0, 250), inline: false },
     )
     .setColor(upgrade ? 0x2ecc71 : 0xe67e22)
-    .setFooter({ text: `${seasonLabel(record.seasonKey)} · ${record.weekNumber ? `Week ${record.weekNumber}` : 'Offseason'} · ${status === 'applied' ? 'Applied' : status === 'skipped' ? 'Skipped' : 'Needs review'}` })
+    .setFooter({ text: `${seasonLabel(record.seasonKey)} · ${record.weekNumber ? `Week ${record.weekNumber}` : 'Offseason'} · Apply changes in Madden` })
     .setTimestamp(new Date(record.generatedAt));
   if (typeof item.playerImage === 'string' && /^https?:\/\//i.test(item.playerImage)) {
     embed.setThumbnail(item.playerImage);
@@ -1150,20 +1233,7 @@ function progressionCardEmbed(record, item) {
 }
 
 function controlsForRecommendations(record, teamId, page, entries) {
-  const options = entries.map((item) => ({
-    label: `${item.player} — ${item.position}`.slice(0, 100),
-    value: item.recommendationId,
-    description: `${item.direction === 'upgrade' ? 'Upgrade' : 'Downgrade'}: ${item.attributes.map((attr) => `${attr.points > 0 ? '+' : ''}${attr.points} ${attr.attribute}`).join(', ')}`.slice(0, 100),
-  }));
-  if (!options.length) return [];
-  return [
-    new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId(`madden_progression_select|${record.periodKey}|${teamId}|${page}`)
-        .setPlaceholder('Choose a recommendation to manage')
-        .addOptions(options),
-    ),
-  ];
+  return [];
 }
 
 function statusButtons(record, teamId, page, item) {
@@ -1409,7 +1479,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   const current = type === 'weekly'
     ? buildWeeklyProgressionRecommendations(snapshot, {
       weekIndex,
-      awardWinners: awardWinners || readWeeklyAwardResults(leagueId, Number(weekIndex) + 1),
+      awardWinners: awardWinners || readWeeklyAwardResults(leagueId, Number(weekIndex) + 1, seasonKey),
       history,
       startingOveralls: starting,
       rules,

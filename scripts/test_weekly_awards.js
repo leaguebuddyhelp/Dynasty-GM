@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
 import { publishWeeklyAwards } from '../src/madden/awards.js';
+import { readWeeklyAwardResults } from '../src/madden/progression.js';
 
 saveGuildMaddenConfig('awards-guild', {
   status: 'complete',
@@ -61,6 +62,9 @@ assert.equal((await publish(snapshot({ weeklyStats: [] }))).posted, false);
 const first = await publish(snapshot({ weeklyStats: [week(0), week(1, 900)] }));
 assert.equal(first.posted, true);
 assert.equal(first.weekNumber, 1);
+assert.ok(readWeeklyAwardResults('award-league', 1, 'year_2026').afc_offense);
+assert.deepEqual(readWeeklyAwardResults('award-league', 1, 'year_2027'), {});
+assert.deepEqual(readWeeklyAwardResults('award-league', 2, 'year_2026'), {});
 assert.equal(sent.length, 1);
 const firstEmbed = sent[0].embeds[0].toJSON();
 assert.match(firstEmbed.title, /Week 1/);

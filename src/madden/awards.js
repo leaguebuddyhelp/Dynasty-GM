@@ -880,7 +880,11 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       allowedMentions: coachTag ? { parse: [], roles: [coachRoleId] } : { parse: [] },
     });
   }
-  awardsStore[leagueId] = { ...leagueStore, [awardsWeek]: winners };
+  awardsStore[leagueId] = {
+    ...leagueStore,
+    [awardsWeek]: winners,
+    __seasonByWeek: { ...leagueStore.__seasonByWeek, [awardsWeek]: getMaddenSeasonKey(snapshot) },
+  };
   saveJson(AWARDS_FILE, awardsStore);
   if (isSoloModeEnabled() && guildId && options.refreshProgression !== false) {
     try {
