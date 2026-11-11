@@ -184,6 +184,18 @@ const lineReport = await publishProgressionReports({ client, guildId, snapshot: 
 assert.equal(lineReport.recommendationCount, 1, 'Offseason should use the line starter observed during a weekly sync');
 const lineCards = [...falcons.storedMessages.values()].slice(beforeLine).flatMap((entry) => entry.payload.embeds.map((item) => item.toJSON()));
 assert.ok(lineCards.some((entry) => /Season Lineman/.test(entry.title) && /proxy, not individual blocking stats/.test(JSON.stringify(entry))));
+const replacedLineEnd = structuredClone(lineEnd);
+replacedLineEnd.syncId = 'line-offseason-updated';
+replacedLineEnd.rosters.teams[1].rosterInfoList.push({
+  rosterId: 'better-lt', firstName: 'New', lastName: 'Starter', position: 'LT',
+  playerBestOvr: 90, runBlockRating: 90,
+});
+await persistSyncHistory({ leagueId, snapshot: replacedLineEnd, summary: {} });
+const replacedLineReport = await publishProgressionReports({ client, guildId, snapshot: replacedLineEnd });
+assert.equal(replacedLineReport.recommendationCount, 0, 'Former starter must be removed and a new starter must not inherit historical evidence');
+const updatedLineMessages = [...falcons.storedMessages.values()].slice(beforeLine);
+assert.ok(updatedLineMessages.some((entry) => /superseded/.test(entry.payload.content || '')), 'Obsolete backup cards should be cleared on repeat sync');
+assert.ok(!updatedLineMessages.flatMap((entry) => entry.payload.embeds).some((item) => /Season Lineman|New Starter/.test(item.toJSON().title)));
 
 const playoffWeek = makeSnapshot('playoff-week', 2, 20, 2031);
 playoffWeek.rosters.teams[1].rosterInfoList = [

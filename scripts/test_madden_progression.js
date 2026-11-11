@@ -57,10 +57,13 @@ balancedSeason.rosters.teams[1].rosterInfoList.push(
   { rosterId: 'poor-hb', firstName: 'Poor', lastName: 'HB', position: 'HB', playerBestOvr: 85, bCVRating: 80 },
   { rosterId: 'poor-wr', firstName: 'Poor', lastName: 'WR', position: 'WR', playerBestOvr: 85, routeRunMedRating: 80 },
   { rosterId: 'poor-cb', firstName: 'Poor', lastName: 'CB', position: 'CB', playerBestOvr: 85, awareRating: 80 },
-  { rosterId: 'poor-lt', firstName: 'Poor', lastName: 'LT', position: 'LT', playerBestOvr: 85, runBlockRating: 80 },
   { rosterId: 'poor-k', firstName: 'Poor', lastName: 'K', position: 'K', playerBestOvr: 85, kickAccRating: 80 },
   { rosterId: 'poor-p', firstName: 'Poor', lastName: 'P', position: 'P', playerBestOvr: 85, kickPowerRating: 80 },
 );
+balancedSeason.teams.leagueTeamInfoList.push({ teamId: 2, cityName: 'Other', nickName: 'Team' });
+balancedSeason.rosters.teams[2] = { rosterInfoList: [
+  { rosterId: 'poor-lt', firstName: 'Poor', lastName: 'LT', position: 'LT', playerBestOvr: 85, runBlockRating: 80 },
+] };
 for (const week of balancedSeason.weeklyStats) {
   week.passing.playerPassingStatInfoList.push({ rosterId: 'poor-qb', teamId: 1, position: 'QB', passAtt: 30, passComp: 8, passYds: 40, passTDs: 0, passInts: 3 });
   week.rushing.playerRushingStatInfoList.push({ rosterId: 'poor-hb', teamId: 1, position: 'HB', rushAtt: 15, rushYds: 20, rushTDs: 0 });
@@ -72,7 +75,7 @@ for (const week of balancedSeason.weeklyStats) {
 const balancedLines = [
   ...mixedLineHistory,
   ...mixedLineHistory.map((row) => ({
-    ...row, playerKey: 'roster:poor-lt',
+    ...row, playerKey: 'roster:poor-lt', teamId: '2',
     totals: { teamRushAtt: 25, teamRushYds: 20, teamRunScore: 16, teamLineScore: 16 },
   })),
 ];
@@ -143,7 +146,7 @@ assert.ok(lineRecord.recommendations.some((item) => item.playerKey === 'roster:l
 assert.ok(!lineRecord.recommendations.some((item) => ['roster:line-backup', 'roster:line-injured'].includes(item.playerKey)));
 const lineCard = JSON.stringify(buildProgressionCardEmbed(lineRecord, lineResult).toJSON());
 assert.match(lineCard, /proxy, not individual blocking stats/);
-assert.match(lineCard, /Starter estimated/);
+assert.match(lineCard, /Projected starter/);
 assert.match(lineCard, /Team carries/);
 const unavailableLine = structuredClone(lineSnapshot);
 delete unavailableLine.weeklyStats[0].rushing;
@@ -176,6 +179,50 @@ const badLine = structuredClone(lineSnapshot);
 badLine.weeklyStats[0].rushing.playerRushingStatInfoList[0].rushYds = 20;
 badLine.weeklyStats[0].passing.playerPassingStatInfoList[0].passSacks = 9;
 assert.equal(buildWeeklyProgressionRecommendations(badLine, { weekIndex: 0, rules: baseRules }).recommendations.find((item) => item.playerKey === 'roster:line-lt')?.direction, 'downgrade');
+
+const linePositions = ['LT', 'LG', 'C', 'RG', 'RT'];
+const fullLine = structuredClone(lineSnapshot);
+fullLine.rosters.teams[1].rosterInfoList = linePositions.flatMap((position) => [
+  { rosterId: `starter-${position}`, position, playerBestOvr: 80, runBlockRating: 80 },
+  { rosterId: `backup-${position}`, position, playerBestOvr: 70, runBlockRating: 70 },
+]);
+fullLine.rosters.teams[1].rosterInfoList.push(
+  { rosterId: 'injured-RT', position: 'RT', playerBestOvr: 99, injuryLength: 3, runBlockRating: 90 },
+  { rosterId: 'unknown-LT', position: 'LT', runBlockRating: 70 },
+);
+const fullLineRecommendations = buildWeeklyProgressionRecommendations(fullLine, { weekIndex: 0, rules: baseRules }).recommendations;
+assert.deepEqual(new Set(fullLineRecommendations.map((item) => item.playerKey)), new Set(linePositions.map((position) => `roster:starter-${position}`)));
+const switchedLine = structuredClone(fullLine);
+switchedLine.rosters.teams[1].rosterInfoList.find((player) => player.rosterId === 'starter-LT').injuryLength = 1;
+const switchedWeekly = buildWeeklyProgressionRecommendations(switchedLine, { weekIndex: 0, rules: baseRules }).recommendations;
+assert.ok(switchedWeekly.some((item) => item.playerKey === 'roster:backup-LT'));
+assert.ok(!switchedWeekly.some((item) => item.playerKey === 'roster:starter-LT'));
+const tiedLine = structuredClone(fullLine);
+tiedLine.rosters.teams[1].rosterInfoList.find((player) => player.rosterId === 'backup-LT').playerBestOvr = 80;
+const tiedFirst = buildWeeklyProgressionRecommendations(tiedLine, { weekIndex: 0, rules: baseRules }).recommendations.filter((item) => item.position === 'LT');
+tiedLine.rosters.teams[1].rosterInfoList.reverse();
+const tiedSecond = buildWeeklyProgressionRecommendations(tiedLine, { weekIndex: 0, rules: baseRules }).recommendations.filter((item) => item.position === 'LT');
+assert.equal(tiedFirst.length, 1);
+assert.equal(tiedFirst[0].playerKey, tiedSecond[0].playerKey, 'Tied ratings must resolve consistently regardless of roster order');
+const observedLine = linePositions.flatMap((position) => ['starter', 'backup'].map((role) => ({
+  playerKey: `roster:${role}-${position}`, teamId: '1', position, weekIndex: 0,
+  totals: { teamRushAtt: 25, teamRushYds: 150, teamRunScore: 100, teamLineScore: 100 },
+})));
+const offseasonLine = buildOffseasonProgressionRecommendations(fullLine, { rules: baseRules, lineObservations: observedLine });
+assert.deepEqual(new Set(offseasonLine.recommendations.map((item) => item.playerKey)), new Set(linePositions.map((position) => `roster:starter-${position}`)));
+const switchedOffseason = buildOffseasonProgressionRecommendations(switchedLine, { rules: baseRules, lineObservations: observedLine });
+assert.ok(switchedOffseason.recommendations.some((item) => item.playerKey === 'roster:backup-LT'));
+assert.ok(!switchedOffseason.recommendations.some((item) => item.playerKey === 'roster:starter-LT'));
+const unobservedStarter = buildOffseasonProgressionRecommendations(fullLine, {
+  rules: baseRules, lineObservations: observedLine.filter((row) => row.playerKey !== 'roster:starter-LT'),
+});
+assert.ok(!unobservedStarter.recommendations.some((item) => item.position === 'LT'));
+const rawLine = structuredClone(fullLine);
+rawLine.weeklyStats = [{ stage: 1, weekIndex: 0, playerTotals: [{
+  rosterId: 'backup-LT', position: 'LT', totals: { teamRushAtt: 25, teamRushYds: 150, teamRunScore: 100, teamLineScore: 100 },
+}] }];
+assert.ok(!buildWeeklyProgressionRecommendations(rawLine, { weekIndex: 0, rules: baseRules }).recommendations.some((item) => item.position === 'LT'));
+assert.ok(!buildOffseasonProgressionRecommendations(rawLine, { rules: baseRules }).recommendations.some((item) => item.position === 'LT'));
 
 const specialistSnapshot = {
   ...lineSnapshot,

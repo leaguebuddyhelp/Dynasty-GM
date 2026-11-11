@@ -301,6 +301,24 @@ function buildWeeklyPlayerStats(snapshot, aliases, { requestedWeekIndex = null, 
   return byWeek;
 }
 
+function projectedOffensiveLineStarters(players) {
+  const starters = new Map();
+  for (const player of players) {
+    if (!OFFENSIVE_LINE_POSITIONS.has(player.position) || player.ovr === null || Number(player.injuryLength || 0) > 0) continue;
+    const slot = `${player.teamId}|${player.position}`;
+    const previous = starters.get(slot);
+    if (!previous || player.ovr > previous.ovr || (player.ovr === previous.ovr && player.key < previous.key)) starters.set(slot, player);
+  }
+  return starters;
+}
+
+function clearOffensiveLineStats(byWeek, players) {
+  const lineKeys = players.filter((player) => OFFENSIVE_LINE_POSITIONS.has(player.position)).map((player) => player.key);
+  for (const week of byWeek.values()) {
+    for (const key of lineKeys) week.delete(key);
+  }
+}
+
 function addOffensiveLineProxies(snapshot, players, aliases, byWeek, weekIndex) {
   const entries = (snapshot?.weeklyStats || []).filter((entry) =>
     Number(entry?.stage ?? entry?.stageIndex ?? 0) === 1 && Number(entry?.weekIndex) === weekIndex);
@@ -325,13 +343,7 @@ function addOffensiveLineProxies(snapshot, players, aliases, byWeek, weekIndex) 
       }
     }
   }
-  const starters = new Map();
-  for (const player of players) {
-    if (!OFFENSIVE_LINE_POSITIONS.has(player.position) || player.ovr === null || Number(player.injuryLength || 0) > 0) continue;
-    const slot = `${player.teamId}|${player.position}`;
-    const previous = starters.get(slot);
-    if (!previous || player.ovr > previous.ovr || (player.ovr === previous.ovr && player.key < previous.key)) starters.set(slot, player);
-  }
+  const starters = projectedOffensiveLineStarters(players);
   const week = byWeek.get(weekIndex) || new Map();
   for (const player of starters.values()) {
     const team = teamStats.get(player.teamId);
@@ -921,6 +933,7 @@ export function performanceAdjustedRatings(snapshot, rules = readRules().progres
   if (endWeek === null || endWeek < 0) return new Map();
   const { players, aliases } = getRosterPlayers(snapshot);
   const byWeek = buildWeeklyPlayerStats(snapshot, aliases, { requestedWeekIndex: endWeek });
+  clearOffensiveLineStats(byWeek, players);
   addOffensiveLineProxies(snapshot, players, aliases, byWeek, endWeek);
   const recentAwards = Array.from({ length: Math.min(4, endWeek + 1) }, (_, index) =>
     readWeeklyAwardResults(snapshot.leagueId, endWeek + 1 - index, getMaddenSeasonKey(snapshot)));
@@ -1018,6 +1031,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   const weekNumber = Number(weekIndex) + 1;
   const { players, aliases } = getRosterPlayers(snapshot);
   const byWeek = buildWeeklyPlayerStats(snapshot, aliases);
+  clearOffensiveLineStats(byWeek, players);
   addOffensiveLineProxies(snapshot, players, aliases, byWeek, Number(weekIndex));
   const weekPlayers = byWeek.get(Number(weekIndex)) || new Map();
   const observations = inactivityObservations(snapshot, players, byWeek, Number(weekIndex));
@@ -1340,7 +1354,9 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
   const seasonKey = getMaddenSeasonKey(snapshot);
   const { players, aliases } = getRosterPlayers(snapshot);
   const byWeek = buildWeeklyPlayerStats(snapshot, aliases, { includePostseason: true });
+  clearOffensiveLineStats(byWeek, players);
   const currentPlayers = new Map(players.map((player) => [player.key, player]));
+  const projectedLineKeys = new Set([...projectedOffensiveLineStarters(players).values()].map((player) => player.key));
   for (const observation of lineObservations) {
     const player = currentPlayers.get(observation.playerKey);
     if (!player || player.teamId !== observation.teamId || player.position !== observation.position) continue;
@@ -1357,6 +1373,7 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
     const positionKey = progressionPositionKey(player.position, positionRules);
     const positionRule = positionKey ? positionRules[positionKey] : null;
     if (!positionRule) continue;
+    if (positionKey === 'OL' && !projectedLineKeys.has(player.key)) continue;
     const windows = getPlayerWindowScores(player.key, player, byWeek, maxWeek, positionKey, rules.weekly);
     const observedMetrics = windows.metrics.filter((entry) =>
       opportunityConfirmed(entry.row.totals, positionKey, rules.weekly));
@@ -1531,7 +1548,7 @@ function recommendationWhy(record, item) {
   const reasons = [`${item.direction === 'upgrade' ? 'Strong' : 'Poor'} performance in ${evidence}.`];
   if (item.changeContext?.teamLineProxy) {
     const sources = [item.stats?.teamRunScore != null ? 'rushing' : null, item.stats?.teamPassScore != null ? 'pass protection' : null].filter(Boolean).join(' and ');
-    reasons[0] = `Team ${sources} performance is a proxy, not individual blocking stats. Starter estimated from the highest-rated player at this position who is not listed as injured.`;
+    reasons[0] = `Team ${sources} performance is a proxy, not individual blocking stats. Projected starter is the highest-OVR healthy player at this position${record.type === 'offseason' ? '; season evidence comes only from weeks when this player was also the projected starter' : ''}.`;
   }
   if (record.type === 'weekly' && item.awardPoints > 0) reasons.push('Won a weekly award.');
   if (item.attributes.some((attribute) => attribute.attribute === 'Awareness' && attribute.evidence === 'currentGameScore')) {
@@ -2024,8 +2041,14 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
       syncIds: [...new Set([...(old.syncIds || [old.syncId]), current.syncId].filter(Boolean))],
       updatedAt: new Date().toISOString(),
     };
+    const starterKeys = new Set([...projectedOffensiveLineStarters(getRosterPlayers(snapshot).players).values()].map((player) => player.key));
+    record.recommendations = old.recommendations.filter((item) =>
+      !item.changeContext?.teamLineProxy || starterKeys.has(item.playerKey)
+      || old.statusById?.[item.recommendationId]?.status === 'applied');
+    for (const item of current.recommendations.filter((entry) => entry.changeContext?.teamLineProxy)) {
+      if (!record.recommendations.some((existing) => existing.playerKey === item.playerKey)) record.recommendations.push(item);
+    }
     if (type === 'weekly') {
-      record.recommendations = [...old.recommendations];
       record.unupgradedAwardWinners = current.unupgradedAwardWinners.filter((winner) =>
         !winner.playerKey || !record.recommendations.some((item) => item.playerKey === winner.playerKey && item.direction === 'upgrade'));
       for (const winner of current.recommendations.filter((item) => item.awardPoints > 0 && item.direction === 'upgrade')) {
