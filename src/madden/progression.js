@@ -386,6 +386,80 @@ function opportunityConfirmed(stats, position, rules) {
     Number(stats?.[field] || 0) >= Number(minimum));
 }
 
+function inactivityObservations(snapshot, players, byWeek, weekIndex) {
+  const week = (snapshot?.weeklyStats || []).find((entry) =>
+    Number(entry?.stage ?? entry?.stageIndex ?? 0) === 1 && Number(entry?.weekIndex) === weekIndex);
+  const games = (snapshot?.schedule?.schedules || []).filter((game) =>
+    Number(game.stageIndex ?? game.stage ?? -1) === 1
+    && Number(game.weekIndex) === weekIndex && Number(game.status) >= 2);
+  const playedTeams = new Set(games.flatMap((game) => [String(game.homeTeamId ?? ''), String(game.awayTeamId ?? '')]));
+  const positions = {
+    QB: ['passing', 'playerPassingStatInfoList'], HB: ['rushing', 'playerRushingStatInfoList'],
+    FB: ['rushing', 'playerRushingStatInfoList'], WR: ['receiving', 'playerReceivingStatInfoList'],
+    TE: ['receiving', 'playerReceivingStatInfoList'], DEF: ['defense', 'playerDefensiveStatInfoList'],
+    K: ['kicking', 'playerKickingStatInfoList'], P: ['punting', 'playerPuntingStatInfoList'],
+  };
+  const observations = {};
+  for (const player of players) {
+    const positionKey = progressionPositionKey(player.position, positions);
+    const bucket = positions[positionKey];
+    if (!bucket || !playedTeams.has(player.teamId) || !player.key || player.key.startsWith('fallback:')
+      || Number(player.injuryLength || 0) > 0) continue;
+    const rows = week?.[bucket[0]]?.[bucket[1]];
+    if (!Array.isArray(rows) || !rows.some((row) => String(row.teamId ?? '') === player.teamId)) continue;
+    const current = byWeek.get(weekIndex)?.get(player.key);
+    const hasStats = current && Object.values(current.totals).some((value) => Number.isFinite(value) && value !== 0);
+    observations[player.key] = { teamId: player.teamId, position: player.position, missing: !hasStats };
+  }
+  return observations;
+}
+
+function inactivityStreak(player, observations, history, seasonKey, weekIndex, schedule) {
+  if (!observations[player.key]?.missing) return 0;
+  const games = (schedule || []).filter((game) =>
+    Number(game.stageIndex ?? game.stage ?? -1) === 1 && Number(game.status) >= 2
+    && Number.isInteger(Number(game.weekIndex)) && Number(game.weekIndex) <= weekIndex
+    && [String(game.homeTeamId ?? ''), String(game.awayTeamId ?? '')].includes(player.teamId))
+    .sort((a, b) => Number(b.weekIndex) - Number(a.weekIndex));
+  let count = 0;
+  const seen = new Set();
+  for (const game of games) {
+    const index = Number(game.weekIndex);
+    if (seen.has(index)) return 0;
+    seen.add(index);
+    const observation = index === weekIndex ? observations[player.key]
+      : history.periods?.[`${seasonKey}_week_${index + 1}`]?.inactivityObservations?.[player.key];
+    if (!observation || observation.teamId !== player.teamId || observation.position !== player.position || !observation.missing) break;
+    count++;
+  }
+  return count;
+}
+
+function observedPoorStreak(player, positionKey, positionRule, observations, history, seasonKey, weekIndex, schedule, byWeek, rules) {
+  const games = (schedule || []).filter((game) =>
+    Number(game.stageIndex ?? game.stage ?? -1) === 1 && Number(game.status) >= 2
+    && Number.isInteger(Number(game.weekIndex)) && Number(game.weekIndex) <= weekIndex
+    && [String(game.homeTeamId ?? ''), String(game.awayTeamId ?? '')].includes(player.teamId))
+    .sort((a, b) => Number(b.weekIndex) - Number(a.weekIndex));
+  if (!games.length || Number(games[0].weekIndex) !== weekIndex) return 0;
+  const seen = new Set();
+  let count = 0;
+  for (const game of games) {
+    const index = Number(game.weekIndex);
+    if (seen.has(index)) return 0;
+    seen.add(index);
+    const observed = index === weekIndex ? observations[player.key]
+      : history.periods?.[`${seasonKey}_week_${index + 1}`]?.inactivityObservations?.[player.key];
+    const stats = byWeek.get(index)?.get(player.key)?.totals;
+    if (!observed || observed.missing || observed.teamId !== player.teamId || observed.position !== player.position
+      || !stats || !opportunityConfirmed(stats, positionKey, rules)
+      || !Object.keys(positionRule.weights).some((field) => numberOrNull(stats[field]) !== null)
+      || performanceMetrics(stats, player.ovr, positionRule, rules).score > Number(rules.poorGameScore)) break;
+    count++;
+  }
+  return count;
+}
+
 function getEvidenceAttributes(stats, player, rules, positionRule, maxAttributes = 3) {
   const seenFields = new Set();
   const seenEvidence = new Set();
@@ -903,6 +977,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   const byWeek = buildWeeklyPlayerStats(snapshot, aliases);
   addOffensiveLineProxies(snapshot, players, aliases, byWeek, Number(weekIndex));
   const weekPlayers = byWeek.get(Number(weekIndex)) || new Map();
+  const observations = inactivityObservations(snapshot, players, byWeek, Number(weekIndex));
   const recentAwardWinners = Array.from({ length: Math.min(4, Number(weekIndex) + 1) }, (_, index) =>
     index === 0 && Object.keys(awardWinners).length
       ? awardWinners
@@ -916,9 +991,34 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const positionRule = positionKey ? positionRules[positionKey] : null;
     if (!positionRule) continue;
     const current = weekPlayers.get(player.key);
-    if (!current || !opportunityConfirmed(current.totals, positionKey, weeklyRules)) continue;
+    if (!current || !opportunityConfirmed(current.totals, positionKey, weeklyRules)) {
+      const streak = inactivityStreak(player, observations, history, seasonKey, Number(weekIndex), snapshot?.schedule?.schedules);
+      const awareness = numberOrNull(player[weeklyRules.attributeFields?.Awareness]);
+      if (streak >= Number(weeklyRules.inactivityMinimumGames ?? 4) && awareness !== null && awareness > 0 && awareness <= 99) {
+        const allocation = attributeAllocation({
+          attribute: 'Awareness', field: weeklyRules.attributeFields.Awareness,
+          evidence: 'missingStatGames', currentValue: awareness,
+        }, -1);
+        const selected = recommendation({
+          player, seasonKey, direction: 'downgrade', performanceScore: 0,
+          selectionScore: Number(weeklyRules.minimumDowngradeSelectionPriority)
+            + Math.min(streak - Number(weeklyRules.inactivityMinimumGames ?? 4), 5),
+          selectionAdjustments: { consistency: 0, awardPoints: 0, teamAndPositionBalance: 0, seasonalGuidelineSoftPenalty: 0, ratingPopulationSoftPenalty: 0 },
+          consistency: { poorStreak: 0 }, stats: { missingStatGames: streak }, attributes: allocation,
+          explanation: `${streak} consecutive observed team games without a tracked stat line; this is possible inactivity, not confirmed DNP.`,
+        });
+        selected.changeContext = { possibleInactivity: true, inactivityGames: streak };
+        selected.minimumSelectionScore = Number(weeklyRules.minimumDowngradeSelectionPriority);
+        candidates.push(selected);
+      }
+      continue;
+    }
     const windows = getPlayerWindowScores(player.key, player, byWeek, Number(weekIndex), positionKey, weeklyRules);
     const currentMetrics = performanceMetrics(current.totals, player.ovr, positionRule, weeklyRules);
+    const verifiedPoorStreak = observedPoorStreak(
+      player, positionKey, positionRule, observations, history, seasonKey, Number(weekIndex),
+      snapshot?.schedule?.schedules, byWeek, weeklyRules,
+    );
     const rotatedAttributes = positionRule.attributes.length
       ? (() => {
         const offset = (parseInt(stableHash(player.key).slice(0, 8), 16) + Number(weekIndex)) % positionRule.attributes.length;
@@ -990,7 +1090,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
             + exceptionalConsistencyBonus + weeklyAwards
           - soft.penalty - populationAdjustment;
       }
-    } else if (windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)) {
+    } else if (windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)
+      || verifiedPoorStreak >= Number(weeklyRules.poorPerformanceMinimumGames ?? 3)) {
       const negative = selectNegativeAttributes(
         current.totals,
         player,
@@ -999,7 +1100,13 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         1,
         Number(weeklyRules.attributesPerRecommendation || 3),
       );
-      const tier = getNegativeTier(windows.performanceScore, weeklyRules.negativeChangeTiers);
+      const sustainedPoor = verifiedPoorStreak >= Number(weeklyRules.poorPerformanceMinimumGames ?? 3);
+      const awarenessValue = numberOrNull(player[weeklyRules.attributeFields?.Awareness]);
+      if (sustainedPoor && !negative.length && awarenessValue !== null && awarenessValue > 0 && awarenessValue <= 99) {
+        negative.push({ attribute: 'Awareness', field: weeklyRules.attributeFields.Awareness, evidence: 'currentGameScore', currentValue: awarenessValue, evidenceRatio: 1 });
+      }
+      const tier = getNegativeTier(windows.performanceScore, weeklyRules.negativeChangeTiers)
+        || (sustainedPoor ? { attributePoints: -1 } : null);
       if (negative.length && tier) {
         direction = 'downgrade';
         points = Number(tier.attributePoints);
@@ -1011,7 +1118,9 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     selectionAdjustments.consistency = direction === 'downgrade'
       ? poorConsistencyBonus + decliningTrendBonus
       : consistencyBonus + improvingTrendBonus + exceptionalConsistencyBonus;
-    const streak = direction === 'upgrade' ? windows.consistency.strongStreak : windows.consistency.poorStreak;
+    const awarenessPoorFallback = direction === 'downgrade' && evidence.some((item) => item.evidence === 'currentGameScore');
+    const streak = direction === 'upgrade' ? windows.consistency.strongStreak
+      : awarenessPoorFallback ? verifiedPoorStreak : windows.consistency.poorStreak;
     const maxPoints = Number(weeklyRules.maximumWeeklyAttributePoints ?? 5);
     const streakThreshold = Number(weeklyRules.streakGamesForExtraPoint ?? 3);
     const streakBonus = Math.max(0, streak - streakThreshold + 1);
@@ -1056,7 +1165,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         seasonalGuidelineSoftPenalty: direction === 'upgrade' ? Math.round(soft.penalty * 10) / 10 : 0,
         ratingPopulationSoftPenalty: direction === 'upgrade' ? populationAdjustment : 0,
       },
-      consistency: windows.consistency,
+      consistency: awarenessPoorFallback ? { ...windows.consistency, poorStreak: verifiedPoorStreak } : windows.consistency,
       awardPoints: direction === 'upgrade' ? weeklyAwards : 0,
       stats: allocation.some((item) => item.evidence === 'currentGameScore')
         ? { ...current.totals, currentGameScore: currentMetrics.score }
@@ -1097,6 +1206,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       candidate.selectionScore >= candidate.minimumSelectionScore).length,
     preferredMinimum: Number(weeklyRules.preferredRecommendationRange?.[0] || 0),
   };
+  record.inactivityObservations = observations;
   return record;
 }
 
@@ -1250,6 +1360,7 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
 
 const STAT_LABELS = {
   currentGameScore: 'Game performance score',
+  missingStatGames: 'Consecutive team games without recorded stats',
   teamRushAtt: 'Team carries', teamRushYds: 'Team rushing yards', teamRushYpc: 'Team yards per carry',
   teamPassAtt: 'Team pass attempts', teamSacks: 'Team sacks allowed', teamSackRate: 'Team sack rate',
   teamRunScore: 'Team run-blocking proxy', teamPassScore: 'Team pass-protection proxy', teamLineScore: 'Team line proxy score',
@@ -1304,6 +1415,9 @@ function recommendationEvidence(item) {
 }
 
 function recommendationWhy(record, item) {
+  if (item.changeContext?.possibleInactivity) {
+    return `No tracked stat line in ${item.changeContext.inactivityGames} consecutive observed team games. This may indicate inactivity, but it does not confirm a DNP; limited usage can look the same.`;
+  }
   const labels = [...new Set((item.attributes || []).map((attribute) => statLabel(attribute.evidence)).filter(Boolean))];
   const evidence = labels.length ? labels.join(', ').toLowerCase() : 'the available game statistics';
   const reasons = [`${item.direction === 'upgrade' ? 'Strong' : 'Poor'} performance in ${evidence}.`];
@@ -1763,6 +1877,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   if (old && Object.values(old.statusById || {}).some((status) => status.status === 'applied')) {
     record = {
       ...old,
+      ...(type === 'weekly' ? { inactivityObservations: current.inactivityObservations } : {}),
       latestSyncId: current.syncId,
       syncIds: [...new Set([...(old.syncIds || [old.syncId]), current.syncId].filter(Boolean))],
       updatedAt: new Date().toISOString(),
