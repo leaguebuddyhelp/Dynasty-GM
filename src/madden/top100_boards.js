@@ -66,7 +66,8 @@ export function calculateSeasonTop100(weeks) {
   }).sort((a, b) => b.seasonGrade - a.seasonGrade || b.appearances - a.appearances || String(a.name).localeCompare(String(b.name)));
   const selected = new Set();
   for (const position of SOLO_POSITION_ORDER) {
-    for (const item of ranked.filter((player) => (POSITION_ALIASES[player.position] || player.position) === position).slice(0, 2)) {
+    const minimum = ['WR', 'CB'].includes(position) ? 4 : 2;
+    for (const item of ranked.filter((player) => (POSITION_ALIASES[player.position] || player.position) === position).slice(0, minimum)) {
       selected.add(item.id);
     }
   }
@@ -78,10 +79,13 @@ export function calculateSeasonTop100(weeks) {
 }
 
 export function buildAllProTeams(players) {
-  return SOLO_POSITION_ORDER.map((position) => {
+  return SOLO_POSITION_ORDER.filter((position) => position !== 'FB').flatMap((position) => {
     const matching = players.filter((player) => (POSITION_ALIASES[player.position] || player.position) === position)
       .sort((a, b) => b.seasonGrade - a.seasonGrade || b.appearances - a.appearances || String(a.name).localeCompare(String(b.name)));
-    return { position, first: matching[0] || null, second: matching[1] || null };
+    const slots = ['WR', 'CB'].includes(position) ? 2 : 1;
+    return Array.from({ length: slots }, (_, index) => ({
+      position, first: matching[index] || null, second: matching[index + slots] || null,
+    }));
   });
 }
 

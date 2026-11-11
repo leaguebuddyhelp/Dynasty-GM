@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildAllProTeams, buildTop100Page, calculateSeasonTop100, publishTop100Boards } from '../src/madden/top100_boards.js';
+import { buildAllProEmbeds, buildAllProTeams, buildTop100Page, calculateSeasonTop100, publishTop100Boards } from '../src/madden/top100_boards.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
 import { computeWeeklyList } from '../src/madden/top_players.js';
 
@@ -22,6 +22,42 @@ assert.equal(yearly[0].seasonGrade, 99);
 assert.equal(yearly[0].appearances, 18);
 assert.equal(buildAllProTeams(yearly).find((slot) => slot.position === 'QB').second.id, 'player-1');
 assert.equal(buildAllProTeams(yearly).find((slot) => slot.position === 'K').first, null);
+const allProCandidates = [
+  ...['WR', 'CB'].flatMap((position) => Array.from({ length: 5 }, (_, index) => ({
+    id: `${position}-${index}`, name: `${position} ${index}`, position, team: 'Atlanta Falcons',
+    seasonGrade: 90 - index, appearances: 18,
+  }))),
+  { id: 'fb', name: 'Fullback', position: 'FB', team: 'Atlanta Falcons', seasonGrade: 99, appearances: 18 },
+];
+const allPro = buildAllProTeams(allProCandidates);
+assert.ok(!allPro.some((slot) => slot.position === 'FB'));
+for (const position of ['WR', 'CB']) {
+  const slots = allPro.filter((slot) => slot.position === position);
+  assert.equal(slots.length, 2);
+  assert.deepEqual(slots.map((slot) => slot.first.id), [`${position}-0`, `${position}-1`]);
+  assert.deepEqual(slots.map((slot) => slot.second.id), [`${position}-2`, `${position}-3`]);
+  const short = buildAllProTeams(allProCandidates.filter((player) => player.position !== position || player.id === `${position}-0`))
+    .filter((slot) => slot.position === position);
+  assert.equal(short[0].first.id, `${position}-0`);
+  assert.equal(short[1].first, null);
+  assert.ok(short.every((slot) => slot.second === null));
+}
+for (const embed of buildAllProEmbeds({ seasonKey: 'year_2026', seasonTop100: allProCandidates })) {
+  const text = embed.toJSON().description;
+  assert.equal((text.match(/\*\*WR\*\*/g) || []).length, 2);
+  assert.equal((text.match(/\*\*CB\*\*/g) || []).length, 2);
+  assert.doesNotMatch(text, /\*\*FB\*\*/);
+}
+const selectionPool = [
+  ...Array.from({ length: 100 }, (_, index) => ({ id: `high-${index}`, name: `High ${index}`, position: 'QB', grade: 99 - index * 0.01 })),
+  ...['WR', 'CB'].flatMap((position) => Array.from({ length: 4 }, (_, index) => ({
+    id: `${position}-reserved-${index}`, name: `${position} ${index}`, position, grade: 60 - index,
+  }))),
+];
+const reserved = calculateSeasonTop100({ 0: selectionPool });
+for (const position of ['WR', 'CB']) {
+  assert.equal(reserved.filter((player) => player.position === position).length, 4);
+}
 const fallback = calculateSeasonTop100({ 0: [weekly[0]], 1: [weekly[1]], 2: [weekly[1]] });
 assert.equal(fallback[0].id, 'player-1', 'Repeated appearances should be rewarded');
 assert.equal((await publishTop100Boards({ client: {}, guildId: 'guild', snapshot: { leagueId: 'league', info: { careerHubInfo: { seasonInfo: { seasonWeekType: 0 } } } } })).posted, false);
