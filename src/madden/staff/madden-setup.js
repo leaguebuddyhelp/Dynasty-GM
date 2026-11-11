@@ -31,6 +31,60 @@ export const SOLO_CHANNELS = Object.freeze([
   ['Draft Results', 'draft-results', 'Franchise Management'],
 ]);
 
+const NEW_BOARD_KEYS = new Set(['Weekly Top 100', 'Yearly Top 100', 'All-Pro Teams']);
+const boardUpdates = new Map();
+
+function channelPermissions(guild, userId, botId) {
+  return [
+    { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+    { id: userId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.UseApplicationCommands, PermissionFlagsBits.SendMessagesInThreads] },
+    { id: botId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.CreatePublicThreads, PermissionFlagsBits.SendMessagesInThreads, PermissionFlagsBits.ManageThreads] },
+  ];
+}
+
+export async function ensureNewBoardChannels(interaction) {
+  const denial = getSoloInteractionDenial({ userId: interaction.user?.id, guildId: interaction.guildId });
+  if (denial) throw new Error(denial);
+  const guild = interaction.guild;
+  if (!guild) throw new Error('Franchise HQ must be set up in your Discord server.');
+  if (boardUpdates.has(guild.id)) return boardUpdates.get(guild.id);
+  const update = (async () => {
+    const config = loadGuildMaddenConfig(guild.id);
+    if (config?.status !== 'complete') return { updated: 0 };
+    const map = config.compat?.maddenChannelMap;
+    if (!map) throw new Error('Franchise HQ channel mapping is missing. Use Create Franchise HQ to repair it.');
+    await guild.channels.fetch();
+    const boards = SOLO_CHANNELS.filter(([key]) => NEW_BOARD_KEYS.has(key));
+    const missing = boards.filter(([key]) => guild.channels.cache.get(map[key])?.type !== ChannelType.GuildText);
+    if (!missing.length) return { updated: 0 };
+    const me = guild.members.me || await guild.members.fetchMe();
+    if (!me.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      throw new Error('Give the bot Manage Channels to add the new Top 100 and All-Pro channels.');
+    }
+    const category = guild.channels.cache.get(map['Franchise HQ']);
+    if (category?.type !== ChannelType.GuildCategory) {
+      throw new Error('Franchise HQ category is missing. Use Create Franchise HQ to repair it.');
+    }
+    const permissions = channelPermissions(guild, getSoloModeConfig().userId, me.id);
+    for (const [key, name] of missing) {
+      let channel = guild.channels.cache.find((item) => item.type === ChannelType.GuildText
+        && item.name === name && item.parentId === category.id);
+      if (channel) await channel.permissionOverwrites.set(permissions);
+      else channel = await guild.channels.create({ name, type: ChannelType.GuildText, parent: category.id, permissionOverwrites: permissions });
+      map[key] = channel.id;
+      config.updatedAt = new Date().toISOString();
+      saveGuildMaddenConfig(guild.id, config);
+    }
+    return { updated: missing.length };
+  })();
+  boardUpdates.set(guild.id, update);
+  try {
+    return await update;
+  } finally {
+    boardUpdates.delete(guild.id);
+  }
+}
+
 export async function execute(interaction) {
   const denial = getSoloInteractionDenial({ userId: interaction.user?.id, guildId: interaction.guildId });
   if (!interaction.deferred && !interaction.replied) await interaction.deferReply({ flags: 64 });
@@ -46,11 +100,7 @@ export async function execute(interaction) {
   const oldMap = previous.compat?.maddenChannelMap || {};
   const managedKeys = new Set([...SOLO_CATEGORIES.map((spec) => spec.key), ...SOLO_CHANNELS.map(([key]) => key)]);
   const channelMap = Object.fromEntries(Object.entries(oldMap).filter(([key]) => managedKeys.has(key)));
-  const permissions = [
-    { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
-    { id: userId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.UseApplicationCommands, PermissionFlagsBits.SendMessagesInThreads] },
-    { id: me.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.CreatePublicThreads, PermissionFlagsBits.SendMessagesInThreads, PermissionFlagsBits.ManageThreads] },
-  ];
+  const permissions = channelPermissions(guild, userId, me.id);
   const config = {
     version: 3,
     status: 'incomplete',
