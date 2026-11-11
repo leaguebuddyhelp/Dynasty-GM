@@ -628,9 +628,9 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     if (!duplicate && options.client && options.guildId) {
       try {
         const { isDraftReadyForGrades, maybePostDraftGrades } = await import('./draft_grades_auto.js');
-        if (isDraftReadyForGrades(snapshot)) {
-          result.draftGrades = await maybePostDraftGrades(options.client, leagueId, options.guildId);
-        }
+        result.draftGrades = isDraftReadyForGrades(snapshot)
+          ? await maybePostDraftGrades(options.client, leagueId, options.guildId)
+          : { posted: false, reason: 'No completed draft rookies are present in team rosters.' };
       } catch (error) {
         result.draftGrades = { posted: false, error: error?.message || String(error) };
         console.error('[draft-grades-auto] sync-triggered grade check failed', error);

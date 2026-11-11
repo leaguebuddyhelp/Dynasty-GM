@@ -50,28 +50,23 @@ function resolveTeamNeedsForDraftGrades(teamName, needsByTeam = {}) {
   return hit?.[1] || ['BPA'];
 }
 
+function isDraftRookie(player) {
+  if (player?.yearsPro !== undefined && player?.yearsPro !== null) {
+    return Number(player.yearsPro) === 0;
+  }
+  return player?.isRookie === true;
+}
+
 function countDraftedRookies(snapshot) {
   return Object.values(snapshot?.rosters?.teams || {})
-    .flatMap((team) => team?.rosterInfoList || [])
-    .filter((player) => Number(player?.yearsPro ?? 1) === 0)
+    .flatMap((team) => team?.rosterInfoList || team?.rosterPlayerInfoList || [])
+    .filter(isDraftRookie)
     .length;
 }
 
 export function isDraftReadyForGrades(snapshot) {
   const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
-  const rawWeekType = seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId;
-  const weekType = Number(rawWeekType ?? snapshot?.stage ?? 1);
-  const hasExplicitWeekType = rawWeekType !== undefined && rawWeekType !== null;
-  const seasonTitle = String(seasonInfo.seasonTitle || '').toLowerCase();
-  const rookieCount = countDraftedRookies(snapshot);
-  const isOffseason = Number(seasonInfo.offSeasonStage || 0) > 0
-    || seasonTitle.includes('offseason')
-    || weekType === 3
-    || weekType === 8
-    || ((!hasExplicitWeekType || weekType !== 1)
-      && seasonInfo.isDraftActive === false
-      && seasonInfo.isLeagueStarted === true);
-  return isOffseason && seasonInfo.isDraftActive !== true && rookieCount >= 32;
+  return seasonInfo.isDraftActive !== true && countDraftedRookies(snapshot) > 0;
 }
 
 export function computeDraftGrades(snapshot) {
@@ -90,7 +85,7 @@ export function computeDraftGrades(snapshot) {
   teams.forEach(t => {
     const teamName = getFullTeamName(t, `Team ${t.teamId}`);
     const roster = rosters[t.teamId]?.rosterInfoList || [];
-    const rookies = roster.filter(p => Number(p.yearsPro ?? 1) === 0);
+    const rookies = roster.filter(isDraftRookie);
     if (!rookies.length) return;
     const teamNeeds = resolveTeamNeedsForDraftGrades(teamName, needsByTeam);
     const avgOvr = rookies.reduce((s, p) => s + Number(p.playerBestOvr || 0), 0) / rookies.length;

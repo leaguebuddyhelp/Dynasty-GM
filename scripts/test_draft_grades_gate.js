@@ -21,51 +21,36 @@ assert.equal(isDraftReadyForGrades(snapshot({
   seasonInfo: { seasonWeekType: 1, isDraftActive: true },
 })), false);
 assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 3, isDraftActive: false },
+  yearsPro: [0],
+  seasonInfo: { seasonWeekType: 1, isDraftActive: false },
 })), true);
 assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 8, isDraftActive: false },
+  yearsPro: [0],
+  seasonInfo: { isDraftActive: false },
 })), true);
 assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 0, isDraftActive: false, isLeagueStarted: true },
+  yearsPro: [0],
+  seasonInfo: {},
 })), true);
 assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 1, offSeasonStage: 1, isDraftActive: false, isLeagueStarted: true },
-})), true);
-assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 1, seasonTitle: 'Offseason', isDraftActive: false },
-})), true);
-assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { offSeasonStage: 3, isDraftActive: false },
-})), true);
-assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { isDraftActive: false, isLeagueStarted: true },
-})), true);
-assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 1, isDraftActive: false, isLeagueStarted: true },
+  yearsPro: [0],
+  seasonInfo: { isDraftActive: true },
 })), false);
 assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { seasonWeekType: 1, offSeasonStage: 0, isDraftActive: false, isLeagueStarted: true },
+  yearsPro: [1, 2, 3],
+  seasonInfo: { isDraftActive: false },
 })), false);
 assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 31 }, () => 0),
-  seasonInfo: { seasonWeekType: 3, isDraftActive: false },
+  yearsPro: [1],
+  seasonInfo: { isDraftActive: true },
 })), false);
 assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 224 }, () => 0),
-  seasonInfo: { seasonWeekType: 0, isDraftActive: false },
+  yearsPro: [null],
+  seasonInfo: { isDraftActive: false },
 })), false);
-assert.equal(isDraftReadyForGrades(snapshot({
-  yearsPro: Array.from({ length: 32 }, () => 0),
-  seasonInfo: { offSeasonStage: 1, isDraftActive: true },
-})), false);
-console.log('PASS draft grades recognize offseason weeks and wait until the draft is complete');
+const rookieFlagSnapshot = snapshot({
+  seasonInfo: { isDraftActive: false },
+});
+rookieFlagSnapshot.rosters.teams['1'].rosterInfoList = [{ isRookie: true }];
+assert.equal(isDraftReadyForGrades(rookieFlagSnapshot), true);
+console.log('PASS draft grades post-ready after any rookie appears and the draft is not active');
