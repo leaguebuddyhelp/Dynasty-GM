@@ -55,7 +55,19 @@ assert.equal(report.sourceValidation.teamCount, 32);
 const leaderboardEmbed = buildLeaderboardEmbed(report).toJSON();
 assert.match(leaderboardEmbed.title, /Player Overalls/);
 assert.match(leaderboardEmbed.description, /🥇/);
+assert.match(leaderboardEmbed.description, /\*\*71 OVR\*\*/);
+assert.doesNotMatch(leaderboardEmbed.description, /form|Madden OVR|\(\+\d+\)/i);
 assert.doesNotMatch(leaderboardEmbed.footer.text, /snapshot-1/);
+const rankedReport = buildSoloReportSnapshot({
+  ...snapshot,
+  rosters: { teams: { 1: { rosterInfoList: Array.from({ length: 12 }, (_, index) => ({
+    rosterId: `qb-${index}`, firstName: 'Player', lastName: String(index).padStart(2, '0'),
+    position: 'QB', playerBestOvr: 70 + index,
+  })) } } },
+});
+assert.deepEqual(rankedReport.leaderboards.QB.map((entry) => entry.ovr), [81, 80, 79, 78, 77, 76, 75, 74, 73, 72]);
+assert.equal(rankedReport.leaderboards.QB.every((entry) => !('performanceRating' in entry)), true);
+assert.equal(buildLeaderboardEmbed(rankedReport).toJSON().description.split('\n').filter((line) => /OVR\*\*/.test(line)).length, 10);
 const teamOverallsEmbed = buildTeamOverallsEmbed(report).toJSON();
 assert.match(teamOverallsEmbed.description, /OFF \*\*\d+\*\* · DEF \*\*\d+\*\*/);
 assert.doesNotMatch(teamOverallsEmbed.description, /Snapshot/);
@@ -110,7 +122,8 @@ const path = await import('node:path');
 const { Collection } = await import('discord.js');
 const { saveGuildMaddenConfig } = await import('../src/shared/madden_guild_config.js');
 const { getMaddenLeagueSnapshotPath } = await import('../src/leaguebuddy/paths.js');
-const { publishSoloSyncReports } = await import('../src/madden/solo_reports.js');
+const { publishSoloSyncReports, loadSoloReport } = await import('../src/madden/solo_reports.js');
+const { persistSyncHistory } = await import('../src/madden/madden_sync_history.js');
 const { SOLO_CHANNELS } = await import('../src/madden/staff/madden-setup.js');
 const { updateWeeklyGameLog } = await import('../src/madden/weekly_game_log.js');
 const snapshotFile = getMaddenLeagueSnapshotPath(snapshot.leagueId);
@@ -168,6 +181,14 @@ const originalPlayerMessage = (await playerChannel.messages.fetchPinned())[0];
 const originalTeamMessage = (await teamChannel.messages.fetchPinned())[0];
 assert.ok(originalPlayerMessage);
 assert.ok(originalTeamMessage);
+await persistSyncHistory({ leagueId: snapshot.leagueId, snapshot, summary: {} });
+const legacyReportFile = path.join(path.dirname(snapshotFile), '..', 'solo_reports', snapshot.leagueId, `${snapshot.syncId}.json`);
+const legacyReport = JSON.parse(await fs.readFile(legacyReportFile, 'utf8'));
+legacyReport.version = 1;
+legacyReport.leaderboards.QB = [legacyReport.leaderboards.QB[1]];
+await fs.writeFile(legacyReportFile, JSON.stringify(legacyReport));
+const recoveredReport = await loadSoloReport(snapshot.leagueId, snapshot.syncId);
+assert.deepEqual(recoveredReport.leaderboards.QB.map((entry) => entry.ovr), [71, 70], 'Legacy boards must rebuild from the archived roster, not the old top ten');
 const nextSnapshot = {
   ...snapshot,
   syncId: 'snapshot-2',

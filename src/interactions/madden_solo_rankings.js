@@ -30,7 +30,7 @@ export async function execute(interaction) {
     });
   } catch (error) {
     console.error('[solo-rankings] failed to load report snapshot', error);
-    const message = 'This historical leaderboard snapshot is unavailable.';
+    const message = 'This leaderboard snapshot is unavailable. Run `/sync` to refresh the player overalls board.';
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({ content: message, flags: 64 });
     } else {
