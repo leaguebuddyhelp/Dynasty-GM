@@ -51,10 +51,11 @@ function resolveTeamNeedsForDraftGrades(teamName, needsByTeam = {}) {
 }
 
 function isDraftRookie(player) {
+  if (player?.isRookie === true) return true;
   if (player?.yearsPro !== undefined && player?.yearsPro !== null) {
     return Number(player.yearsPro) === 0;
   }
-  return player?.isRookie === true;
+  return false;
 }
 
 function countDraftedRookies(snapshot) {
@@ -83,7 +84,7 @@ export function computeDraftGrades(snapshot) {
   };
   teams.forEach(t => {
     const teamName = getFullTeamName(t, `Team ${t.teamId}`);
-    const roster = rosters[t.teamId]?.rosterInfoList || [];
+    const roster = rosters[t.teamId]?.rosterInfoList || rosters[t.teamId]?.rosterPlayerInfoList || [];
     const rookies = roster.filter(isDraftRookie);
     if (!rookies.length) return;
     const teamNeeds = resolveTeamNeedsForDraftGrades(teamName, needsByTeam);
@@ -179,6 +180,16 @@ export async function maybePostDraftGrades(client, leagueId, guildId = null) {
     const seasonInfo = snapshot?.info?.careerHubInfo?.seasonInfo || {};
     const weekType = Number(seasonInfo.seasonWeekType ?? seasonInfo.seasonWeekTypeId ?? snapshot?.stage ?? 1);
     const rookieCount = countDraftedRookies(snapshot);
+    console.info('[draft-grades-auto] checking synced rosters', {
+      leagueId,
+      guildId,
+      rookieCount,
+      teamRosterCount: Object.keys(snapshot?.rosters?.teams || {}).length,
+      isDraftActive: seasonInfo.isDraftActive ?? null,
+      weekType,
+      offSeasonStage: seasonInfo.offSeasonStage ?? null,
+      seasonYear: seasonInfo.calendarYear ?? snapshot?.info?.calendarYear ?? null,
+    });
     // Keep checking eligible offseason syncs until grades post successfully.
     if (!isDraftReadyForGrades(snapshot)) {
       console.warn('[draft-grades-auto] skipped: draft completion criteria were not met', {

@@ -53,4 +53,9 @@ const rookieFlagSnapshot = snapshot({
 });
 rookieFlagSnapshot.rosters.teams['1'].rosterInfoList = [{ isRookie: true }];
 assert.equal(isDraftReadyForGrades(rookieFlagSnapshot), true);
+const rookieFlagWithExperienceSnapshot = snapshot({
+  seasonInfo: { isDraftActive: false },
+});
+rookieFlagWithExperienceSnapshot.rosters.teams['1'].rosterInfoList = [{ yearsPro: 1, isRookie: true }];
+assert.equal(isDraftReadyForGrades(rookieFlagWithExperienceSnapshot), true);
 console.log('PASS draft grades post-ready after any rookie appears and the draft is not active');
