@@ -13,12 +13,12 @@ function historyPath(leagueId, seasonKey, weekNumber) {
 }
 
 export function getNewlyCompletedMockWeek(snapshot, previousSnapshot) {
-  if (!snapshot || !previousSnapshot) return null;
-  const seasonKey = getMaddenSeasonKey(snapshot);
-  if (seasonKey !== getMaddenSeasonKey(previousSnapshot)) return null;
+  if (!snapshot) return null;
   const latest = getLatestReliableRegularSeasonWeekIndex(snapshot);
-  const previous = getLatestReliableRegularSeasonWeekIndex(previousSnapshot);
-  if (latest === null || previous === null || latest <= previous) return null;
+  if (latest === null) return null;
+  const sameSeason = previousSnapshot && getMaddenSeasonKey(snapshot) === getMaddenSeasonKey(previousSnapshot);
+  const previous = sameSeason ? getLatestReliableRegularSeasonWeekIndex(previousSnapshot) : null;
+  if (previous !== null && latest < previous) return null;
   return latest + 1;
 }
 
@@ -56,7 +56,7 @@ export async function publishWeeklyMockDraft({ client, guildId, snapshot, previo
   };
   await command.execute(captureInteraction);
   if (!payload?.embeds?.length) {
-    throw new Error('The existing mock-draft command did not produce a publishable report.');
+    throw new Error(payload?.content || 'The existing mock-draft command did not produce a publishable report.');
   }
 
   const message = await channel.send({ embeds: payload.embeds, components: [] });

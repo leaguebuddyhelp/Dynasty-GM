@@ -14,6 +14,10 @@ assert.equal(suppliedClass, path.resolve('bundled_data/draft_classes/Madden 26 C
 const suppliedProspects = loadMaddenDraftClassArray('cus_02');
 assert.ok(suppliedProspects.length > 0);
 assert.equal(Number(suppliedProspects[0].class), 2);
+const firstClass = loadMaddenDraftClassArray('cus_01');
+assert.equal(findMaddenDraftClassFile('CUS01'), path.resolve('bundled_data/draft_classes/Madden 26 CUS01 - Big Board.json'));
+assert.ok(firstClass.length >= 32);
+assert.ok(firstClass.every((prospect) => Number(prospect.class) === 1), 'CUS01 must contain first-year prospects');
 
 for (const seasonYear of [0, 1, 2, 3, 9, 99]) {
   const snapshot = { info: { careerHubInfo: { seasonInfo: { seasonYear } } } };
