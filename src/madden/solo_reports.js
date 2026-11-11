@@ -8,6 +8,7 @@ import { getDataFilePath } from '../leaguebuddy/paths.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getMaddenChannelId } from '../shared/madden_metadata.js';
 import { formatTeamLabelWithEmoji } from '../shared/madden_visuals.js';
+import { performanceAdjustedRatings } from './progression.js';
 
 export const SOLO_POSITION_ORDER = [
   'QB', 'HB', 'FB', 'WR', 'TE',
@@ -139,6 +140,7 @@ function specialTeamsOverall(players, rules) {
 }
 
 export function buildSoloReportSnapshot(snapshot, { syncId = snapshot?.syncId, rules = readRules() } = {}) {
+  const performanceRatings = performanceAdjustedRatings(snapshot, rules.progression);
   const teams = Array.isArray(snapshot?.teams?.leagueTeamInfoList) ? snapshot.teams.leagueTeamInfoList : [];
   const players = flattenRoster(snapshot);
   const byPosition = new Map(SOLO_POSITION_ORDER.map((position) => [position, []]));
@@ -153,7 +155,7 @@ export function buildSoloReportSnapshot(snapshot, { syncId = snapshot?.syncId, r
   const leaderboards = Object.fromEntries(SOLO_POSITION_ORDER.map((position) => [
     position,
     byPosition.get(position)
-      .sort((a, b) => b.ovr - a.ovr || playerName(a).localeCompare(playerName(b)))
+      .sort((a, b) => (performanceRatings.get(b.playerKey)?.adjusted ?? b.ovr) - (performanceRatings.get(a.playerKey)?.adjusted ?? a.ovr) || playerName(a).localeCompare(playerName(b)))
       .slice(0, 10)
       .map((player, index) => ({
         rank: index + 1,
@@ -161,6 +163,7 @@ export function buildSoloReportSnapshot(snapshot, { syncId = snapshot?.syncId, r
         player: playerName(player),
         team: player.teamName,
         ovr: player.ovr,
+        performanceRating: performanceRatings.get(player.playerKey) || null,
       })),
   ]));
 
@@ -260,11 +263,11 @@ export function buildLeaderboardEmbed(report, positionIndex = 0) {
   const position = SOLO_POSITION_ORDER[positionIndex] || SOLO_POSITION_ORDER[0];
   const entries = report.leaderboards?.[position] || [];
   const lines = entries.length
-    ? entries.map((entry) => `${rankBadge(entry.rank)} **${entry.player}** · ${formatTeamLabelWithEmoji(entry.team)} · **${entry.ovr} OVR**`)
+    ? entries.map((entry) => `${rankBadge(entry.rank)} **${entry.player}** · ${formatTeamLabelWithEmoji(entry.team)} · **${entry.performanceRating?.adjusted ?? entry.ovr} form** · ${entry.ovr} Madden OVR${entry.performanceRating?.change ? ` (${entry.performanceRating.change > 0 ? '+' : ''}${entry.performanceRating.change})` : ''}`)
     : ['No players at this position have imported ratings yet.'];
   return new EmbedBuilder()
     .setTitle(`🏈 Player Overalls · ${position}`)
-    .setDescription(`**Top players by Madden OVR**\n\n${lines.join('\n')}`)
+    .setDescription(`**Performance-adjusted form rankings** · Madden OVR is unchanged\n\n${lines.join('\n')}`)
     .addFields({
       name: 'Season · Week',
       value: `${report.season ?? 'Unknown'} · ${report.week ?? 'Unknown'}`,

@@ -599,6 +599,17 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     const result = duplicate || { ...summary, validation };
     if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
       try {
+        const { publishWeeklyAwards } = await import('./awards.js');
+        result.weeklyAwards = await publishWeeklyAwards({
+          client: options.client, guildId: options.guildId, snapshot,
+        });
+      } catch (error) {
+        result.weeklyAwards = { posted: false, error: error?.message || String(error) };
+        console.error('[awards] failed to publish weekly awards', error);
+      }
+    }
+    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+      try {
         const { publishSoloSyncReports } = await import('./solo_reports.js');
         const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
         result.soloReports = await publishSoloSyncReports({
@@ -613,13 +624,11 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     }
     if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
       try {
-        const { publishWeeklyAwards } = await import('./awards.js');
-        result.weeklyAwards = await publishWeeklyAwards({
-          client: options.client, guildId: options.guildId, snapshot,
-        });
+        const { publishTop100Boards } = await import('./top100_boards.js');
+        result.top100 = await publishTop100Boards({ client: options.client, guildId: options.guildId, snapshot });
       } catch (error) {
-        result.weeklyAwards = { posted: false, error: error?.message || String(error) };
-        console.error('[awards] failed to publish weekly awards', error);
+        result.top100 = { posted: false, error: error?.message || String(error) };
+        console.error('[top100] failed to publish boards', error);
       }
     }
     if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
@@ -750,6 +759,11 @@ async function execute(interaction) {
         ? `Posted for week ${summary.weeklyAwards.weekNumber}`
         : summary.weeklyAwards.error || summary.weeklyAwards.reason || 'Not posted'
       : null;
+    const top100Status = summary.top100
+      ? summary.top100.posted
+        ? `Week ${summary.top100.weekNumber} updated${summary.top100.seasonPosted ? '; yearly Top 100 and All-Pro teams updated' : summary.top100.missingWeeks?.length ? `; season reports waiting for weeks ${summary.top100.missingWeeks.join(', ')}` : ''}`
+        : summary.top100.error || summary.top100.reason || 'Not posted'
+      : null;
     const draftGradesStatus = summary.draftGrades
       ? summary.draftGrades.posted
         ? 'Draft grades posted in Draft Results'
@@ -775,6 +789,7 @@ async function execute(interaction) {
         ...(soloReportStatus ? [{ name: 'Solo reports', value: soloReportStatus, inline: false }] : []),
         ...(progressionStatus ? [{ name: 'Player progression', value: progressionStatus, inline: false }] : []),
         ...(weeklyAwardsStatus ? [{ name: 'Weekly awards', value: weeklyAwardsStatus, inline: false }] : []),
+        ...(top100Status ? [{ name: 'Top 100', value: top100Status, inline: false }] : []),
         ...(draftGradesStatus ? [{ name: 'Draft grades', value: draftGradesStatus, inline: false }] : []),
         ...(importSummaryStatus ? [{ name: 'Data import summary', value: importSummaryStatus, inline: false }] : []),
         ...(weeklyMockStatus ? [{ name: 'Weekly mock draft', value: weeklyMockStatus, inline: false }] : []),

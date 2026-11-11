@@ -825,6 +825,47 @@ function selectNegativeAttributes(stats, player, position, rules, games = 1, max
   return selected;
 }
 
+export function performanceAdjustedRatings(snapshot, rules = readRules().progression) {
+  const info = snapshot?.info?.careerHubInfo?.seasonInfo || {};
+  const type = Number(info.seasonWeekType ?? 1);
+  if (type === 0) return new Map();
+  const currentWeek = Number(snapshot?.currentWeek);
+  if (type === 1 && (!Number.isInteger(currentWeek) || currentWeek < 2)) return new Map();
+  const cap = type === 1 ? Math.min(17, currentWeek - 2) : 17;
+  const endWeek = getLatestReliableRegularSeasonWeekIndex(snapshot, cap);
+  if (endWeek === null || endWeek < 0) return new Map();
+  const { players, aliases } = getRosterPlayers(snapshot);
+  const byWeek = buildWeeklyPlayerStats(snapshot, aliases, { requestedWeekIndex: endWeek });
+  addOffensiveLineProxies(snapshot, players, aliases, byWeek, endWeek);
+  const recentAwards = Array.from({ length: Math.min(4, endWeek + 1) }, (_, index) =>
+    readWeeklyAwardResults(snapshot.leagueId, endWeek + 1 - index, getMaddenSeasonKey(snapshot)));
+  const ratings = new Map();
+  for (const player of players) {
+    if (player.ovr === null) continue;
+    const positionKey = progressionPositionKey(player.position, rules.weekly.positions);
+    if (!positionKey) continue;
+    const windows = getPlayerWindowScores(player.key, player, byWeek, endWeek, positionKey, rules.weekly);
+    if (!windows.latest || !opportunityConfirmed(windows.latest.row.totals, positionKey, rules.weekly)) continue;
+    const positionRule = rules.weekly.positions[positionKey];
+    const positive = getEvidenceAttributes(windows.latest.row.totals, player, rules.weekly, positionRule, 1).length > 0;
+    const negative = selectNegativeAttributes(windows.latest.row.totals, player, positionKey, rules.weekly, 1, 1).length > 0;
+    const score = windows.currentScore * 0.65 + windows.recentScore * 0.35;
+    let change = Math.round(clamp((score - 55) / 12, -3, 3));
+    if (change > 0 && !positive) change = 0;
+    if (change < 0 && !negative) change = 0;
+    if (change > 0) {
+      if (windows.consistency.strongStreak >= 3) change += 1;
+      if (numberOrNull(player.yearsPro) !== null && Number(player.yearsPro) <= 2 && score >= 70) change += 1;
+      const awardWeeks = recentAwards.filter((winners) => getWeeklyAwardPoints(winners, player, players, aliases, rules.weekly) > 0).length;
+      if (awardWeeks >= 2 && score >= 70) change += 1;
+    } else if (change < 0 && windows.consistency.poorStreak >= 3) change -= 1;
+    change = clamp(change, -5, 5);
+    const adjusted = clamp(player.ovr + change, 0, 99);
+    ratings.set(player.key, { adjusted, change: adjusted - player.ovr, score: Math.round(score * 10) / 10, lastWeek: windows.latest.weekIndex + 1 });
+  }
+  return ratings;
+}
+
 function allTotals(rows) {
   const totals = {};
   for (const row of rows) {
@@ -862,6 +903,10 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   const byWeek = buildWeeklyPlayerStats(snapshot, aliases);
   addOffensiveLineProxies(snapshot, players, aliases, byWeek, Number(weekIndex));
   const weekPlayers = byWeek.get(Number(weekIndex)) || new Map();
+  const recentAwardWinners = Array.from({ length: Math.min(4, Number(weekIndex) + 1) }, (_, index) =>
+    index === 0 && Object.keys(awardWinners).length
+      ? awardWinners
+      : readWeeklyAwardResults(snapshot.leagueId, weekNumber - index, seasonKey));
   const population = populationSnapshot(players, rules);
   const candidates = [];
   for (const player of players) {
@@ -893,6 +938,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const soft = positiveSeasonPenalty(positivePointsUsed, seasonKeyOvr, rules.offseason);
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
     const weeklyAwards = getWeeklyAwardPoints(awardWinners, player, players, aliases, weeklyRules);
+    const awardWeeks = recentAwardWinners.filter((winners) =>
+      getWeeklyAwardPoints(winners, player, players, aliases, weeklyRules) > 0).length;
     const breakout = weeklyAwards > 0
       && player.ovr <= Number(weeklyRules.breakoutMaximumOvr ?? 70)
       && currentMetrics.score >= Number(weeklyRules.breakoutMinimumGameScore ?? 85);
@@ -956,6 +1003,14 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const maxPoints = Number(weeklyRules.maximumWeeklyAttributePoints ?? 5);
     const streakThreshold = Number(weeklyRules.streakGamesForExtraPoint ?? 3);
     const streakBonus = Math.max(0, streak - streakThreshold + 1);
+    const youngMomentum = direction === 'upgrade'
+      && numberOrNull(player.yearsPro) !== null
+      && Number(player.yearsPro) <= Number(weeklyRules.youngMomentumMaxYearsPro ?? 2)
+      && currentMetrics.score >= Number(weeklyRules.momentumMinimumGameScore ?? 85)
+      && streak >= Number(weeklyRules.momentumMinimumStrongStreak ?? 2);
+    const awardMomentum = direction === 'upgrade'
+      && awardWeeks >= Number(weeklyRules.momentumAwardWeeks ?? 2)
+      && currentMetrics.score >= Number(weeklyRules.momentumMinimumGameScore ?? 85);
     const allocation = evidence.flatMap((attribute, index) => {
       const ratio = attribute.evidenceRatio ?? 1;
       let magnitude = 1;
@@ -973,6 +1028,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         magnitude += 1;
       }
       if (index === 0 || ratio >= Number(weeklyRules.streakEvidenceRatio ?? 1.3)) magnitude += streakBonus;
+      if (index === 0 && !breakout) magnitude += Number(youngMomentum) + Number(awardMomentum);
       magnitude = Math.min(maxPoints, magnitude);
       return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
     });
@@ -997,7 +1053,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       seasonToDateScore: windows.seasonScore,
       explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
-    selected.changeContext = { breakout, streakBonus, teamLineProxy: positionKey === 'OL' };
+    selected.changeContext = { breakout, streakBonus, youngMomentum, awardMomentum, teamLineProxy: positionKey === 'OL' };
     selected.minimumSelectionScore = direction === 'upgrade'
       ? Number(weeklyRules.minimumUpgradeSelectionScore)
       : Number(weeklyRules.minimumDowngradeSelectionPriority);
@@ -1244,6 +1300,8 @@ function recommendationWhy(record, item) {
   if (item.changeContext?.breakout) {
     reasons.push('Exceptional play for a lower-rated player earned a larger boost.');
   }
+  if (item.changeContext?.youngMomentum) reasons.push('Sustained strong play accelerated this young player’s development.');
+  if (item.changeContext?.awardMomentum) reasons.push('Multiple recent weekly awards increased the strongest change.');
   const streak = item.direction === 'upgrade' ? item.consistency?.strongStreak : item.consistency?.poorStreak;
   if (item.changeContext?.streakBonus > 0) reasons.push(`${streak} consecutive ${item.direction === 'upgrade' ? 'strong' : 'poor'} games increased some changes.`);
   return reasons.join(' ');

@@ -20,6 +20,7 @@ export const SOLO_COMMAND_MODULES = Object.freeze([
 export const SOLO_INTERACTION_MODULES = Object.freeze([
   '../interactions/madden_setup_dashboard.js',
   '../interactions/madden_solo_rankings.js',
+  '../interactions/madden_top100_board.js',
   '../interactions/madden_progression.js',
   '../interactions/madden_roster_page.js',
   '../interactions/madden_roster_select.js',

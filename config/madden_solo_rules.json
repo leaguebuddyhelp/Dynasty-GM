@@ -75,12 +75,17 @@
       "breakoutMinimumGameScore": 85,
       "breakoutEliteGameScore": 95,
       "breakoutBasePoints": 3,
+      "youngMomentumMaxYearsPro": 2,
+      "momentumMinimumGameScore": 85,
+      "momentumMinimumStrongStreak": 2,
+      "momentumAwardWeeks": 2,
       "positiveChangeTiers": [
         { "minimumScore": 65, "attributePoints": 1 },
         { "minimumScore": 82, "attributePoints": 1 },
         { "minimumScore": 90, "attributePoints": 1 }
       ],
       "negativeChangeTiers": [
+        { "maximumScore": 38, "attributePoints": -1 },
         { "maximumScore": 28, "attributePoints": -1 },
         { "maximumScore": 20, "attributePoints": -1 },
         { "maximumScore": 12, "attributePoints": -1 },
@@ -200,7 +205,7 @@
       "improvingTrendSelectionModifier": 0.1,
       "decliningTrendSelectionModifier": 0.1,
       "minimumUpgradePerformanceScore": 65,
-      "maximumDowngradePerformanceScore": 28,
+      "maximumDowngradePerformanceScore": 38,
       "minimumDowngradeSelectionPriority": 60,
       "positions": {
         "QB": {

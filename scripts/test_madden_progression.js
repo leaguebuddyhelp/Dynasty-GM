@@ -7,6 +7,7 @@ import {
   buildOffseasonProgressionRecommendations,
   buildRecommendationStatusButtons,
   buildWeeklyProgressionRecommendations,
+  performanceAdjustedRatings,
   isOffseason,
 } from '../src/madden/progression.js';
 
@@ -131,6 +132,7 @@ rules.weekly.positionBalancePenalty = 0;
 rules.weekly.outstandingGameScore = 101;
 rules.weekly.severeGameScore = -1;
 rules.weekly.streakEvidenceRatio = 0;
+rules.weekly.youngMomentumMaxYearsPro = -1;
 rules.weekly.attributesPerRecommendation = 3;
 rules.weekly.meaningfulOpportunityMinimums.QB = { passAtt: 1 };
 rules.weekly.positions.QB = {
@@ -241,6 +243,24 @@ const strongStreak = recommendations([
 ], 3)[0];
 assert.equal(strongStreak.consistency.strongStreak, 3);
 assert.equal(strongStreak.attributes[0].points, 2);
+const momentumRules = structuredClone(rules);
+momentumRules.weekly.youngMomentumMaxYearsPro = 2;
+const momentumSnapshot = snapshot([week(0, { passYds: 90 }), week(1, { passYds: 90 }), week(2, { passYds: 90 })]);
+momentumSnapshot.currentWeek = 4;
+const momentumRecord = buildWeeklyProgressionRecommendations(momentumSnapshot, { weekIndex: 2, rules: momentumRules });
+assert.equal(momentumRecord.recommendations[0].attributes[0].points, 3);
+assert.equal(momentumRecord.recommendations[0].changeContext.youngMomentum, true);
+const youngForm = performanceAdjustedRatings(momentumSnapshot, momentumRules).get('roster:qb-1');
+assert.equal(youngForm.adjusted, 85);
+const veteranSnapshot = structuredClone(momentumSnapshot);
+veteranSnapshot.rosters.teams[1].rosterInfoList[0].yearsPro = 8;
+assert.equal(performanceAdjustedRatings(veteranSnapshot, momentumRules).get('roster:qb-1').adjusted, 84);
+const strugglingSnapshot = snapshot([week(0, { passYds: 0, passInts: 3, passAtt: 30 }), week(1, { passYds: 0, passInts: 3, passAtt: 30 }), week(2, { passYds: 0, passInts: 3, passAtt: 30 })], player({ playerBestOvr: 95 }));
+strugglingSnapshot.currentWeek = 4;
+assert.equal(performanceAdjustedRatings(strugglingSnapshot, momentumRules).get('roster:qb-1').adjusted, 91);
+const incompleteForm = snapshot([week(0, { passYds: 0, passAtt: 0 })]);
+incompleteForm.currentWeek = 2;
+assert.equal(performanceAdjustedRatings(incompleteForm, momentumRules).size, 0);
 const brokenStreak = recommendations([
   week(0, { passYds: 90 }),
   week(1, { passYds: 10 }),
