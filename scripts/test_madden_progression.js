@@ -231,6 +231,57 @@ assert.equal(upgrade.direction, 'upgrade');
 assert.equal(upgrade.attributes[0].points, 1);
 assert.equal(upgrade.windows.currentGame, 90);
 
+const awarenessRules = structuredClone(rules);
+awarenessRules.weekly.awarenessUpgradeEveryWeeks = 3;
+const awarenessPlayer = player({ awareRating: 75 });
+const awarenessWeeks = Array.from({ length: 3 }, (_, index) => {
+  const record = buildWeeklyProgressionRecommendations(snapshot([week(index, { passYds: 90 })], awarenessPlayer), {
+    weekIndex: index, rules: awarenessRules,
+  });
+  return record.recommendations[0];
+});
+const awarenessChanges = awarenessWeeks.filter((item) => item.attributes.some((attribute) => attribute.attribute === 'Awareness'));
+assert.equal(awarenessChanges.length, 1, 'Awareness should rotate rather than be included every week');
+const awarenessChange = awarenessChanges[0].attributes.find((attribute) => attribute.attribute === 'Awareness');
+assert.equal(awarenessChange.currentValue, 75);
+assert.ok(awarenessChange.points > 0 && awarenessChange.points <= 5);
+assert.equal(awarenessChange.evidence, 'currentGameScore');
+assert.match(JSON.stringify(buildProgressionCardEmbed({ type: 'weekly', seasonKey: 'year_2026', generatedAt: new Date().toISOString() }, awarenessChanges[0]).toJSON()), /Game performance score/);
+const noAwarenessOpportunity = buildWeeklyProgressionRecommendations(snapshot([week(0, { passYds: 90, passAtt: 0 })], awarenessPlayer), {
+  weekIndex: 0, rules: awarenessRules,
+});
+assert.equal(noAwarenessOpportunity.recommendations.length, 0);
+for (const value of [undefined, 99]) {
+  const roster = player({ awareRating: value });
+  for (let index = 0; index < 3; index++) {
+    const result = buildWeeklyProgressionRecommendations(snapshot([week(index, { passYds: 90 })], roster), { weekIndex: index, rules: awarenessRules });
+    assert.ok(result.recommendations.every((item) => item.attributes.every((attribute) => attribute.attribute !== 'Awareness')));
+  }
+}
+for (let index = 0; index < 3; index++) {
+  const result = buildWeeklyProgressionRecommendations(snapshot([week(index, { passYds: 0, passInts: 3, passAtt: 30 })], awarenessPlayer), { weekIndex: index, rules: awarenessRules });
+  assert.ok(result.recommendations.every((item) => item.attributes.every((attribute) => attribute.attribute !== 'Awareness')));
+}
+const allPositionAwarenessRules = structuredClone(baseRules);
+allPositionAwarenessRules.weekly.awarenessUpgradeEveryWeeks = 1;
+const awareLine = structuredClone(lineSnapshot);
+awareLine.rosters.teams[1].rosterInfoList[0].awareRating = 70;
+const awareSpecialists = structuredClone(specialistSnapshot);
+awareSpecialists.rosters.teams[1].rosterInfoList.forEach((entry) => { entry.awareRating = 70; });
+Object.assign(awareSpecialists.weeklyStats[0].punting.playerPuntingStatInfoList[0], {
+  puntYds: 180, puntNetYds: 165, puntsIn20: 3,
+});
+const awareDefense = snapshot([{
+  weekIndex: 0, stage: 1,
+  defense: { playerDefensiveStatInfoList: [{ rosterId: 'def-aware', defTotalTackles: 10, defInts: 2, defPassDeflections: 3, defTDs: 1 }] },
+}], { rosterId: 'def-aware', firstName: 'Test', lastName: 'Defender', position: 'CB', playerBestOvr: 75, awareRating: 70, tackleRating: 70, zoneCoverRating: 70 });
+const awareRecords = [awareLine, awareSpecialists, awareDefense]
+  .flatMap((data) => buildWeeklyProgressionRecommendations(data, { weekIndex: 0, rules: allPositionAwarenessRules }).recommendations);
+for (const key of ['roster:line-lt', 'roster:kicker', 'roster:punter', 'roster:def-aware']) {
+  const entry = awareRecords.find((item) => item.playerKey === key);
+  assert.ok(entry?.attributes.some((attribute) => attribute.attribute === 'Awareness'), `Missing Awareness upgrade for ${key}`);
+}
+
 const downgrade = recommendations([week(0, { passYds: 0, passInts: 3, passAtt: 30 })], 0)[0];
 assert.equal(downgrade.direction, 'downgrade');
 assert.equal(downgrade.attributes[0].points, -1);

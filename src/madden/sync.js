@@ -750,9 +750,9 @@ async function execute(interaction) {
         : summary.weeklyMockDraft.reason || summary.weeklyMockDraft.error || 'Not posted'
       : null;
     const progressionStatus = summary.progression
-      ? summary.progression.published
+      ? `${summary.progression.published
         ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads${summary.progression.type === 'weekly' && summary.progression.recommendationCount < (summary.progression.selectionDiagnostics?.preferredMinimum || 0) ? `; fewer than the target because only ${summary.progression.selectionDiagnostics.eligibleCandidates} eligible player(s) were found` : ''}`
-        : summary.progression.error || summary.progression.reason || 'No recommendations met evidence thresholds'
+        : summary.progression.error || summary.progression.reason || 'No recommendations met evidence thresholds'}${summary.progression.seasonChanges ? `; season OVR summaries updated for ${summary.progression.seasonChanges.teamCount} teams${summary.progression.seasonChanges.baseline ? ` (${summary.progression.seasonChanges.partial ? 'partial-season baseline: ' : 'baseline: '}${summary.progression.seasonChanges.baseline})` : ' (season baseline unavailable)'}` : ''}`
       : null;
     const weeklyAwardsStatus = summary.weeklyAwards
       ? summary.weeklyAwards.posted

@@ -79,6 +79,8 @@
       "momentumMinimumGameScore": 85,
       "momentumMinimumStrongStreak": 2,
       "momentumAwardWeeks": 2,
+      "awarenessMinimumGameScore": 68,
+      "awarenessUpgradeEveryWeeks": 3,
       "positiveChangeTiers": [
         { "minimumScore": 65, "attributePoints": 1 },
         { "minimumScore": 82, "attributePoints": 1 },
