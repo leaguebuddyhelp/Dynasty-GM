@@ -163,14 +163,6 @@ export const data = new SlashCommandBuilder()
       { name: 'CSV for Google Sheets', value: 'csv' },
       { name: 'JSON', value: 'json' },
     ))
-  if (!isSoloModeEnabled()) {
-    const roleMap = loadRoleMapForGuild(interaction.guildId);
-    const member = await interaction.guild.members.fetch(interaction.user.id);
-    if (!hasStaffRole(member, roleMap)) {
-      await interaction.editReply({ content: 'Only LB Commish/Co-Commish can use this command.' });
-      return;
-    }
-  }
   .setDefaultMemberPermissions(null);
 
 async function execute(interaction) {
