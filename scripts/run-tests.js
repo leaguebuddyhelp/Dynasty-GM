@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const scripts = [
+  'test_rookie_pipeline.js',
   'test_progression_rating_tiers.js',
   'test_ea_session.js',
   'test_application_emojis.js',

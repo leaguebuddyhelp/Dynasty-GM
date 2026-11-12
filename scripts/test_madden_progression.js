@@ -269,6 +269,9 @@ for (const weekType of [3, 8]) {
 }
 assert.equal(isOffseason({ info: { careerHubInfo: { seasonInfo: { offSeasonStage: 10 } } } }), true);
 const rules = structuredClone(baseRules);
+// Synthetic scores below isolate the base allocation and streak rules.
+// Production rookie/elite acceleration is covered by test_rookie_pipeline.js.
+delete rules.developmentPipeline;
 rules.weekly.performanceWeight = 1;
 rules.weekly.expectationWeight = 0;
 rules.weekly.individualGameWeight = 0.4;

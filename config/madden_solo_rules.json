@@ -40,6 +40,19 @@
   },
   "progression": {
     "version": 1,
+    "developmentPipeline": {
+      "maximumYoungYearsPro": 2,
+      "minimumQualifyingGames": 2,
+      "minimumYoungGameScore": 85,
+      "minimumEliteGameScore": 90,
+      "rookieSelectionBonus": 6,
+      "youngSelectionBonus": 3,
+      "eliteSelectionBonus": 3,
+      "rookieExtraAttributePoints": 1,
+      "rookieAcceleratedAttributes": 2,
+      "eliteExtraPrimaryPoints": 1,
+      "rookieInactivityMinimumGames": 6
+    },
     "sustainedGrowth": {
       "minimumWeeklyGames": 3,
       "minimumPerformanceScore": 82,
