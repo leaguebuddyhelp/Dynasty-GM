@@ -852,7 +852,9 @@ async function execute(interaction) {
         ...(importSummaryStatus ? [{ name: 'Data import summary', value: importSummaryStatus, inline: false }] : []),
         ...(weeklyMockStatus ? [{ name: 'Weekly mock draft', value: weeklyMockStatus, inline: false }] : []),
         { name: 'Saved', value: summary.outPath, inline: false },
-        { name: 'Next', value: summary.fullSeason
+        { name: 'Next', value: summary.progression?.error
+          ? 'Resolve the Player progression error above, then retry the same sync mode. Your imported league data was saved.'
+          : summary.fullSeason
           ? summary.fullSeason.status === 'complete' ? 'Open your team thread for the season upgrade/downgrade cards and apply each final target once. Future `/sync` commands return to weekly playoff changes.'
             : summary.fullSeason.status === 'awaiting_data' ? 'Recover the listed missing weeks and retry `/sync mode:full-season`. No incomplete season total was issued.'
               : 'Simulate Weeks 1–18, then run `/sync mode:full-season` in the first playoff week. Optional checkpoint syncs preserve earlier weeks.'

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { Collection } from 'discord.js';
 import { runFullSeasonSync, resolveSyncMode } from '../src/madden/full_season.js';
-import { loadFullSeasonRun, matchesFullSeason } from '../src/madden/full_season_store.js';
+import { loadFullSeasonRun, matchesFullSeason, findArchivedSeasonBaseline, isStartingSeasonSnapshot } from '../src/madden/full_season_store.js';
 import { publishProgressionReports, refreshProgressionForAwardChange, buildFullSeasonCardEmbeds } from '../src/madden/progression.js';
 import { publishWeeklyAwards, updateAwards } from '../src/madden/awards.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
@@ -67,6 +67,43 @@ channels.set('awards', { isTextBased: () => true, send: async (payload) => {
 const client = { channels: { fetch: async (id) => channels.get(id) } };
 saveGuildMaddenConfig(guildId, { status: 'complete', compat: { maddenChannelMap: { 'Player Upgrades': 'upgrades', Awards: 'awards' } } });
 const sync = (snapshot) => runFullSeasonSync({ client, guildId, snapshot });
+// A normal Week 1 sync already archived the real starting roster. A later
+// explicit full-season sync must recover it and continue, without requiring a restart.
+const recoveryLeague = 'recovered-season-league';
+const recoveryFinal = { ...structuredClone(final), leagueId: recoveryLeague };
+await assert.rejects(runFullSeasonSync({ client, guildId, snapshot: recoveryFinal }), /No starting baseline/);
+const recoveryDirectory = getMaddenDataFilePath(`leagues/history/${recoveryLeague}`);
+await fs.mkdir(recoveryDirectory, { recursive: true });
+const archive = [
+  { ...structuredClone(baseline), leagueId: recoveryLeague, syncId: 'week-one', syncedAt: '2026-11-12T12:00:00Z' },
+  { ...structuredClone(baseline), leagueId: recoveryLeague, syncId: 'preseason', syncedAt: '2026-11-12T11:00:00Z' },
+  { ...structuredClone(baseline), leagueId: recoveryLeague, syncId: 'wrong-season', syncedAt: '2026-11-12T13:00:00Z' },
+  { ...structuredClone(recoveryFinal), syncId: 'late-roster', syncedAt: '2026-11-12T14:00:00Z' },
+];
+archive[1].info.careerHubInfo.seasonInfo.seasonWeekType = 0;
+archive[2].info.careerHubInfo.seasonInfo.seasonIndex = 0;
+for (const snapshot of archive) await fs.writeFile(`${recoveryDirectory}/${snapshot.syncId}.json`, JSON.stringify(snapshot));
+await fs.writeFile(`${recoveryDirectory}/index.json`, JSON.stringify({ records: archive.map((snapshot) => ({ syncId: snapshot.syncId, syncedAt: snapshot.syncedAt })) }));
+assert.equal((await findArchivedSeasonBaseline(recoveryFinal)).syncId, 'week-one', 'Recover Week 1 rather than preseason, a different season, or playoff ratings');
+const staleWeekOne = structuredClone(archive[0]);
+staleWeekOne.weeklyStats = [recoveryFinal.weeklyStats[0]];
+assert.equal(isStartingSeasonSnapshot(staleWeekOne), false, 'A stale Week 1 hub label cannot accept played-game stats as a baseline');
+const emptyRoster = structuredClone(archive[0]);
+emptyRoster.rosters.teams[1].rosterInfoList = [];
+assert.equal(isStartingSeasonSnapshot(emptyRoster), false);
+const recoveryCheckpoint = { ...structuredClone(recoveryFinal), currentWeek: 9 };
+recoveryCheckpoint.info.careerHubInfo.seasonInfo.seasonWeekType = 1;
+recoveryCheckpoint.weeklyStats = recoveryCheckpoint.weeklyStats.slice(0, 8);
+const recoveryPlayoffs = { ...structuredClone(recoveryFinal), weeklyStats: recoveryCheckpoint.weeklyStats };
+const recovered = await runFullSeasonSync({ client, guildId, snapshot: recoveryPlayoffs });
+assert.equal(recovered.status, 'awaiting_data', 'A playoff recovery must immediately evaluate season coverage, rather than return as if still at Week 1');
+assert.equal((await runFullSeasonSync({ client, guildId, snapshot: recoveryCheckpoint })).status, 'collecting');
+const recoveredRun = await loadFullSeasonRun(guildId, recoveryLeague);
+assert.equal(recoveredRun.recoveredBaseline, true);
+assert.equal(recoveredRun.baselineSyncId, 'week-one');
+assert.deepEqual(recoveredRun.baseline.rosters, archive[0].rosters);
+assert.equal(recoveredRun.coverage.completedWeeks, 8);
+assert.equal(awardMessages.size + parentMessages.size, 0);
 const prepared = await sync(baseline);
 assert.equal(prepared.status, 'prepared');
 assert.equal(parentMessages.size + awardMessages.size, 0, 'Preparing a baseline cannot issue any rating or award posts');

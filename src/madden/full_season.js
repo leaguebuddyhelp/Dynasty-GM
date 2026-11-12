@@ -1,6 +1,6 @@
 import { getMaddenSeasonKey } from '../shared/madden_metadata.js';
 import { getFranchisePhase } from './franchise_phase.js';
-import { loadFullSeasonRun, saveFullSeasonRun, archiveFullSeasonRun, fullSeasonIdentity, matchesFullSeason } from './full_season_store.js';
+import { loadFullSeasonRun, saveFullSeasonRun, archiveFullSeasonRun, fullSeasonIdentity, matchesFullSeason, findArchivedSeasonBaseline, isStartingSeasonSnapshot } from './full_season_store.js';
 import { regularSeasonWeeks, seasonCoverage, replayFullSeason, buildSeasonApplication } from './full_season_engine.js';
 import { updateAwards, publishWeeklyAwards } from './awards.js';
 import { publishFullSeasonTotals, readProgressionRules, hasIssuedSeasonWeeklyChanges } from './progression.js';
@@ -33,19 +33,19 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
   }
   const phase = getFranchisePhase(snapshot);
   if (!run) {
-    if (!(phase === 'preseason' || (phase === 'regular' && Number(snapshot.currentWeek) === 1))) {
-      throw new Error('Full-season mode requires a baseline during preseason or at Week 1 before any regular-season game. Start /sync mode:full-season there before simulating.');
-    }
-    if ((snapshot.teams?.leagueTeamInfoList || []).length !== 32 || Object.keys(snapshot.rosters?.teams || {}).length !== 32) {
-      throw new Error('A full-season baseline requires all 32 teams and rosters.');
-    }
     if (await hasIssuedSeasonWeeklyChanges(snapshot)) throw new Error('Weekly rating changes have already been issued for this season. Full-season mode cannot overlap them.');
-    run = { version: 1, guildId: String(guildId), leagueId: String(snapshot.leagueId), seasonKey: getMaddenSeasonKey(snapshot),
-      identity: fullSeasonIdentity(snapshot), status: 'prepared', applicationMode: 'add_net',
-      baseline: baselineSnapshot(snapshot), baselineSyncId: snapshot.syncId, preparedAt: new Date().toISOString(),
+    const starting = isStartingSeasonSnapshot(snapshot) ? snapshot : await findArchivedSeasonBaseline(snapshot);
+    if (!starting) throw new Error('No starting baseline was found in this season’s saved preseason/Week 1 syncs. Full-season mode needs a complete starting roster from before regular-season games; playoff ratings cannot replace it.');
+    run = { version: 1, guildId: String(guildId), leagueId: String(snapshot.leagueId), seasonKey: getMaddenSeasonKey(starting),
+      identity: fullSeasonIdentity(starting), status: 'prepared', applicationMode: 'add_net',
+      baseline: baselineSnapshot(starting), baselineSyncId: starting.syncId, preparedAt: new Date().toISOString(),
+      ...(starting !== snapshot ? { recoveredBaseline: true, baselineSource: 'sync_history' } : {}),
       importedWeeks: {}, importedSchedule: [], weeks: {}, awardPosts: {} };
     await saveFullSeasonRun(run);
-    return { mode: 'full-season', status: run.status, published: false, recommendationCount: 0,
+    if (starting !== snapshot) {
+      console.log('[full-season] recovered starting baseline', { leagueId: run.leagueId, baselineSyncId: run.baselineSyncId, phase: getFranchisePhase(starting), currentWeek: starting.currentWeek });
+      if (onProgress) await onProgress('Recovered starting ratings', 'Found your saved preseason/Week 1 sync. Continuing the season evaluation from those original ratings.');
+    } else return { mode: 'full-season', status: run.status, published: false, recommendationCount: 0,
       reason: 'Full-season baseline saved. Simulate Weeks 1–18, then run /sync mode:full-season in the first playoff week.' };
   }
   if (run.status === 'complete') return { ...run.result, duplicate: true, reason: 'The season upgrade/downgrade cards are already posted in your team threads. Apply the targets once; playoff syncs use normal weekly progression.' };
