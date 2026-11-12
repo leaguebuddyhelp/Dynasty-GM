@@ -13,6 +13,7 @@ import { getMaddenChannelId, getMaddenSeasonKey } from '../shared/madden_metadat
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getMaddenStatValue, normalizeMaddenStatField } from './madden_stat_fields.js';
+import { seasonProductionReward, buildTeamFormContexts } from './weekly_progression_context.js';
 import { buildTeamReportIndex } from './report_navigation.js';
 import { getFranchisePhase } from './franchise_phase.js';
 import { stablePlayerKey } from './player_identity.js';
@@ -1144,6 +1145,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       : readWeeklyAwardResults(snapshot.leagueId, weekNumber - index, seasonKey));
   const population = populationSnapshot(players, rules);
   const participants = Number(weekIndex) >= 18 ? playedTeamIds(snapshot, weekIndex) : null;
+  const teamForms = buildTeamFormContexts(snapshot, Number(weekIndex), weeklyRules.teamForm);
   const candidates = [];
   const rookieOutcomes = new Map();
   const awardReasons = new Map();
@@ -1196,6 +1198,19 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const windows = getPlayerWindowScores(player.key, player, byWeek, Number(weekIndex), positionKey, weeklyRules);
     const currentMetrics = performanceMetrics(current.totals, player.ovr, positionRule, weeklyRules);
     const pipeline = pipelineMomentum(player, windows, positionKey, rules);
+    const qualified = windows.metrics.filter(({ row }) => opportunityConfirmed(row.totals, positionKey, weeklyRules));
+    const seasonStats = seasonStatSummaries(qualified.map(({ row }) => row));
+    const productionAverages = { ...seasonStats.averages };
+    for (const field of ['passYds', 'passTDs', 'recYds', 'recTDs', 'rushYds', 'rushTDs', 'defSacks', 'defInts', 'defTotalTackles', 'defPassDeflections']) {
+      if (seasonStats.totals[field] != null) productionAverages[field] = seasonStats.totals[field] / Math.max(1, qualified.length);
+    }
+    productionAverages.scrimmageYds = (productionAverages.rushYds || 0) + (productionAverages.recYds || 0);
+    productionAverages.scrimmageTDs = (productionAverages.rushTDs || 0) + (productionAverages.recTDs || 0);
+    const productionTotals = { ...seasonStats.totals, scrimmageYds: (seasonStats.totals.rushYds || 0) + (seasonStats.totals.recYds || 0),
+      scrimmageTDs: (seasonStats.totals.rushTDs || 0) + (seasonStats.totals.recTDs || 0) };
+    const production = positionKey === 'OL' ? null : seasonProductionReward({ position: positionKey, games: qualified.length,
+      averages: productionAverages, totals: productionTotals,
+      seasonScore: performanceMetrics(productionAverages, player.ovr, positionRule, weeklyRules).score, policy: weeklyRules.statProduction });
     const verifiedPoorStreak = observedPoorStreak(
       player, positionKey, positionRule, observations, history, seasonKey, Number(weekIndex),
       snapshot?.schedule?.schedules, byWeek, weeklyRules,
@@ -1219,7 +1234,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     );
     const awareness = numberOrNull(player[weeklyRules.attributeFields?.Awareness]);
     const awarenessInterval = Number(weeklyRules.awarenessUpgradeEveryWeeks ?? 3);
-    if (awareness !== null && awareness >= 0 && awareness < 99
+    if (!production && awareness !== null && awareness >= 0 && awareness < 99
       && currentMetrics.score >= Number(weeklyRules.awarenessMinimumGameScore ?? weeklyRules.strongGameScore)
       && Number.isInteger(awarenessInterval) && awarenessInterval > 0
       && (parseInt(stableHash(player.key).slice(0, 8), 16) + Number(weekIndex)) % awarenessInterval === 0) {
@@ -1229,12 +1244,17 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         evidence: 'currentGameScore', evidenceRatio: 1, currentValue: awareness,
       });
     }
+    if (production) {
+      const priorities = weeklyRules.statProduction.priorityAttributes?.[positionKey] || [];
+      const rank = (attribute) => { const index = priorities.indexOf(attribute.attribute); return index < 0 ? 100 : index; };
+      currentAttributeEvidence.sort((left, right) => rank(left) - rank(right));
+    }
     const seasonKeyOvr = numberOrNull(startingOveralls[player.key]) ?? player.ovr;
     const positivePointsUsed = sumAttributePoints(history, seasonKey, player.key, 'positive');
     const negativePointsUsed = sumAttributePoints(history, seasonKey, player.key, 'negative');
     const soft = earnedGrowthPenalty(
       positiveSeasonPenalty(positivePointsUsed, seasonKeyOvr, rules.offseason),
-      sustainedWeeklyGrowth(windows, positionKey, rules), rules,
+      Boolean(production) || sustainedWeeklyGrowth(windows, positionKey, rules), rules,
     );
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
     const awardEvidence = currentAttributeEvidence.some((item) => item.evidence !== 'currentGameScore');
@@ -1280,13 +1300,14 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     let reserve = false;
     const currentUpgradeEligible = !movement || currentMetrics.score >= Number(movement.minimumCurrentUpgradeScore) || weeklyAwards > 0;
     const currentDowngradeEligible = !movement || (currentMetrics.score <= Number(movement.maximumCurrentDowngradeScore) && Number(player.injuryLength || 0) <= 0);
-    if ((currentUpgradeEligible || reserveUpgrade) && !rookieBust && (reserveUpgrade || windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
+    const productionUpgrade = production && currentMetrics.score >= Number(movement?.minimumVolume?.minimumUpgradeScore ?? weeklyRules.minimumUpgradePerformanceScore);
+    if ((currentUpgradeEligible || reserveUpgrade || productionUpgrade) && !rookieBust && (productionUpgrade || reserveUpgrade || windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
       && currentAttributeEvidence.length) {
       const tier = getTier(breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore, weeklyRules.positiveChangeTiers, 'minimumScore')
-        || (weeklyAwards || reserveUpgrade ? { attributePoints: 1 } : null);
+        || (weeklyAwards || reserveUpgrade || productionUpgrade ? { attributePoints: 1 } : null);
       if (tier) {
         direction = 'upgrade';
-        reserve = !currentUpgradeEligible || (windows.performanceScore < Number(weeklyRules.minimumUpgradePerformanceScore) && !breakout && !weeklyAwards);
+        reserve = !productionUpgrade && (!currentUpgradeEligible || (windows.performanceScore < Number(weeklyRules.minimumUpgradePerformanceScore) && !breakout && !weeklyAwards));
         points = Number(tier.attributePoints);
         evidence = currentAttributeEvidence;
         priorityBase = (breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore) + consistencyBonus + improvingTrendBonus
@@ -1327,6 +1348,13 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const rookieOutcomeBonus = (direction === 'upgrade' && rookieOutcome?.trajectory === 'boom') || (direction === 'downgrade' && rookieBust)
       ? (rookieOutcome.highPick ? Number(outcomePolicy.highPickSelectionBonus) : 0)
         + (direction === 'downgrade' ? Number(outcomePolicy.bustSelectionBonus) : 0) : 0;
+    const productionBonus = direction === 'upgrade' && productionUpgrade ? production.selectionBonus : 0;
+    const form = teamForms.get(player.teamId);
+    const teamMultiplier = reserve ? 1 : (direction === 'upgrade' ? form?.upgradeMultiplier : form?.downgradeMultiplier) || 1;
+    const teamBonus = weeklyRules.teamForm ? (teamMultiplier - 1) / Math.max(0.01, Number(weeklyRules.teamForm.streakMultiplier) - 1) * Number(weeklyRules.teamForm.maximumSelectionBonus) : 0;
+    priorityBase += productionBonus + teamBonus;
+    selectionAdjustments.seasonProduction = productionBonus;
+    selectionAdjustments.teamForm = teamBonus;
     priorityBase += rookieOutcomeBonus;
     selectionAdjustments.rookieOutcome = rookieOutcomeBonus;
     const recentSelections = movement ? Object.values(history.periods || {}).filter((period) =>
@@ -1388,7 +1416,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       if (index === 0 && rookieOutcome?.highPick && rookieOutcomeBonus > 0) {
         magnitude += Number(outcomePolicy.highPickExtraPrimaryPoints);
       }
-      magnitude = reserve ? 1 : Math.min(maxPoints, magnitude);
+      if (direction === 'upgrade' && productionUpgrade && index < production.attributes && attribute.evidence !== 'currentGameScore') magnitude += production.extraPoints;
+      magnitude = reserve ? 1 : Math.min(maxPoints, Math.ceil(magnitude * teamMultiplier));
       return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
     });
     if (!allocation.length) continue;
@@ -1415,7 +1444,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
     selected.eligibilityTier = reserve ? 'reserve' : 'primary';
-    selected.changeContext = { reserveSelection: reserve, gameplayMomentum: !reserve && gameplayMomentum, rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
+    selected.changeContext = { seasonProduction: productionBonus ? production : null,
+      teamForm: teamMultiplier > 1 ? { ...form, multiplier: teamMultiplier } : null, reserveSelection: reserve, gameplayMomentum: !reserve && gameplayMomentum, rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
       rookieMomentum: direction === 'upgrade' && pipeline.rookie,
       eliteMomentum: direction === 'upgrade' && pipeline.elite,
       sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0, teamLineProxy: positionKey === 'OL' };
@@ -1745,6 +1775,14 @@ function recommendationWhy(record, item) {
   const labels = [...new Set((item.attributes || []).map((attribute) => statLabel(attribute.evidence)).filter(Boolean))];
   const evidence = labels.length ? labels.join(', ').toLowerCase() : 'the available game statistics';
   const reasons = [`${item.direction === 'upgrade' ? 'Strong' : 'Poor'} performance in ${evidence}.`];
+  const production = item.changeContext?.seasonProduction;
+  if (production) {
+    const totals = Object.entries(production.evidence).filter(([, value]) => Number.isFinite(value))
+      .map(([field, value]) => `${Math.round(value)} ${statLabel(field).toLowerCase()}`).join(', ');
+    reasons.push(`${production.label}: ${totals} in ${production.games} games earned faster attribute growth.`);
+  }
+  const team = item.changeContext?.teamForm;
+  if (team) reasons.push(`Team form ${team.wins}-${team.losses} over ${team.games} games: ${team.multiplier}× earned ${item.direction === 'upgrade' ? 'upgrade' : 'downgrade'} points, within the weekly cap.`);
   if (item.changeContext?.teamLineProxy) {
     const sources = [item.stats?.teamRunScore != null ? 'rushing' : null, item.stats?.teamPassScore != null ? 'pass protection' : null].filter(Boolean).join(' and ');
     reasons[0] = `Team ${sources} performance is a proxy, not individual blocking stats. Projected starter is the highest-OVR healthy player at this position${record.type !== 'weekly' ? '; season evidence comes only from weeks when this player was also the projected starter' : ''}.`;

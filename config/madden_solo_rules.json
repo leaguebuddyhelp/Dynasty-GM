@@ -93,6 +93,137 @@
           "maximumAttributes": 2
         }
       },
+      "statProduction": {
+        "minimumGames": 4,
+        "minimumSeasonScore": 70,
+        "priorityAttributes": {
+          "WR": [
+            "Short Route Running",
+            "Medium Route Running",
+            "Deep Route Running",
+            "Catching",
+            "Spectacular Catch"
+          ],
+          "TE": [
+            "Catching",
+            "Short Route Running",
+            "Medium Route Running",
+            "Deep Route Running"
+          ],
+          "QB": [
+            "Throw Accuracy Short",
+            "Throw Accuracy Mid",
+            "Throw Accuracy Deep",
+            "Play Action"
+          ],
+          "HB": [
+            "Ball Carrier Vision",
+            "Carrying",
+            "Break Tackle",
+            "Catching"
+          ]
+        },
+        "tiers": [
+          {
+            "label": "Elite season production",
+            "selectionBonus": 10,
+            "extraPoints": 2,
+            "attributes": 3,
+            "positions": {
+              "WR": [
+                {
+                  "recYds": 95
+                },
+                {
+                  "recYds": 70,
+                  "recTDs": 0.85
+                }
+              ],
+              "TE": [
+                {
+                  "recYds": 70,
+                  "recTDs": 0.6
+                }
+              ],
+              "QB": [
+                {
+                  "passYds": 275,
+                  "passTDs": 2.5
+                }
+              ],
+              "HB": [
+                {
+                  "scrimmageYds": 100,
+                  "scrimmageTDs": 0.85
+                }
+              ],
+              "DEF": [
+                {
+                  "defSacks": 0.8
+                },
+                {
+                  "defInts": 0.4
+                }
+              ]
+            }
+          },
+          {
+            "label": "Strong season production",
+            "selectionBonus": 6,
+            "extraPoints": 1,
+            "attributes": 3,
+            "positions": {
+              "WR": [
+                {
+                  "recYds": 75
+                },
+                {
+                  "recYds": 60,
+                  "recTDs": 0.5
+                }
+              ],
+              "TE": [
+                {
+                  "recYds": 55,
+                  "recTDs": 0.4
+                }
+              ],
+              "QB": [
+                {
+                  "passYds": 240,
+                  "passTDs": 1.8
+                }
+              ],
+              "HB": [
+                {
+                  "scrimmageYds": 85,
+                  "scrimmageTDs": 0.5
+                }
+              ],
+              "DEF": [
+                {
+                  "defSacks": 0.6
+                },
+                {
+                  "defInts": 0.25
+                },
+                {
+                  "defTotalTackles": 8,
+                  "defPassDeflections": 1
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "teamForm": {
+        "recentGames": 4,
+        "minimumGames": 3,
+        "minimumShare": 0.75,
+        "formMultiplier": 1.25,
+        "streakMultiplier": 1.5,
+        "maximumSelectionBonus": 4
+      },
       "preferredRecommendationRange": [20, 30],
       "minimumUpgradeSelectionScore": 58,
       "performanceWeight": 0.8,
