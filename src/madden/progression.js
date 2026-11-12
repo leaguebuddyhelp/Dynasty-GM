@@ -1328,7 +1328,12 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       );
       const sustainedPoor = verifiedPoorStreak >= Number(weeklyRules.poorPerformanceMinimumGames ?? 3);
       const awarenessValue = numberOrNull(player[weeklyRules.attributeFields?.Awareness]);
-      if (sustainedPoor && !negative.length && awarenessValue !== null && awarenessValue > 0 && awarenessValue <= 99) {
+      // Repeated poor decisions affect awareness as well as the evidenced skill.
+      // Keeping this alongside skill losses lets struggling highly rated players
+      // decline instead of repeatedly reducing only one attribute.
+      if (sustainedPoor && !negative.some((attribute) => attribute.attribute === 'Awareness')
+        && awarenessValue !== null && awarenessValue > 0 && awarenessValue <= 99) {
+        negative.splice(Math.max(0, Number(weeklyRules.attributesPerRecommendation || 3) - 1));
         negative.push({ attribute: 'Awareness', field: weeklyRules.attributeFields.Awareness, evidence: 'currentGameScore', currentValue: awarenessValue, evidenceRatio: 1 });
       }
       const tier = getNegativeTier(windows.performanceScore, weeklyRules.negativeChangeTiers)

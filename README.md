@@ -109,3 +109,5 @@ Use `/sync mode:full-season` as a separate alternative to normal weekly progress
 6. After finalization, normal `/sync` returns to **weekly playoff progression for teams that played**. It cannot issue the regular-season changes again. Offseason syncs still create no rating changes.
 
 Publication retries resume saved work and do not duplicate weekly awards or reapply targets. A completed season's calculated targets stay fixed. A starting baseline is required for each new season; starting full-season mode after the season was already simulated is rejected.
+
+Both modes use the same performance-based attribute changes. Sustained strong play remains eligible across the 80/90 OVR boundaries; sustained verified poor play can lower Awareness alongside directly evidenced skills. Players can reverse direction when their performance changes. Madden calculates the resulting actual OVR after you apply the attribute targets; the app does not assign an artificial OVR or force tier quotas.
