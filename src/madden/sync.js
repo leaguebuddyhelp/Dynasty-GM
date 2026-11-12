@@ -22,9 +22,9 @@ import {
   persistSyncHistory,
   validateFranchiseSnapshot,
 } from './madden_sync_history.js';
-import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 import { getMaddenChannelId } from '../shared/madden_metadata.js';
 import { getMaddenStatValue } from './madden_stat_fields.js';
+import { updateWeeklyGameLog } from './weekly_game_log.js';
 
 const leagueDir = getMaddenLeaguesDir();
 const prevDir = path.join(leagueDir, 'previous');
@@ -102,15 +102,33 @@ function buildPlayerTotals(week) {
       agg.set(id, cur);
     });
   };
-  add(week?.passing?.playerPassingStatInfoList, ['passAtt', 'passComp', 'passYds', 'passTDs', 'passInts', 'passSacks']);
-  add(week?.rushing?.playerRushingStatInfoList, ['rushAtt', 'rushYds', 'rushTDs', 'fumbles']);
-  add(week?.receiving?.playerReceivingStatInfoList, ['recCatches', 'recYds', 'recTDs']);
-  add(week?.defense?.playerDefensiveStatInfoList, [
-    'defTotalTackles', 'defSoloTackles', 'defSacks', 'defTacklesForLoss', 'defInts',
-    'defForcedFumbles', 'defRecoveredFumbles', 'defPassDeflections', 'defTDs'
+  add(week?.passing?.playerPassingStatInfoList, [
+    'passAtt', 'passComp', 'passCompPct', 'passYds', 'passYdsPerAtt',
+    'passYdsPerGame', 'passTDs', 'passInts', 'passSacks', 'passerRating', 'passLongest', 'passPts',
   ]);
-  add(week?.kicking?.playerKickingStatInfoList, ['fgMade', 'fgAtt', 'xpMade', 'xpAtt', 'kickPts']);
-  add(week?.punting?.playerPuntingStatInfoList, ['pntAtt', 'pntYds', 'pntInside20']);
+  add(week?.rushing?.playerRushingStatInfoList, [
+    'rushAtt', 'rushYds', 'rushTDs', 'fumbles', 'rushBrokenTackles',
+    'rushYdsAfterContact', 'rush20PlusYds', 'rushLongest', 'rushYdsPerAtt',
+    'rushYdsPerGame', 'rushToPct', 'rushPts',
+  ]);
+  add(week?.receiving?.playerReceivingStatInfoList, [
+    'recCatches', 'recYds', 'recTDs', 'recDrops', 'recLongest',
+    'recYdsAfterCatch', 'recYacPerCatch', 'recYdsPerCatch', 'recCatchPct',
+    'recYdsPerGame', 'recToPct', 'recPts',
+  ]);
+  add(week?.defense?.playerDefensiveStatInfoList, [
+    'defTotalTackles', 'defSacks', 'defInts', 'defForcedFumbles',
+    'defRecoveredFumbles', 'defPassDeflections', 'defTDs', 'defCatchAllowed',
+    'defIntReturnYds', 'defSafeties', 'defPts',
+  ]);
+  add(week?.kicking?.playerKickingStatInfoList, [
+    'fgMade', 'fgAtt', 'fg50PlusMade', 'fg50PlusAtt', 'fgCompPct',
+    'fgLongest', 'xpMade', 'xpAtt', 'xpCompPct', 'kickPts', 'kickoffAtt', 'kickoffTBs',
+  ]);
+  add(week?.punting?.playerPuntingStatInfoList, [
+    'pntAtt', 'pntYds', 'pntYdsPerAtt', 'pntNetYds', 'pntNetYdsPerAtt',
+    'pntInside20', 'pntLongest', 'pntTBs', 'puntsBlocked',
+  ]);
   return Array.from(agg.values());
 }
 
@@ -194,7 +212,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       throw new Error('No EA connection was found for this server. Run `/setup` and reconnect EA, then retry.');
     }
     await emitProgress(options, 'Opening league session', 'Refreshing the saved connection and opening the Madden session.');
-    const client = await createEAClientFromEnv({ ...process.env, EA_ACCESS_TOKEN: tokens.accessToken, EA_REFRESH_TOKEN: tokens.refreshToken, EA_ACCESS_TOKEN_EXPIRES_AT: tokens.expiry, EA_CONSOLE: tokens.console, EA_BLAZE_ID: tokens.blazeId, EA_GAME_YEAR: tokens.gameYear }, {
+    const client = await createEAClientFromEnv({ ...process.env, EA_ACCESS_TOKEN: tokens.accessToken, EA_REFRESH_TOKEN: tokens.refreshToken, EA_ACCESS_TOKEN_EXPIRES_AT: tokens.expiry, EA_CONSOLE: tokens.console, EA_BLAZE_ID: tokens.blazeId, EA_GAME_YEAR: tokens.gameYear, EA_SERVICE_OVERRIDE: tokens.serviceOverride || process.env.EA_SERVICE_OVERRIDE, EA_PRODUCT_OVERRIDE: tokens.productOverride || process.env.EA_PRODUCT_OVERRIDE }, {
       persistTokenUpdate: options.guildId ? (updatedTokens) => saveGuildEATokens(options.guildId, updatedTokens) : undefined,
     });
     let info = null;
@@ -522,7 +540,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     if (!validation.valid) {
       throw new Error(`Madden sync returned an invalid franchise snapshot: ${validation.issues.join(', ')}`);
     }
-    if (isSoloModeEnabled() && (!validation.has32Teams || validation.rosterTeamCount !== 32)) {
+    if (!validation.has32Teams || validation.rosterTeamCount !== 32) {
       throw new Error(
         `Solo sync requires all 32 teams and rosters; received ${validation.teamCount} teams and ${validation.rosterTeamCount} team rosters.`,
       );
@@ -558,6 +576,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
     const temporarySnapshotPath = `${outPath}.${process.pid}.${snapshot.syncId}.tmp`;
     await fs.writeFile(temporarySnapshotPath, JSON.stringify(snapshot, null, 2), 'utf-8');
     await fs.rename(temporarySnapshotPath, outPath);
+    updateWeeklyGameLog(leagueId, snapshot);
 
     // Cleanup: keep only snapshots for this league to avoid accumulating old leagues.
     try {
@@ -597,7 +616,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       summary,
     });
     const result = duplicate || { ...summary, validation };
-    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+    if (!duplicate && options.requestId && options.client && options.guildId) {
       try {
         const { publishWeeklyAwards } = await import('./awards.js');
         result.weeklyAwards = await publishWeeklyAwards({
@@ -608,7 +627,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         console.error('[awards] failed to publish weekly awards', error);
       }
     }
-    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+    if (!duplicate && options.requestId && options.client && options.guildId) {
       try {
         const { publishSoloSyncReports } = await import('./solo_reports.js');
         const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
@@ -622,7 +641,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         console.error('[solo-reports] failed to publish sync reports', error);
       }
     }
-    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+    if (!duplicate && options.requestId && options.client && options.guildId) {
       try {
         const { publishTop100Boards } = await import('./top100_boards.js');
         result.top100 = await publishTop100Boards({ client: options.client, guildId: options.guildId, snapshot });
@@ -631,7 +650,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         console.error('[top100] failed to publish boards', error);
       }
     }
-    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+    if (!duplicate && options.requestId && options.client && options.guildId) {
       try {
         const { publishProgressionReports } = await import('./progression.js');
         const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
@@ -674,7 +693,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         console.error('[draft-grades-auto] sync-triggered grade check failed', error);
       }
     }
-    if (!duplicate && isSoloModeEnabled() && options.requestId && options.client && options.guildId) {
+    if (!duplicate && options.requestId && options.client && options.guildId) {
       try {
         const { publishWeeklyMockDraft } = await import('./weekly_mock_draft.js');
         result.weeklyMockDraft = await publishWeeklyMockDraft({
@@ -745,7 +764,7 @@ async function execute(interaction) {
       guildId: interaction.guildId,
       requestId: interaction.id,
       client: interaction.client,
-      notifyChannelId: '1460287771838255350',
+      notifyChannelId: getMaddenChannelId('Data Imports', interaction.guildId),
       onProgress: async (phase, detail) => {
         await interaction.editReply({ embeds: [renderProgressEmbed(phase, detail)] });
       },
@@ -816,7 +835,11 @@ async function execute(interaction) {
     const msg = typeof err?.message === 'string' ? err.message : 'Unknown error';
     const lower = msg.toLowerCase();
     let guidance = 'Try again shortly.';
-    if (lower.includes('no local ea tokens')) {
+    if (err?.code === 'EA_SESSION_TEMPORARY') {
+      guidance = 'EA did not open the Madden service after automatic retries. Wait a moment, then run `/sync` again. Your saved connection does not need to be reset for this error.';
+    } else if (err?.code === 'EA_SESSION_SERVICE') {
+      guidance = 'Check that the selected Madden account and console in `/setup` match your franchise.';
+    } else if (err?.code === 'EA_SESSION_AUTH' || lower.includes('no local ea tokens')) {
       guidance = 'Run `/setup` and reconnect EA, then rerun the sync.';
     } else if (lower.includes('no sessionkey') || lower.includes('auth_err_invalid_token') || lower.includes('server information was not found')) {
       guidance = 'The saved EA session looks stale. Return to `/setup` and reconnect EA, then rerun the sync.';

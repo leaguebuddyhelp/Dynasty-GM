@@ -6,8 +6,6 @@ import { getPinId } from './pins_store.js'; // unused but kept in case future pi
 import { computeGradeFromRank, computeWeeklyList, getLatestReliableRegularSeasonWeekIndex } from './top_players.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getMaddenSeasonKey, loadMaddenChannelMap } from '../shared/madden_metadata.js';
-import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
-import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { applyEmbedThumbnailFromAsset, getLeagueBuddyBrandAsset } from '../shared/madden_assets.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
@@ -28,13 +26,6 @@ function loadJson(file, fallback = {}) {
 
 function loadChannelMap(guildId = null) {
   return loadMaddenChannelMap(guildId);
-}
-
-function loadRoleMap(guildId = null) {
-  const overlay = getGuildRoleMap(guildId);
-  if (overlay && Object.keys(overlay).length) return overlay;
-  const roleMapFile = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-  return loadJson(roleMapFile, {});
 }
 
 
@@ -84,20 +75,6 @@ function reverseTeamLookup(teamNameMapObj) {
   return rev;
 }
 
-
-function coachMention(teamName, roleMap) {
-  if (!teamName) return null;
-  const target = teamName.toLowerCase();
-  const mascot = target.split(/\s+/).pop();
-  for (const [key, val] of Object.entries(roleMap || {})) {
-    if (!key.endsWith(' Coach')) continue;
-    const base = key.replace(/ Coach$/, '').toLowerCase();
-    if (base === target || base === mascot || target.includes(base) || base.includes(target)) {
-      return `<@&${val}>`;
-    }
-  }
-  return null;
-}
 
 function teamEmoji(teamName) {
   return getTeamEmojiByName(teamName);
@@ -499,10 +476,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   const snapshotMtime = snapshotMtimeMs(leagueId);
   buildRosterYearsPro(snapshot);
   const channelMap = loadChannelMap(guildId);
-  const roleMap = loadRoleMap(guildId);
-  const awardsChannelId = isSoloModeEnabled()
-    ? channelMap.Awards || channelMap['Weekly Awards'] || channelMap['Yearly Awards']
-    : channelMap['Weekly Awards'] || channelMap['Yearly Awards'] || channelMap.Awards;
+  const awardsChannelId = channelMap.Awards;
   const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId) : null);
   if (!interaction && !targetChannel?.isTextBased()) {
     console.warn('[awards] Awards channel not text-based or missing.');
@@ -827,7 +801,6 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
 
   const makeField = (label, p) => {
     if (!p) return { name: label, value: 'N/A', inline: false };
-    const mention = coachMention(p.teamName, roleMap);
     const emoji = teamEmoji(p.teamName);
     const id = gradeMap.idFor(p);
     const gradeFromList = weeklyGradeMap.get(id) ?? p.grade;
@@ -837,13 +810,11 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     const line = (p.statLine && p.statLine.trim().length) ? p.statLine : formatLine(p);
     return {
       name: label,
-      value: `${header}${mention ? ` (${mention})` : ''}\n${line}`,
+      value: `${header}\n${line}`,
       inline: false,
     };
   };
 
-  const coachRoleId = roleMap['LEAGUEbuddy Coaches'] || roleMap['LB Coaches'] || roleMap['Ghost Legacy'];
-  const coachTag = coachRoleId ? `<@&${coachRoleId}>` : null;
   const logo = getLeagueBuddyLogoEmoji();
   const embed = new EmbedBuilder()
     .setTitle(`${logo ? `${logo} ` : ''}Weekly Awards — Week ${awardsWeek}${isPlayoffs ? ' (Playoffs)' : ''}`)
@@ -861,12 +832,11 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     )
     .setTimestamp(new Date());
   let files = [];
-  files = applyEmbedThumbnailFromAsset(embed, files, getLeagueBuddyBrandAsset({ attachmentName: 'leaguebuddy_logo.png' }));
+  files = applyEmbedThumbnailFromAsset(embed, files, getLeagueBuddyBrandAsset({ attachmentName: 'dynasty_gm_logo.png' }));
 
   let message = null;
   if (interaction) {
-    const content = isPublic ? coachTag : null;
-    const payload = { content, embeds: [embed], files, allowedMentions: isPublic && coachTag ? { parse: [], roles: [coachRoleId] } : { parse: [] } };
+    const payload = { embeds: [embed], files, allowedMentions: { parse: [] } };
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(payload);
     } else {
@@ -874,10 +844,9 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     }
   } else if (targetChannel?.isTextBased()) {
     message = await targetChannel.send({
-      content: coachTag || null,
       embeds: [embed],
       files,
-      allowedMentions: coachTag ? { parse: [], roles: [coachRoleId] } : { parse: [] },
+      allowedMentions: { parse: [] },
     });
   }
   awardsStore[leagueId] = {
@@ -886,7 +855,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     __seasonByWeek: { ...leagueStore.__seasonByWeek, [awardsWeek]: getMaddenSeasonKey(snapshot) },
   };
   saveJson(AWARDS_FILE, awardsStore);
-  if (isSoloModeEnabled() && guildId && options.refreshProgression !== false) {
+  if (guildId && options.refreshProgression !== false) {
     try {
       const { refreshProgressionForAwardChange } = await import('./progression.js');
       await refreshProgressionForAwardChange({

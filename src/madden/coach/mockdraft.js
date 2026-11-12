@@ -29,19 +29,17 @@ function loadDraftClass(classId, context = {}) {
 }
 import fs from 'fs';
 import path from 'path';
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden_data.js';
 import { getEffectiveFirstRoundOverrides } from '../pick_overrides_store.js';
 import { buildLiveDraftContext } from './draft_live_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../../shared/madden_visuals.js';
-import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
+import { commandDescription, voiceFooter, errorBlurb } from '../../shared/madden_voice.js';
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { formatMaddenDraftClassLock, getMaddenDraftClassId, getMaddenDraftYear } from '../../shared/madden_draft_class.js';
 import { findMaddenDraftClassFile, formatMaddenProspectIdentity, loadMaddenDraftClassArray, normalizeMaddenDraftClassId } from '../../shared/madden_draft_class_files.js';
-import { isSoloModeEnabled } from '../../leaguebuddy/solo_mode.js';
 
-export const featureKey = 'scouting_draft';
 
 let currentCalendarYear = 2025;
 const DRAFT_ORDER_OVERRIDES_FILE = getMaddenDataFilePath('draft_order_overrides.json');
@@ -1528,7 +1526,7 @@ const QB_LATE_FIRST_MAX_OVR = 72;
 
 export const data = new SlashCommandBuilder()
   .setName('mockdraft')
-  .setDescription(coachCommandDescription('mockdraft'));
+  .setDescription(commandDescription('mockdraft'));
 
 export const deferOnDispatch = { flags: 64 };
 
@@ -1573,7 +1571,7 @@ export async function execute(interaction) {
     userId: interaction.user?.id,
   }) || [];
   if (!prospects.length) {
-    const payload = { content: `${coachErrorBlurb('draftBoardMissing', 'The draft board is not loaded yet.', { guildId: interaction.guildId })} (classId: ${classId})` };
+    const payload = { content: `${errorBlurb('draftBoardMissing', 'The draft board is not loaded yet.', { guildId: interaction.guildId })} (classId: ${classId})` };
     await interaction.editReply(payload);
     return;
   }
@@ -1825,18 +1823,9 @@ export async function execute(interaction) {
     .setTitle('Madden Mock Draft (Picks 1–32)')
     .setDescription(picks.join('\n'))
     .setColor(0x1e90ff)
-    .setFooter({ text: `${coachVoiceFooter('mockdraft', 'Live board, live order, live class')} • league ${leagueId}` });
+    .setFooter({ text: `${voiceFooter('mockdraft', 'Live board, live order, live class')} • league ${leagueId}` });
 
-  const controls = isSoloModeEnabled()
-    ? null
-    : new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('madden_mockdraft_live|create|auto')
-        .setLabel('Start Live Mock Draft')
-        .setStyle(ButtonStyle.Primary),
-    );
-
-  const payload = { embeds: [embed], components: controls ? [controls] : [] };
+  const payload = { embeds: [embed], components: [] };
   await interaction.editReply(payload);
   return payload;
 }

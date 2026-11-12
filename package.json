@@ -2,21 +2,15 @@
   "name": "leaguebuddy-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
     "start": "node app.js",
+    "start:dev": "NODE_ENV=development APP_ENV=dev dotenv_config_path=.env.dev node app.js",
+    "start:prod": "NODE_ENV=production APP_ENV=prod dotenv_config_path=.env.prod node app.js",
     "deploy-commands": "node deploy-commands.js",
-    "start:dev": "NODE_ENV=development APP_ENV=dev MADDEN_ONLY=true dotenv_config_path=.env.dev node app.js",
-    "deploy:dev": "NODE_ENV=development APP_ENV=dev MADDEN_ONLY=true DEPLOY_SCOPE=guild node -r dotenv/config deploy-commands.js dotenv_config_path=.env.dev",
-    "start:prod": "NODE_ENV=production APP_ENV=prod MADDEN_ONLY=true node app.js",
-    "deploy:prod": "NODE_ENV=production APP_ENV=prod MADDEN_ONLY=true DEPLOY_SCOPE=guild GUILD_ID=1415452215044473036 node -r dotenv/config deploy-commands.js dotenv_config_path=.env.prod",
-    "madden:avp": "node scripts/generate-madden-avp.js",
-    "madden:sync": "node scripts/madden-import.js",
-    "madden:export:upload": "node scripts/madden-upload-export.js",
-    "madden:roles": "node scripts/create-madden-roles.js"
+    "deploy:dev": "NODE_ENV=development APP_ENV=dev dotenv_config_path=.env.dev node deploy-commands.js",
+    "deploy:prod": "NODE_ENV=production APP_ENV=prod dotenv_config_path=.env.prod node deploy-commands.js",
+    "test": "node scripts/run-tests.js",
+    "check:commands": "node deploy-commands.js --dry-run"
   },
   "engines": {
     "node": ">=21.0.0"
@@ -25,11 +19,6 @@
     "discord.js": "^14.25.1",
     "dotenv": "^16.6.1",
     "node-fetch": "^3.3.2",
-    "stripe": "^16.12.0",
-    "puppeteer": "^24.37.3",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "sharp": "^0.34.5",
-    "tesseract.js": "^7.0.0"
+    "sharp": "^0.34.5"
   }
 }

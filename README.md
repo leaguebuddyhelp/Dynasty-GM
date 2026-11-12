@@ -20,8 +20,8 @@ The bot needs channel, message, embed, attachment, thread, and role management p
 
 | Purpose | Commands |
 | --- | --- |
-| Setup | `/setup`, `/setup-channels` |
-| Connection | `/connectleague`, `/league-status`, `/disconnectleague`, `/resetleague` |
+| Setup | `/setup` |
+| Connection | `/league-status`, `/disconnectleague confirm:true` |
 | Franchise data | `/sync`, `/schedule`, `/roster`, `/playersearch`, `/awards` |
 | Draft | `/bigboard`, `/mockdraft`, `/draftexport` |
 | Help | `/help`, `/ping` |
@@ -33,6 +33,8 @@ Sync stores the latest franchise snapshot and immutable history with request ded
 On a sync, weekly awards post to the configured Awards channel once for the latest reliable completed regular-season week or playoff round; repeated syncs do not repost it. A completed playoff round can also be detected from its final schedule results when the league enters the offseason. If data or the channel is unavailable, the sync reports why and the next sync can retry.
 
 Weekly award winners, including offensive and defensive rookies, are prioritized for an upgrade in their team progression thread when a recorded stat supports an available attribute rating. Award winners are not displaced by the normal weekly recommendation cap; multiple awards for the same player produce one recommendation. If a winner cannot be matched or lacks supported evidence or ratings, the progression summary lists them for review instead of inventing an upgrade. Playoff award winners use the corresponding playoff statistics.
+
+Draft exports exclude rookies explicitly marked undrafted by Madden's round 64, pick 0 sentinel. Players with incomplete selection data or conflicting pick numbers remain in the export rather than being removed without proof.
 
 Running `/setup` on an existing Franchise HQ adds the Weekly Top 100, Yearly Top 100, and All-Pro Teams channels if they are missing. Initial setup still uses Create Franchise HQ. The weekly board updates on sync and shows ten players per page. Weekly results are stored by season; missing earlier weeks can be reconstructed from available snapshot data, using the roster available at sync time. After the regular season, the yearly board and first- and second-team All-Pro boards are published when results for all 18 weeks are available. The yearly grade is 90% average weekly Top 100 grade plus up to 10 points for appearances across the 18 weeks. Each All-Pro team has two WRs and two CBs, one player at each other listed position, and no FB. The highest-ranked players from the yearly Top 100 fill the first team before the second; slots without enough qualifying players remain vacant.
 
@@ -70,6 +72,8 @@ Set `LB_PUBLIC_BASE_URL` to the public dashboard URL when hosted. `PORT` enables
 Development commands use `.env.dev`; production commands use `.env.prod`. Both deploy only to `MADDEN_SOLO_GUILD_ID`. Use `npm run check:commands` to inspect the command payload without contacting Discord.
 
 ## Development
+
+Opening the EA Madden session retries temporary service failures up to three times with a 15-second timeout per request. Optional overrides are `EA_SESSION_MAX_ATTEMPTS` (1–5), `EA_SESSION_RETRY_BASE_MS` (default 1000), and `EA_SESSION_TIMEOUT_MS` (default 15000, maximum 30000). Expired-token responses require reconnecting through `/setup`; temporary service errors preserve the saved connection and recommend retrying `/sync` later.
 
 `npm test` runs the solo authorization, command catalog, setup, sync history, progression, report, and draft checks with isolated temporary data roots. Tests do not log into Discord, EA, or payment services.
 

@@ -4,15 +4,15 @@ import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
 } from 'discord.js';
-import { loadLeagueSnapshot, currentWeek, requireLeagueIdForGuild } from '../../../madden/madden_data.js';
+import { loadLeagueSnapshot, currentWeek, requireLeagueIdForGuild } from '../madden_data.js';
 import { getMessageForWeek } from '../madden_utils.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
 import { formatTeamLabelWithEmoji } from '../../shared/madden_visuals.js';
 import { loadWeeklyGameLog } from '../weekly_game_log.js';
-import { coachCommandDescription } from '../../shared/madden_coach_voice.js';
+import { commandDescription } from '../../shared/madden_voice.js';
 export const data = new SlashCommandBuilder()
   .setName('schedule')
-  .setDescription(coachCommandDescription('schedule'));
+  .setDescription(commandDescription('schedule'));
 
 function buildTeamMaps(snapshot) {
   const names = new Map();

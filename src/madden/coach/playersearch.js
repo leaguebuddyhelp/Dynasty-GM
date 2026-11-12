@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../../../madden/madden_data.js';
-import { computePlayerValue } from '../../../madden/madden_trade_modal_submit.js';
+import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden_data.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { coachCommandDescription, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
+import { formatTeamLabelWithEmoji } from '../../shared/madden_visuals.js';
+import { commandDescription, errorBlurb } from '../../shared/madden_voice.js';
 import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
 function devLabel(dev) {
@@ -20,7 +20,7 @@ function heightToFeetInches(h) {
 
 export const data = new SlashCommandBuilder()
   .setName('playersearch')
-  .setDescription(coachCommandDescription('playersearch'))
+  .setDescription(commandDescription('playersearch'))
   .addStringOption(o =>
     o.setName('team')
       .setDescription('Team (start typing to select)')
@@ -100,7 +100,7 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    await interaction.reply({ content: coachErrorBlurb('noLeague', 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.'), ephemeral: true });
+    await interaction.reply({ content: errorBlurb('noLeague', 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.'), ephemeral: true });
     return;
   }
   const teamInput = interaction.options.getString('team');
@@ -143,13 +143,11 @@ export async function execute(interaction) {
   const wt = p.weight ? `${p.weight} lbs` : 'N/A';
   const years = Number.isFinite(p.yearsPro) ? `${p.yearsPro}` : 'N/A';
   const ovr = p.playerBestOvr ?? p.overallRating ?? 'N/A';
-  const tradeVal = computePlayerValue(p);
   const desc = [
-    `Team: ${teamName}`,
+    `Team: ${formatTeamLabelWithEmoji(teamName)}`,
     `OVR: ${ovr} • Dev: ${dev}`,
     `Ht/Wt: ${ht} / ${wt}`,
     `Age: ${p.age ?? 'N/A'} • Years Pro: ${years}`,
-    `Est. Trade Value: ${tradeVal.toFixed(1)}`
   ].join('\n');
 
   const embed = new EmbedBuilder()

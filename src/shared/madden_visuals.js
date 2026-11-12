@@ -1,11 +1,5 @@
 import { getFullTeamName } from './madden_team_names.js';
-import { getRecognitionEmoji, getTeamApplicationEmoji } from './application_emojis.js';
-
-export const RECOGNITION_EMOJIS = new Proxy({}, {
-  get(_target, prop) {
-    return getRecognitionEmoji(prop);
-  },
-});
+import { getTeamApplicationEmoji } from './application_emojis.js';
 
 export function getTeamEmojiByName(teamName = '') {
   return getTeamApplicationEmoji(teamName, '');

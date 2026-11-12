@@ -1,8 +1,9 @@
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import { spawnSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 
-const DB_PATH = path.join(process.cwd(), 'data', 'madden', 'db.sqlite');
+const DB_PATH = getMaddenDataFilePath('db.sqlite');
 
 function ensureDb() {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });

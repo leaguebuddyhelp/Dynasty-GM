@@ -3,14 +3,13 @@ import path from 'path';
 import { EmbedBuilder } from 'discord.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
-import { getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
+import { getMaddenDataFilePath, getMaddenLeagueSnapshotPath } from '../leaguebuddy/paths.js';
 import { renderLeagueBoardImage } from '../shared/madden_board_renderer.js';
 import { getLeagueBuddyLogoEmoji } from '../shared/application_emojis.js';
 import { ensureBoardPinMessage } from './board_pin_utils.js';
 import { getMessageForWeek } from './madden_utils.js';
 
-const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-const RANKS_FILE = path.join(process.cwd(), 'data', 'madden', 'power_ranks.json');
+const RANKS_FILE = getMaddenDataFilePath('power_ranks.json');
 function loadSnapshot(leagueId) {
   const file = getMaddenLeagueSnapshotPath(leagueId);
   const raw = fs.readFileSync(file, 'utf8');
@@ -296,24 +295,6 @@ function saveRanks(map) {
   fs.writeFileSync(RANKS_FILE, JSON.stringify(map, null, 2));
 }
 
-function teamRoleMention(teamName, roleMap) {
-  if (!teamName) return null;
-  const normalize = (s) => (s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
-    .replace(/ers$/, 'ers'); // keep 49ers style intact
-  const target = normalize(teamName);
-  const mascot = normalize(teamName.split(/\s+/).pop());
-  for (const [key, val] of Object.entries(roleMap)) {
-    if (!key.endsWith(' Coach')) continue;
-    const base = normalize(key.replace(/ Coach$/, ''));
-    if (base === target || (mascot && base === mascot) || target.includes(base) || base.includes(target)) {
-      return `<@&${val}>`;
-    }
-  }
-  return null;
-}
-
 export async function updatePowerRankings(client, leagueId, guildId = null) {
   const resolvedGuildId = guildId || client?.guilds?.cache?.first?.()?.id || null;
   const snapshot = loadSnapshot(leagueId);
@@ -329,7 +310,6 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
     return;
   }
   const teams = teamNameMap(snapshot);
-  const roleMap = loadJson(ROLE_MAP_FILE);
   const ranked = rankTeams(snapshot);
   const prevMap = loadPrevRanks();
   const prev = prevMap[leagueId] || {};
@@ -352,8 +332,7 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
       if (prevRank === undefined || prevRank > 10) {
         move = '(new)';
         if (hadPreviousRanks) {
-          const mention = teamRoleMention(name, roleMap);
-          newEntrants.push({ mention, name });
+          newEntrants.push({ name });
         }
       } else {
         const diff = prevRank - currentRank;
@@ -415,10 +394,6 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
     const lines = newEntrants.map(e => {
       return `${e.name || 'Team'} has entered the Top 10!`;
     });
-    const roleMentions = newEntrants
-      .map(e => (e.mention || '').match(/<@&(\d+)>/))
-      .filter(Boolean)
-      .map(m => m[1]);
     const announce = {
       title: `${getLeagueBuddyLogoEmoji() ? `${getLeagueBuddyLogoEmoji()} ` : ''}New Teams in the Power Rankings`,
       description: lines.join('\n'),
@@ -426,9 +401,8 @@ export async function updatePowerRankings(client, leagueId, guildId = null) {
       timestamp: new Date().toISOString(),
     };
     await channel.send({
-      content: roleMentions.length ? roleMentions.map(id => `<@&${id}>`).join(' ') : null,
       embeds: [announce],
-      allowedMentions: roleMentions.length ? { roles: roleMentions, parse: [] } : { parse: [] },
+      allowedMentions: { parse: [] },
     }).catch(() => null);
   }
 }

@@ -5,10 +5,8 @@ import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden_data.js
 import { getMaddenLeaguesDir } from '../../leaguebuddy/paths.js';
 import { getMaddenDataFilePath } from '../../leaguebuddy/paths.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { isDraftRookie } from '../draft_rookies.js';
 import { stablePlayerKey } from '../player_identity.js';
-import { hasStaffRole, loadRoleMapForGuild } from './staffUtils.js';
-import { isSoloModeEnabled } from '../../leaguebuddy/solo_mode.js';
+import { isDraftRookie } from '../draft_rookies.js';
 
 const EXPORT_DIR = getMaddenDataFilePath('draft_exports');
 
@@ -111,6 +109,7 @@ export function collectDraft(snapshot) {
     }
   }
   return [...playersByKey.values()]
+    .filter((player) => !(player.draftRound === 64 && player.draftPickInRound === 0))
     .map((player) => ({
       playerKey: player.playerKey,
       rosterId: player.rosterId ?? null,

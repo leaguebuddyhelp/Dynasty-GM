@@ -91,3 +91,8 @@ data/recruits.json
 data/recruiting.json
 data/scout_points.json
 data/scouting.json
+
+# Commit the solo setup templates; keep real environment files private.
+!.env.example
+!.env.dev.example
+!.env.prod.example

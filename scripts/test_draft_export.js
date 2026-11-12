@@ -154,4 +154,20 @@ const latestClass = collectDraft([oldClass, newClass]);
 assert.equal(latestClass.length, 224);
 assert.equal(draftCsvRows(latestClass).split('\r\n').length, 225);
 assert.equal(latestClass.every((player) => player.rosterId >= 20000), true);
+
+const extraRookies = classSnapshot(30000, 224);
+extraRookies.rosters.teams[1].rosterInfoList[0].draftRound = 8;
+extraRookies.rosters.teams[1].rosterInfoList[0].draftPick = 19;
+extraRookies.rosters.teams[1].rosterInfoList.push(
+  { rosterId: 30224, firstName: 'Duplicate', lastName: 'Pick', position: 'RT', yearsPro: 0, draftRound: 8, draftPick: 19 },
+  { rosterId: 30225, firstName: 'Undrafted', lastName: 'Rookie', position: 'LE', yearsPro: 0, draftRound: 64, draftPick: 0 },
+);
+const filteredDraft = collectDraft(extraRookies);
+assert.equal(filteredDraft.length, 225, 'Exclude explicit undrafted sentinel but preserve duplicate picks');
+assert.ok(!filteredDraft.some((player) => player.rosterId === 30225));
+assert.ok(filteredDraft.some((player) => player.rosterId === 30224));
+assert.equal(filteredDraft.filter((player) => player.draftRound === 8 && player.draftPickInRound === 19).length, 2);
+const missingPick = structuredClone(extraRookies);
+delete missingPick.rosters.teams[1].rosterInfoList.at(-1).draftPick;
+assert.ok(collectDraft(missingPick).some((player) => player.rosterId === 30225), 'Incomplete selection information must not be treated as undrafted');
 console.log('PASS draft export identity, trade/current-team distinction, unresolved picks, and CSV escaping');

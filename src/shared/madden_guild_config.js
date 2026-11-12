@@ -49,8 +49,6 @@ export function upsertGuildPin(guildId, key, messageId) {
         version: 2,
         status: 'incomplete',
         updatedAt: new Date().toISOString(),
-        license: { tier: 'free' },
-        packsEnabled: [],
         compat: { maddenChannelMap: {}, maddenRoleMap: {} },
         pins: {},
     };
@@ -80,25 +78,6 @@ export function getGuildPinsMap(guildId) {
     return map && typeof map === 'object' ? map : null;
 }
 
-export function getGuildLicense(guildId) {
-    const cfg = loadGuildMaddenConfigIfComplete(guildId) || loadGuildMaddenConfig(guildId);
-    return cfg?.license || null;
-}
-
-export function tierRank(tier) {
-    const t = String(tier || '').toLowerCase();
-    if (t === 'pro') return 2;
-    if (t === 'starter') return 1;
-    return 0;
-}
-
-export function isPackEnabled(guildId, packId) {
-    const cfg = loadGuildMaddenConfigIfComplete(guildId);
-    if (!cfg) return false;
-    const list = Array.isArray(cfg.packsEnabled) ? cfg.packsEnabled : [];
-    return list.includes(String(packId));
-}
-
 export function getGuildCompatMaps(guildId) {
     const cfg = loadGuildMaddenConfig(guildId);
     return {
@@ -109,13 +88,6 @@ export function getGuildCompatMaps(guildId) {
     };
 }
 
-export function normalizeTier(tier) {
-    const t = String(tier || '').trim().toLowerCase();
-    if (t === 'pro') return 'pro';
-    if (t === 'starter') return 'starter';
-    return 'free';
-}
-
 export default {
     loadGuildMaddenConfig,
     loadGuildMaddenConfigIfComplete,
@@ -123,10 +95,6 @@ export default {
     getGuildChannelMap,
     getGuildRoleMap,
     getGuildPinsMap,
-    getGuildLicense,
     getGuildCompatMaps,
-    normalizeTier,
     upsertGuildPin,
-    tierRank,
-    isPackEnabled,
 };

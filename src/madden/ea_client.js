@@ -46,20 +46,6 @@ function persistTokensToTarget(token, persistTokenUpdate) {
   persistTokens(token);
 }
 
-function buildReadableSessionError(errors = [], primaryConsole) {
-  const joined = String(errors.join(' | '));
-  if (joined.includes('AUTH_ERR_INVALID_TOKEN') || joined.includes('invalid_token')) {
-    return `EA session expired for ${primaryConsole}. Reconnect EA from /setup and try again.`;
-  }
-  if (joined.includes('The Server Information was not found')) {
-    return `EA could not open the Madden ${YEAR} ${String(primaryConsole || '').toUpperCase()} service right now. Try again in a moment.`;
-  }
-  if (joined.includes('ERR_SYSTEM')) {
-    return 'EA returned a temporary system error while opening the Madden service. Try again in a moment.';
-  }
-  return 'LEAGUEbuddy could not open the Madden service for this account right now. Reconnect EA and try again.';
-}
-
 // TokenInformation / SessionInformation shapes (JS version)
 // token: { accessToken, refreshToken, expiry: Date, console: 'ps5'|'xbsx'|..., blazeId }
 // session: { blazeId: number, sessionKey: string, requestId: number }
@@ -117,57 +103,98 @@ async function refreshToken(token, persistTokenUpdate) {
   return refreshed;
 }
 
-async function retrieveBlazeSession(token) {
+function boundedInteger(value, fallback, minimum, maximum) {
+  const number = Number(value);
+  return value == null || value === '' || !Number.isFinite(number)
+    ? fallback
+    : Math.max(minimum, Math.min(maximum, Math.floor(number)));
+}
+
+function sessionFailure(status, body = '', networkError = null) {
+  const text = String(body).toLowerCase();
+  if (status === 401 || status === 403 || /auth_err_invalid_token|invalid_token/.test(text)) {
+    return { code: 'EA_SESSION_AUTH', retryable: false };
+  }
+  const networkCode = networkError?.cause?.code || networkError?.code;
+  const transientNetwork = networkError && (
+    ['TimeoutError', 'AbortError', 'TypeError', 'FetchError'].includes(networkError.name)
+    || ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EAI_AGAIN', 'ENOTFOUND', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_SOCKET'].includes(networkCode)
+  );
+  if (transientNetwork || status === 408 || status === 429 || status >= 500
+    || /err_system|err_timeout|temporar/.test(text)) {
+    return { code: 'EA_SESSION_TEMPORARY', retryable: true };
+  }
+  return { code: status === 404 || text.includes('the server information was not found')
+    ? 'EA_SESSION_SERVICE' : 'EA_SESSION_RESPONSE', retryable: false };
+}
+
+function makeSessionError(failures, consoleName, attempts) {
+  const temporary = failures.some((failure) => failure.retryable);
+  const code = failures.some((failure) => failure.code === 'EA_SESSION_AUTH')
+    ? 'EA_SESSION_AUTH' : temporary ? 'EA_SESSION_TEMPORARY'
+      : failures.some((failure) => failure.code === 'EA_SESSION_SERVICE') ? 'EA_SESSION_SERVICE' : 'EA_SESSION_RESPONSE';
+  const messages = {
+    EA_SESSION_AUTH: `EA session expired for ${consoleName}. Reconnect EA from /setup and try again.`,
+    EA_SESSION_TEMPORARY: `EA returned a temporary system error or timed out while opening the Madden service after ${attempts} attempt(s). Wait a moment, then run /sync again.`,
+    EA_SESSION_SERVICE: `EA could not find the Madden ${YEAR} ${String(consoleName).toUpperCase()} service. Check the selected Madden account and console in /setup.`,
+    EA_SESSION_RESPONSE: 'EA did not return a valid Madden session. Check the selected Madden account in /setup and try again.',
+  };
+  return Object.assign(new Error(messages[code]), {
+    code, retryable: code === 'EA_SESSION_TEMPORARY', attempts,
+    // Keep diagnostics useful without retaining tokens, session keys, or response bodies.
+    diagnostics: failures,
+  });
+}
+
+export async function retrieveBlazeSession(token, options = {}) {
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  const sleep = options.sleep || wait;
+  const maxAttempts = boundedInteger(options.maxAttempts ?? process.env.EA_SESSION_MAX_ATTEMPTS, 3, 1, 5);
+  const baseDelayMs = boundedInteger(options.baseDelayMs ?? process.env.EA_SESSION_RETRY_BASE_MS, 1000, 0, 10000);
+  const timeoutMs = boundedInteger(options.timeoutMs ?? process.env.EA_SESSION_TIMEOUT_MS, 15000, 1, 30000);
   const primaryConsole = token.console || process.env.EA_CONSOLE || 'ps5';
-  const consolesToTry = [primaryConsole];
-  const errors = [];
-  for (const c of consolesToTry) {
-    const variants = token.serviceOverride && token.productOverride
-      ? [{ service: token.serviceOverride, product: token.productOverride }]
-      : token.serviceOverride
-        ? [{ service: token.serviceOverride, product: token.productOverride || token.serviceOverride }]
-        : getServiceVariantsForConsole(c); // try all known variants for this console/year
-    if (!variants.length) {
-      errors.push(`console=${c} missing service/product for YEAR=${YEAR}`);
-      continue;
-    }
+  const variants = token.serviceOverride
+    ? [{ service: token.serviceOverride, product: token.productOverride || token.serviceOverride }]
+    : getServiceVariantsForConsole(primaryConsole).map((variant) => ({ ...variant, product: token.productOverride || variant.product }));
+  if (!variants.length) throw makeSessionError([{ code: 'EA_SESSION_SERVICE', retryable: false, console: primaryConsole }], primaryConsole, 0);
+
+  let failures = [];
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    failures = [];
     for (const variant of variants) {
-      const res = await fetch(
-        `https://wal2.tools.gos.bio-iad.ea.com/wal/authentication/login`,
-        {
-          method: "POST",
-          headers: headers({ ...token, console: c, serviceOverride: variant.service }),
-          body: JSON.stringify({
-            accessToken: token.accessToken,
-            productName: variant.product,
-          }),
+      let response;
+      let textResponse;
+      try {
+        response = await fetchImpl('https://wal2.tools.gos.bio-iad.ea.com/wal/authentication/login', {
+          method: 'POST',
+          headers: headers({ ...token, console: primaryConsole, serviceOverride: variant.service }),
+          body: JSON.stringify({ accessToken: token.accessToken, productName: variant.product }),
           agent,
-        }
-      );
-      const textResponse = await res.text();
-      if (!res.ok) {
-        errors.push(`console=${c} service=${variant.service} status=${res.status} body=${textResponse}`);
-        // On 404 server info not found, try next variant but break after trying all.
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        textResponse = await response.text();
+      } catch (error) {
+        failures.push({ ...sessionFailure(0, '', error), console: primaryConsole, service: variant.service, status: 0 });
         continue;
       }
       let blazeSession;
-      try {
-        blazeSession = JSON.parse(textResponse);
-      } catch (e) {
-        errors.push(`console=${c} service=${variant.service} non-JSON: ${textResponse}`);
-        continue;
-      }
+      try { blazeSession = JSON.parse(textResponse); } catch { /* Classify non-JSON gateway responses below. */ }
       const sessionKey = blazeSession?.userLoginInfo?.sessionKey;
       const blazeId = blazeSession?.userLoginInfo?.personaDetails?.personaId;
-      if (sessionKey) {
-        console.info(`[ea] Blaze session established console=${c} service=${variant.service} blazeId=${blazeId}`);
-        return { blazeId: blazeId, sessionKey: sessionKey, requestId: 1, console: c, serviceOverride: variant.service, productOverride: variant.product };
+      if (response.ok && sessionKey) {
+        console.info(`[ea] Blaze session established console=${primaryConsole} service=${variant.service}`);
+        return { blazeId, sessionKey, requestId: 1, console: primaryConsole, serviceOverride: variant.service, productOverride: variant.product };
       }
-      errors.push(`console=${c} service=${variant.service} no sessionKey: ${textResponse}`);
+      const failure = { ...sessionFailure(response.status, textResponse), console: primaryConsole, service: variant.service, status: response.status };
+      failures.push(failure);
+      if (failure.code === 'EA_SESSION_AUTH') throw makeSessionError(failures, primaryConsole, attempt);
     }
+    const error = makeSessionError(failures, primaryConsole, attempt);
+    if (!error.retryable || attempt === maxAttempts) throw error;
+    const delayMs = Math.min(baseDelayMs * (2 ** (attempt - 1)), 10000);
+    console.warn('[ea] retrying Madden session', { attempt, maxAttempts, delayMs, diagnostics: failures });
+    await sleep(delayMs);
   }
-  const readable = buildReadableSessionError(errors, primaryConsole);
-  throw new Error(readable);
 }
 
 function calculateMessageAuthData(blazeId, requestId) {
@@ -313,7 +340,7 @@ export async function createEAClientFromEnv(env, options = {}) {
   }
 
   const freshToken = await refreshToken(token, options.persistTokenUpdate);
-  const session = await retrieveBlazeSession(freshToken);
+  const session = await retrieveBlazeSession(freshToken, options);
   return await ephemeralClientFromToken({ ...freshToken, gameYear: env.EA_GAME_YEAR || YEAR }, session);
 }
 

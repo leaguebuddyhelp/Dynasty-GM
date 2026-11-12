@@ -1,4 +1,4 @@
-import { loadLeagueSnapshot, resolveLeagueIdStrict } from '../../madden/madden_data.js';
+import { loadLeagueSnapshot, resolveLeagueIdStrict } from '../madden/madden_data.js';
 import { buildGameDetailView, buildScheduleWeekView } from '../madden/coach/schedule.js';
 
 export const customId = /^madden_schedule_game\|/;

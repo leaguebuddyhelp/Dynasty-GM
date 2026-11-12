@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs';
+
+const bundledEmojis = JSON.parse(readFileSync(new URL('../../config/application_emojis.json', import.meta.url), 'utf8'));
+
 const emojiState = {
+  applicationId: null,
   byName: new Map(),
   dataByName: new Map(),
   lastFetchedAt: 0,
@@ -48,18 +53,6 @@ const DEV_TRAIT_NAMES = {
   3: ['xfactor_dev'],
 };
 
-const RECOGNITION_EMOJI_IDS = {
-  prod: {
-    activity: '1506342706862096536',
-    legacy: '1506342070149976226',
-    impact: '1506342069222903978',
-  },
-  dev: {
-    activity: '1506342672057630791',
-    legacy: '1506335999939186789',
-    impact: '1506337456998322228',
-  },
-};
 
 function normalizeEmojiKey(value = '') {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -77,6 +70,13 @@ function isStrongFuzzyAliasMatch(normalized, canonicalKey, aliasKeys) {
 
 export async function refreshApplicationEmojiMap(client) {
   if (!client?.application) return emojiState;
+  const applicationId = client.application.id || process.env.CLIENT_ID || null;
+  if (emojiState.applicationId !== applicationId) {
+    emojiState.byName = new Map();
+    emojiState.dataByName = new Map();
+    emojiState.applicationId = applicationId;
+    emojiState.ready = false;
+  }
   try {
     await client.application.fetch();
     const collection = await client.application.emojis.fetch();
@@ -109,15 +109,36 @@ export async function refreshApplicationEmojiMap(client) {
 
 export function getApplicationEmoji(name, fallback = '') {
   if (!name) return fallback;
-  return emojiState.byName.get(normalizeEmojiKey(name)) || fallback;
+  const key = normalizeEmojiKey(name);
+  return emojiState.byName.get(key) || bundledEmojiText(key) || fallback;
+}
+
+function bundledEmojiData(key) {
+  // A successful fetch is authoritative, including renamed or deleted emojis.
+  if (emojiState.ready) return null;
+  const applicationId = emojiState.applicationId || process.env.CLIENT_ID || bundledEmojis.applicationId;
+  if (applicationId !== bundledEmojis.applicationId) return null;
+  const id = bundledEmojis.emojis[key];
+  return id ? { id, name: key, animated: false } : null;
+}
+
+function bundledEmojiText(key) {
+  const emoji = bundledEmojiData(key);
+  return emoji ? `<:${emoji.name}:${emoji.id}>` : '';
 }
 
 export function getApplicationEmojiData(name) {
   if (!name) return null;
-  return emojiState.dataByName.get(normalizeEmojiKey(name)) || null;
+  const key = normalizeEmojiKey(name);
+  return emojiState.dataByName.get(key) || bundledEmojiData(key);
 }
 
 export function findApplicationEmoji(candidates = [], fallback = '') {
+  // Prefer any live alias before falling back to the supplied screenshot IDs.
+  for (const candidate of candidates) {
+    const emoji = emojiState.byName.get(normalizeEmojiKey(candidate));
+    if (emoji) return emoji;
+  }
   for (const candidate of candidates) {
     const emoji = getApplicationEmoji(candidate);
     if (emoji) return emoji;
@@ -127,23 +148,16 @@ export function findApplicationEmoji(candidates = [], fallback = '') {
 
 export function findApplicationEmojiData(candidates = []) {
   for (const candidate of candidates) {
+    const emoji = emojiState.dataByName.get(normalizeEmojiKey(candidate));
+    if (emoji) return emoji;
+  }
+  for (const candidate of candidates) {
     const emoji = getApplicationEmojiData(candidate);
     if (emoji) return emoji;
   }
   return null;
 }
 
-function getRecognitionEmojiFallback(tier) {
-  const key = normalizeEmojiKey(tier);
-  const env = String(process.env.APP_ENV || process.env.NODE_ENV || '').toLowerCase();
-  const scope = env === 'prod' || env === 'production' ? 'prod' : 'dev';
-  const id = RECOGNITION_EMOJI_IDS[scope]?.[key];
-  return id ? `<:${key}:${id}>` : '•';
-}
-
-export function getRecognitionEmoji(tier) {
-  return findApplicationEmoji([tier], getRecognitionEmojiFallback(tier));
-}
 
 export function getDevTraitEmoji(devTrait, { fallbackText = true } = {}) {
   const key = devTrait == null ? 'hidden' : String(Number(devTrait));
@@ -197,7 +211,7 @@ export function getTeamApplicationEmojiData(teamName = '') {
 
 export function getLeagueBuddyLogoEmoji(fallback = '') {
   return findApplicationEmoji(
-    ['leaguebuddy_official_logo', 'lb_official_logo', 'leaguebuddy_logo', 'leaguebuddy', 'lb_logo', 'lb'],
+    ['dynasty_gm_official_logo', 'dynastygm_official_logo', 'dynasty_gm_logo', 'dynastygm_logo'],
     fallback,
   );
 }

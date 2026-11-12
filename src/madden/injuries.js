@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { EmbedBuilder, MessageFlags } from 'discord.js';
 import { getMessageForWeek } from './madden_utils.js';
-import { appendMaddenStaffLog, postMaddenStaffLog } from '../shared/madden_staff_ops.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getMaddenLeagueSnapshotPath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
@@ -242,30 +241,7 @@ export async function updateInjuries(client, leagueId, guildId = null) {
     );
   }
 
-  if (notableInjuries.length) {
-    const lines = notableInjuries.slice(0, 6).map(({ teamName, player, weeks, ovr, type }) =>
-      type === 'new'
-        ? `${teamName}: ${playerLabel(player)} — out ${weeks} week${weeks === 1 ? '' : 's'}`
-        : `${teamName}: ${playerLabel(player)} — recovered`
-    );
-    appendMaddenStaffLog({
-      type: 'notable_injuries',
-      guildId,
-      leagueId,
-      count: notableInjuries.length,
-      weekLabel,
-      lines,
-    });
-    if (guildId) {
-      await postMaddenStaffLog(
-        client,
-        guildId,
-        'Notable Injury Watch',
-        `${weekLabel}: major injury movement worth staff attention.`,
-        [{ name: 'Highlights', value: lines.join('\n') }],
-      ).catch(() => null);
-    }
-  }
+
 }
 
 export default { updateInjuries };

@@ -10,7 +10,6 @@ import { stablePlayerKey } from './player_identity.js';
 
 const LEAGUE_DIR = getMaddenLeaguesDir();
 const PREV_DIR = path.join(LEAGUE_DIR, 'previous');
-const ROLE_MAP_FILE = getMaddenDataFilePath('madden_role_ids.json');
 const PLAYER_CHANGES_FILE = getMaddenDataFilePath('player_changes.json');
 
 function loadJson(file) {
@@ -244,11 +243,6 @@ export async function updatePlayerChanges(client, leagueId, guildId = null) {
     console.warn('[player_changes] Player Change Log channel missing.');
     return;
   }
-  const roleMap = loadJson(ROLE_MAP_FILE) || {};
-  const commishMentions = ['LB Commish', 'LB Co-Commish']
-    .map(r => roleMap[r] ? `<@&${roleMap[r]}>` : null)
-    .filter(Boolean)
-    .join(' ');
   const channel = await client.channels.fetch(channelId).catch(() => null);
   if (!channel || !channel.isTextBased()) {
     console.warn('[player_changes] Player Change Log channel not text-based or missing.');
@@ -314,9 +308,7 @@ export async function updatePlayerChanges(client, leagueId, guildId = null) {
         .addFields({ name: '\u200b', value: part.join('\n\n') })
         .setColor(0x1e90ff)
         .setTimestamp(new Date());
-      const content = positionChangedForTeam ? commishMentions : null;
       await channel.send({
-        content: content || undefined,
         embeds: [embed],
         ...(positionChangedForTeam ? {} : { flags: MessageFlags.SuppressNotifications }),
       }).catch(() => null);

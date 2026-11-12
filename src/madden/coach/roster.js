@@ -1,9 +1,8 @@
-import { getUserTeam } from '../../shared/user_team_lookup.js';
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { requireLeagueIdForGuild, loadLeagueSnapshot } from '../madden_data.js';
-import { computePlayerValue } from '../madden_trade_modal_submit.js';
 import { getFullTeamName } from '../../shared/madden_team_names.js';
-import { coachCommandDescription, coachVoiceFooter, coachErrorBlurb } from '../../shared/madden_coach_voice.js';
+import { formatTeamLabelWithEmoji } from '../../shared/madden_visuals.js';
+import { commandDescription, voiceFooter, errorBlurb } from '../../shared/madden_voice.js';
 import { applyEmbedThumbnailFromAsset, getNflTeamLogoAsset } from '../../shared/madden_assets.js';
 
 const DEV_LABEL = { 0: 'Normal', 1: 'Star', 2: 'Superstar', 3: 'X-Factor' };
@@ -71,7 +70,7 @@ function chunkLines(lines, maxCount = 12) {
 
 export const data = new SlashCommandBuilder()
   .setName('roster')
-  .setDescription(coachCommandDescription('roster'))
+  .setDescription(commandDescription('roster'))
   .addStringOption(o =>
     o.setName('team')
       .setDescription('Team name (city, nickname, or abbreviation)')
@@ -96,18 +95,17 @@ export function buildRosterEmbeds(snapshot, teamName) {
       const ovr = p.overallRating ?? p.playerBestOvr ?? p.ovrRating ?? '—';
       const devTrait = dev(p);
       const cap = capHit(p);
-      const value = num(computePlayerValue(p));
       const name = `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown';
-      return `**${pos}** ${name} • OVR ${ovr} • Age ${age} • Dev ${devTrait} • Cap ${cap} • Value ${value}`;
+      return `**${pos}** ${name} • OVR ${ovr} • Age ${age} • Dev ${devTrait} • Cap ${cap}`;
     });
 
   const chunks = chunkLines(lines, 12);
   const logoAsset = getNflTeamLogoAsset(teamInfo, `roster_${teamInfo.teamId}.png`);
   const embeds = chunks.map((chunk, idx) => new EmbedBuilder()
     .setTitle(`${fullTeamName} — Roster`)
-    .setDescription(chunk.join('\n'))
+    .setDescription(`${formatTeamLabelWithEmoji(fullTeamName)}\n\n${chunk.join('\n')}`)
     .setColor(0x00a3ff)
-    .setFooter({ text: chunks.length > 1 ? `${coachVoiceFooter('roster', 'Live roster card')} • Page ${idx + 1}/${chunks.length}` : coachVoiceFooter('roster', 'Live roster card') })
+    .setFooter({ text: chunks.length > 1 ? `${voiceFooter('roster', 'Live roster card')} • Page ${idx + 1}/${chunks.length}` : voiceFooter('roster', 'Live roster card') })
   );
   return { embeds, teamInfo, logoAsset };
 }
@@ -118,22 +116,14 @@ export async function execute(interaction) {
   try {
     leagueId = requireLeagueIdForGuild(interaction.guildId);
   } catch {
-    await interaction.reply({ content: coachErrorBlurb('noLeague', 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.'), ephemeral: true });
+    await interaction.reply({ content: errorBlurb('noLeague', 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.'), ephemeral: true });
     return;
   }
   try {
     const snapshot = loadLeagueSnapshot(leagueId);
     if (!snapshot) {
-      await interaction.reply({ content: coachErrorBlurb('noSnapshot', 'Could not load the current Madden league snapshot.'), ephemeral: true });
+      await interaction.reply({ content: errorBlurb('noSnapshot', 'Could not load the current Madden league snapshot.'), ephemeral: true });
       return;
-    }
-    // If no team provided, use assignment system
-    if (!teamInput) {
-      teamInput = getUserTeam(interaction.guildId, interaction.user.id);
-      if (!teamInput) {
-        await interaction.reply({ content: 'Could not determine your assigned team.', ephemeral: true });
-        return;
-      }
     }
     await interaction.deferReply({ ephemeral: true });
     const result = buildRosterEmbeds(snapshot, teamInput);

@@ -19,18 +19,6 @@ export function getLeaguebuddyDir() {
   return path.join(getDataRoot(), 'leaguebuddy');
 }
 
-export function getLeaguebuddyGuildStorePath() {
-  return path.join(getLeaguebuddyDir(), 'guilds.json');
-}
-
-export function getLeaguebuddyAuditLogPath() {
-  return path.join(getLeaguebuddyDir(), 'audit.log');
-}
-
-export function getLeaguebuddyClaimsStorePath() {
-  return path.join(getLeaguebuddyDir(), 'claims.json');
-}
-
 export function getLeaguebuddyMaddenConnectionsPath() {
   return path.join(getLeaguebuddyDir(), 'madden_connections.json');
 }
@@ -86,19 +74,11 @@ export function getMaddenConfigPath() {
   return path.join(getMaddenRoot(), 'config.json');
 }
 
-export function getLeaguebuddyRecognitionStorePath() {
-  return path.join(getDataRoot(), 'leaguebuddy_recognition.json');
-}
-
 export default {
   getDataRoot,
   getDataFilePath,
   getLeaguebuddyDir,
-  getLeaguebuddyGuildStorePath,
-  getLeaguebuddyAuditLogPath,
-  getLeaguebuddyClaimsStorePath,
   getLeaguebuddyMaddenConnectionsPath,
-  getLeaguebuddyRecognitionStorePath,
   getGuildsRoot,
   getGuildOverlayConfigPath,
   getGuildMaddenDir,

@@ -1,3 +1,4 @@
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -12,9 +13,7 @@ import path from 'path';
 import { resolveLeagueIdWithConfig, loadLeagueSnapshot } from '../madden/madden_data.js';
 import { getMaddenSeasonKey, loadMaddenChannelMap } from '../shared/madden_metadata.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';
-import { getGuildRoleMap } from '../shared/madden_guild_config.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
-import { hasStaffRole } from '../madden/staff/staffUtils.js';
 import { stablePlayerKey } from '../madden/player_identity.js';
 import { isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 
@@ -22,12 +21,6 @@ function loadJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
 }
 
-function loadRoleMap(guildId = null) {
-  const overlay = getGuildRoleMap(guildId);
-  if (overlay && Object.keys(overlay).length) return overlay;
-  const ROLE_MAP_FILE = path.join(process.cwd(), 'data', 'madden', 'madden_role_ids.json');
-  return loadJson(ROLE_MAP_FILE);
-}
 
 function normalize(str) {
   return (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -83,16 +76,6 @@ function teamEmoji(team) {
   return getTeamEmojiByName(getFullTeamName(team, ''));
 }
 
-function coachTag(teamName, roleMap) {
-  if (!teamName) return '';
-  const parts = teamName.split(/\s+/);
-  const mascot = parts[parts.length - 1];
-  const candidates = [`${teamName} Coach`, `${mascot} Coach`];
-  for (const c of candidates) {
-    if (roleMap[c]) return `<@&${roleMap[c]}>`;
-  }
-  return '';
-}
 
 function titleCase(str) {
   return (str || '')
@@ -112,13 +95,6 @@ export async function execute(interaction) {
     await interaction.reply({ content: 'No league is connected yet. Run `/setup` and press Open Setup Dashboard.', ephemeral: true });
     return;
   }
-  const roleMap = loadRoleMap(interaction.guildId);
-  const member = await interaction.guild.members.fetch(interaction.user.id);
-  if (!hasStaffRole(member, roleMap)) {
-    await interaction.reply({ content: 'Staff only.', ephemeral: true });
-    return;
-  }
-
   const modal = new ModalBuilder()
     .setCustomId('madden_awards_modal')
     .setTitle('Enter Madden Yearly Awards')
@@ -151,11 +127,8 @@ export async function execute_modal(interaction) {
     return;
   }
   const snapshot = loadLeagueSnapshot(leagueId);
-  const roleMap = loadRoleMap(interaction.guildId);
   const channelMap = loadMaddenChannelMap(interaction.guildId);
-  const awardsChannelId = isSoloModeEnabled()
-    ? channelMap.Awards || channelMap['Yearly awards'] || channelMap['Yearly Awards']
-    : channelMap['Yearly awards'] || channelMap['Yearly Awards'] || channelMap.Awards;
+  const awardsChannelId = channelMap.Awards;
   // Fallback season year: use config.json if snapshot lacks seasonYear
   let seasonYear =
     snapshot?.info?.careerHubInfo?.seasonInfo?.seasonYear ||
@@ -164,7 +137,7 @@ export async function execute_modal(interaction) {
     null;
   if (!seasonYear) {
     try {
-      const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'madden', 'config.json'), 'utf8'));
+      const config = JSON.parse(fs.readFileSync(getMaddenDataFilePath('config.json'), 'utf8'));
       seasonYear = config?.seasonYear || config?.season || null;
     } catch { /* ignore */ }
   }
@@ -209,10 +182,9 @@ export async function execute_modal(interaction) {
     const team = (snapshot?.teams?.leagueTeamInfoList || []).find(t => t.teamId === teamId);
     const emoji = teamEmoji(team);
     const teamName = team ? getFullTeamName(team, 'Unknown Team') : 'Unknown Team';
-    const coachRole = coachTag(teamName, roleMap);
     const playerName = player ? `${player.firstName || ''} ${player.lastName || ''}`.trim() : titleCase(inputs[key]);
     const title = `🏆 ${label} — Season ${seasonYear}`;
-    const desc = `${emoji ? emoji + ' ' : ''}${playerName} — ${teamName}${coachRole ? ` (${coachRole})` : ''}`;
+    const desc = `${emoji ? emoji + ' ' : ''}${playerName} — ${teamName}`;
     const embed = new EmbedBuilder().setTitle(title).setDescription(desc).setColor(0xFFD700);
     posts.push({ embed, content: null });
   };
@@ -220,9 +192,8 @@ export async function execute_modal(interaction) {
     const team = findTeam(snapshot, inputs[key]);
     const teamName = team ? getFullTeamName(team, titleCase(inputs[key])) : titleCase(inputs[key]);
     const emoji = teamEmoji(team);
-    const coachRole = coachTag(teamName, roleMap);
     const title = `🏆 ${label} — Season ${seasonYear}`;
-    const desc = `${emoji ? emoji + ' ' : ''}${teamName}${coachRole ? ` (${coachRole})` : ''}`;
+    const desc = `${emoji ? emoji + ' ' : ''}${teamName}`;
     const embed = new EmbedBuilder().setTitle(title).setDescription(desc).setColor(0xFFD700);
     posts.push({ embed, content: null });
   };

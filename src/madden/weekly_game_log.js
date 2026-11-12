@@ -1,9 +1,9 @@
+import { getMaddenDataFilePath } from '../leaguebuddy/paths.js';
 import fs from 'fs';
 import path from 'path';
 import { getFullTeamName } from '../shared/madden_team_names.js';
 
-const WEEKLY_GAME_LOG_PATH = path.join(process.cwd(), 'data', 'madden', 'weekly_game_log.json');
-const THREAD_STATE_PATH = path.join(process.cwd(), 'data', 'madden', 'thread_reminders.json');
+const WEEKLY_GAME_LOG_PATH = getMaddenDataFilePath('weekly_game_log.json');
 
 function safeReadJSON(file, fallback) {
   try {
@@ -83,43 +83,6 @@ function stageLabel(stageIndex, weekIndex) {
   return `Stage ${stage} Week ${week + 1}`;
 }
 
-function buildThreadOutcomeMap() {
-  const state = safeReadJSON(THREAD_STATE_PATH, { threads: {} });
-  const map = new Map();
-  for (const info of Object.values(state?.threads || {})) {
-    const weekIndex = Number(info?.weekIndex ?? -1);
-    const stageIndex = Number(info?.stageIndex ?? 1);
-    if (weekIndex < 0) continue;
-    const away = normalizeName(info?.awayTeam || '');
-    const home = normalizeName(info?.homeTeam || '');
-    if (!away || !home) continue;
-    const key = `${stageIndex}:${weekIndex}:${away}:${home}`;
-    map.set(key, {
-      status: String(info?.status || 'pending'),
-      threadId: info?.threadId || null,
-      deadlineAt: info?.deadlineAt || null,
-    });
-    // Backward compatibility for older thread registrations without stageIndex.
-    if (stageIndex === 1) {
-      map.set(`${weekIndex}:${away}:${home}`, {
-        status: String(info?.status || 'pending'),
-        threadId: info?.threadId || null,
-        deadlineAt: info?.deadlineAt || null,
-      });
-    }
-  }
-  return map;
-}
-
-function outcomeLabel(status) {
-  if (status === 'fairsim') return 'Fair Sim';
-  if (status === 'homewin') return 'Force Win Home';
-  if (status === 'awaywin') return 'Force Win Away';
-  if (status === 'cpu') return 'CPU';
-  if (status === 'complete') return 'Game Completed';
-  return null;
-}
-
 export function updateWeeklyGameLog(leagueId, snapshot) {
   if (!leagueId || !snapshot) return null;
   const all = safeReadJSON(WEEKLY_GAME_LOG_PATH, {});
@@ -127,7 +90,6 @@ export function updateWeeklyGameLog(leagueId, snapshot) {
     (snapshot?.teams?.leagueTeamInfoList || []).map((team) => [Number(team.teamId), getFullTeamName(team, `Team ${team.teamId}`)]),
   );
   const latestCompletedWeek = latestCompletedRegularWeekIndex(snapshot);
-  const threadOutcomeMap = buildThreadOutcomeMap();
   const games = (snapshot?.schedule?.schedules || [])
     .filter((game) => Number(game?.stageIndex ?? game?.stage ?? -1) >= 1)
     .map((game) => {
@@ -135,8 +97,6 @@ export function updateWeeklyGameLog(leagueId, snapshot) {
       const weekIndex = Number(game?.weekIndex ?? -1);
       const awayTeam = teamsById.get(Number(game?.awayTeamId)) || 'Away';
       const homeTeam = teamsById.get(Number(game?.homeTeamId)) || 'Home';
-      const key = `${stageIndex}:${weekIndex}:${normalizeName(awayTeam)}:${normalizeName(homeTeam)}`;
-      const threadInfo = threadOutcomeMap.get(key) || threadOutcomeMap.get(`${weekIndex}:${normalizeName(awayTeam)}:${normalizeName(homeTeam)}`);
       const schedulePlayed = Number(game?.status ?? 0) >= 2 || Number(game?.homeScore || 0) > 0 || Number(game?.awayScore || 0) > 0;
       const latestCompletedForStage = latestCompletedWeekIndexByStage(snapshot, stageIndex);
       const statsAvailable = weekIndex >= 0 && weekIndex <= latestCompletedForStage;
@@ -161,8 +121,6 @@ export function updateWeeklyGameLog(leagueId, snapshot) {
         scoreSource: explicitAwayScore || explicitHomeScore || schedulePlayed ? 'schedule' : (statsAvailable ? 'weekly_stats' : null),
         played: schedulePlayed || statsAvailable,
         statsAvailable,
-        threadStatus: threadInfo?.status || null,
-        outcomeLabel: outcomeLabel(threadInfo?.status || ''),
       };
     });
 
