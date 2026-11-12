@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const scripts = [
+  'test_progression_rating_tiers.js',
   'test_ea_session.js',
   'test_application_emojis.js',
   'test_solo_mode.js', 'test_solo_setup.js', 'test_madden_sync_history.js',

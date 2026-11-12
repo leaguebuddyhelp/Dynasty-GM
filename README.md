@@ -58,6 +58,10 @@ Team overalls are talent-scaled estimates, not official Madden team ratings: sta
 
 ## Storage and hosting
 
+Progression supports movement across the 80 and 90 OVR bands. Three consecutive qualifying games scoring at least 82, with a recent average of at least 82, limit the season-guideline selection penalty to 8 so earlier earned upgrades do not stall continued excellent play. Offseason relief requires at least eight qualifying games, a season score of at least 82, and at least 60% of qualifying games scoring 82 or higher. Population targets remain soft selection modifiers. Players rated 90+ remain eligible for evidence-based downgrades. Maxed attributes are skipped so other supported attributes can improve. Configure these rules under `progression.sustainedGrowth` in `config/madden_solo_rules.json`.
+
+These are attribute recommendations: apply them in Madden, then sync the recalculated OVR. The app does not assume an attribute point equals an OVR point or automatically edit EA player ratings.
+
 Set `LB_DATA_ROOT` to a persistent volume (for example `/data`) when hosting. Otherwise runtime storage uses `./data`.
 
 - `madden/leagues/`: franchise snapshots and sync history.

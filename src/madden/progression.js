@@ -495,7 +495,7 @@ function getEvidenceAttributes(stats, player, rules, positionRule, maxAttributes
     .filter((rule) => rule.evidenceValue >= Number(rule.minimum)
       && rule.currentValue !== null
       && rule.currentValue >= 0
-      && rule.currentValue <= 99)
+      && rule.currentValue < 99)
     .sort((a, b) => (b.evidenceValue / Number(b.minimum)) - (a.evidenceValue / Number(a.minimum)))
     .filter((rule) => {
       const field = rules.attributeFields?.[rule.attribute];
@@ -646,6 +646,23 @@ function positiveSeasonPenalty(positivePoints, startingOvr, offseasonRules) {
     penalty: Math.max(0, positivePoints - midpoint)
       * Number(offseasonRules.softPenaltyPerPointOverGuidelineMidpoint),
   };
+}
+
+function earnedGrowthPenalty(soft, qualifies, rules) {
+  const limit = numberOrNull(rules.sustainedGrowth?.maximumSeasonGuidelinePenalty);
+  const penalty = qualifies && limit !== null && limit >= 0 ? Math.min(soft.penalty, limit) : soft.penalty;
+  return { ...soft, penalty, earnedRelief: soft.penalty - penalty };
+}
+
+function sustainedWeeklyGrowth(windows, positionKey, rules) {
+  const growth = rules.sustainedGrowth;
+  if (!growth) return false;
+  const games = Number(growth.minimumWeeklyGames);
+  const minimum = Number(growth.minimumPerformanceScore);
+  if (!Number.isInteger(games) || games < 1 || !Number.isFinite(minimum)) return false;
+  const recent = windows.metrics.slice(-games);
+  return recent.length === games && windows.recentScore >= minimum
+    && recent.every(({ row, score }) => score >= minimum && opportunityConfirmed(row.totals, positionKey, rules.weekly));
 }
 
 function populationSnapshot(players, progressionRules) {
@@ -1116,7 +1133,10 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const seasonKeyOvr = numberOrNull(startingOveralls[player.key]) ?? player.ovr;
     const positivePointsUsed = sumAttributePoints(history, seasonKey, player.key, 'positive');
     const negativePointsUsed = sumAttributePoints(history, seasonKey, player.key, 'negative');
-    const soft = positiveSeasonPenalty(positivePointsUsed, seasonKeyOvr, rules.offseason);
+    const soft = earnedGrowthPenalty(
+      positiveSeasonPenalty(positivePointsUsed, seasonKeyOvr, rules.offseason),
+      sustainedWeeklyGrowth(windows, positionKey, rules), rules,
+    );
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
     const awardEvidence = currentAttributeEvidence.some((item) => item.evidence !== 'currentGameScore');
     if (weeklyAwards && !awardEvidence) {
@@ -1250,7 +1270,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       seasonToDateScore: windows.seasonScore,
       explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
-    selected.changeContext = { breakout, streakBonus, youngMomentum, awardMomentum, teamLineProxy: positionKey === 'OL' };
+    selected.changeContext = { breakout, streakBonus, youngMomentum, awardMomentum, sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0, teamLineProxy: positionKey === 'OL' };
     selected.minimumSelectionScore = direction === 'upgrade'
       ? Number(weeklyRules.minimumUpgradeSelectionScore)
       : Number(weeklyRules.minimumDowngradeSelectionPriority);
@@ -1258,6 +1278,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       positivePreviouslyConfirmed: positivePointsUsed,
       negativePreviouslyConfirmed: negativePointsUsed,
       softGuideline: soft.guideline,
+      seasonalGuidelineRelief: direction === 'upgrade' ? soft.earnedRelief : 0,
     };
     candidates.push(selected);
   }
@@ -1397,7 +1418,14 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
     const startingOvr = numberOrNull(startingOveralls[player.key]) ?? player.ovr;
     const positiveUsed = sumAttributePoints(history, seasonKey, player.key, 'positive');
     const negativeUsed = sumAttributePoints(history, seasonKey, player.key, 'negative');
-    const soft = positiveSeasonPenalty(positiveUsed, startingOvr, rules.offseason);
+    const growth = rules.sustainedGrowth;
+    const sustainedGrowth = growth && games >= Number(growth.minimumOffseasonGames)
+      && seasonScore >= Number(growth.minimumPerformanceScore)
+      && observedMetrics.filter(({ score }) => score >= Number(growth.minimumPerformanceScore)).length / games
+        >= Number(growth.minimumExcellentSeasonShare);
+    const soft = earnedGrowthPenalty(
+      positiveSeasonPenalty(positiveUsed, startingOvr, rules.offseason), sustainedGrowth, rules,
+    );
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
     const consistency = getStrongPoorCounts(observedMetrics.map((entry) => entry.score), rules.weekly);
     const identityVerified = observedMetrics.every(({ row }) =>
@@ -1463,11 +1491,12 @@ export function buildOffseasonProgressionRecommendations(snapshot, {
         : `Full-season performance score ${seasonScore.toFixed(1)} with verified attribute-specific evidence for ${attributes.map((item) => item.attribute).join(', ')}.`,
     }));
     candidates.at(-1).minimumSelectionScore = minimumSelectionScore;
-    if (positionKey === 'OL') candidates.at(-1).changeContext = { teamLineProxy: true };
+    candidates.at(-1).changeContext = { teamLineProxy: positionKey === 'OL', sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0 };
     candidates.at(-1).pointTracking = {
       positivePreviouslyConfirmed: positiveUsed,
       negativePreviouslyConfirmed: negativeUsed,
       softGuideline: soft.guideline,
+      seasonalGuidelineRelief: direction === 'upgrade' ? soft.earnedRelief : 0,
     };
   }
   const selected = candidates.sort((a, b) => b.selectionScore - a.selectionScore
@@ -1562,6 +1591,7 @@ function recommendationWhy(record, item) {
   }
   if (item.changeContext?.youngMomentum) reasons.push('Sustained strong play accelerated this young player’s development.');
   if (item.changeContext?.awardMomentum) reasons.push('Multiple recent weekly awards increased the strongest change.');
+  if (item.changeContext?.sustainedGrowth) reasons.push('Sustained excellent play kept the season point guideline soft so earned growth can continue across OVR tiers.');
   const streak = item.direction === 'upgrade' ? item.consistency?.strongStreak : item.consistency?.poorStreak;
   if (item.changeContext?.streakBonus > 0) reasons.push(`${streak} consecutive ${item.direction === 'upgrade' ? 'strong' : 'poor'} games increased some changes.`);
   return reasons.join(' ');
