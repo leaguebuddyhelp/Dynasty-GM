@@ -2183,17 +2183,17 @@ function seasonOverallChangesEmbed(record, teamName, baseline, changes) {
     : 'No qualifying changes.';
   const emoji = getTeamEmojiByName(teamName);
   const description = baseline
-    ? `Comparing actual Madden OVR from **${baseline.label}** to the latest offseason sync.${baseline.partial ? '\n**Partial-season comparison:** no preseason or Week 1 snapshot is available.' : ''}\nPlayers are listed on their current team; players without a matching baseline rating are excluded.`
+    ? `Comparing actual Madden OVR from **${baseline.label}** to the latest sync.${baseline.partial ? '\n**Partial-season comparison:** no preseason or Week 1 snapshot is available.' : ''}\nPlayers are listed on their current team; players without a matching baseline rating are excluded.`
     : 'No preseason or regular-season snapshot is available for this season. Sync during the season to establish a comparison baseline.';
   return new EmbedBuilder()
     .setTitle('📊 Season OVR Changes')
     .setDescription(`${emoji ? `${emoji} ` : ''}**${teamName} · ${seasonLabel(record.seasonKey)}**\n\n${description}`)
     .addFields(
-      { name: '📈 Top 10 Upgrades', value: format(changes?.upgrades || []) },
-      { name: '📉 Top 10 Downgrades', value: format(changes?.downgrades || []) },
+      { name: '📈 Top 10 Growers', value: format(changes?.upgrades || []) },
+      { name: '📉 Top 10 Fallers', value: format(changes?.downgrades || []) },
     )
     .setColor(0x5865f2)
-    .setFooter({ text: 'Actual Madden OVR · Updates on offseason syncs' });
+    .setFooter({ text: 'Actual Madden OVR · Updates on playoff and offseason syncs' });
 }
 
 async function publishSeasonOverallChanges(client, guildId, snapshot, record, history, registry) {
@@ -2299,7 +2299,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   history.periods[record.periodKey] = record;
   await saveHistory(leagueId, history);
   const output = await publishTeamThreadReports(client, guildId, snapshot, record, history, rules);
-  const seasonChanges = type === 'offseason' && isOffseason(snapshot)
+  const seasonChanges = type === 'offseason'
     ? await publishSeasonOverallChanges(client, guildId, snapshot, record, history, await loadJsonFile(threadsFile(guildId), null))
     : null;
   return {
