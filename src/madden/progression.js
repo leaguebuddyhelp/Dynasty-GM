@@ -2302,7 +2302,7 @@ function seasonOverallChangesEmbed(record, teamName, baseline, changes) {
       { name: '📉 Top 10 Fallers', value: format(changes?.downgrades || []) },
     )
     .setColor(0x5865f2)
-    .setFooter({ text: 'Actual Madden OVR · Updates from playoffs onward' });
+    .setFooter({ text: 'Actual Madden OVR · Updates from playoff Week 2 onward' });
 }
 
 async function publishSeasonOverallChanges(client, guildId, snapshot, record, history, registry) {
@@ -2552,8 +2552,40 @@ export async function publishFullSeasonTotals({ client, guildId, snapshot, run }
     ...(movement.seasonChangesError ? { seasonChangesError: movement.seasonChangesError } : {}) };
 }
 
+export function isSeasonMovementDue(snapshot) {
+  const phase = getFranchisePhase(snapshot);
+  if (phase === 'offseason') return true;
+  if (phase !== 'playoffs') return false;
+  const info = snapshot.info?.careerHubInfo?.seasonInfo || {};
+  const week = Number(snapshot.currentWeek) > 0 ? Number(snapshot.currentWeek)
+    : Number(info.displayWeek) > 0 ? Number(info.displayWeek) : Number(info.seasonWeek) + 1;
+  return Number.isFinite(week) && week >= 20;
+}
+async function deferPublishedSeasonMovement(client, guildId, snapshot, history) {
+  const record = history.periods[`${getMaddenSeasonKey(snapshot)}_ovr_summary`];
+  if (!record || record.deferredUntilPlayoffWeek === 2) return;
+  const waiting = new EmbedBuilder().setTitle('📊 Top 10 Risers / Fallers · Playoff Week 2')
+    .setDescription('Apply the first playoff week’s attribute changes in Madden, then sync in the second playoff week. The top 10 lists will use those updated ratings.')
+    .setColor(0x5865f2);
+  const refs = Object.values(record.seasonChangeMessages?.[guildId] || {}).map((row) => ({ channelId: row.threadId, messageId: row.messageId }));
+  const registry = await loadJsonFile(threadsFile(guildId), null);
+  if (record.reportIndexMessages?.[guildId] && registry?.channelId) refs.push({ channelId: registry.channelId, messageId: record.reportIndexMessages[guildId] });
+  for (const ref of refs) {
+    const channel = await client.channels.fetch(ref.channelId);
+    const message = await channel.messages.fetch(ref.messageId).catch((error) => { if (error.code === 10008) return null; throw error; });
+    if (!message) continue;
+    if (message.author?.id && message.author.id !== client.user?.id) throw new Error('Recorded OVR report belongs to a different author.');
+    await message.edit({ embeds: [waiting], allowedMentions: { parse: [] } });
+  }
+  record.deferredUntilPlayoffWeek = 2;
+  await saveHistory(snapshot.leagueId, history);
+}
 async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
   const history = await loadHistory(snapshot.leagueId);
+  if (!isSeasonMovementDue(snapshot)) {
+    await deferPublishedSeasonMovement(client, guildId, snapshot, history);
+    return { published: false, recommendationCount: 0, type: 'season_summary', reason: 'Top 10 risers/fallers publish in playoff Week 2, after the first-week rating changes are applied in Madden.' };
+  }
   const rules = readRules().progression;
   const registry = await ensureTeamThreads({ client, guildId, snapshot, rules });
   const seasonKey = getMaddenSeasonKey(snapshot);
@@ -2564,6 +2596,7 @@ async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
     seasonChangeMessages: history.periods[`${seasonKey}_offseason`]?.seasonChangeMessages || {},
   };
   history.periods[periodKey] = record;
+  record.deferredUntilPlayoffWeek = null;
   const seasonChanges = await publishSeasonOverallChanges(client, guildId, snapshot, record, history, registry);
   return { published: false, recommendationCount: 0, type: 'season_summary', periodKey, seasonChanges,
     reason: 'Season OVR risers/fallers updated. Ratings change only through weekly gameplay recommendations.' };
@@ -2642,6 +2675,9 @@ export async function repairProgressionReportNavigation(client, guildId) {
   const weekIndex = resolveProgressionWeek(snapshot);
   const weekly = weekIndex === null ? null : history.periods[`${seasonKey}_week_${weekIndex + 1}`];
   const seasonal = history.periods[`${seasonKey}_ovr_summary`];
+  if (getFranchisePhase(snapshot) === 'playoffs' && !isSeasonMovementDue(snapshot) && seasonal) {
+    await deferPublishedSeasonMovement(client, guildId, snapshot, history);
+  }
   const needsWeekly = !weekly?.issuedAsAggregate && weekly?.recommendations?.length && !weekly.reportIndexMessages?.[guildId];
   const needsSeasonal = seasonal?.seasonChangeMessages?.[guildId] && !seasonal.reportIndexMessages?.[guildId];
   const needsPlayoffRepair = getFranchisePhase(snapshot) === 'playoffs' && weekIndex >= 18

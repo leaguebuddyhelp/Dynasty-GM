@@ -142,6 +142,7 @@ assert.equal(awardMessages.size, 18, 'Retry resumes only the remaining weekly aw
 const result = await sync(retained);
 assert.equal(result.status, 'complete');
 assert.equal(result.awardsPosted, 18);
+assert.equal(result.seasonChanges, undefined, 'First playoff season sync must wait until playoff Week 2 to show OVR risers/fallers');
 assert.equal(result.weeklyTallies.length, 18);
 assert.equal((await loadFullSeasonRun(guildId, leagueId)).calculatedAt, calculationTime, 'Publication retries do not recalculate issued targets');
 assert.ok(result.seasonTotals.positivePoints > 0 && result.seasonTotals.negativePoints > 0);
