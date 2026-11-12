@@ -23,4 +23,12 @@ const failed = appendProgressionResultFields(new EmbedBuilder().setTitle('Import
 }).toJSON();
 assert.match(failed.fields[0].value, /Failed: Discord unavailable/);
 assert.match(failed.fields[1].value, /Failed: Missing permission/);
+const fullSeason = appendProgressionResultFields(new EmbedBuilder().setTitle('Import'), {
+  mode: 'full-season', status: 'complete', published: true, recommendationCount: 100, awardsPosted: 18,
+  reportUrl: reports[0].url, seasonTotals: { positivePoints: 900, negativePoints: 300, netPoints: 600 },
+}).toJSON();
+assert.equal(fullSeason.fields[0].name, 'Full-season attribute totals');
+assert.match(fullSeason.fields[0].value, /18 weekly evaluations/);
+assert.match(fullSeason.fields[0].value, /900.*300.*600/s);
+assert.match(fullSeason.fields[0].value, /Apply the combined targets once/);
 console.log('PASS 32-team navigation, Discord embed limits, visible 30-player results, report links, and failure reporting');

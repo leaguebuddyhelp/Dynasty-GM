@@ -15,6 +15,7 @@ import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getMaddenStatValue, normalizeMaddenStatField } from './madden_stat_fields.js';
 import { seasonProductionReward, buildTeamFormContexts } from './weekly_progression_context.js';
 import { normalizePlayoffProgressionSnapshot, hasPlayoffPlayerData } from './playoff_stats.js';
+import { loadFullSeasonRun, matchesFullSeason } from './full_season_store.js';
 import { buildTeamReportIndex } from './report_navigation.js';
 import { getFranchisePhase } from './franchise_phase.js';
 import { stablePlayerKey } from './player_identity.js';
@@ -625,7 +626,7 @@ function sumAttributePoints(history, seasonKey, playerKey, direction) {
     if (period.seasonKey !== seasonKey) continue;
     for (const recommendation of period.recommendations || []) {
       if (recommendation.playerKey !== playerKey) continue;
-      if (period.statusById?.[recommendation.recommendationId]?.status !== 'applied') continue;
+      if (!history.projected && period.statusById?.[recommendation.recommendationId]?.status !== 'applied') continue;
       for (const attribute of recommendation.attributes) {
         const points = Number(attribute.points || 0);
         if (direction === 'positive' && points > 0) total += points;
@@ -1143,7 +1144,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   const recentAwardWinners = Array.from({ length: Math.min(4, Number(weekIndex) + 1) }, (_, index) =>
     index === 0 && Object.keys(awardWinners).length
       ? awardWinners
-      : readWeeklyAwardResults(snapshot.leagueId, weekNumber - index, seasonKey));
+      : history.weeklyAwardWinners?.[weekNumber - index] || history.periods?.[`${seasonKey}_week_${weekNumber - index}`]?.awardWinners || readWeeklyAwardResults(snapshot.leagueId, weekNumber - index, seasonKey));
   const population = populationSnapshot(players, rules);
   const participants = Number(weekIndex) >= 18 ? playedTeamIds(snapshot, weekIndex) : null;
   const teamForms = buildTeamFormContexts(snapshot, Number(weekIndex), weeklyRules.teamForm);
@@ -2074,7 +2075,7 @@ export async function removeRookieRecapMessages(client, guildId) {
   console.log(`[progression] Removed ${removed} legacy rookie recap messages`);
 }
 
-async function publishReportIndex(client, guildId, registry, record, history, embed) {
+async function publishReportIndex(client, guildId, registry, record, history, embed, files = null) {
   const channel = await client.channels.fetch(registry.channelId);
   if (!channel?.isTextBased()) throw new Error('Player Upgrades channel is unavailable for report navigation.');
   record.reportIndexMessages ||= {};
@@ -2083,7 +2084,7 @@ async function publishReportIndex(client, guildId, registry, record, history, em
     if (error.code === 10008) return null;
     throw error;
   }) : null;
-  const payload = { embeds: [embed], allowedMentions: { parse: [] } };
+  const payload = { embeds: [embed], allowedMentions: { parse: [] }, ...(files ? { files, attachments: [] } : {}) };
   const message = existing ? await existing.edit(payload) : await channel.send(payload);
   record.reportIndexMessages[guildId] = message.id;
   await saveHistory(record.leagueId, history);
@@ -2194,6 +2195,17 @@ async function publishTeamThreadReports(client, guildId, snapshot, record, histo
     recommendationCount: record.recommendations.length,
     threadCount: Object.keys(registry.teams).length,
   };
+}
+
+export function readProgressionRules() { return structuredClone(readRules().progression); }
+
+export async function hasIssuedSeasonWeeklyChanges(snapshot) {
+  const history = await loadHistory(snapshot.leagueId);
+  const info = snapshot.info?.careerHubInfo?.seasonInfo || {};
+  const index = info.seasonIndex ?? snapshot.season ?? info.seasonYear;
+  return Object.values(history.periods).some((period) => period.type === 'weekly' && !period.issuedAsAggregate
+    && period.seasonKey === getMaddenSeasonKey(snapshot) && (index == null || period.season == null || Number(period.season) === Number(index))
+    && period.recommendations?.length > 0);
 }
 
 export function isOffseason(snapshot) {
@@ -2423,6 +2435,109 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   };
 }
 
+function fullSeasonCard(row, seasonKey) {
+  const signed = (number) => `${number >= 0 ? '+' : ''}${number}`;
+  const lines = row.attributes.filter((attribute) => attribute.net || attribute.needsReview).map((attribute) =>
+    attribute.needsReview ? `**${attribute.attribute}** · earned ${signed(attribute.net)} · imported rating missing; review in Madden`
+      : `**${attribute.attribute}** ${attribute.currentValue} → ${attribute.targetValue} (${signed(attribute.pointsToApply)}) · season +${attribute.positive}/−${attribute.negative} = ${signed(attribute.net)}`);
+  return new EmbedBuilder().setTitle(`Season Total · ${row.player}`.slice(0, 256))
+    .setDescription(`**${row.position}**\n\n${lines.join('\n')}`.slice(0, 3900))
+    .setColor(0x5865f2).setFooter({ text: `${seasonLabel(seasonKey)} · Apply these final targets ONCE in Madden · Includes all 18 weekly evaluations` });
+}
+function encodeSeasonCsv(rows) {
+  const cell = (value) => {
+    let text = String(value ?? '');
+    if (typeof value === 'string' && /^[=+@\-\t\r]/.test(text)) text = `'${text}`;
+    return `"${text.replaceAll('"', '""')}"`;
+  };
+  return Buffer.from(rows.map((row) => row.map(cell).join(',')).join('\r\n'));
+}
+function seasonCsv(run) {
+  const rows = [['Player', 'Team ID', 'Position', 'Attribute', 'Baseline', 'Gross upgrades', 'Gross downgrades', 'Net earned', 'Current Madden', 'Final target', 'Change to apply', 'Weeks', 'Review required']];
+  for (const player of run.application) for (const attribute of player.attributes) rows.push([
+    player.player, player.teamId, player.position, attribute.attribute, attribute.baselineValue, attribute.positive, attribute.negative,
+    attribute.net, attribute.currentValue, attribute.targetValue, attribute.pointsToApply, attribute.weeks.join(' '), attribute.needsReview || player.teamId == null ? 'Yes' : 'No',
+  ]);
+  return encodeSeasonCsv(rows);
+}
+function seasonWeeklyCsv(run) {
+  const rows = [['Week', 'Player', 'Team ID', 'Position', 'Direction', 'Attribute', 'Virtual rating before', 'Virtual rating after', 'Points', 'Evidence']];
+  for (const week of Object.values(run.weeks)) for (const player of week.recommendations) for (const attribute of player.attributes) rows.push([
+    week.weekNumber, player.player, player.teamId, player.position, player.direction,
+    attribute.attribute, attribute.currentValue, attribute.targetValue, attribute.points, attribute.evidence,
+  ]);
+  return encodeSeasonCsv(rows);
+}
+export async function publishFullSeasonTotals({ client, guildId, snapshot, run }) {
+  const rules = readRules().progression;
+  const history = await loadHistory(snapshot.leagueId);
+  const seasonKey = getMaddenSeasonKey(snapshot);
+  const registry = await ensureTeamThreads({ client, guildId, snapshot, rules });
+  const periodKey = `${seasonKey}_full_season`;
+  const record = history.periods[periodKey] ||= {
+    version: 1, leagueId: String(snapshot.leagueId), periodKey, seasonKey, season: snapshot.season,
+    type: 'full_season', recommendations: [], application: run.application, teamMessages: {}, statusById: {},
+  };
+  for (const week of Object.values(run.weeks)) {
+    const key = `${seasonKey}_week_${week.weekNumber}`;
+    const prior = history.periods[key];
+    if (prior && prior.season != null && snapshot.season != null && Number(prior.season) !== Number(snapshot.season)) history.periods[`${key}_season_${prior.season}`] = prior;
+    history.periods[key] = { ...week, periodKey: key, seasonKey, season: snapshot.season, issuedAsAggregate: true };
+  }
+  await saveHistory(snapshot.leagueId, history);
+  const grouped = new Map();
+  for (const player of record.application) {
+    if (!player.attributes.some((attribute) => attribute.net || attribute.needsReview) || !registry.teams[player.teamId]) continue;
+    const list = grouped.get(player.teamId) || [];
+    list.push(player);
+    grouped.set(player.teamId, list);
+  }
+  const reports = [];
+  for (const [teamId, players] of grouped) {
+    const thread = await client.channels.fetch(registry.teams[teamId].threadId);
+    if (!thread?.isThread()) throw new Error('Full-season progression thread is unavailable.');
+    if (thread.archived) await thread.setArchived(false, 'Full-season attribute totals');
+    const pages = [];
+    let page = [], size = 0;
+    for (const player of players) {
+      const embed = fullSeasonCard(player, run.seasonKey), length = JSON.stringify(embed.toJSON()).length;
+      if (page.length && (size + length > 5500 || page.length >= 5)) { pages.push(page); page = []; size = 0; }
+      page.push(embed); size += length;
+    }
+    if (page.length) pages.push(page);
+    const previous = record.teamMessages[teamId] || [];
+    const ids = [];
+    for (const [index, embeds] of pages.entries()) {
+      const message = previous[index] ? await thread.messages.fetch(previous[index]).catch((error) => {
+        if (error.code === 10008) return null;
+        throw error;
+      }) : null;
+      const payload = { embeds, components: [], allowedMentions: { parse: [] } };
+      const posted = message ? await message.edit(payload) : await thread.send(payload);
+      ids.push(posted?.id || message?.id);
+      record.teamMessages[teamId] = [...ids, ...previous.slice(ids.length)];
+      await saveHistory(snapshot.leagueId, history);
+    }
+    record.teamMessages[teamId] = ids;
+    reports.push({ teamName: registry.teams[teamId].teamName, url: `https://discord.com/channels/${guildId}/${thread.id}/${ids[0]}` });
+  }
+  const totals = run.totals;
+  const embed = buildTeamReportIndex({ title: `📋 ${seasonLabel(run.seasonKey)} · Combined Attribute Changes`,
+    description: `**All 18 weeks evaluated separately**\n${totals.upgradeEvents} weekly upgrade events · ${totals.downgradeEvents} downgrade events\n**Attribute points earned: +${totals.positivePoints} / −${totals.negativePoints} · Net ${totals.netPoints >= 0 ? '+' : ''}${totals.netPoints}**\n\nApply each player's final targets **once**. Net earned changes were added to the final imported ratings, preserving Madden's own development. The attached CSVs include combined totals and every weekly attribute change.`, reports });
+  if (run.unmatchedPlayers?.length) embed.addFields({ name: 'Players needing review', value: `${run.unmatchedPlayers.length} players had no starting baseline and were excluded from rating calculations.` });
+  const tally = Object.values(run.weeks).map((week) => `Week ${week.weekNumber}: ${week.recommendations.filter((item) => item.direction === 'upgrade').length} upgrades / ${week.recommendations.filter((item) => item.direction === 'downgrade').length} downgrades`);
+  embed.addFields({ name: 'Weeks 1–9', value: tally.slice(0, 9).join('\n') }, { name: 'Weeks 10–18', value: tally.slice(9).join('\n') });
+  const reportUrl = await publishReportIndex(client, guildId, registry, record, history, embed,
+    [{ attachment: seasonCsv(run), name: `${run.seasonKey}-combined-attribute-changes.csv` },
+      { attachment: seasonWeeklyCsv(run), name: `${run.seasonKey}-weekly-attribute-audit.csv` }]);
+  let movement = {};
+  try { movement = await publishSeasonMovementSummary({ client, guildId, snapshot }); }
+  catch (error) { console.error('[full-season] OVR list publication failed', error); movement.seasonChangesError = error.message; }
+  return { published: true, recommendationCount: [...grouped.values()].reduce((sum, players) => sum + players.length, 0),
+    type: 'full_season', periodKey, reportUrl, ...(movement.seasonChanges ? { seasonChanges: movement.seasonChanges } : {}),
+    ...(movement.seasonChangesError ? { seasonChangesError: movement.seasonChangesError } : {}) };
+}
+
 async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
   const history = await loadHistory(snapshot.leagueId);
   const rules = readRules().progression;
@@ -2469,6 +2584,9 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
   if (!isSoloModeEnabled()) return { published: false, reason: 'Solo mode is disabled.' };
   if (!snapshot?.leagueId || !snapshot?.syncId) throw new Error('Progression requires a synced franchise snapshot.');
   const phase = getFranchisePhase(snapshot);
+  const seasonRun = await loadFullSeasonRun(guildId, snapshot.leagueId);
+  const fullSeason = matchesFullSeason(seasonRun, snapshot) ? seasonRun : null;
+  if (fullSeason && fullSeason.status !== 'complete') return { published: false, recommendationCount: 0, reason: 'Full-season mode is active. Use /sync mode:full-season for the combined list.' };
   if (phase === 'preseason') return { published: false, reason: 'Progression starts after regular-season games.' };
   let summary = {};
   if (['playoffs', 'offseason'].includes(phase)) {
@@ -2480,6 +2598,9 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
     if (phase === 'offseason') return summary;
   }
   const weekIndex = resolveProgressionWeek(snapshot);
+  if (fullSeason?.status === 'complete' && weekIndex !== null && weekIndex < 18) return {
+    ...summary, published: false, recommendationCount: 0, reason: 'Regular-season changes are already included in the combined season list. Playoff games use weekly progression.',
+  };
   console.log('[progression] evaluation', { phase, currentWeek: snapshot.currentWeek, targetWeek: weekIndex === null ? null : weekIndex + 1 });
   if (phase === 'playoffs' && weekIndex >= 18) console.log('[progression] playoff source buckets',
     (snapshot.weeklyStats || []).filter((entry) => Number(entry.weekIndex) === weekIndex).map((entry) => ({
@@ -2507,7 +2628,7 @@ export async function repairProgressionReportNavigation(client, guildId) {
   const weekIndex = resolveProgressionWeek(snapshot);
   const weekly = weekIndex === null ? null : history.periods[`${seasonKey}_week_${weekIndex + 1}`];
   const seasonal = history.periods[`${seasonKey}_ovr_summary`];
-  const needsWeekly = weekly?.recommendations?.length && !weekly.reportIndexMessages?.[guildId];
+  const needsWeekly = !weekly?.issuedAsAggregate && weekly?.recommendations?.length && !weekly.reportIndexMessages?.[guildId];
   const needsSeasonal = seasonal?.seasonChangeMessages?.[guildId] && !seasonal.reportIndexMessages?.[guildId];
   const needsPlayoffRepair = getFranchisePhase(snapshot) === 'playoffs' && weekIndex >= 18
     && weekly && !weekly.recommendations?.length && weekly.playoffStatsVersion !== 1;
@@ -2522,6 +2643,8 @@ export async function refreshProgressionForAwardChange({ client, guildId, league
   const weekIndex = Number(weekNumber) - 1;
   if (!Number.isInteger(weekIndex) || weekIndex < 0) return { published: false, reason: 'Invalid award week.' };
   if (isOffseason(snapshot)) return { published: false, reason: 'No rating recommendations are issued during offseason.' };
+  const seasonRun = await loadFullSeasonRun(guildId, snapshot.leagueId);
+  if (matchesFullSeason(seasonRun, snapshot) && (seasonRun.status !== 'complete' || weekIndex < 18)) return { published: false, recommendationCount: 0, reason: 'Regular-season changes belong to the combined full-season list.' };
   const progressionSnapshot = weekIndex >= 18 ? playoffProgressionSnapshot(snapshot) : snapshot;
   return publishProgression({
     client,

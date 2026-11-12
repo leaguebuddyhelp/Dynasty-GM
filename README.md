@@ -96,3 +96,16 @@ Opening the EA Madden session retries temporary service failures up to three tim
 `apps/snallabot-service` is retained as a separate reference checkout and is not a workspace dependency or started by this app.
 
 Playoff imports use populated player-stat buckets across EA stages 0, 1 and 2. Empty stage-2 placeholders cannot replace real stage-1 data. Split buckets are combined and repeated player rows are counted once. Older zero-player playoff reports caused by stage selection are retried from the saved snapshot after upgrade, without another EA import or duplicate rating changes.
+
+## Full-season simulation
+
+Use `/sync mode:full-season` as a separate alternative to normal weekly progression:
+
+1. **Before playing Week 1** (preseason or the start of Week 1), run it once to save all 32 starting rosters and attribute ratings. Repeating this step does not replace the baseline.
+2. Simulate the regular season. Optional checkpoint syncs using the same mode preserve early weekly data if EA later stops returning it. While a full-season run is active, an ordinary `/sync` continues collecting season data; explicit weekly mode is blocked to avoid duplicate changes.
+3. In the **first playoff week**, run `/sync mode:full-season` again. It requires complete stats for all 18 regular-season weeks and every team that played. Missing weeks are listed and finalization stops rather than inventing awards or rating changes.
+4. The app evaluates Weeks 1–18 chronologically with the weekly formula, showing progress week by week. Earned attribute changes carry into later calculations. It posts **one awards message per week**, then a **single combined list per player** in the team threads and a linked season summary.
+5. Apply the combined targets **once** in Madden. Gross attribute upgrades and downgrades are tallied separately; their net is added to the latest imported ratings, preserving Madden's own development and respecting 0–99 limits. The report includes a combined totals CSV and a weekly attribute audit CSV. Players without a baseline or a usable current rating are flagged for review. Imported OVR is not simulated or invented.
+6. After finalization, normal `/sync` returns to **weekly playoff progression for teams that played**. It cannot issue the regular-season changes again. Offseason syncs still create no rating changes.
+
+Publication retries resume saved work and do not duplicate weekly awards or reapply targets. A completed season's calculated targets stay fixed. A starting baseline is required for each new season; starting full-season mode after the season was already simulated is rejected.

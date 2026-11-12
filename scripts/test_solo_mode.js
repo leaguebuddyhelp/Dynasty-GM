@@ -31,6 +31,7 @@ try {
   for (const name of ['setup', 'sync', 'bigboard', 'mockdraft', 'draftexport', 'awards']) assert.equal(commands.has(name), true);
   for (const command of commands.values()) command.data.toJSON();
   assert.deepEqual(commands.get('setup').data.toJSON().options || [], []);
+  assert.deepEqual(commands.get('sync').data.toJSON().options[0].choices.map((choice) => choice.value), ['weekly', 'full-season']);
   assert.equal(commands.get('roster').data.toJSON().options[0].required, true);
   for (const id of ['trade_builder_add|user|asset', 'madden_sportsbook_card', 'madden_mockdraft_live|create|auto', 'lb_plan_upgrade', 'madden_game_complete_button', 'scout_select_1']) {
     assert.equal(handlers.some((handler) => handler.customId instanceof RegExp ? handler.customId.test(id) : handler.customId === id), false, id);

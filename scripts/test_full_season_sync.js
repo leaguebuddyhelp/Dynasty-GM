@@ -1,0 +1,125 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { Collection } from 'discord.js';
+import { runFullSeasonSync, resolveSyncMode } from '../src/madden/full_season.js';
+import { loadFullSeasonRun, matchesFullSeason } from '../src/madden/full_season_store.js';
+import { publishProgressionReports, refreshProgressionForAwardChange } from '../src/madden/progression.js';
+import { publishWeeklyAwards, updateAwards } from '../src/madden/awards.js';
+import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
+import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
+
+const guildId = 'full-season-guild', leagueId = 'full-season-league';
+process.env.MADDEN_FRANCHISE_MANAGER_ROLE_ID = 'manager';
+const teams = Array.from({ length: 32 }, (_, index) => ({ teamId: index + 1, cityName: `City${index}`, nickName: `Club${index}`, divisionName: index < 16 ? 'AFC East' : 'NFC East' }));
+const player = (id, position, teamId) => ({ rosterId: id, firstName: 'Season', lastName: id, position, yearsPro: teamId === 1 ? 0 : 5, playerBestOvr: 80,
+  awareRating: 75, throwAccShortRating: 75, throwAccMidRating: 75, throwAccDeepRating: 75, throwPowerRating: 75, playActionRating: 75,
+  tackleRating: 75, zoneCoverRating: 75, playRecRating: 75, pursuitRating: 75, manCoverRating: 75 });
+const baseline = { leagueId, syncId: 'baseline', syncedAt: new Date().toISOString(), season: 1, currentWeek: 1,
+  info: { careerHubInfo: { seasonInfo: { calendarYear: 2027, seasonIndex: 1, seasonWeekType: 1 } } },
+  teams: { leagueTeamInfoList: teams }, rosters: { teams: Object.fromEntries(teams.map((team) => [team.teamId, { rosterInfoList: [player(`q${team.teamId}`, 'QB', team.teamId), player(`d${team.teamId}`, 'CB', team.teamId)] }])) }, weeklyStats: [], schedule: { schedules: [] } };
+const final = structuredClone(baseline);
+final.syncId = 'final'; final.currentWeek = 19;
+final.info.careerHubInfo.seasonInfo.calendarYear = 2028;
+final.info.careerHubInfo.seasonInfo.seasonWeekType = 2;
+final.schedule.schedules = Array.from({ length: 18 }, (_, weekIndex) => Array.from({ length: 16 }, (_, index) => ({ weekIndex, stageIndex: 1, status: 2, homeTeamId: index * 2 + 1, awayTeamId: index * 2 + 2, homeScore: 31, awayScore: 14 }))).flat();
+final.weeklyStats = Array.from({ length: 18 }, (_, weekIndex) => ({ weekIndex, stage: 1,
+  passing: { playerPassingStatInfoList: teams.map(({ teamId }) => ({ rosterId: `q${teamId}`, teamId, position: 'QB', passAtt: 30,
+    passComp: teamId % 2 ? 24 : 8, passYds: teamId % 2 ? 350 : 40, passTDs: teamId % 2 ? 4 : 0, passInts: teamId % 2 ? 0 : 3, passLongest: teamId % 2 ? 55 : 10 })) },
+  defense: { playerDefensiveStatInfoList: teams.map(({ teamId }) => ({ rosterId: `d${teamId}`, teamId, position: 'CB', defTotalTackles: 8, defInts: teamId % 4 ? 0 : 1, defPassDeflections: 2 })) },
+}));
+for (const roster of Object.values(final.rosters.teams)) for (const row of roster.rosterInfoList) row.awareRating = 80;
+let sequence = 0, failAward = true, failCombined = true;
+const channels = new Map(), parentMessages = new Map(), awardMessages = new Map(), threads = new Collection();
+function message(payload, store) {
+  const row = { id: `message-${++sequence}`, payload, pinned: true, pin: async () => {}, edit: async (next) => { row.payload = next; return row; } };
+  store.set(row.id, row); return row;
+}
+const fetchMessage = (store) => async (id) => { if (!store.has(id)) throw Object.assign(new Error('Missing'), { code: 10008 }); return store.get(id); };
+const manager = { id: 'manager', mentionable: true };
+const guild = { roles: { cache: new Map([['manager', manager]]) }, members: { fetch: async () => ({ roles: { cache: new Map([['manager', manager]]) } }) } };
+const parent = { id: 'upgrades', guild, isTextBased: () => true,
+  messages: { fetch: fetchMessage(parentMessages) },
+  threads: { fetchActive: async () => ({ threads }), fetchArchived: async () => ({ threads: new Collection() }) },
+  send: async (payload) => {
+    const row = message(payload, parentMessages);
+    row.startThread = async ({ name }) => {
+      const store = new Map();
+      const thread = { id: `thread-${++sequence}`, name, archived: false, store, isThread: () => true,
+        messages: { fetch: fetchMessage(store) }, send: async (value) => {
+          if (failCombined && value.embeds?.[0]?.toJSON().title.startsWith('Season Total')) { failCombined = false; throw new Error('Combined report outage'); }
+          return message(value, store);
+        } };
+      threads.set(thread.id, thread); channels.set(thread.id, thread); return thread;
+    };
+    return row;
+  } };
+channels.set('upgrades', parent);
+channels.set('awards', { isTextBased: () => true, send: async (payload) => {
+  if (failAward && awardMessages.size === 4) { failAward = false; throw new Error('Award publication outage'); }
+  return message(payload, awardMessages);
+} });
+const client = { channels: { fetch: async (id) => channels.get(id) } };
+saveGuildMaddenConfig(guildId, { status: 'complete', compat: { maddenChannelMap: { 'Player Upgrades': 'upgrades', Awards: 'awards' } } });
+const sync = (snapshot) => runFullSeasonSync({ client, guildId, snapshot });
+const prepared = await sync(baseline);
+assert.equal(prepared.status, 'prepared');
+assert.equal(parentMessages.size + awardMessages.size, 0, 'Preparing a baseline cannot issue any rating or award posts');
+const storedBaseline = (await loadFullSeasonRun(guildId, leagueId)).baseline;
+const alteredBaseline = structuredClone(baseline); alteredBaseline.rosters.teams[1].rosterInfoList[0].awareRating = 98;
+await sync(alteredBaseline);
+assert.deepEqual((await loadFullSeasonRun(guildId, leagueId)).baseline, storedBaseline, 'Repeat setup cannot replace the starting baseline');
+assert.equal((await resolveSyncMode({ guildId, snapshot: baseline })).mode, 'full-season');
+await assert.rejects(resolveSyncMode({ guildId, snapshot: baseline, requestedMode: 'weekly' }), /Full-season mode is active/);
+const captured = await updateAwards(null, leagueId, 1, { guildId, snapshot: { ...final, currentWeek: 2, weeklyStats: [final.weeklyStats[0]] }, captureOnly: true, refreshProgression: false });
+assert.ok(captured.winners.afc_offense);
+await assert.rejects(fs.access(getMaddenDataFilePath('awards.json')), { code: 'ENOENT' });
+await assert.rejects(fs.access(getMaddenDataFilePath('season_state.json')), { code: 'ENOENT' });
+const checkpoint = structuredClone(final); checkpoint.currentWeek = 9; checkpoint.info.careerHubInfo.seasonInfo.seasonWeekType = 1;
+checkpoint.weeklyStats = checkpoint.weeklyStats.slice(0, 8);
+assert.equal((await sync(checkpoint)).coverage.completedWeeks, 8);
+assert.equal(awardMessages.size, 0);
+assert.equal((await publishProgressionReports({ client, guildId, snapshot: checkpoint })).published, false, 'Normal progression cannot overlap full-season mode');
+const incomplete = structuredClone(final); incomplete.weeklyStats = incomplete.weeklyStats.filter((entry) => entry.weekIndex !== 12);
+const waiting = await sync(incomplete);
+assert.equal(waiting.status, 'awaiting_data');
+assert.deepEqual(waiting.coverage.missingWeeks, [13]);
+assert.equal(awardMessages.size, 0, 'Incomplete data cannot produce a claimed full-season report');
+const retained = structuredClone(final); retained.weeklyStats = retained.weeklyStats.filter((entry) => entry.weekIndex >= 4);
+await assert.rejects(sync(retained), /Award publication outage/);
+assert.equal(awardMessages.size, 4);
+const calculationTime = (await loadFullSeasonRun(guildId, leagueId)).calculatedAt;
+assert.equal((await loadFullSeasonRun(guildId, leagueId)).coverage.complete, true, 'A saved checkpoint preserves older weeks missing from the final EA response');
+await assert.rejects(sync(retained), /Combined report outage/);
+assert.equal(awardMessages.size, 18, 'Retry resumes only the remaining weekly award posts');
+const result = await sync(retained);
+assert.equal(result.status, 'complete');
+assert.equal(result.awardsPosted, 18);
+assert.equal(result.weeklyTallies.length, 18);
+assert.equal((await loadFullSeasonRun(guildId, leagueId)).calculatedAt, calculationTime, 'Publication retries do not recalculate issued targets');
+assert.ok(result.seasonTotals.positivePoints > 0 && result.seasonTotals.negativePoints > 0);
+assert.match(result.reportUrl, /discord.com/);
+const titles = [...awardMessages.values()].map((row) => row.payload.embeds[0].toJSON().title);
+assert.equal(new Set(titles).size, 18);
+assert.ok(titles[0].includes('Week 1') && titles[17].includes('Week 18'));
+const combined = [...parentMessages.values()].find((row) => row.payload.embeds?.[0]?.toJSON().title.includes('Combined Attribute Changes'));
+assert.equal(combined.payload.files.length, 2);
+assert.match(combined.payload.files[0].attachment.toString(), /Gross upgrades/);
+assert.match(combined.payload.files[1].attachment.toString(), /Virtual rating before/);
+const counts = [parentMessages.size, awardMessages.size, [...threads.values()].reduce((sum, thread) => sum + thread.store.size, 0)];
+assert.equal((await sync(retained)).duplicate, true);
+assert.deepEqual([parentMessages.size, awardMessages.size, [...threads.values()].reduce((sum, thread) => sum + thread.store.size, 0)], counts);
+const mode = await resolveSyncMode({ guildId, snapshot: final });
+assert.equal(mode.mode, 'weekly', 'After finalization the default returns to weekly playoff sync');
+assert.equal(matchesFullSeason(await loadFullSeasonRun(guildId, leagueId), final), true, 'January calendar changes cannot lose the armed season');
+assert.equal((await publishWeeklyAwards({ client, guildId, snapshot: final, dedupScope: 'year_2027_1_full' })).duplicate, true, 'Normal sync cannot repost a regular-season award after the combined list');
+const regularAgain = await publishProgressionReports({ client, guildId, snapshot: final });
+assert.equal(regularAgain.recommendationCount, 0, 'Week 18 cannot be issued a second time after aggregation');
+assert.equal((await refreshProgressionForAwardChange({ client, guildId, snapshot: final, weekNumber: 18 })).published, false);
+const playoffs = structuredClone(final); playoffs.currentWeek = 20;
+playoffs.weeklyStats.push({ ...structuredClone(final.weeklyStats[0]), weekIndex: 18, stage: 1 });
+playoffs.schedule.schedules.push({ weekIndex: 18, stageIndex: 1, status: 2, homeTeamId: 1, awayTeamId: 2, homeScore: 28, awayScore: 7 });
+const playoffReport = await publishProgressionReports({ client, guildId, snapshot: playoffs });
+assert.equal(playoffReport.type, 'weekly');
+const history = JSON.parse(await fs.readFile(getMaddenDataFilePath(`progression_history/${leagueId}.json`), 'utf8'));
+assert.ok(history.periods.year_2028_week_19.recommendations.every((row) => ['1', '2'].includes(row.teamId)));
+console.log('PASS full-season preparation, checkpoint retention, all 18 weekly awards, combined/audit CSVs, retry safety, year boundary, and return to weekly playoffs');

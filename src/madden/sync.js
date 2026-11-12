@@ -36,7 +36,9 @@ const activeSyncRequests = new Map();
 
 const data = new SlashCommandBuilder()
   .setName('sync')
-  .setDescription('Pull this server\'s connected Madden league data and save locally.');
+  .setDescription('Sync this server’s Madden league weekly or evaluate a full season.')
+  .addStringOption((option) => option.setName('mode').setDescription('Choose weekly sync or prepare/finalize a full season')
+    .addChoices({ name: 'Weekly sync', value: 'weekly' }, { name: 'Full season (prepare / finalize)', value: 'full-season' }));
 
 async function emitProgress(options, phase, detail) {
   if (typeof options?.onProgress !== 'function') return;
@@ -618,11 +620,29 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       summary,
     });
     const result = duplicate || { ...summary, validation };
+    let syncMode = { mode: 'weekly', run: null };
     if (!duplicate && options.requestId && options.client && options.guildId) {
+      try {
+        const { resolveSyncMode, runFullSeasonSync } = await import('./full_season.js');
+        syncMode = await resolveSyncMode({ guildId: options.guildId, snapshot, requestedMode: options.mode || null });
+        if (syncMode.mode === 'full-season') {
+          result.fullSeason = await runFullSeasonSync({ client: options.client, guildId: options.guildId, snapshot,
+            onProgress: (phase, detail) => emitProgress(options, phase, detail) });
+          result.progression = result.fullSeason;
+        }
+      } catch (error) {
+        syncMode = { mode: 'blocked', run: null };
+        result.progression = { published: false, error: error.message };
+        console.error('[full-season] sync mode failed', error);
+      }
+    }
+
+    if (!duplicate && options.requestId && options.client && options.guildId && syncMode.mode === 'weekly') {
       try {
         const { publishWeeklyAwards } = await import('./awards.js');
         result.weeklyAwards = await publishWeeklyAwards({
           client: options.client, guildId: options.guildId, snapshot,
+          dedupScope: syncMode.run ? `${syncMode.run.seasonKey}_${syncMode.run.identity.index ?? 'unknown'}_full` : null,
         });
       } catch (error) {
         result.weeklyAwards = { posted: false, error: error?.message || String(error) };
@@ -653,30 +673,32 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       }
     }
     if (!duplicate && options.requestId && options.client && options.guildId) {
-      try {
-        const { publishProgressionReports } = await import('./progression.js');
-        const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
-        result.progression = await publishProgressionReports({
-          client: options.client,
-          guildId: options.guildId,
-          snapshot: archivedSnapshot,
-        });
-      } catch (error) {
-        result.progression = { published: false, error: error?.message || String(error) };
-        console.error('[progression] failed to publish sync recommendations', error);
-      }
-      if (result.weeklyAwards?.weekNumber >= 19
-        && (result.weeklyAwards.posted || result.weeklyAwards.duplicate)) {
+      if (syncMode.mode === 'weekly') {
         try {
-          const { refreshProgressionForAwardChange } = await import('./progression.js');
+          const { publishProgressionReports } = await import('./progression.js');
           const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
-          result.playoffAwardProgression = await refreshProgressionForAwardChange({
-            client: options.client, guildId: options.guildId, leagueId,
-            snapshot: archivedSnapshot, weekNumber: result.weeklyAwards.weekNumber,
+          result.progression = await publishProgressionReports({
+            client: options.client,
+            guildId: options.guildId,
+            snapshot: archivedSnapshot,
           });
         } catch (error) {
-          result.playoffAwardProgression = { error: error?.message || String(error) };
-          console.error('[progression] failed to refresh playoff award winners', error);
+          result.progression = { published: false, error: error?.message || String(error) };
+          console.error('[progression] failed to publish sync recommendations', error);
+        }
+        if (result.weeklyAwards?.weekNumber >= 19
+          && (result.weeklyAwards.posted || result.weeklyAwards.duplicate)) {
+          try {
+            const { refreshProgressionForAwardChange } = await import('./progression.js');
+            const archivedSnapshot = await loadSyncSnapshot(leagueId, snapshot.syncId);
+            result.playoffAwardProgression = await refreshProgressionForAwardChange({
+              client: options.client, guildId: options.guildId, leagueId,
+              snapshot: archivedSnapshot, weekNumber: result.weeklyAwards.weekNumber,
+            });
+          } catch (error) {
+            result.playoffAwardProgression = { error: error?.message || String(error) };
+            console.error('[progression] failed to refresh playoff award winners', error);
+          }
         }
       }
       try {
@@ -766,6 +788,7 @@ async function execute(interaction) {
       guildId: interaction.guildId,
       requestId: interaction.id,
       client: interaction.client,
+      mode: interaction.options?.getString?.('mode') || null,
       notifyChannelId: getMaddenChannelId('Data Imports', interaction.guildId),
       onProgress: async (phase, detail) => {
         await interaction.editReply({ embeds: [renderProgressEmbed(phase, detail)] });
@@ -811,7 +834,7 @@ async function execute(interaction) {
       : null;
     const embed = new EmbedBuilder()
       .setTitle('Madden Sync')
-      .setColor(0x00cc66)
+      .setColor(summary.progression?.error ? 0xf1c40f : 0x00cc66)
       .addFields(
         { name: 'League', value: String(summary.leagueId), inline: true },
         { name: 'Week', value: weekLabel, inline: true },
@@ -829,7 +852,11 @@ async function execute(interaction) {
         ...(importSummaryStatus ? [{ name: 'Data import summary', value: importSummaryStatus, inline: false }] : []),
         ...(weeklyMockStatus ? [{ name: 'Weekly mock draft', value: weeklyMockStatus, inline: false }] : []),
         { name: 'Saved', value: summary.outPath, inline: false },
-        { name: 'Next', value: 'Return to `/setup` and press Check Again.', inline: false }
+        { name: 'Next', value: summary.fullSeason
+          ? summary.fullSeason.status === 'complete' ? 'Open the combined list and apply each final target once. Future `/sync` commands return to weekly playoff changes.'
+            : summary.fullSeason.status === 'awaiting_data' ? 'Recover the listed missing weeks and retry `/sync mode:full-season`. No incomplete season total was issued.'
+              : 'Simulate Weeks 1–18, then run `/sync mode:full-season` in the first playoff week. Optional checkpoint syncs preserve earlier weeks.'
+          : 'Return to `/setup` and press Check Again.', inline: false }
       );
 
     await interaction.editReply({ embeds: [embed] });

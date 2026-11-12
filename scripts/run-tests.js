@@ -4,6 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 
 const scripts = [
+  'test_full_season_sync.js',
+  'test_full_season_engine.js',
   'test_playoff_stats.js',
   'test_stat_team_progression.js',
   'test_report_navigation.js',

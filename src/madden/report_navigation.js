@@ -12,11 +12,14 @@ export function buildTeamReportIndex({ title, description, reports }) {
 export function appendProgressionResultFields(embed, progression) {
   if (!progression) return embed;
   const week = /_week_(\d+)$/.exec(progression.periodKey || '')?.[1];
-  const value = progression.error ? `Failed: ${progression.error}`
+  const fullSeason = progression.mode === 'full-season' && progression.status === 'complete';
+  const value = fullSeason
+    ? `**${progression.recommendationCount} players · 18 weekly evaluations**\nAttribute points: +${progression.seasonTotals.positivePoints} / −${progression.seasonTotals.negativePoints} · Net ${progression.seasonTotals.netPoints}\n${progression.awardsPosted} weekly awards posts\n[Open combined targets and CSV](${progression.reportUrl})\nApply the combined targets once.`
+    : progression.error ? `Failed: ${progression.error}`
     : progression.published
       ? `**${progression.recommendationCount} player changes** · ${progression.upgradeCount} upgrades · ${progression.downgradeCount} downgrades${progression.reportUrl ? `\n[Open weekly changes](${progression.reportUrl})` : ''}`
       : progression.reason || 'No rating changes were issued.';
-  embed.addFields({ name: week ? `Player changes · Week ${week}` : 'Player changes', value: value.slice(0, 1024) });
+  embed.addFields({ name: fullSeason ? 'Full-season attribute totals' : week ? `Player changes · Week ${week}` : 'Player changes', value: value.slice(0, 1024) });
   if (progression.seasonChangesError) {
     embed.addFields({ name: 'Top 10 growers / fallers', value: `Failed: ${progression.seasonChangesError}`.slice(0, 1024) });
   } else if (progression.seasonChanges) {

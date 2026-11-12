@@ -477,8 +477,8 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   buildRosterYearsPro(snapshot);
   const channelMap = loadChannelMap(guildId);
   const awardsChannelId = channelMap.Awards;
-  const targetChannel = interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId) : null);
-  if (!interaction && !targetChannel?.isTextBased()) {
+  const targetChannel = options.captureOnly ? null : interaction?.channel ?? (awardsChannelId ? await client.channels.fetch(awardsChannelId) : null);
+  if (!options.captureOnly && !interaction && !targetChannel?.isTextBased()) {
     console.warn('[awards] Awards channel not text-based or missing.');
     return { posted: false, reason: 'Awards channel is missing or not text-based.' };
   }
@@ -544,6 +544,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   // Load existing winners if present (allow re-post)
   const awardsStore = loadJson(AWARDS_FILE, {});
   let leagueStore = awardsStore[leagueId] || {};
+  if (!options.captureOnly) {
   // Season rollover guard: clear stale history/awards when the calendar year bumps
   try {
     const seasonState = loadJson(SEASON_STATE_FILE, {});
@@ -564,6 +565,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     saveJson(SEASON_STATE_FILE, seasonState);
   } catch (e) {
     console.warn('[awards] season rollover guard skipped:', e?.message || e);
+  }
   }
   // Always recompute winners to reflect latest grading/formula
   let winners = null;
@@ -609,7 +611,7 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
       }
     });
 
-    const gradedList = targetStage === 2 ? null : loadGradedWeek(leagueId, awardsWeek, snapshotMtime);
+    const gradedList = targetStage === 2 || options.captureOnly ? null : loadGradedWeek(leagueId, awardsWeek, snapshotMtime);
     const offensePositions = new Set(['QB', 'HB', 'RB', 'FB', 'TB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'K', 'P']);
     const defPositions = new Set(['CB', 'FS', 'SS', 'ROLB', 'LOLB', 'MLB', 'LB', 'RE', 'LE', 'DT', 'EDGE', 'EDG', 'LEDGE', 'REDGE', 'LEDG', 'REDG', 'OLB', 'LDE', 'RDE', 'EDGE_R', 'EDGE_L', 'EDGE-R', 'EDGE-L', 'DE']);
     const normalizedGraded = (gradedList || []).map(p => {
@@ -799,6 +801,9 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
     return { posted: false, reason: 'No eligible weekly award winners were found.' };
   }
 
+  if (options.winnersOverride) winners = options.winnersOverride;
+  if (options.captureOnly) return { winners: JSON.parse(JSON.stringify(winners)), weekNumber: awardsWeek };
+
   const makeField = (label, p) => {
     if (!p) return { name: label, value: 'N/A', inline: false };
     const emoji = teamEmoji(p.teamName);
@@ -873,7 +878,8 @@ export async function updateAwards(client, leagueId, weekOverride = null, option
   return { posted: true, weekNumber: awardsWeek, messageId: message?.id || null, winners };
 }
 
-export async function publishWeeklyAwards({ client, guildId, snapshot }) {
+export async function publishWeeklyAwards({ client, guildId, snapshot, weekNumber: requestedWeek = null, winnersOverride = null, dedupScope = null }) {
+  if (requestedWeek !== null && (!Number.isInteger(requestedWeek) || requestedWeek < 1 || requestedWeek > 18)) throw new Error('Invalid regular-season award week.');
   const info = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const weekType = Number(info.seasonWeekType);
   if (![1, 2, 3, 8].includes(weekType)) {
@@ -903,11 +909,11 @@ export async function publishWeeklyAwards({ client, guildId, snapshot }) {
     .filter(({ index, stage }) => (weekType <= 2 && index < currentWeek - 1)
       || ((weekType !== 1 || currentWeek >= 19) && completedPlayoffRound(index, stage)))
     .sort((a, b) => b.index - a.index || b.stage - a.stage);
-  const playoff = playoffCandidates.find(({ index, stage }) => gatherWeeklyStats(snapshot, index, stage));
+  const playoff = requestedWeek === null ? playoffCandidates.find(({ index, stage }) => gatherWeeklyStats(snapshot, index, stage)) : null;
   const regularCap = weekType === 1 ? Math.min(17, currentWeek - 2) : 17;
   const regularIndex = [1, 2].includes(weekType)
     ? getLatestReliableRegularSeasonWeekIndex(snapshot, regularCap) : null;
-  const weekIndex = playoff?.index ?? regularIndex;
+  const weekIndex = requestedWeek === null ? playoff?.index ?? regularIndex : requestedWeek - 1;
   const targetStage = playoff?.stage ?? 1;
   if (weekIndex === null || weekIndex === undefined || weekIndex < 0) {
     return { posted: false, reason: 'No reliable completed week with player statistics is available.' };
@@ -917,7 +923,8 @@ export async function publishWeeklyAwards({ client, guildId, snapshot }) {
   if (!safeId(leagueId) || !safeId(guildId)) throw new Error('Invalid league or guild ID for weekly awards.');
   const weekNumber = weekIndex + 1;
   const phase = playoff ? 'playoffs' : 'regular';
-  const file = path.join(AUTO_AWARDS_DIR, String(guildId), leagueId, `${getMaddenSeasonKey(snapshot)}_${phase}_week_${weekNumber}.json`);
+  if (dedupScope !== null && !/^[a-zA-Z0-9_-]+$/.test(dedupScope)) throw new Error('Invalid award deduplication scope.');
+  const file = path.join(AUTO_AWARDS_DIR, String(guildId), leagueId, `${dedupScope || getMaddenSeasonKey(snapshot)}_${phase}_week_${weekNumber}.json`);
   if (activeAutoAwards.has(file)) return activeAutoAwards.get(file);
   const pending = (async () => {
     try {
@@ -928,7 +935,7 @@ export async function publishWeeklyAwards({ client, guildId, snapshot }) {
       if (error?.code !== 'ENOENT') throw error;
     }
     const result = await updateAwards(client, leagueId, weekNumber, {
-      guildId, snapshot, stage: targetStage, refreshProgression: false,
+      guildId, snapshot, stage: targetStage, refreshProgression: false, winnersOverride,
     });
     if (!result.posted) return result;
     if (!result.messageId) throw new Error('Weekly awards were sent but Discord returned no message ID.');
