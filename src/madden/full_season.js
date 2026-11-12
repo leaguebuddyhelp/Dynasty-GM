@@ -6,6 +6,24 @@ import { updateAwards, publishWeeklyAwards } from './awards.js';
 import { publishFullSeasonTotals, readProgressionRules, hasIssuedSeasonWeeklyChanges } from './progression.js';
 
 const queues = new Map();
+export async function logFullSeasonStatus(guildId) {
+  const { resolveLeagueIdWithConfig, loadLeagueSnapshot } = await import('./madden_data.js');
+  const leagueId = resolveLeagueIdWithConfig(guildId, 'full-season:diagnostics');
+  const snapshot = await loadLeagueSnapshot(leagueId);
+  if (!snapshot) return;
+  const run = await loadFullSeasonRun(guildId, leagueId);
+  if (!matchesFullSeason(run, snapshot) || run.status === 'complete') return;
+  const games = run.importedSchedule || [];
+  const weeks = Object.values(run.importedWeeks || {}).map((week) => ({
+    week: Number(week.weekIndex) + 1,
+    games: games.filter((game) => Number(game.weekIndex) === Number(week.weekIndex)).length,
+    statuses: [...new Set(games.filter((game) => Number(game.weekIndex) === Number(week.weekIndex)).map((game) => game.status))],
+    passTeams: [...new Set((week.passing?.playerPassingStatInfoList || []).filter((row) => Number(row.passAtt) > 0).map((row) => row.teamId))],
+    defenseTeams: [...new Set((week.defense?.playerDefensiveStatInfoList || []).filter((row) => ['defTotalTackles', 'defSacks', 'defInts', 'defPassDeflections'].some((field) => Number(row[field]) > 0)).map((row) => row.teamId))],
+    ...(Number(week.weekIndex) === 0 ? { defenseFields: Object.keys(week.defense?.playerDefensiveStatInfoList?.[0] || {}) } : {}),
+  }));
+  console.log('[full-season] saved diagnostics', JSON.stringify({ leagueId, status: run.status, phase: getFranchisePhase(snapshot), coverage: run.coverage, weeks }));
+}
 export async function resolveSyncMode({ guildId, snapshot, requestedMode = null }) {
   if (requestedMode !== null && !['weekly', 'full-season'].includes(requestedMode)) throw new Error('Choose weekly or full-season sync mode.');
   const run = await loadFullSeasonRun(guildId, snapshot.leagueId);
@@ -70,6 +88,7 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
   run.latestSyncId = snapshot.syncId;
   const regular = { ...regularSnapshot(snapshot, run), schedule: { schedules: run.importedSchedule }, weeklyStats: Object.values(merged) };
   run.coverage = seasonCoverage(regular, merged);
+  console.log('[full-season] coverage', JSON.stringify({ leagueId: run.leagueId, phase, ...run.coverage }));
   if (phase === 'preseason' || phase === 'regular') {
     run.status = 'collecting';
     await saveFullSeasonRun(run);
