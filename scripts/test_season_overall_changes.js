@@ -341,6 +341,6 @@ delete brokenHistory.periods.year_2039_week_19.playoffStatsVersion;
 await fs.writeFile(periodHistoryPath, JSON.stringify(brokenHistory));
 const repairedPlayoff = await repairProgressionReportNavigation(client, guildId);
 assert.equal(repairedPlayoff.periodKey, 'year_2039_week_19');
-assert.equal(repairedPlayoff.recommendationCount, 30, 'A saved zero-player playoff report is repaired from actual stage-1 stats without another EA import');
+assert.equal(repairedPlayoff.recommendationCount, 5, 'A saved zero-player playoff report is repaired from actual stage-1 stats without another EA import');
 assert.equal(await repairProgressionReportNavigation(client, guildId), undefined, 'The repaired report is not reissued on every restart');
 console.log('PASS saved playoff-stat repair, weekly/season indexes, startup replay without EA, and repeat-sync deduplication');

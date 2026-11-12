@@ -27,7 +27,7 @@ assert.equal(normalized.weeklyStats[0].passing.playerPassingStatInfoList.length,
 assert.equal(normalized.schedule.schedules.length, 1);
 assert.equal(normalized.schedule.schedules[0].status, 2, 'Pending stage-2 schedule cannot replace completed stage-1 games');
 assert.equal(resolveProgressionWeek(snapshot), 18);
-assert.equal(buildWeeklyProgressionRecommendations(normalized, { weekIndex: 18, rules }).recommendations.length, 24);
+assert.equal(buildWeeklyProgressionRecommendations(normalized, { weekIndex: 18, rules }).recommendations.length, 5);
 const duplicate = structuredClone(snapshot);
 duplicate.weeklyStats[1].passing.playerPassingStatInfoList = players.map(row);
 const deduped = normalizePlayoffProgressionSnapshot(duplicate);
@@ -39,7 +39,7 @@ assert.equal(normalizePlayoffProgressionSnapshot(split).weeklyStats[0].receiving
 assert.equal(normalizePlayoffProgressionSnapshot(split).weeklyStats[0].passing.playerPassingStatInfoList.length, 24);
 const fallback = structuredClone(snapshot);
 fallback.weeklyStats[0].stage = 0;
-assert.equal(buildWeeklyProgressionRecommendations(normalizePlayoffProgressionSnapshot(fallback), { weekIndex: 18, rules }).recommendations.length, 24, 'Stage-0 playoff fallback retains real stats');
+assert.equal(buildWeeklyProgressionRecommendations(normalizePlayoffProgressionSnapshot(fallback), { weekIndex: 18, rules }).recommendations.length, 5, 'Stage-0 playoff fallback retains real stats');
 const empty = structuredClone(snapshot);
 empty.weeklyStats[0].passing.playerPassingStatInfoList = [];
 assert.equal(resolveProgressionWeek(empty), null, 'Empty completed-week placeholders do not become zero-evidence reports');

@@ -71,6 +71,7 @@
     },
     "weekly": {
       "maximumRecommendations": 30,
+      "playoffRecommendationsPerTeam": [1, 5],
       "attributesPerRecommendation": 5,
       "gameplayMovement": {
         "requirePlayedGame": true,

@@ -90,6 +90,41 @@ playoff.weeklyStats[1].passing.playerPassingStatInfoList.push({ ...statTemplate,
 const playingOnly = buildWeeklyProgressionRecommendations(playoff, { weekIndex: 18, rules: calibrated });
 assert.ok(playingOnly.recommendations.length);
 assert.ok(playingOnly.recommendations.every((item) => ['1', '2'].includes(item.teamId)), 'Stale stat rows cannot give bye/eliminated teams changes');
+// Playoff volume scales with the teams that actually played, not the regular
+// season's league-wide target. Each team has both strong and poor performers.
+const round = snapshot(80, { games: 1 });
+round.currentWeek = 20;
+round.info = { careerHubInfo: { seasonInfo: { seasonWeekType: 2 } } };
+round.teams.leagueTeamInfoList = Array.from({ length: 14 }, (_, index) => ({ teamId: index + 1 }));
+round.rosters.teams = {};
+const roundRows = [];
+for (let teamId = 1; teamId <= 14; teamId++) {
+  round.rosters.teams[teamId] = { rosterInfoList: Array.from({ length: 8 }, (_, index) => ({
+    ...template, rosterId: `team-${teamId}-player-${index}`, lastName: `${teamId}-${index}`,
+  })) };
+  for (const [index, player] of round.rosters.teams[teamId].rosterInfoList.entries()) roundRows.push({
+    ...statTemplate, rosterId: player.rosterId, teamId, passTDs: index < 6 ? 4 : 0, passInts: index < 6 ? 0 : 4,
+  });
+}
+round.weeklyStats = [{ stage: 1, weekIndex: 18, passing: { playerPassingStatInfoList: roundRows } }];
+round.schedule = { schedules: Array.from({ length: 6 }, (_, index) => ({ stageIndex: 1, weekIndex: 18,
+  status: 2, homeTeamId: index * 2 + 1, awayTeamId: index * 2 + 2 })) };
+const wildCard = buildWeeklyProgressionRecommendations(round, { rules: calibrated, weekIndex: 18 });
+assert.equal(wildCard.recommendations.length, 60, 'Twelve playing teams may earn five changes each, exceeding the regular-season league cap');
+assert.deepEqual(wildCard.selectionDiagnostics.playoffPerTeamRange, [1, 5]);
+assert.ok(Object.values(wildCard.selectionDiagnostics.teamCounts).every((count) => count === 5));
+assert.ok(wildCard.recommendations.every((item) => Number(item.teamId) <= 12), 'Byes and eliminated teams are excluded even with stale stats');
+const superBowl = structuredClone(round);
+superBowl.schedule.schedules = [superBowl.schedule.schedules[0]];
+const finalists = buildWeeklyProgressionRecommendations(superBowl, { rules: calibrated, weekIndex: 18 });
+assert.equal(finalists.recommendations.length, 10, 'Two playing teams stop at ten changes without filling to twenty');
+assert.ok(finalists.recommendations.some((item) => item.direction === 'upgrade'));
+assert.ok(finalists.recommendations.some((item) => item.direction === 'downgrade'));
+const smallSample = structuredClone(superBowl);
+smallSample.weeklyStats[0].passing.playerPassingStatInfoList = roundRows.filter((row) => row.rosterId === 'team-1-player-0');
+const supported = buildWeeklyProgressionRecommendations(smallSample, { rules: calibrated, weekIndex: 18 });
+assert.equal(supported.recommendations.length, 1, 'One supported player is sufficient; missing evidence cannot create extra changes');
+assert.equal(supported.selectionDiagnostics.teamCounts['2'], 0);
 for (const snapshotPhase of [
   { seasonWeekType: 3 }, { seasonWeekType: 8 },
   { seasonWeekType: 1, seasonTitle: '2026 Offseason' },
@@ -100,4 +135,4 @@ for (const snapshotPhase of [
 const regular = snapshot(80, { games: 2 });
 regular.currentWeek = 2;
 assert.equal(resolveProgressionWeek(regular), 0, 'Do not evaluate the currently active regular-season week');
-console.log('PASS weekly 20-player fill from eight primary candidates, smaller evidence-backed changes, playoff participants, offseason blocking, and correct completed-week selection');
+console.log('PASS weekly 20-player fill from eight primary candidates, smaller evidence-backed changes, playoff 1–5 changes per playing team without a league quota, offseason blocking, and correct completed-week selection');

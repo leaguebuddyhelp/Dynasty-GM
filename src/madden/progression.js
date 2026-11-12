@@ -1467,18 +1467,25 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     };
     candidates.push(selected);
   }
-  const awardCandidates = candidates.filter((candidate) => candidate.direction === 'upgrade' && candidate.awardPoints > 0);
-  const otherCandidates = candidates.filter((candidate) => !awardCandidates.includes(candidate) && candidate.eligibilityTier !== 'reserve');
-  const selected = [...awardCandidates, ...selectWithSoftBalance(
-    otherCandidates,
-    weeklyRules,
-    Math.max(0, Number(weeklyRules.maximumRecommendations) - awardCandidates.length),
-    { balanceDirections: true },
-  )];
-  const minimum = Math.min(Number(weeklyRules.maximumRecommendations), Number(weeklyRules.preferredRecommendationRange?.[0] || 0));
-  if (selected.length < minimum) selected.push(...selectWithSoftBalance(
-    candidates.filter((candidate) => candidate.eligibilityTier === 'reserve'), weeklyRules, minimum - selected.length, { balanceDirections: true },
-  ));
+  const playoffRange = weeklyRules.playoffRecommendationsPerTeam || [1, 5];
+  const teamMinimum = Math.max(1, Math.min(5, Number(playoffRange[0])));
+  const teamMaximum = Math.max(teamMinimum, Math.min(5, Number(playoffRange[1])));
+  const selectGroup = (pool, maximum, minimum) => {
+    const awards = pool.filter((candidate) => candidate.direction === 'upgrade' && candidate.awardPoints > 0)
+      .sort((a, b) => b.selectionScore - a.selectionScore || a.player.localeCompare(b.player));
+    const picked = [...awards.slice(0, maximum), ...selectWithSoftBalance(
+      pool.filter((candidate) => !awards.includes(candidate) && candidate.eligibilityTier !== 'reserve'),
+      weeklyRules, Math.max(0, maximum - awards.length), { balanceDirections: true })];
+    if (picked.length < minimum) picked.push(...selectWithSoftBalance(
+      pool.filter((candidate) => candidate.eligibilityTier === 'reserve' && !picked.includes(candidate)),
+      weeklyRules, minimum - picked.length, { balanceDirections: true }));
+    return picked;
+  };
+  const minimum = participants ? participants.size * teamMinimum
+    : Math.min(Number(weeklyRules.maximumRecommendations), Number(weeklyRules.preferredRecommendationRange?.[0] || 0));
+  const selected = participants
+    ? [...participants].flatMap((teamId) => selectGroup(candidates.filter((candidate) => candidate.teamId === teamId), teamMaximum, teamMinimum))
+    : selectGroup(candidates, Math.max(Number(weeklyRules.maximumRecommendations), candidates.filter((candidate) => candidate.direction === 'upgrade' && candidate.awardPoints > 0).length), minimum);
   const record = makeRecord({
     snapshot,
     type: 'weekly',
@@ -1495,6 +1502,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     participatingTeamCount: participants?.size ?? null,
     targetShortfall: Math.max(0, minimum - selected.length),
     preferredMinimum: minimum,
+    ...(participants ? { playoffPerTeamRange: [teamMinimum, teamMaximum],
+      teamCounts: Object.fromEntries([...participants].map((teamId) => [teamId, selected.filter((item) => item.teamId === teamId).length])) } : {}),
   };
   addRookieMonitoring(record, players, byWeek, Number(weekIndex), candidates, startingOveralls, rules, rookieOutcomes);
   const missingAwards = new Map();
@@ -2362,6 +2371,11 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
     rules,
   });
   const old = history.periods[current.periodKey];
+  const playoff = Number(weekIndex) >= 18;
+  const maximumPerTeam = Math.min(5, Number(rules.weekly.playoffRecommendationsPerTeam?.[1] || 5));
+  const canAdd = (record, item) => playoff
+    ? record.recommendations.filter((existing) => existing.teamId === item.teamId).length < maximumPerTeam
+    : record.recommendations.length < Number(rules.weekly.maximumRecommendations);
   let record;
   if (old && ((old.gameplayPolicyVersion >= 1 && old.recommendations?.length > 0) || Object.values(old.statusById || {}).some((status) => status.status === 'applied'))) {
     record = {
@@ -2376,7 +2390,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
       !item.changeContext?.teamLineProxy || starterKeys.has(item.playerKey)
       || old.statusById?.[item.recommendationId]?.status === 'applied');
     for (const item of current.recommendations.filter((entry) => entry.changeContext?.teamLineProxy)) {
-      if (record.recommendations.length < Number(rules.weekly.maximumRecommendations) && !record.recommendations.some((existing) => existing.playerKey === item.playerKey)) record.recommendations.push(item);
+      if (canAdd(record, item) && !record.recommendations.some((existing) => existing.playerKey === item.playerKey)) record.recommendations.push(item);
     }
     if (type === 'weekly') {
       record.unupgradedAwardWinners = current.unupgradedAwardWinners.filter((winner) =>
@@ -2384,7 +2398,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
       for (const winner of current.recommendations.filter((item) => item.awardPoints > 0 && item.direction === 'upgrade')) {
         const index = record.recommendations.findIndex((item) => item.playerKey === winner.playerKey);
         if (index < 0) {
-          if (record.recommendations.length < Number(rules.weekly.maximumRecommendations)) record.recommendations.push(winner);
+          if (canAdd(record, winner)) record.recommendations.push(winner);
           else record.unupgradedAwardWinners.push({ player: winner.player, reason: 'The weekly limit has already been issued; review this late award separately.' });
         } else if (record.recommendations[index].direction !== 'upgrade') {
           const existing = record.recommendations[index];
@@ -2409,14 +2423,16 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
     const participants = playedTeamIds(snapshot, weekIndex);
     record.recommendations = record.recommendations.filter((item) => participants.has(String(item.teamId)));
   }
-  if (record.recommendations.length < Number(rules.weekly.preferredRecommendationRange?.[0] || 0)) {
+  if (playoff || record.recommendations.length < Number(rules.weekly.preferredRecommendationRange?.[0] || 0)) {
     for (const item of current.recommendations) {
-      if (record.recommendations.length >= Number(rules.weekly.maximumRecommendations)) break;
-      if (!record.recommendations.some((existing) => existing.playerKey === item.playerKey)) record.recommendations.push(item);
+      if (canAdd(record, item) && !record.recommendations.some((existing) => existing.playerKey === item.playerKey)) record.recommendations.push(item);
     }
   }
-  record.selectionDiagnostics = { ...current.selectionDiagnostics, targetShortfall: Math.max(0,
-    Number(rules.weekly.preferredRecommendationRange?.[0] || 0) - record.recommendations.length) };
+  const teamCounts = playoff ? Object.fromEntries([...playedTeamIds(snapshot, weekIndex)].map((teamId) =>
+    [teamId, record.recommendations.filter((item) => item.teamId === teamId).length])) : null;
+  record.selectionDiagnostics = { ...current.selectionDiagnostics, ...(teamCounts ? { teamCounts } : {}),
+    targetShortfall: playoff ? Object.values(teamCounts).filter((count) => count < 1).length
+      : Math.max(0, Number(rules.weekly.preferredRecommendationRange?.[0] || 0) - record.recommendations.length) };
   const recommendedRookies = new Map(record.recommendations.map((item) => [item.playerKey, item.direction]));
   record.rookieMonitoring = (current.rookieMonitoring || []).map((player) => ({
     ...player,
