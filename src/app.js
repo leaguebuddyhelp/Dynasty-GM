@@ -1,7 +1,8 @@
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { validateStartupConfig } from './leaguebuddy/startup_validation.js';
 import { markHealthReady, startHealthcheckServer } from './leaguebuddy/healthcheck.js';
-import { getSoloInteractionDenial, loadSoloCommands, loadSoloInteractionHandlers } from './leaguebuddy/solo_mode.js';
+import { getSoloInteractionDenial, getSoloModeConfig, loadSoloCommands, loadSoloInteractionHandlers } from './leaguebuddy/solo_mode.js';
+import { removeRookieRecapMessages } from './madden/progression.js';
 import { refreshApplicationEmojiMap } from './shared/application_emojis.js';
 
 validateStartupConfig();
@@ -60,6 +61,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.once(Events.ClientReady, () => {
   markHealthReady(true);
   console.log(`[ready] Madden Franchise HQ connected as ${client.user.tag}`);
+  removeRookieRecapMessages(client, getSoloModeConfig().guildId).catch((error) => console.warn('[progression] Recap cleanup failed', error.message));
   refreshApplicationEmojiMap(client).catch((error) => console.warn('[emoji] refresh failed', error.message));
 });
 client.on(Events.ShardDisconnect, () => markHealthReady(false));

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import { Collection } from 'discord.js';
+import { Collection, EmbedBuilder } from 'discord.js';
 import {
   buildWeeklyProgressionRecommendations, buildOffseasonProgressionRecommendations,
-  buildRookieMonitoringEmbeds, publishProgressionReports,
+  removeRookieRecapMessages, publishProgressionReports,
 } from '../src/madden/progression.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
 import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
@@ -105,13 +105,7 @@ for (let games = 1; games <= 6; games++) {
 }
 const annual = buildOffseasonProgressionRecommendations(snapshot(9), { rules });
 assert.equal(annual.rookieMonitoring.length, 3);
-const pages = buildRookieMonitoringEmbeds({ ...result, rookieMonitoring: Array.from({ length: 100 }, (_, index) => ({ ...result.rookieMonitoring[0], player: `Rookie ${index}` })) }, '1');
-assert.ok(pages.length > 1);
-assert.ok(pages.every((embed) => embed.toJSON().description.length <= 4096));
-assert.equal(pages.flatMap((embed) => [...embed.toJSON().description.matchAll(/\*\*Rookie \d+\*\*/g)]).length, 100);
-
-// Publish twice to prove the watch survives history persistence and updates
-// its original team-thread message instead of posting duplicates.
+// Repeated publication preserves tracking without posting recap messages.
 process.env.MADDEN_FRANCHISE_MANAGER_ROLE_ID = 'manager';
 const role = { id: 'manager', mentionable: true };
 const guild = { roles: { cache: new Map([['manager', role]]) }, members: { fetch: async () => ({ roles: { cache: new Map([['manager', role]]) } }) } };
@@ -119,26 +113,28 @@ let sequence = 0;
 const channels = new Map();
 const threads = new Collection();
 const parentMessages = new Map();
-const client = { channels: { fetch: async (id) => channels.get(id) } };
+const client = { user: { id: 'bot' }, channels: { fetch: async (id) => channels.get(id) } };
 const lookup = (messages) => async (id) => {
   if (!messages.has(id)) throw Object.assign(new Error('Missing'), { code: 10008 });
   return messages.get(id);
 };
 function makeMessage(payload, messages) {
-  const message = { id: `message-${++sequence}`, payload, pinned: true,
+  const message = { id: `message-${++sequence}`, payload, pinned: true, author: { id: 'bot' },
+    get embeds() { return (message.payload.embeds || []).map((embed) => ({ ...(embed.toJSON ? embed.toJSON() : embed), toJSON: () => embed.toJSON ? embed.toJSON() : embed })); },
+    delete: async () => { messages.delete(message.id); },
     edit: async (next) => { message.payload = next; return message; }, pin: async () => {} };
   messages.set(message.id, message);
   return message;
 }
 const channel = {
-  id: 'upgrades', guild, isTextBased: () => true,
+  id: 'upgrades', guildId: 'pipeline-guild', guild, isTextBased: () => true,
   threads: { fetchActive: async () => ({ threads }), fetchArchived: async () => ({ threads: new Collection() }) },
   messages: { fetch: lookup(parentMessages) },
   send: async (payload) => {
     const message = makeMessage(payload, parentMessages);
     message.startThread = async ({ name }) => {
       const stored = new Map();
-      const thread = { id: `thread-${++sequence}`, name, archived: false, stored,
+      const thread = { id: `thread-${++sequence}`, name, guildId: 'pipeline-guild', archived: false, stored,
         isThread: () => true, messages: { fetch: lookup(stored) }, send: async (next) => makeMessage(next, stored) };
       threads.set(thread.id, thread); channels.set(thread.id, thread); return thread;
     };
@@ -149,11 +145,42 @@ channels.set(channel.id, channel);
 saveGuildMaddenConfig('pipeline-guild', { status: 'complete', compat: { maddenChannelMap: { 'Player Upgrades': 'upgrades' } } });
 await publishProgressionReports({ client, guildId: 'pipeline-guild', snapshot: current });
 const watchMessages = () => [...threads.values()].flatMap((thread) => [...thread.stored.values()]).filter((message) => message.payload.embeds?.some((embed) => embed.toJSON().title.includes('Rookie Pipeline')));
-assert.equal(watchMessages().length, 1);
-const originalMessage = watchMessages()[0].id;
+assert.equal(watchMessages().length, 0);
 await publishProgressionReports({ client, guildId: 'pipeline-guild', snapshot: current });
-assert.equal(watchMessages().length, 1);
-assert.equal(watchMessages()[0].id, originalMessage);
-const stored = JSON.parse(await fs.readFile(getMaddenDataFilePath('progression_history/rookie-pipeline.json'), 'utf8'));
+assert.equal(watchMessages().length, 0);
+assert.ok([...threads.values()].some((thread) => thread.stored.size), 'Normal recommendations still post');
+assert.ok([...parentMessages.values()].every((message) => message.embeds.every((embed) =>
+  !embed.toJSON().fields?.some((field) => field.name === 'Rookie pipeline'))));
+const historyPath = getMaddenDataFilePath('progression_history/rookie-pipeline.json');
+const stored = JSON.parse(await fs.readFile(historyPath, 'utf8'));
 assert.equal(stored.periods.year_2026_week_2.rookieMonitoring.length, 3);
-console.log('PASS rookie/young/elite acceleration, evidence and experience safeguards, rookie inactivity grace, full watch coverage, pagination, persistence, and retry updates');
+const registry = JSON.parse(await fs.readFile(getMaddenDataFilePath('progression_threads/pipeline-guild.json'), 'utf8'));
+const [teamId, team] = Object.entries(registry.teams)[0];
+const thread = channels.get(team.threadId);
+thread.archived = true;
+thread.setArchived = async (value) => { thread.archived = value; };
+const legacy = makeMessage({ embeds: [new EmbedBuilder().setTitle('🌱 Rookie Pipeline')] }, thread.stored);
+const otherUser = makeMessage({ embeds: [new EmbedBuilder().setTitle('🌱 Rookie Pipeline')] }, thread.stored);
+otherUser.author.id = 'someone-else';
+const normal = makeMessage({ embeds: [new EmbedBuilder().setTitle('Upgrade')] }, thread.stored);
+const retry = makeMessage({ embeds: [new EmbedBuilder().setTitle('🌱 Rookie Pipeline')] }, thread.stored);
+retry.delete = async () => { throw new Error('Temporary failure'); };
+stored.periods.year_2026_week_2.rookieMessages = { [teamId]: [legacy.id, otherUser.id, normal.id, retry.id, 'missing'] };
+await fs.writeFile(historyPath, JSON.stringify(stored));
+const summary = parentMessages.get(registry.summaryMessageId);
+summary.payload.embeds[0].addFields({ name: 'Rookie pipeline', value: 'Old recap' });
+await removeRookieRecapMessages(client, 'other-guild');
+assert.ok(thread.stored.has(legacy.id));
+await removeRookieRecapMessages(client, 'pipeline-guild');
+assert.ok(!thread.stored.has(legacy.id));
+assert.ok(thread.stored.has(otherUser.id));
+assert.ok(thread.stored.has(normal.id));
+assert.ok(thread.stored.has(retry.id));
+assert.ok(!summary.embeds[0].toJSON().fields.some((field) => field.name === 'Rookie pipeline'));
+const cleaned = JSON.parse(await fs.readFile(historyPath, 'utf8'));
+assert.deepEqual(cleaned.periods.year_2026_week_2.rookieMessages[teamId], [otherUser.id, normal.id, retry.id]);
+assert.equal(cleaned.periods.year_2026_week_2.rookieMonitoring.length, 3);
+retry.delete = async () => { thread.stored.delete(retry.id); };
+await removeRookieRecapMessages(client, 'pipeline-guild');
+assert.ok(!thread.stored.has(retry.id));
+console.log('PASS rookie/young/elite acceleration, rookie tracking without recaps, safe legacy cleanup, and retry persistence');

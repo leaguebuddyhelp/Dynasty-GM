@@ -1731,36 +1731,7 @@ function populationSummaryEmbed(record) {
       inline: false,
     });
   }
-  const rookies = record.rookieMonitoring || [];
-  if (rookies.length) embed.addFields({
-    name: 'Rookie pipeline',
-    value: `${rookies.length} rookies tracked · ${rookies.filter((player) => player.status === 'upgrade').length} upgrade recommendations. Full rookie watch lists are updated in the team threads.`,
-  });
   return embed;
-}
-
-export function buildRookieMonitoringEmbeds(record, teamId) {
-  const rookies = (record.rookieMonitoring || []).filter((player) => player.teamId === String(teamId));
-  if (!rookies.length) return [];
-  const labels = {
-    upgrade: 'Upgrade recommended', downgrade: 'Downgrade evidence — review', eligible_not_selected: 'Eligible — awaiting selection',
-    missing_rating: 'Missing OVR — review import', unsupported_position: 'Position needs review',
-    no_current_stats: 'No current-game stats — monitor usage', limited_usage: 'Limited usage — monitor', monitoring: 'Developing — monitor',
-    injured: 'Injured — monitor recovery',
-  };
-  const pages = [];
-  let lines = [];
-  for (const player of rookies) {
-    const score = player.currentGameScore === null ? 'N/A' : player.currentGameScore.toFixed(1);
-    const movement = player.seasonOvrChange === null ? 'baseline pending' : `${player.seasonOvrChange >= 0 ? '+' : ''}${player.seasonOvrChange} since season baseline`;
-    const line = `**${player.player}** · ${player.position} · ${player.currentOvr ?? 'N/A'} OVR (${movement})\n${player.qualifyingGames} qualifying games · Latest score: ${score} · ${labels[player.status] || labels.monitoring}${player.teamLineProxy ? ' · Team blocking proxy' : ''}`;
-    if (lines.length && [...lines, line].join('\n\n').length > 3600) { pages.push(lines); lines = []; }
-    lines.push(line);
-  }
-  if (lines.length) pages.push(lines);
-  return pages.map((page, index) => new EmbedBuilder().setTitle('🌱 Rookie Pipeline')
-    .setDescription(`**${rookies[0].team}**\n\n${page.join('\n\n')}`)
-    .setColor(0x57f287).setFooter({ text: `${seasonLabel(record.seasonKey)} · ${record.weekNumber ? `Week ${record.weekNumber}` : 'Offseason'} · ${index + 1}/${pages.length} · OVR is imported from Madden` }));
 }
 
 function progressionCardEmbed(record, item) {
@@ -1893,43 +1864,72 @@ async function ensureTeamThreads({ client, guildId, snapshot, rules }) {
   return registry;
 }
 
-async function publishRookieWatchReports(client, registry, record, history) {
-  record.rookieMessages ||= {};
-  const teamIds = new Set([
-    ...(record.rookieMonitoring || []).map((player) => player.teamId),
-    ...Object.keys(record.rookieMessages),
-  ]);
-  for (const teamId of teamIds) {
-    const threadId = registry.teams[teamId]?.threadId;
-    if (!threadId) continue;
-    const thread = await client.channels.fetch(threadId);
-    if (!thread?.isThread()) throw new Error(`Rookie watch thread ${threadId} is unavailable.`);
-    if (thread.archived) await thread.setArchived(false, 'Updating rookie development watch');
-    const previous = [...(record.rookieMessages[teamId] || [])];
-    const embeds = buildRookieMonitoringEmbeds(record, teamId);
-    const ids = [];
-    for (const [index, embed] of embeds.entries()) {
-      const payload = { embeds: [embed], components: [], allowedMentions: { parse: [] } };
-      const existing = previous[index] ? await thread.messages.fetch(previous[index]).catch((error) => {
-        if (error.code === 10008) return null;
-        throw error;
-      }) : null;
-      const message = existing || await thread.send(payload);
-      if (existing) await existing.edit(payload);
-      ids.push(message.id);
-      record.rookieMessages[teamId] = ids;
-      await saveHistory(record.leagueId, history);
+// Remove only recorded legacy recap messages belonging to this bot. Failed
+// deletions retain their IDs so the next startup can retry safely.
+export async function removeRookieRecapMessages(client, guildId) {
+  const registry = await loadJsonFile(threadsFile(guildId), null);
+  if (!registry) return;
+  const files = await fs.readdir(HISTORY_DIR).catch((error) => {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  });
+  let removed = 0;
+  for (const file of files.filter((name) => name.endsWith('.json'))) {
+    const history = await loadJsonFile(path.join(HISTORY_DIR, file), null);
+    let changed = false;
+    for (const record of Object.values(history?.periods || {})) {
+      for (const [teamId, ids] of Object.entries(record.rookieMessages || {})) {
+        if (!ids.length) continue;
+        const threadId = registry.teams?.[teamId]?.threadId;
+        if (!threadId) continue;
+        const thread = await client.channels.fetch(threadId).catch(() => null);
+        if (!thread?.isThread() || thread.guildId !== guildId) continue;
+        const remaining = [];
+        for (const id of ids) {
+          try {
+            const message = await thread.messages.fetch(id);
+            const recap = message.embeds.some((embed) => embed.title === '🌱 Rookie Pipeline')
+              || message.content === 'This rookie watch page has been superseded.';
+            if (message.author?.id !== client.user.id || !recap) {
+              remaining.push(id);
+              continue;
+            }
+            if (thread.archived) await thread.setArchived(false, 'Removing retired rookie recaps');
+            await message.delete();
+            removed++;
+          } catch (error) {
+            if (error.code !== 10008) {
+              remaining.push(id);
+              console.warn('[progression] Rookie recap removal failed', id, error.message);
+            }
+          }
+        }
+        if (remaining.length !== ids.length) {
+          record.rookieMessages[teamId] = remaining;
+          changed = true;
+        }
+      }
     }
-    for (const id of previous.slice(embeds.length)) {
-      const obsolete = await thread.messages.fetch(id).catch((error) => {
+    if (changed) await atomicJsonWrite(path.join(HISTORY_DIR, file), history);
+  }
+  if (registry.summaryMessageId) {
+    const channel = await client.channels.fetch(registry.channelId);
+    if (channel?.guildId === guildId && channel.isTextBased()) {
+      const message = await channel.messages.fetch(registry.summaryMessageId).catch((error) => {
         if (error.code === 10008) return null;
         throw error;
       });
-      if (obsolete) await obsolete.edit({ content: 'This rookie watch page has been superseded.', embeds: [], components: [], allowedMentions: { parse: [] } });
+      if (message?.author?.id === client.user.id) {
+        const embeds = message.embeds.map((embed) => embed.toJSON());
+        const summary = embeds.find((embed) => embed.title === '🏈 Franchise Progression');
+        if (summary?.fields?.some((field) => field.name === 'Rookie pipeline')) {
+          summary.fields = summary.fields.filter((field) => field.name !== 'Rookie pipeline');
+          await message.edit({ embeds, allowedMentions: { parse: [] } });
+        }
+      }
     }
-    record.rookieMessages[teamId] = ids;
-    await saveHistory(record.leagueId, history);
   }
+  console.log(`[progression] Removed ${removed} legacy rookie recap messages`);
 }
 
 async function publishTeamThreadReports(client, guildId, snapshot, record, history, rules) {
@@ -2002,7 +2002,6 @@ async function publishTeamThreadReports(client, guildId, snapshot, record, histo
     record.teamMessages[teamId] = messageIds;
     await saveHistory(record.leagueId, history);
   }
-  await publishRookieWatchReports(client, registry, record, history);
   record.threadRegistryFile = threadsFile(guildId);
   const upgradesChannel = await client.channels.fetch(registry.channelId);
   if (!upgradesChannel?.isTextBased()) throw new Error('Configured Player Upgrades channel is unavailable or not text-based.');
