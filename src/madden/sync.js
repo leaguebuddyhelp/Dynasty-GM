@@ -779,12 +779,12 @@ async function execute(interaction) {
       : null;
     const weeklyMockStatus = summary.weeklyMockDraft
       ? summary.weeklyMockDraft.posted
-        ? `Posted for week ${summary.weeklyMockDraft.weekNumber}`
+        ? `Posted for ${summary.weeklyMockDraft.periodLabel || `week ${summary.weeklyMockDraft.weekNumber}`}`
         : summary.weeklyMockDraft.reason || summary.weeklyMockDraft.error || 'Not posted'
       : null;
     const progressionStatus = summary.progression
       ? `${summary.progression.published
-        ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads${summary.progression.type === 'weekly' && summary.progression.recommendationCount < (summary.progression.selectionDiagnostics?.preferredMinimum || 0) ? `; fewer than the target because only ${summary.progression.selectionDiagnostics.eligibleCandidates} eligible player(s) were found` : ''}`
+        ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads${summary.progression.type === 'season_end' ? `; regular-season finale: ${summary.progression.upgradeCount} upgrades, ${summary.progression.downgradeCount} downgrades${summary.progression.upgradeCount < (summary.progression.selectionDiagnostics?.preferredMinimum || 0) ? ` (only ${summary.progression.selectionDiagnostics?.eligibleUpgrades || 0} upgrades met the evidence thresholds)` : ''}` : ''}${summary.progression.type === 'weekly' && summary.progression.recommendationCount < (summary.progression.selectionDiagnostics?.preferredMinimum || 0) ? `; fewer than the target because only ${summary.progression.selectionDiagnostics.eligibleCandidates} eligible player(s) were found` : ''}`
         : summary.progression.error || summary.progression.reason || 'No recommendations met evidence thresholds'}${summary.progression.seasonChanges ? `; season OVR summaries updated for ${summary.progression.seasonChanges.teamCount} teams${summary.progression.seasonChanges.baseline ? ` (${summary.progression.seasonChanges.partial ? 'partial-season baseline: ' : 'baseline: '}${summary.progression.seasonChanges.baseline})` : ' (season baseline unavailable)'}` : ''}${summary.progression.unupgradedAwardWinners?.length ? `; award winners needing review: ${summary.progression.unupgradedAwardWinners.map((winner) => winner.player).join(', ')}` : ''}${summary.playoffAwardProgression ? `; playoff week ${summary.weeklyAwards.weekNumber}: ${summary.playoffAwardProgression.error || `${summary.playoffAwardProgression.recommendationCount} recommendation(s)`}${summary.playoffAwardProgression.unupgradedAwardWinners?.length ? `; award winners needing review: ${summary.playoffAwardProgression.unupgradedAwardWinners.map((winner) => winner.player).join(', ')}` : ''}` : ''}`
       : null;
     const weeklyAwardsStatus = summary.weeklyAwards

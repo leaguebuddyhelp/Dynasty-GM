@@ -363,6 +363,8 @@
       }
     },
     "offseason": {
+      "maximumSeasonEndUpgrades": 50,
+      "preferredSeasonEndUpgradeRange": [40, 50],
       "attributesPerRecommendation": 2,
       "minimumUpgradePerformanceScore": 65,
       "minimumUpgradeSelectionScore": 62,

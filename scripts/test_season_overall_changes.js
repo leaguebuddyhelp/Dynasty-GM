@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import { buildSeasonOverallChanges, publishProgressionReports, refreshProgressionForAwardChange } from '../src/madden/progression.js';
+import { buildSeasonOverallChanges, buildOffseasonProgressionRecommendations, publishProgressionReports, refreshProgressionForAwardChange } from '../src/madden/progression.js';
 import { persistSyncHistory } from '../src/madden/madden_sync_history.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
 import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
@@ -125,7 +125,7 @@ assert.doesNotMatch(completeEmbed.description, /Partial-season/);
 assert.match(completeEmbed.fields[0].value, /70 → 74 \(\+4\)/);
 
 const seasonStart = makeSnapshot('season-start', 1, 1, 2029);
-const seasonEnd = makeSnapshot('season-end', 3, 19, 2029);
+const seasonEnd = makeSnapshot('season-end', 2, 19, 2029);
 const seasonPlayers = Array.from({ length: 61 }, (_, index) => ({
   ...makePlayer(`season-${index}`, 75), throwAccShortRating: 75,
 }));
@@ -136,7 +136,7 @@ seasonStart.rosters.teams[1].rosterInfoList.push(structuredClone(poorDefender));
 seasonEnd.rosters.teams[1].rosterInfoList.push(structuredClone(poorDefender));
 seasonStart.rosters.teams[2].rosterInfoList = [];
 seasonEnd.rosters.teams[2].rosterInfoList = [];
-seasonEnd.weeklyStats = Array.from({ length: 4 }, (_, weekIndex) => ({
+seasonEnd.weeklyStats = Array.from({ length: 18 }, (_, weekIndex) => ({
   stage: 1, weekIndex,
   passing: { playerPassingStatInfoList: seasonPlayers.map((player, index) => ({
     rosterId: player.rosterId, teamId: 1, position: 'QB', passAtt: 30,
@@ -145,23 +145,52 @@ seasonEnd.weeklyStats = Array.from({ length: 4 }, (_, weekIndex) => ({
   })) },
   defense: { playerDefensiveStatInfoList: [{ rosterId: 'season-cb', teamId: 1, position: 'CB', defTotalTackles: 2 }] },
 }));
+const finaleRules = JSON.parse(await fs.readFile('config/madden_solo_rules.json', 'utf8')).progression;
+const evaluateFinale = (snapshot) => buildOffseasonProgressionRecommendations(snapshot, { rules: finaleRules, regularSeasonOnly: true })
+  .recommendations.map((item) => ({ playerKey: item.playerKey, score: item.performanceScore, attributes: item.attributes }));
+const contaminated = structuredClone(seasonEnd);
+const playoffStats = structuredClone(seasonEnd.weeklyStats[0]);
+playoffStats.stage = 2;
+playoffStats.weekIndex = 18;
+playoffStats.passing.playerPassingStatInfoList.forEach((row) => { row.passYds = 0; row.passTDs = 0; row.passInts = 8; });
+contaminated.weeklyStats.push(playoffStats, { ...playoffStats, stage: 1 });
+assert.deepEqual(evaluateFinale(contaminated), evaluateFinale(seasonEnd), 'Playoff stats cannot alter regular-season finale evaluation');
 await persistSyncHistory({ leagueId, snapshot: seasonStart, summary: {} });
 await persistSyncHistory({ leagueId, snapshot: seasonEnd, summary: {} });
 const totalBefore = falcons.storedMessages.size;
 const published = await publishProgressionReports({ client, guildId, snapshot: seasonEnd });
-assert.equal(published.recommendationCount, 62, 'All qualifying players should receive offseason recommendations');
+assert.equal(published.recommendationCount, 52, 'Playoffs begin with 50 upgrades and two evidenced downgrades');
+assert.equal(published.type, 'season_end');
+assert.equal(published.selectionDiagnostics.eligibleUpgrades, 60);
 const newMessages = [...falcons.storedMessages.values()].slice(totalBefore);
-assert.equal(newMessages.length, 14, '62 recommendations require 13 pages plus a separate Top 10 summary');
+assert.equal(newMessages.length, 11, '52 recommendations require 11 pages at the first playoff sync');
 const cards = newMessages.flatMap((entry) => entry.payload.embeds.map((item) => item.toJSON()))
   .filter((entry) => /^(🟢 Upgrade|🟠 Downgrade)/u.test(entry.title));
-assert.equal(cards.length, 62);
-assert.equal(cards.filter((card) => card.title.startsWith('🟢')).length, 60);
+assert.equal(cards.length, 52);
+assert.equal(cards.filter((card) => card.title.startsWith('🟢')).length, 50);
 assert.equal(cards.filter((card) => card.title.startsWith('🟠')).length, 2);
 const defenderCard = cards.find((card) => /Season Defender/.test(card.title));
 assert.match(JSON.stringify(defenderCard), /not a direct measurement/);
 assert.match(cards[0].description, /→/);
 await publishProgressionReports({ client, guildId, snapshot: seasonEnd });
-assert.equal(falcons.storedMessages.size, totalBefore + 14, 'A repeat sync edits existing offseason cards');
+assert.equal(falcons.storedMessages.size, totalBefore + 11, 'A repeat playoff sync edits the same batch');
+const postseason = structuredClone(seasonEnd);
+postseason.info.careerHubInfo.seasonInfo.seasonWeekType = 3;
+postseason.currentWeek = 28;
+postseason.syncId = 'after-playoffs';
+postseason.rosters.teams[1].rosterInfoList.forEach((player) => { player.throwAccShortRating = 95; });
+postseason.weeklyStats.push({ ...postseason.weeklyStats[0], stage: 2, weekIndex: 18 });
+await persistSyncHistory({ leagueId, snapshot: postseason, summary: {} });
+const laterBatch = await publishProgressionReports({ client, guildId, snapshot: postseason });
+assert.equal(laterBatch.periodKey, published.periodKey, 'No separate offseason upgrade batch');
+assert.equal(laterBatch.recommendationCount, 52);
+assert.equal(falcons.storedMessages.size, totalBefore + 12, 'Only the actual-OVR overview is added in offseason');
+const replayedCards = newMessages.flatMap((entry) => entry.payload.embeds.map((embed) => embed.toJSON()));
+assert.ok(replayedCards.some((card) => /75 →/.test(card.description)), 'Previously issued targets remain stable after manual Madden edits');
+const partialPlayoffs = structuredClone(seasonEnd);
+partialPlayoffs.leagueId = 'partial-playoffs';
+partialPlayoffs.weeklyStats = partialPlayoffs.weeklyStats.slice(0, 4);
+assert.match((await publishProgressionReports({ client, guildId, snapshot: partialPlayoffs })).reason, /Week 18/);
 
 const lineWeek = makeSnapshot('line-week', 1, 2, 2030);
 lineWeek.rosters.teams[1].rosterInfoList = [{
@@ -225,4 +254,4 @@ const afterPlayoff = falcons.storedMessages.size;
 const retry = await refreshProgressionForAwardChange({ client, guildId, leagueId, snapshot: playoffWeek, weekNumber: 19 });
 assert.equal(retry.recommendationCount, 1, 'A sync retry must read the stored playoff awards');
 assert.equal(falcons.storedMessages.size, afterPlayoff, 'Retry must edit the existing team post');
-console.log('PASS season OVR comparisons, partial baselines, team threads, repeat updates, and season rollover');
+console.log('PASS season OVR comparisons, first-playoff finale batch, postseason exclusion, stable targets, duplicate prevention, and season rollover');
