@@ -24,6 +24,7 @@ import {
 } from './madden_sync_history.js';
 import { getMaddenChannelId } from '../shared/madden_metadata.js';
 import { getMaddenStatValue } from './madden_stat_fields.js';
+import { appendProgressionResultFields } from './report_navigation.js';
 import { updateWeeklyGameLog } from './weekly_game_log.js';
 
 const leagueDir = getMaddenLeaguesDir();
@@ -66,6 +67,7 @@ async function postDataImportSummary(client, guildId, summary) {
       { name: 'Import warnings', value: warningText, inline: false },
     )
     .setTimestamp(new Date(summary.syncedAt));
+  appendProgressionResultFields(embed, summary.progression);
   await channel.send({ embeds: [embed] });
   return { posted: true, channelId };
 }
@@ -678,7 +680,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         }
       }
       try {
-        result.dataImportSummary = await postDataImportSummary(options.client, options.guildId, summary);
+        result.dataImportSummary = await postDataImportSummary(options.client, options.guildId, result);
       } catch (error) {
         result.dataImportSummary = { posted: false, error: error?.message || String(error) };
         console.error('[madden-sync] failed to post data import summary', error);

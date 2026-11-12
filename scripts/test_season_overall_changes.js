@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import { buildSeasonOverallChanges, publishProgressionReports, refreshProgressionForAwardChange, refreshProgressionForSeasonAwardChange } from '../src/madden/progression.js';
+import path from 'node:path';
+import { buildSeasonOverallChanges, publishProgressionReports, refreshProgressionForAwardChange, refreshProgressionForSeasonAwardChange, repairProgressionReportNavigation } from '../src/madden/progression.js';
 import { persistSyncHistory } from '../src/madden/madden_sync_history.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
-import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../src/leaguebuddy/paths.js';
+import { getMaddenDataFilePath, getMaddenLeaguesDir, getMaddenConfigPath, getMaddenLeagueSnapshotPath } from '../src/leaguebuddy/paths.js';
 
+const seasonSummaryInfo = ({ teamCount, baseline, partial }) => ({ teamCount, baseline, partial });
 if (!process.env.LB_DATA_ROOT) throw new Error('Set LB_DATA_ROOT to an isolated test directory.');
 process.env.MADDEN_SOLO_USER_ID = 'operator';
 process.env.MADDEN_FRANCHISE_MANAGER_ROLE_ID = 'manager';
@@ -53,14 +55,18 @@ const threadByName = new Map();
 const summaries = [];
 let sequence = 0;
 let failOverview = false;
+const parentMessages = new Map();
 const channel = {
   id: 'upgrades', guild, isTextBased: () => true,
   threads: { fetchActive: async () => ({ threads: [] }), fetchArchived: async () => ({ threads: [] }) },
-  messages: { fetch: async () => { throw Object.assign(new Error('Missing'), { code: 10008 }); } },
+  messages: { fetch: async (id) => { if (!parentMessages.has(id)) throw Object.assign(new Error('Missing'), { code: 10008 }); return parentMessages.get(id); } },
   send: async (payload) => {
     if (payload.embeds) {
       summaries.push(payload);
-      return { id: `summary-${++sequence}`, pinned: false, pin: async () => {} };
+      const message = { id: `summary-${++sequence}`, payload, pinned: true, pin: async () => {},
+        edit: async (updated) => { message.payload = updated; summaries.push(updated); return message; } };
+      parentMessages.set(message.id, message);
+      return message;
     }
     return {
       startThread: async ({ name }) => {
@@ -99,7 +105,7 @@ const archiveIndex = JSON.parse(await fs.readFile(indexPath, 'utf8'));
 archiveIndex.records.unshift({ syncId: 'missing-old-archive', syncedAt: '2000-01-01T00:00:00Z' });
 await fs.writeFile(indexPath, JSON.stringify(archiveIndex));
 const first = await publishProgressionReports({ client, guildId, snapshot: end });
-assert.deepEqual(first.seasonChanges, { teamCount: 2, baseline: 'Week 4', partial: true });
+assert.deepEqual(seasonSummaryInfo(first.seasonChanges), { teamCount: 2, baseline: 'Week 4', partial: true });
 const falcons = threadByName.get('Atlanta Falcons');
 const rams = threadByName.get('Los Angeles Rams');
 assert.equal(falcons.storedMessages.size, 1);
@@ -128,7 +134,7 @@ nextEnd.rosters.teams[1].rosterInfoList[0].playerBestOvr = 74;
 await persistSyncHistory({ leagueId, snapshot: early, summary: {} });
 await persistSyncHistory({ leagueId, snapshot: nextEnd, summary: {} });
 const completeBaseline = await publishProgressionReports({ client, guildId, snapshot: nextEnd });
-assert.deepEqual(completeBaseline.seasonChanges, { teamCount: 2, baseline: 'Week 1', partial: false });
+assert.deepEqual(seasonSummaryInfo(completeBaseline.seasonChanges), { teamCount: 2, baseline: 'Week 1', partial: false });
 const completeEmbed = [...falcons.storedMessages.values()][2].payload.embeds[0].toJSON();
 assert.doesNotMatch(completeEmbed.description, /Partial-season/);
 assert.match(completeEmbed.fields[0].value, /70 → 74 \(\+4\)/);
@@ -160,6 +166,8 @@ const totalBefore = falcons.storedMessages.size;
 const published = await publishProgressionReports({ client, guildId, snapshot: seasonEnd });
 assert.equal(published.recommendationCount, 30, 'Only the final regular-season weekly batch is issued, capped at 30');
 assert.equal(published.type, 'weekly');
+assert.match(published.reportUrl, /discord.com\/channels/);
+assert.match(published.seasonChanges.indexUrl, /discord.com\/channels/);
 const periodHistoryPath = getMaddenDataFilePath(`progression_history/${leagueId}.json`);
 const underfilledHistory = JSON.parse(await fs.readFile(periodHistoryPath, 'utf8'));
 const underfilledPeriod = underfilledHistory.periods[published.periodKey];
@@ -171,7 +179,7 @@ const repaired = await publishProgressionReports({ client, guildId, snapshot: se
 assert.equal(repaired.recommendationCount, 30, 'An older frozen eight-player week can fill to the weekly target');
 const repairedHistory = JSON.parse(await fs.readFile(periodHistoryPath, 'utf8'));
 assert.deepEqual(repairedHistory.periods[published.periodKey].recommendations.slice(0, 8).map((item) => item.attributes), issuedTargets, 'Previously issued targets remain unchanged');
-assert.deepEqual(published.seasonChanges, { teamCount: 2, baseline: 'Week 1', partial: false });
+assert.deepEqual(seasonSummaryInfo(published.seasonChanges), { teamCount: 2, baseline: 'Week 1', partial: false });
 const newMessages = [...falcons.storedMessages.values()].slice(totalBefore);
 assert.equal(newMessages.length, 7, 'Playoffs begin with the overview and six final-week recommendation pages');
 assert.equal(newMessages[0].payload.embeds[0].toJSON().title, '📊 Season OVR Changes');
@@ -189,7 +197,7 @@ await persistSyncHistory({ leagueId, snapshot: postseason, summary: {} });
 const laterBatch = await publishProgressionReports({ client, guildId, snapshot: postseason });
 assert.equal(laterBatch.type, 'season_summary', 'Offseason only updates the OVR overview');
 assert.equal(laterBatch.recommendationCount, 0, 'Offseason never creates rating changes');
-assert.deepEqual(laterBatch.seasonChanges, { teamCount: 2, baseline: 'Week 1', partial: false });
+assert.deepEqual(seasonSummaryInfo(laterBatch.seasonChanges), { teamCount: 2, baseline: 'Week 1', partial: false });
 const offseasonOverview = newMessages[0];
 const refreshedOverview = offseasonOverview.payload.embeds[0].toJSON();
 assert.deepEqual(refreshedOverview.fields.map((field) => field.name), ['📈 Top 10 Growers', '📉 Top 10 Fallers']);
@@ -254,7 +262,7 @@ assert.equal(playoffReport.recommendationCount, 1);
 assert.equal(playoffReport.unupgradedAwardWinners[0].player, 'Missing Winner');
 const playoffCards = [...falcons.storedMessages.values()].slice(beforePlayoff).flatMap((entry) => entry.payload.embeds.map((item) => item.toJSON()));
 assert.ok(playoffCards.some((card) => /Playoff Winner/.test(card.title) && /weekly award/i.test(JSON.stringify(card))));
-assert.match(JSON.stringify(summaries.at(-1).embeds[0].toJSON()), /Missing Winner/);
+assert.match(JSON.stringify(summaries.findLast((payload) => payload.embeds[0].toJSON().title === '🏈 Franchise Progression').embeds[0].toJSON()), /Missing Winner/);
 await fs.writeFile(getMaddenDataFilePath('awards.json'), JSON.stringify({
   [leagueId]: { 19: { afc_offense: { rosterId: 'playoff-winner' }, nfc_offense: { rosterId: 'playoff-missing' } }, __seasonByWeek: { 19: 'year_2031' } },
 }));
@@ -287,4 +295,21 @@ assert.equal(recoveredReport.seasonChanges.teamCount, 2, 'The next sync retries 
 assert.equal(recoveredReport.recommendationCount, 30);
 const awardRefresh = await refreshProgressionForSeasonAwardChange({ client, guildId, snapshot: postseason });
 assert.equal(awardRefresh.published, false, 'Season awards cannot recreate an annual rating batch');
-console.log('PASS playoff OVR lists, weekly-only regular/playoff changes, no offseason batch, actual-OVR updates, duplicate prevention, and season rollover');
+const configPath = getMaddenConfigPath();
+await fs.mkdir(path.dirname(configPath), { recursive: true });
+await fs.writeFile(configPath, JSON.stringify({ guilds: { [guildId]: leagueId } }));
+await fs.writeFile(getMaddenLeagueSnapshotPath(leagueId), JSON.stringify(reportFailure));
+const navigationHistory = JSON.parse(await fs.readFile(periodHistoryPath, 'utf8'));
+delete navigationHistory.periods.year_2038_week_18.reportIndexMessages;
+delete navigationHistory.periods.year_2038_ovr_summary.reportIndexMessages;
+const originalTargets = navigationHistory.periods.year_2038_week_18.recommendations.map((item) => item.attributes);
+await fs.writeFile(periodHistoryPath, JSON.stringify(navigationHistory));
+const parentCount = parentMessages.size;
+const backfilled = await repairProgressionReportNavigation(client, guildId);
+assert.equal(backfilled.recommendationCount, 30);
+assert.equal(parentMessages.size, parentCount + 2, 'Startup backfills one weekly index and one top-10 index');
+const repairedNavigation = JSON.parse(await fs.readFile(periodHistoryPath, 'utf8'));
+assert.deepEqual(repairedNavigation.periods.year_2038_week_18.recommendations.map((item) => item.attributes), originalTargets, 'Backfill never issues another set of rating changes');
+assert.equal(await repairProgressionReportNavigation(client, guildId), undefined);
+assert.equal(parentMessages.size, parentCount + 2, 'Restarting again cannot duplicate the report indexes');
+console.log('PASS weekly and season indexes, startup backfill without rating changes, repeat-sync deduplication, and actual OVR lists');

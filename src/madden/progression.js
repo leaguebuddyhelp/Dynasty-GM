@@ -13,6 +13,7 @@ import { getMaddenChannelId, getMaddenSeasonKey } from '../shared/madden_metadat
 import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getMaddenStatValue, normalizeMaddenStatField } from './madden_stat_fields.js';
+import { buildTeamReportIndex } from './report_navigation.js';
 import { getFranchisePhase } from './franchise_phase.js';
 import { stablePlayerKey } from './player_identity.js';
 import { getLatestReliableRegularSeasonWeekIndex } from './top_players.js';
@@ -2034,6 +2035,22 @@ export async function removeRookieRecapMessages(client, guildId) {
   console.log(`[progression] Removed ${removed} legacy rookie recap messages`);
 }
 
+async function publishReportIndex(client, guildId, registry, record, history, embed) {
+  const channel = await client.channels.fetch(registry.channelId);
+  if (!channel?.isTextBased()) throw new Error('Player Upgrades channel is unavailable for report navigation.');
+  record.reportIndexMessages ||= {};
+  const previous = record.reportIndexMessages[guildId];
+  const existing = previous ? await channel.messages.fetch(previous).catch((error) => {
+    if (error.code === 10008) return null;
+    throw error;
+  }) : null;
+  const payload = { embeds: [embed], allowedMentions: { parse: [] } };
+  const message = existing ? await existing.edit(payload) : await channel.send(payload);
+  record.reportIndexMessages[guildId] = message.id;
+  await saveHistory(record.leagueId, history);
+  return `https://discord.com/channels/${guildId}/${registry.channelId}/${message.id}`;
+}
+
 async function publishTeamThreadReports(client, guildId, snapshot, record, history, rules) {
   const registry = await ensureTeamThreads({ client, guildId, snapshot, rules });
   const byTeam = new Map();
@@ -2124,8 +2141,16 @@ async function publishTeamThreadReports(client, guildId, snapshot, record, histo
   registry.summaryMessageId = persistedSummary.id;
   await atomicJsonWrite(threadsFile(guildId), registry);
   await saveHistory(record.leagueId, history);
+  const upgrades = record.recommendations.filter((item) => item.direction === 'upgrade').length;
+  const reportUrl = record.recommendations.length ? await publishReportIndex(client, guildId, registry, record, history, buildTeamReportIndex({
+    title: `📈 Weekly Player Changes · Week ${record.weekNumber}`,
+    description: `**${seasonLabel(record.seasonKey)} · ${record.recommendations.length} player changes**\n${upgrades} upgrades · ${record.recommendations.length - upgrades} downgrades\n\nOpen your team below. Apply each change manually in Madden.`,
+    reports: [...byTeam.keys()].map((teamId) => ({ teamName: registry.teams[teamId].teamName,
+      url: `https://discord.com/channels/${guildId}/${registry.teams[teamId].threadId}/${record.teamMessages[teamId][0]}` })),
+  })) : null;
   return {
     published: true,
+    reportUrl,
     teamCount: byTeam.size,
     recommendationCount: record.recommendations.length,
     threadCount: Object.keys(registry.teams).length,
@@ -2253,7 +2278,16 @@ async function publishSeasonOverallChanges(client, guildId, snapshot, record, hi
     messages[teamId] = { threadId: thread.id, messageId: message.id };
     await saveHistory(record.leagueId, history);
   }
-  return { teamCount: (snapshot?.teams?.leagueTeamInfoList || []).length, baseline: baseline?.label || null, partial: Boolean(baseline?.partial) };
+  const indexUrl = await publishReportIndex(client, guildId, registry, record, history, buildTeamReportIndex({
+    title: `📊 ${seasonLabel(record.seasonKey)} · Top 10 Growers / Fallers`,
+    description: 'Actual Madden OVR movement since the season baseline. Open your team’s list below.',
+    reports: (snapshot.teams?.leagueTeamInfoList || []).map((team) => {
+      const teamId = String(team.teamId);
+      return { teamName: registry.teams[teamId].teamName,
+        url: `https://discord.com/channels/${guildId}/${messages[teamId].threadId}/${messages[teamId].messageId}` };
+    }),
+  }));
+  return { teamCount: (snapshot?.teams?.leagueTeamInfoList || []).length, baseline: baseline?.label || null, partial: Boolean(baseline?.partial), indexUrl };
 }
 
 async function publishProgression({ client, guildId, snapshot, type, weekIndex = null, awardWinners = null }) {
@@ -2421,6 +2455,28 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
   const weekly = await publishProgression({ client, guildId, snapshot: phase === 'playoffs' ? playoffProgressionSnapshot(snapshot) : snapshot, type: 'weekly', weekIndex });
   return { ...weekly, ...(summary.seasonChanges ? { seasonChanges: summary.seasonChanges } : {}),
     ...(summary.seasonChangesError ? { seasonChangesError: summary.seasonChangesError } : {}) };
+}
+
+// Backfill navigation for already-issued reports after upgrading the bot.
+// This reads the saved snapshot and never contacts EA or advances the league.
+export async function repairProgressionReportNavigation(client, guildId) {
+  const { resolveLeagueIdWithConfig, loadLeagueSnapshot } = await import('./madden_data.js');
+  const leagueId = resolveLeagueIdWithConfig(guildId, 'progression:navigation');
+  if (!leagueId) return;
+  const snapshot = loadLeagueSnapshot(leagueId);
+  if (!snapshot?.syncId) return;
+  const history = await loadHistory(leagueId);
+  const seasonKey = getMaddenSeasonKey(snapshot);
+  const weekIndex = resolveProgressionWeek(snapshot);
+  const weekly = weekIndex === null ? null : history.periods[`${seasonKey}_week_${weekIndex + 1}`];
+  const seasonal = history.periods[`${seasonKey}_ovr_summary`];
+  const needsWeekly = weekly?.recommendations?.length && !weekly.reportIndexMessages?.[guildId];
+  const needsSeasonal = seasonal?.seasonChangeMessages?.[guildId] && !seasonal.reportIndexMessages?.[guildId];
+  if (!needsWeekly && !needsSeasonal) return;
+  const result = await publishProgressionReports({ client, guildId, snapshot });
+  console.log('[progression] Report navigation repaired', { week: weekIndex === null ? null : weekIndex + 1,
+    changes: result.recommendationCount, teams: result.seasonChanges?.teamCount });
+  return result;
 }
 
 export async function refreshProgressionForAwardChange({ client, guildId, leagueId, snapshot, weekNumber, winners }) {
