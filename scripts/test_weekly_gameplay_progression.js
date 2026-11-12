@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { buildWeeklyProgressionRecommendations } from '../src/madden/progression.js';
+import { buildWeeklyProgressionRecommendations, resolveProgressionWeek } from '../src/madden/progression.js';
 
 const rules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
 const calibrated = structuredClone(rules);
@@ -60,4 +60,44 @@ assert.ok(!evaluate(recovery, calibrated).recommendations.some((item) => item.di
 const slump = snapshot(80, { games: 4 });
 slump.weeklyStats.at(-1).passing.playerPassingStatInfoList[0].passTDs = 0;
 assert.ok(!evaluate(slump, calibrated).recommendations.some((item) => item.direction === 'upgrade'), 'A poor current game cannot receive an upgrade from stale strong games');
-console.log('PASS stronger weekly gameplay movement across low/mid/high OVR, evidence/usage/injury guards, and current-game recovery/slump protection');
+const crowd = snapshot(75, { games: 1 });
+const template = crowd.rosters.teams[1].rosterInfoList[0];
+crowd.rosters.teams[1].rosterInfoList = Array.from({ length: 28 }, (_, index) => ({ ...template, rosterId: `crowd-${index}` }));
+const statTemplate = crowd.weeklyStats[0].passing.playerPassingStatInfoList[0];
+crowd.weeklyStats[0].passing.playerPassingStatInfoList = Array.from({ length: 28 }, (_, index) => ({ ...statTemplate, rosterId: `crowd-${index}`, passTDs: index < 8 ? 4 : 3 }));
+const filled = evaluate(crowd, calibrated);
+assert.equal(filled.recommendations.length, 20, 'Eight primary players plus supported smaller changes reach the weekly minimum');
+assert.equal(filled.selectionDiagnostics.primaryEligible, 8);
+assert.equal(filled.selectionDiagnostics.reserveSelected, 12);
+assert.ok(filled.recommendations.filter((item) => item.eligibilityTier === 'reserve').every((item) => item.attributes.length <= 2 && item.attributes.every((attribute) => attribute.points === 1)));
+const short = structuredClone(crowd);
+short.weeklyStats[0].passing.playerPassingStatInfoList = short.weeklyStats[0].passing.playerPassingStatInfoList.slice(0, 8);
+assert.equal(evaluate(short, calibrated).recommendations.length, 8, 'Missing gameplay cannot be fabricated to fill the quota');
+assert.equal(evaluate(short, calibrated).selectionDiagnostics.targetShortfall, 12);
+const playoff = snapshot(80);
+playoff.info = { careerHubInfo: { seasonInfo: { seasonWeekType: 2 } } };
+playoff.currentWeek = 19;
+playoff.weeklyStats = [{ ...playoff.weeklyStats[0], weekIndex: 17 }, { ...playoff.weeklyStats[1], weekIndex: 18, stage: 2 }];
+playoff.schedule = { schedules: [{ stageIndex: 2, weekIndex: 18, status: 1, homeTeamId: 1, awayTeamId: 2 }] };
+assert.equal(resolveProgressionWeek(playoff), 17, 'First playoff sync evaluates the final regular-season week, not upcoming playoff stats');
+playoff.schedule.schedules[0].status = 2;
+assert.equal(resolveProgressionWeek(playoff), 18);
+const benchTeam = structuredClone(template);
+benchTeam.rosterId = 'bye-player';
+playoff.rosters.teams[3] = { rosterInfoList: [benchTeam] };
+playoff.weeklyStats[1].stage = 1;
+playoff.weeklyStats[1].passing.playerPassingStatInfoList.push({ ...statTemplate, rosterId: 'bye-player', teamId: 3 });
+const playingOnly = buildWeeklyProgressionRecommendations(playoff, { weekIndex: 18, rules: calibrated });
+assert.ok(playingOnly.recommendations.length);
+assert.ok(playingOnly.recommendations.every((item) => ['1', '2'].includes(item.teamId)), 'Stale stat rows cannot give bye/eliminated teams changes');
+for (const snapshotPhase of [
+  { seasonWeekType: 3 }, { seasonWeekType: 8 },
+  { seasonWeekType: 1, seasonTitle: '2026 Offseason' },
+]) {
+  const offseason = { ...playoff, info: { careerHubInfo: { seasonInfo: snapshotPhase } } };
+  assert.equal(resolveProgressionWeek(offseason), null, 'Offseason never resolves a rating-change week');
+}
+const regular = snapshot(80, { games: 2 });
+regular.currentWeek = 2;
+assert.equal(resolveProgressionWeek(regular), 0, 'Do not evaluate the currently active regular-season week');
+console.log('PASS weekly 20-player fill from eight primary candidates, smaller evidence-backed changes, playoff participants, offseason blocking, and correct completed-week selection');

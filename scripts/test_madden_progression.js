@@ -589,12 +589,12 @@ assert.match(JSON.stringify(breakoutCard), /Passing yards: 390/);
 const noAward = buildWeeklyProgressionRecommendations(breakoutSnapshot, {
   weekIndex: 2, rules: baseRules, history: { periods: {}, seasonAwards: {} },
 }).recommendations;
-assert.equal(noAward.length, 0);
+assert.ok(noAward.every((item) => item.eligibilityTier === 'reserve' && item.attributes.every((attribute) => attribute.points === 1)), 'Without an award, only the smaller gameplay-supported reserve change may qualify');
 const wrongAward = buildWeeklyProgressionRecommendations(breakoutSnapshot, {
   weekIndex: 2, rules: baseRules, awardWinners: { nfc_offense: { rosterId: 'different-player' } },
   history: { periods: {}, seasonAwards: {} },
 }).recommendations;
-assert.equal(wrongAward.length, 0);
+assert.ok(wrongAward.every((item) => item.eligibilityTier === 'reserve' && item.awardPoints === 0));
 const highRated = buildWeeklyProgressionRecommendations(snapshot([breakoutWeek], {
   ...breakoutPlayer, playerBestOvr: 85,
 }), {

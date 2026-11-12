@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import { buildSeasonOverallChanges, publishProgressionReports, refreshProgressionForAwardChange, refreshProgressionForSeasonAwardChange } from '../src/madden/progression.js';
 import { persistSyncHistory } from '../src/madden/madden_sync_history.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
-import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
+import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../src/leaguebuddy/paths.js';
 
 if (!process.env.LB_DATA_ROOT) throw new Error('Set LB_DATA_ROOT to an isolated test directory.');
 process.env.MADDEN_SOLO_USER_ID = 'operator';
@@ -52,6 +52,7 @@ const channels = new Map();
 const threadByName = new Map();
 const summaries = [];
 let sequence = 0;
+let failOverview = false;
 const channel = {
   id: 'upgrades', guild, isTextBased: () => true,
   threads: { fetchActive: async () => ({ threads: [] }), fetchArchived: async () => ({ threads: [] }) },
@@ -71,6 +72,10 @@ const channel = {
             return messages.get(id);
           } },
           send: async (next) => {
+            if (failOverview && next.embeds?.some((embed) => embed.toJSON().title === '📊 Season OVR Changes')) {
+              failOverview = false;
+              throw new Error('Simulated OVR report failure');
+            }
             const message = { id: `message-${++sequence}`, payload: next, edit: async (updated) => { message.payload = updated; } };
             messages.set(message.id, message);
             return message;
@@ -89,6 +94,10 @@ const client = { channels: { fetch: async (id) => channels.get(id) } };
 saveGuildMaddenConfig(guildId, { compat: { maddenChannelMap: { 'Player Upgrades': 'upgrades' } } });
 await persistSyncHistory({ leagueId, snapshot: start, summary: {} });
 await persistSyncHistory({ leagueId, snapshot: end, summary: {} });
+const indexPath = `${getMaddenLeaguesDir()}/history/${leagueId}/index.json`;
+const archiveIndex = JSON.parse(await fs.readFile(indexPath, 'utf8'));
+archiveIndex.records.unshift({ syncId: 'missing-old-archive', syncedAt: '2000-01-01T00:00:00Z' });
+await fs.writeFile(indexPath, JSON.stringify(archiveIndex));
 const first = await publishProgressionReports({ client, guildId, snapshot: end });
 assert.deepEqual(first.seasonChanges, { teamCount: 2, baseline: 'Week 4', partial: true });
 const falcons = threadByName.get('Atlanta Falcons');
@@ -151,6 +160,17 @@ const totalBefore = falcons.storedMessages.size;
 const published = await publishProgressionReports({ client, guildId, snapshot: seasonEnd });
 assert.equal(published.recommendationCount, 30, 'Only the final regular-season weekly batch is issued, capped at 30');
 assert.equal(published.type, 'weekly');
+const periodHistoryPath = getMaddenDataFilePath(`progression_history/${leagueId}.json`);
+const underfilledHistory = JSON.parse(await fs.readFile(periodHistoryPath, 'utf8'));
+const underfilledPeriod = underfilledHistory.periods[published.periodKey];
+underfilledPeriod.recommendations = underfilledPeriod.recommendations.slice(0, 8);
+underfilledPeriod.gameplayPolicyVersion = 1;
+const issuedTargets = underfilledPeriod.recommendations.map((item) => item.attributes);
+await fs.writeFile(periodHistoryPath, JSON.stringify(underfilledHistory));
+const repaired = await publishProgressionReports({ client, guildId, snapshot: seasonEnd });
+assert.equal(repaired.recommendationCount, 30, 'An older frozen eight-player week can fill to the weekly target');
+const repairedHistory = JSON.parse(await fs.readFile(periodHistoryPath, 'utf8'));
+assert.deepEqual(repairedHistory.periods[published.periodKey].recommendations.slice(0, 8).map((item) => item.attributes), issuedTargets, 'Previously issued targets remain unchanged');
 assert.deepEqual(published.seasonChanges, { teamCount: 2, baseline: 'Week 1', partial: false });
 const newMessages = [...falcons.storedMessages.values()].slice(totalBefore);
 assert.equal(newMessages.length, 7, 'Playoffs begin with the overview and six final-week recommendation pages');
@@ -255,6 +275,16 @@ for (const stage of [1, 2]) {
   assert.ok(report.recommendationCount > 0 && report.recommendationCount <= 30, 'Completed playoff games receive weekly gameplay recommendations for either EA stage encoding');
   assert.ok(report.seasonChanges);
 }
+const reportFailure = structuredClone(seasonEnd);
+reportFailure.info.careerHubInfo.seasonInfo.calendarYear = 2038;
+reportFailure.syncId = 'summary-retry';
+failOverview = true;
+const failedReport = await publishProgressionReports({ client, guildId, snapshot: reportFailure });
+assert.equal(failedReport.recommendationCount, 30, 'A failed OVR list must not block weekly changes');
+assert.match(failedReport.seasonChangesError, /Simulated OVR report failure/);
+const recoveredReport = await publishProgressionReports({ client, guildId, snapshot: reportFailure });
+assert.equal(recoveredReport.seasonChanges.teamCount, 2, 'The next sync retries the missing top-10 lists');
+assert.equal(recoveredReport.recommendationCount, 30);
 const awardRefresh = await refreshProgressionForSeasonAwardChange({ client, guildId, snapshot: postseason });
 assert.equal(awardRefresh.published, false, 'Season awards cannot recreate an annual rating batch');
 console.log('PASS playoff OVR lists, weekly-only regular/playoff changes, no offseason batch, actual-OVR updates, duplicate prevention, and season rollover');

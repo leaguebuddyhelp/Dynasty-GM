@@ -84,7 +84,14 @@
         "extraAttributePoints": 1,
         "recentSelectionWindow": 3,
         "repeatSelectionPenalty": 2,
-        "maximumRepeatSelectionPenalty": 6
+        "maximumRepeatSelectionPenalty": 6,
+        "minimumVolume": {
+          "minimumUpgradeScore": 60,
+          "maximumDowngradeScore": 45,
+          "minimumUpgradePriority": 52,
+          "minimumDowngradePriority": 50,
+          "maximumAttributes": 2
+        }
       },
       "preferredRecommendationRange": [20, 30],
       "minimumUpgradeSelectionScore": 58,

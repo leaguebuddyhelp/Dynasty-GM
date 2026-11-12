@@ -1112,6 +1112,15 @@ function getPopulationSoftPenalty(player, population, rules) {
   return total;
 }
 
+function playedTeamIds(snapshot, weekIndex) {
+  const games = (snapshot.schedule?.schedules || []).filter((game) =>
+    Number(game.weekIndex) === Number(weekIndex) && [1, 2].includes(Number(game.stageIndex ?? game.stage)) && Number(game.status) >= 2);
+  if (games.length) return new Set(games.flatMap((game) => [game.homeTeamId, game.awayTeamId]).filter((id) => id != null).map(String));
+  const entries = (snapshot.weeklyStats || []).filter((entry) => Number(entry.weekIndex) === Number(weekIndex) && [1, 2].includes(Number(entry.stage ?? entry.stageIndex)));
+  return new Set(entries.flatMap((entry) => [...STAT_BUCKETS.flatMap(([bucket, list]) => entry[bucket]?.[list] || []), ...(entry.playerTotals || [])])
+    .map((row) => row.teamId).filter((id) => id != null).map(String));
+}
+
 export function buildWeeklyProgressionRecommendations(snapshot, {
   weekIndex,
   awardWinners = {},
@@ -1133,10 +1142,12 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       ? awardWinners
       : readWeeklyAwardResults(snapshot.leagueId, weekNumber - index, seasonKey));
   const population = populationSnapshot(players, rules);
+  const participants = Number(weekIndex) >= 18 ? playedTeamIds(snapshot, weekIndex) : null;
   const candidates = [];
   const rookieOutcomes = new Map();
   const awardReasons = new Map();
   for (const player of players) {
+    if (participants && !participants.has(player.teamId)) continue;
     const weeklyAwards = getWeeklyAwardPoints(awardWinners, player, players, aliases, weeklyRules);
     if (player.ovr === null) {
       if (weeklyAwards) awardReasons.set(player.key, 'Missing overall rating.');
@@ -1150,6 +1161,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       continue;
     }
     const current = weekPlayers.get(player.key);
+    if (participants && current && (current.missingTeamId || !current.observedTeamIds?.has(player.teamId))) continue;
     if (!current || (!weeklyAwards && !opportunityConfirmed(current.totals, positionKey, weeklyRules))) {
       if (weeklyAwards) {
         awardReasons.set(player.key, 'No matching weekly statistics.');
@@ -1259,21 +1271,28 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     let evidence = [];
     let priorityBase = 0;
     const movement = weeklyRules.gameplayMovement;
+    const volume = movement?.minimumVolume;
+    const reserveUpgrade = volume && currentMetrics.score >= Number(volume.minimumUpgradeScore)
+      && windows.performanceScore >= Number(volume.minimumUpgradeScore);
+    const reserveDowngrade = volume && currentMetrics.score <= Number(volume.maximumDowngradeScore)
+      && windows.performanceScore <= Number(volume.maximumDowngradeScore) && Number(player.injuryLength || 0) <= 0;
+    let reserve = false;
     const currentUpgradeEligible = !movement || currentMetrics.score >= Number(movement.minimumCurrentUpgradeScore) || weeklyAwards > 0;
     const currentDowngradeEligible = !movement || (currentMetrics.score <= Number(movement.maximumCurrentDowngradeScore) && Number(player.injuryLength || 0) <= 0);
-    if (currentUpgradeEligible && !rookieBust && (windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
+    if ((currentUpgradeEligible || reserveUpgrade) && !rookieBust && (reserveUpgrade || windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
       && currentAttributeEvidence.length) {
       const tier = getTier(breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore, weeklyRules.positiveChangeTiers, 'minimumScore')
-        || (weeklyAwards ? { attributePoints: 1 } : null);
+        || (weeklyAwards || reserveUpgrade ? { attributePoints: 1 } : null);
       if (tier) {
         direction = 'upgrade';
+        reserve = !currentUpgradeEligible || (windows.performanceScore < Number(weeklyRules.minimumUpgradePerformanceScore) && !breakout && !weeklyAwards);
         points = Number(tier.attributePoints);
         evidence = currentAttributeEvidence;
         priorityBase = (breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore) + consistencyBonus + improvingTrendBonus
             + exceptionalConsistencyBonus + weeklyAwards
           - soft.penalty - populationAdjustment;
       }
-    } else if (currentDowngradeEligible && (!rookieOutcome || positionKey === 'OL' || rookieBust) && (windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)
+    } else if ((currentDowngradeEligible || reserveDowngrade) && (!rookieOutcome || positionKey === 'OL' || rookieBust) && (reserveDowngrade || windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)
       || verifiedPoorStreak >= Number(weeklyRules.poorPerformanceMinimumGames ?? 3))) {
       const negative = selectNegativeAttributes(
         current.totals,
@@ -1289,14 +1308,16 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         negative.push({ attribute: 'Awareness', field: weeklyRules.attributeFields.Awareness, evidence: 'currentGameScore', currentValue: awarenessValue, evidenceRatio: 1 });
       }
       const tier = getNegativeTier(windows.performanceScore, weeklyRules.negativeChangeTiers)
-        || (sustainedPoor ? { attributePoints: -1 } : null);
+        || (sustainedPoor || reserveDowngrade ? { attributePoints: -1 } : null);
       if (negative.length && tier) {
         direction = 'downgrade';
+        reserve = !currentDowngradeEligible || (windows.performanceScore > Number(weeklyRules.maximumDowngradePerformanceScore) && !sustainedPoor);
         points = Number(tier.attributePoints);
         evidence = negative;
         priorityBase = 100 - windows.performanceScore + poorConsistencyBonus + decliningTrendBonus;
       }
     }
+    if (reserve) evidence = evidence.filter((item) => item.evidence !== 'currentGameScore').slice(0, Number(volume.maximumAttributes));
     if (!direction || !evidence.length || !points) continue;
     if (direction === 'upgrade') {
       priorityBase += pipeline.selectionBonus;
@@ -1366,7 +1387,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       if (index === 0 && rookieOutcome?.highPick && rookieOutcomeBonus > 0) {
         magnitude += Number(outcomePolicy.highPickExtraPrimaryPoints);
       }
-      magnitude = Math.min(maxPoints, magnitude);
+      magnitude = reserve ? 1 : Math.min(maxPoints, magnitude);
       return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
     });
     if (!allocation.length) continue;
@@ -1392,13 +1413,14 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       seasonToDateScore: windows.seasonScore,
       explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
-    selected.changeContext = { gameplayMomentum, rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
+    selected.eligibilityTier = reserve ? 'reserve' : 'primary';
+    selected.changeContext = { reserveSelection: reserve, gameplayMomentum: !reserve && gameplayMomentum, rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
       rookieMomentum: direction === 'upgrade' && pipeline.rookie,
       eliteMomentum: direction === 'upgrade' && pipeline.elite,
       sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0, teamLineProxy: positionKey === 'OL' };
     selected.minimumSelectionScore = direction === 'upgrade'
-      ? Number(weeklyRules.minimumUpgradeSelectionScore)
-      : Number(weeklyRules.minimumDowngradeSelectionPriority);
+      ? Number(reserve ? volume.minimumUpgradePriority : weeklyRules.minimumUpgradeSelectionScore)
+      : Number(reserve ? volume.minimumDowngradePriority : weeklyRules.minimumDowngradeSelectionPriority);
     selected.pointTracking = {
       positivePreviouslyConfirmed: positivePointsUsed,
       negativePreviouslyConfirmed: negativePointsUsed,
@@ -1408,13 +1430,17 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     candidates.push(selected);
   }
   const awardCandidates = candidates.filter((candidate) => candidate.direction === 'upgrade' && candidate.awardPoints > 0);
-  const otherCandidates = candidates.filter((candidate) => !awardCandidates.includes(candidate));
+  const otherCandidates = candidates.filter((candidate) => !awardCandidates.includes(candidate) && candidate.eligibilityTier !== 'reserve');
   const selected = [...awardCandidates, ...selectWithSoftBalance(
     otherCandidates,
     weeklyRules,
     Math.max(0, Number(weeklyRules.maximumRecommendations) - awardCandidates.length),
     { balanceDirections: true },
   )];
+  const minimum = Math.min(Number(weeklyRules.maximumRecommendations), Number(weeklyRules.preferredRecommendationRange?.[0] || 0));
+  if (selected.length < minimum) selected.push(...selectWithSoftBalance(
+    candidates.filter((candidate) => candidate.eligibilityTier === 'reserve'), weeklyRules, minimum - selected.length, { balanceDirections: true },
+  ));
   const record = makeRecord({
     snapshot,
     type: 'weekly',
@@ -1426,7 +1452,11 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   record.selectionDiagnostics = {
     eligibleCandidates: candidates.filter((candidate) =>
       candidate.selectionScore >= candidate.minimumSelectionScore).length,
-    preferredMinimum: Number(weeklyRules.preferredRecommendationRange?.[0] || 0),
+    primaryEligible: candidates.filter((candidate) => candidate.eligibilityTier !== 'reserve' && candidate.selectionScore >= candidate.minimumSelectionScore).length,
+    reserveSelected: selected.filter((candidate) => candidate.eligibilityTier === 'reserve').length,
+    participatingTeamCount: participants?.size ?? null,
+    targetShortfall: Math.max(0, minimum - selected.length),
+    preferredMinimum: minimum,
   };
   addRookieMonitoring(record, players, byWeek, Number(weekIndex), candidates, startingOveralls, rules, rookieOutcomes);
   const missingAwards = new Map();
@@ -1728,6 +1758,7 @@ function recommendationWhy(record, item) {
   if (item.changeContext?.breakout) {
     reasons.push('Exceptional play for a lower-rated player earned a larger boost.');
   }
+  if (item.changeContext?.reserveSelection) reasons.push('A smaller supported change based on current and recent gameplay.');
   if (item.changeContext?.gameplayMomentum) reasons.push('Repeated gameplay performance increased supported attribute changes.');
   if (item.changeContext?.youngMomentum) reasons.push('Sustained strong play accelerated this young player’s development.');
   const rookieOutcome = item.changeContext?.rookieOutcome;
@@ -2133,9 +2164,9 @@ async function seasonComparisonBaseline(leagueId, seasonKey) {
   if (!Array.isArray(index.records)) throw new Error(`Invalid sync history index for league ${leagueId}.`);
   const directory = path.dirname(file);
   for (const entry of [...index.records].sort((a, b) => String(a.syncedAt || '').localeCompare(String(b.syncedAt || '')))) {
-    if (!entry.syncId) throw new Error(`Sync history for league ${leagueId} contains a record without a sync ID.`);
+    if (!entry.syncId) continue;
     const archived = await loadJsonFile(path.join(directory, `${safeId(entry.syncId, 'sync ID')}.json`), null);
-    if (!archived) throw new Error(`A sync history snapshot is missing for league ${leagueId}.`);
+    if (!archived) { console.warn('[progression] Skipping missing baseline archive', entry.syncId); continue; }
     if (getMaddenSeasonKey(archived) !== seasonKey) continue;
     const info = archived?.info?.careerHubInfo?.seasonInfo || {};
     const rawType = info.seasonWeekType ?? info.seasonWeekTypeId ?? archived.stage;
@@ -2226,6 +2257,7 @@ async function publishSeasonOverallChanges(client, guildId, snapshot, record, hi
 }
 
 async function publishProgression({ client, guildId, snapshot, type, weekIndex = null, awardWinners = null }) {
+  if (getFranchisePhase(snapshot) === 'offseason') return { published: false, recommendationCount: 0, reason: 'No rating changes during offseason.' };
   const leagueId = safeId(snapshot?.leagueId, 'Madden league ID');
   const history = await loadHistory(leagueId);
   const rules = readRules().progression;
@@ -2241,7 +2273,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   });
   const old = history.periods[current.periodKey];
   let record;
-  if (old && ((old.gameplayPolicyVersion === 1 && old.recommendations?.length > 0) || Object.values(old.statusById || {}).some((status) => status.status === 'applied'))) {
+  if (old && ((old.gameplayPolicyVersion >= 1 && old.recommendations?.length > 0) || Object.values(old.statusById || {}).some((status) => status.status === 'applied'))) {
     record = {
       ...old,
       ...(type === 'weekly' ? { inactivityObservations: current.inactivityObservations } : {}),
@@ -2254,15 +2286,17 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
       !item.changeContext?.teamLineProxy || starterKeys.has(item.playerKey)
       || old.statusById?.[item.recommendationId]?.status === 'applied');
     for (const item of current.recommendations.filter((entry) => entry.changeContext?.teamLineProxy)) {
-      if (!record.recommendations.some((existing) => existing.playerKey === item.playerKey)) record.recommendations.push(item);
+      if (record.recommendations.length < Number(rules.weekly.maximumRecommendations) && !record.recommendations.some((existing) => existing.playerKey === item.playerKey)) record.recommendations.push(item);
     }
     if (type === 'weekly') {
       record.unupgradedAwardWinners = current.unupgradedAwardWinners.filter((winner) =>
         !winner.playerKey || !record.recommendations.some((item) => item.playerKey === winner.playerKey && item.direction === 'upgrade'));
       for (const winner of current.recommendations.filter((item) => item.awardPoints > 0 && item.direction === 'upgrade')) {
         const index = record.recommendations.findIndex((item) => item.playerKey === winner.playerKey);
-        if (index < 0) record.recommendations.push(winner);
-        else if (record.recommendations[index].direction !== 'upgrade') {
+        if (index < 0) {
+          if (record.recommendations.length < Number(rules.weekly.maximumRecommendations)) record.recommendations.push(winner);
+          else record.unupgradedAwardWinners.push({ player: winner.player, reason: 'The weekly limit has already been issued; review this late award separately.' });
+        } else if (record.recommendations[index].direction !== 'upgrade') {
           const existing = record.recommendations[index];
           if (old.statusById?.[existing.recommendationId]?.status === 'applied') {
             record.unupgradedAwardWinners.push({ player: winner.player, reason: 'A prior downgrade was marked applied; review before changing it.' });
@@ -2281,12 +2315,24 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
       updatedAt: new Date().toISOString(),
     };
   }
+  if (Number(weekIndex) >= 18) {
+    const participants = playedTeamIds(snapshot, weekIndex);
+    record.recommendations = record.recommendations.filter((item) => participants.has(String(item.teamId)));
+  }
+  if (record.recommendations.length < Number(rules.weekly.preferredRecommendationRange?.[0] || 0)) {
+    for (const item of current.recommendations) {
+      if (record.recommendations.length >= Number(rules.weekly.maximumRecommendations)) break;
+      if (!record.recommendations.some((existing) => existing.playerKey === item.playerKey)) record.recommendations.push(item);
+    }
+  }
+  record.selectionDiagnostics = { ...current.selectionDiagnostics, targetShortfall: Math.max(0,
+    Number(rules.weekly.preferredRecommendationRange?.[0] || 0) - record.recommendations.length) };
   const recommendedRookies = new Map(record.recommendations.map((item) => [item.playerKey, item.direction]));
   record.rookieMonitoring = (current.rookieMonitoring || []).map((player) => ({
     ...player,
     status: recommendedRookies.get(player.playerKey) || (['upgrade', 'downgrade'].includes(player.status) ? 'eligible_not_selected' : player.status),
   }));
-  record.gameplayPolicyVersion = 1;
+  record.gameplayPolicyVersion = 2;
   history.periods[record.periodKey] = record;
   await saveHistory(leagueId, history);
   const output = await publishTeamThreadReports(client, guildId, snapshot, record, history, rules);
@@ -2332,30 +2378,49 @@ function playoffProgressionSnapshot(snapshot) {
   };
 }
 
+export function resolveProgressionWeek(snapshot) {
+  const phase = getFranchisePhase(snapshot);
+  if (['offseason', 'preseason'].includes(phase)) return null;
+  const info = snapshot?.info?.careerHubInfo?.seasonInfo || {};
+  const current = Number(snapshot.currentWeek ?? info.displayWeek ?? (Number.isInteger(info.seasonWeek) ? info.seasonWeek + 1 : 0));
+  if (phase === 'playoffs') {
+    const completed = (snapshot.weeklyStats || []).filter((entry) => [1, 2].includes(Number(entry.stage ?? entry.stageIndex))
+      && Number(entry.weekIndex) >= 18 && Number(entry.weekIndex) <= 22)
+      .map((entry) => Number(entry.weekIndex)).filter((index) => {
+        const games = (snapshot.schedule?.schedules || []).filter((game) => [1, 2].includes(Number(game.stageIndex ?? game.stage)) && Number(game.weekIndex) === index);
+        return index < current - 1 || (games.length > 0 && games.every((game) => Number(game.status) >= 2));
+      });
+    if (completed.length) return Math.max(...completed);
+    // The first playoff sync evaluates Week 18, never the upcoming wild-card
+    // placeholder or a stale earlier regular-season week.
+    return getLatestReliableRegularSeasonWeekIndex(snapshot, 17) === 17 ? 17 : null;
+  }
+  return getLatestReliableRegularSeasonWeekIndex(snapshot, current > 0 ? Math.min(17, current - 2) : 17);
+}
+
 export async function publishProgressionReports({ client, guildId, snapshot }) {
   if (!isSoloModeEnabled()) return { published: false, reason: 'Solo mode is disabled.' };
   if (!snapshot?.leagueId || !snapshot?.syncId) throw new Error('Progression requires a synced franchise snapshot.');
   const phase = getFranchisePhase(snapshot);
   if (phase === 'preseason') return { published: false, reason: 'Progression starts after regular-season games.' };
+  let summary = {};
   if (['playoffs', 'offseason'].includes(phase)) {
-    const summary = await publishSeasonMovementSummary({ client, guildId, snapshot });
+    try { summary = await publishSeasonMovementSummary({ client, guildId, snapshot }); }
+    catch (error) {
+      console.error('[progression] OVR summary failed', error);
+      summary = { published: false, recommendationCount: 0, seasonChangesError: error.message };
+    }
     if (phase === 'offseason') return summary;
-    const playoffWeeks = (snapshot.weeklyStats || []).filter((entry) => [1, 2].includes(Number(entry.stage ?? entry.stageIndex)) && Number(entry.weekIndex) >= 18 && Number(entry.weekIndex) <= 22)
-      .map((entry) => Number(entry.weekIndex)).filter((index) => {
-        const games = (snapshot.schedule?.schedules || []).filter((game) => [1, 2].includes(Number(game.stageIndex ?? game.stage)) && Number(game.weekIndex) === index);
-        return index < Number(snapshot.currentWeek || 0) - 1 || (games.length > 0 && games.every((game) => Number(game.status) >= 2));
-      });
-    const weekIndex = playoffWeeks.length ? Math.max(...playoffWeeks) : getLatestReliableRegularSeasonWeekIndex(snapshot, 17);
-    if (weekIndex === null) return summary;
-    const weekly = await publishProgression({ client, guildId, snapshot: playoffProgressionSnapshot(snapshot), type: 'weekly', weekIndex });
-    return { ...weekly, seasonChanges: summary.seasonChanges };
   }
-  const weekIndex = getLatestReliableRegularSeasonWeekIndex(snapshot);
+  const weekIndex = resolveProgressionWeek(snapshot);
+  console.log('[progression] evaluation', { phase, currentWeek: snapshot.currentWeek, targetWeek: weekIndex === null ? null : weekIndex + 1 });
   if (weekIndex === null) {
     const registry = await ensureTeamThreads({ client, guildId, snapshot, rules: readRules().progression });
-    return { published: false, reason: 'No reliable completed regular-season stats are available.', threadCount: Object.keys(registry.teams).length };
+    return { ...summary, published: false, recommendationCount: 0, reason: 'Waiting for reliable completed-week statistics.', threadCount: Object.keys(registry.teams).length };
   }
-  return publishProgression({ client, guildId, snapshot, type: 'weekly', weekIndex });
+  const weekly = await publishProgression({ client, guildId, snapshot: phase === 'playoffs' ? playoffProgressionSnapshot(snapshot) : snapshot, type: 'weekly', weekIndex });
+  return { ...weekly, ...(summary.seasonChanges ? { seasonChanges: summary.seasonChanges } : {}),
+    ...(summary.seasonChangesError ? { seasonChangesError: summary.seasonChangesError } : {}) };
 }
 
 export async function refreshProgressionForAwardChange({ client, guildId, leagueId, snapshot, weekNumber, winners }) {
