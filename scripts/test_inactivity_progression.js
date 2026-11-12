@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { buildWeeklyProgressionRecommendations, buildProgressionCardEmbed } from '../src/madden/progression.js';
+import { buildWeeklyProgressionRecommendations } from '../src/madden/progression.js';
 
 const rules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
 const roster = [
@@ -34,14 +34,9 @@ for (const index of [0, 1, 3]) {
 addGame(4);
 const fourth = evaluate(4);
 const inactive = fourth.recommendations.find((item) => item.playerKey === 'roster:absent');
-assert.equal(inactive?.direction, 'downgrade');
-assert.equal(inactive.attributes[0].attribute, 'Awareness');
-assert.equal(inactive.attributes[0].points, -1);
-assert.equal(inactive.changeContext.inactivityGames, 4);
-assert.ok(!fourth.recommendations.some((item) => ['roster:injured', 'roster:line'].includes(item.playerKey)));
-assert.match(JSON.stringify(buildProgressionCardEmbed(fourth, inactive).toJSON()), /does not confirm a DNP/);
+assert.equal(inactive, undefined, 'Missing statistics never trigger gameplay-only downgrades');
 history.periods[fourth.periodKey] = fourth;
-assert.equal(evaluate(4).recommendations.find((item) => item.playerKey === 'roster:absent').changeContext.inactivityGames, 4);
+assert.ok(!evaluate(4).recommendations.some((item) => item.playerKey === 'roster:absent'));
 
 const unknown = structuredClone(history);
 delete unknown.periods.year_2026_week_2.inactivityObservations['roster:absent'];
@@ -94,4 +89,4 @@ assert.equal(poorResult.consistency.poorStreak, 3);
 assert.ok(poorResult.attributes[0].points < 0);
 const noPoorHistory = buildWeeklyProgressionRecommendations(poor, { weekIndex: 2, rules: poorRules });
 assert.ok(!noPoorHistory.recommendations.some((item) => item.playerKey === 'roster:cb'));
-console.log('PASS cautious inactivity streaks, byes, missing data, injuries, trades, and sustained poor performance');
+console.log('PASS gameplay-only penalties, missing-data/injury/trade safeguards, and sustained poor performance');

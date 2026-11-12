@@ -1155,6 +1155,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         awardReasons.set(player.key, 'No matching weekly statistics.');
         continue;
       }
+      if (weeklyRules.gameplayMovement?.requirePlayedGame) continue;
       const streak = inactivityStreak(player, observations, history, seasonKey, Number(weekIndex), snapshot?.schedule?.schedules);
       const awareness = numberOrNull(player[weeklyRules.attributeFields?.Awareness]);
       const inactivityMinimum = experienceYears(player) === 0 && rules.developmentPipeline
@@ -1257,7 +1258,10 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     let points = 0;
     let evidence = [];
     let priorityBase = 0;
-    if (!rookieBust && (windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
+    const movement = weeklyRules.gameplayMovement;
+    const currentUpgradeEligible = !movement || currentMetrics.score >= Number(movement.minimumCurrentUpgradeScore) || weeklyAwards > 0;
+    const currentDowngradeEligible = !movement || (currentMetrics.score <= Number(movement.maximumCurrentDowngradeScore) && Number(player.injuryLength || 0) <= 0);
+    if (currentUpgradeEligible && !rookieBust && (windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
       && currentAttributeEvidence.length) {
       const tier = getTier(breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore, weeklyRules.positiveChangeTiers, 'minimumScore')
         || (weeklyAwards ? { attributePoints: 1 } : null);
@@ -1269,7 +1273,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
             + exceptionalConsistencyBonus + weeklyAwards
           - soft.penalty - populationAdjustment;
       }
-    } else if ((!rookieOutcome || positionKey === 'OL' || rookieBust) && (windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)
+    } else if (currentDowngradeEligible && (!rookieOutcome || positionKey === 'OL' || rookieBust) && (windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)
       || verifiedPoorStreak >= Number(weeklyRules.poorPerformanceMinimumGames ?? 3))) {
       const negative = selectNegativeAttributes(
         current.totals,
@@ -1303,6 +1307,13 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         + (direction === 'downgrade' ? Number(outcomePolicy.bustSelectionBonus) : 0) : 0;
     priorityBase += rookieOutcomeBonus;
     selectionAdjustments.rookieOutcome = rookieOutcomeBonus;
+    const recentSelections = movement ? Object.values(history.periods || {}).filter((period) =>
+      period.type === 'weekly' && period.seasonKey === seasonKey && period.weekIndex < Number(weekIndex)
+      && period.weekIndex >= Number(weekIndex) - Number(movement.recentSelectionWindow)
+      && period.recommendations?.some((item) => item.playerKey === player.key)).length : 0;
+    const repeatSelectionPenalty = movement ? Math.min(Number(movement.maximumRepeatSelectionPenalty), recentSelections * Number(movement.repeatSelectionPenalty)) : 0;
+    priorityBase -= repeatSelectionPenalty;
+    selectionAdjustments.recentSelectionPenalty = repeatSelectionPenalty;
     selectionAdjustments.consistency = direction === 'downgrade'
       ? poorConsistencyBonus + decliningTrendBonus
       : consistencyBonus + improvingTrendBonus + exceptionalConsistencyBonus;
@@ -1320,6 +1331,11 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const awardMomentum = direction === 'upgrade'
       && awardWeeks >= Number(weeklyRules.momentumAwardWeeks ?? 2)
       && currentMetrics.score >= Number(weeklyRules.momentumMinimumGameScore ?? 85);
+    const recentStrong = movement ? windows.metrics.slice(-Number(movement.minimumStrongGames)) : [];
+    const gameplayMomentum = Boolean(movement && positionKey !== 'OL' && (direction === 'upgrade'
+      ? recentStrong.length >= Number(movement.minimumStrongGames) && recentStrong.every(({ row, score }) =>
+        score >= Number(movement.minimumStrongScore) && opportunityConfirmed(row.totals, positionKey, weeklyRules))
+      : verifiedPoorStreak >= Number(movement.minimumPoorGames) && currentMetrics.score <= Number(movement.maximumPoorScore)));
     const allocation = evidence.flatMap((attribute, index) => {
       const ratio = attribute.evidenceRatio ?? 1;
       let magnitude = 1;
@@ -1345,6 +1361,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         }
         if (pipeline.elite && index === 0) magnitude += Number(rules.developmentPipeline.eliteExtraPrimaryPoints);
       }
+      if (gameplayMomentum && index < Number(movement.acceleratedAttributes) && attribute.evidence !== 'currentGameScore'
+        && (index === 0 || ratio >= Number(weeklyRules.streakEvidenceRatio ?? 1.3))) magnitude += Number(movement.extraAttributePoints);
       if (index === 0 && rookieOutcome?.highPick && rookieOutcomeBonus > 0) {
         magnitude += Number(outcomePolicy.highPickExtraPrimaryPoints);
       }
@@ -1374,7 +1392,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       seasonToDateScore: windows.seasonScore,
       explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
-    selected.changeContext = { rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
+    selected.changeContext = { gameplayMomentum, rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
       rookieMomentum: direction === 'upgrade' && pipeline.rookie,
       eliteMomentum: direction === 'upgrade' && pipeline.elite,
       sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0, teamLineProxy: positionKey === 'OL' };
@@ -1710,6 +1728,7 @@ function recommendationWhy(record, item) {
   if (item.changeContext?.breakout) {
     reasons.push('Exceptional play for a lower-rated player earned a larger boost.');
   }
+  if (item.changeContext?.gameplayMomentum) reasons.push('Repeated gameplay performance increased supported attribute changes.');
   if (item.changeContext?.youngMomentum) reasons.push('Sustained strong play accelerated this young player’s development.');
   const rookieOutcome = item.changeContext?.rookieOutcome;
   if (rookieOutcome?.trajectory === 'boom') reasons.push(`Rookie boom trajectory${rookieOutcome.highPick ? ': early-round expectations met with stronger growth' : ''}.`);
@@ -2108,28 +2127,6 @@ async function startingOveralls(leagueId, snapshot, seasonKey) {
   return Object.fromEntries(result);
 }
 
-async function historicalLineObservations(leagueId, seasonKey, history) {
-  const directory = path.join(getMaddenLeaguesDir(), 'history', safeId(leagueId, 'Madden league ID'));
-  const observations = [];
-  for (const period of Object.values(history.periods || {})) {
-    if (period.type !== 'weekly' || period.seasonKey !== seasonKey || !Number.isInteger(period.weekIndex)) continue;
-    const syncId = period.latestSyncId || period.syncId;
-    if (!syncId) continue;
-    const archived = await loadJsonFile(path.join(directory, `${safeId(syncId, 'sync ID')}.json`), null);
-    if (!archived) throw new Error(`Missing archived snapshot for ${seasonKey} week ${period.weekIndex + 1}.`);
-    if (getMaddenSeasonKey(archived) !== seasonKey) throw new Error(`Archived snapshot has the wrong season for week ${period.weekIndex + 1}.`);
-    const { players, aliases } = getRosterPlayers(archived);
-    const weekly = new Map();
-    addOffensiveLineProxies(archived, players, aliases, weekly, period.weekIndex);
-    for (const player of players) {
-      if (!OFFENSIVE_LINE_POSITIONS.has(player.position)) continue;
-      const row = weekly.get(period.weekIndex)?.get(player.key);
-      if (row) observations.push({ playerKey: player.key, teamId: player.teamId, position: player.position, weekIndex: period.weekIndex, totals: row.totals });
-    }
-  }
-  return observations;
-}
-
 async function seasonComparisonBaseline(leagueId, seasonKey) {
   const file = path.join(getMaddenLeaguesDir(), 'history', safeId(leagueId, 'Madden league ID'), 'index.json');
   const index = await loadJsonFile(file, { records: [] });
@@ -2193,7 +2190,7 @@ function seasonOverallChangesEmbed(record, teamName, baseline, changes) {
       { name: '📉 Top 10 Fallers', value: format(changes?.downgrades || []) },
     )
     .setColor(0x5865f2)
-    .setFooter({ text: 'Actual Madden OVR · Updates on offseason syncs' });
+    .setFooter({ text: 'Actual Madden OVR · Updates from playoffs onward' });
 }
 
 async function publishSeasonOverallChanges(client, guildId, snapshot, record, history, registry) {
@@ -2234,24 +2231,17 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   const rules = readRules().progression;
   const seasonKey = getMaddenSeasonKey(snapshot);
   const starting = await startingOveralls(leagueId, snapshot, seasonKey);
-  const current = type === 'weekly'
-    ? buildWeeklyProgressionRecommendations(snapshot, {
-      weekIndex,
-      awardWinners: awardWinners || readWeeklyAwardResults(leagueId, Number(weekIndex) + 1, seasonKey),
-      history,
-      startingOveralls: starting,
-      rules,
-    })
-    : buildOffseasonProgressionRecommendations(snapshot, {
-      history,
-      startingOveralls: starting,
-      lineObservations: await historicalLineObservations(leagueId, seasonKey, history),
-      regularSeasonOnly: true,
-      rules,
-    });
+  if (type !== 'weekly') throw new Error('Only gameplay-based weekly rating changes are supported.');
+  const current = buildWeeklyProgressionRecommendations(snapshot, {
+    weekIndex,
+    awardWinners: awardWinners || readWeeklyAwardResults(leagueId, Number(weekIndex) + 1, seasonKey),
+    history,
+    startingOveralls: starting,
+    rules,
+  });
   const old = history.periods[current.periodKey];
   let record;
-  if (old && ((type === 'offseason' && old.recommendations?.length > 0) || Object.values(old.statusById || {}).some((status) => status.status === 'applied'))) {
+  if (old && ((old.gameplayPolicyVersion === 1 && old.recommendations?.length > 0) || Object.values(old.statusById || {}).some((status) => status.status === 'applied'))) {
     record = {
       ...old,
       ...(type === 'weekly' ? { inactivityObservations: current.inactivityObservations } : {}),
@@ -2296,15 +2286,12 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
     ...player,
     status: recommendedRookies.get(player.playerKey) || (['upgrade', 'downgrade'].includes(player.status) ? 'eligible_not_selected' : player.status),
   }));
+  record.gameplayPolicyVersion = 1;
   history.periods[record.periodKey] = record;
   await saveHistory(leagueId, history);
   const output = await publishTeamThreadReports(client, guildId, snapshot, record, history, rules);
-  const seasonChanges = type === 'offseason' && isOffseason(snapshot)
-    ? await publishSeasonOverallChanges(client, guildId, snapshot, record, history, await loadJsonFile(threadsFile(guildId), null))
-    : null;
   return {
     ...output,
-    ...(seasonChanges ? { seasonChanges } : {}),
     published: record.recommendations.length > 0,
     ...(record.recommendations.length ? {} : { reason: 'No players met the configured evidence threshold.' }),
     periodKey: record.periodKey,
@@ -2316,28 +2303,57 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   };
 }
 
+async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
+  const history = await loadHistory(snapshot.leagueId);
+  const rules = readRules().progression;
+  const registry = await ensureTeamThreads({ client, guildId, snapshot, rules });
+  const seasonKey = getMaddenSeasonKey(snapshot);
+  const periodKey = `${seasonKey}_ovr_summary`;
+  const record = history.periods[periodKey] || {
+    ...makeRecord({ snapshot, type: 'season_summary', weekIndex: null, recommendations: [], population: populationSnapshot(getRosterPlayers(snapshot).players, rules), rules }),
+    periodKey,
+    seasonChangeMessages: history.periods[`${seasonKey}_offseason`]?.seasonChangeMessages || {},
+  };
+  history.periods[periodKey] = record;
+  const seasonChanges = await publishSeasonOverallChanges(client, guildId, snapshot, record, history, registry);
+  return { published: false, recommendationCount: 0, type: 'season_summary', periodKey, seasonChanges,
+    reason: 'Season OVR risers/fallers updated. Ratings change only through weekly gameplay recommendations.' };
+}
+
+function playoffProgressionSnapshot(snapshot) {
+  const postseasonWeeks = new Set((snapshot.weeklyStats || []).filter((entry) => Number(entry.stage ?? entry.stageIndex) === 2).map((entry) => Number(entry.weekIndex)));
+  const scheduleWeeks = new Set((snapshot.schedule?.schedules || []).filter((game) => Number(game.stageIndex ?? game.stage) === 2).map((game) => Number(game.weekIndex)));
+  return {
+    ...snapshot,
+    weeklyStats: (snapshot.weeklyStats || []).filter((entry) => Number(entry.stage ?? entry.stageIndex) !== 1 || !postseasonWeeks.has(Number(entry.weekIndex)))
+      .map((entry) => Number(entry.stage ?? entry.stageIndex) === 2 ? { ...entry, stage: 1, stageIndex: 1 } : entry),
+    schedule: { ...snapshot.schedule, schedules: (snapshot.schedule?.schedules || []).filter((game) => Number(game.stageIndex ?? game.stage) !== 1 || !scheduleWeeks.has(Number(game.weekIndex))).map((game) =>
+      Number(game.stageIndex ?? game.stage) === 2 ? { ...game, stageIndex: 1, stage: 1 } : game) },
+  };
+}
+
 export async function publishProgressionReports({ client, guildId, snapshot }) {
   if (!isSoloModeEnabled()) return { published: false, reason: 'Solo mode is disabled.' };
   if (!snapshot?.leagueId || !snapshot?.syncId) throw new Error('Progression requires a synced franchise snapshot.');
   const phase = getFranchisePhase(snapshot);
   if (phase === 'preseason') return { published: false, reason: 'Progression starts after regular-season games.' };
-  if (phase === 'playoffs' && getLatestReliableRegularSeasonWeekIndex(snapshot, 17) !== 17) {
-    return { published: false, reason: 'Waiting for reliable completed Week 18 statistics before the regular-season finale batch.' };
+  if (['playoffs', 'offseason'].includes(phase)) {
+    const summary = await publishSeasonMovementSummary({ client, guildId, snapshot });
+    if (phase === 'offseason') return summary;
+    const playoffWeeks = (snapshot.weeklyStats || []).filter((entry) => [1, 2].includes(Number(entry.stage ?? entry.stageIndex)) && Number(entry.weekIndex) >= 18 && Number(entry.weekIndex) <= 22)
+      .map((entry) => Number(entry.weekIndex)).filter((index) => {
+        const games = (snapshot.schedule?.schedules || []).filter((game) => [1, 2].includes(Number(game.stageIndex ?? game.stage)) && Number(game.weekIndex) === index);
+        return index < Number(snapshot.currentWeek || 0) - 1 || (games.length > 0 && games.every((game) => Number(game.status) >= 2));
+      });
+    const weekIndex = playoffWeeks.length ? Math.max(...playoffWeeks) : getLatestReliableRegularSeasonWeekIndex(snapshot, 17);
+    if (weekIndex === null) return summary;
+    const weekly = await publishProgression({ client, guildId, snapshot: playoffProgressionSnapshot(snapshot), type: 'weekly', weekIndex });
+    return { ...weekly, seasonChanges: summary.seasonChanges };
   }
-  if (['playoffs', 'offseason'].includes(phase)) return publishProgression({ client, guildId, snapshot, type: 'offseason' });
   const weekIndex = getLatestReliableRegularSeasonWeekIndex(snapshot);
   if (weekIndex === null) {
-    const registry = await ensureTeamThreads({
-      client,
-      guildId,
-      snapshot,
-      rules: readRules().progression,
-    });
-    return {
-      published: false,
-      reason: 'No reliable completed regular-season stats are available.',
-      threadCount: Object.keys(registry.teams).length,
-    };
+    const registry = await ensureTeamThreads({ client, guildId, snapshot, rules: readRules().progression });
+    return { published: false, reason: 'No reliable completed regular-season stats are available.', threadCount: Object.keys(registry.teams).length };
   }
   return publishProgression({ client, guildId, snapshot, type: 'weekly', weekIndex });
 }
@@ -2345,13 +2361,8 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
 export async function refreshProgressionForAwardChange({ client, guildId, leagueId, snapshot, weekNumber, winners }) {
   const weekIndex = Number(weekNumber) - 1;
   if (!Number.isInteger(weekIndex) || weekIndex < 0) return { published: false, reason: 'Invalid award week.' };
-  const progressionSnapshot = weekIndex >= 18 ? {
-    ...snapshot,
-    weeklyStats: (snapshot?.weeklyStats || [])
-      .filter((entry) => Number(entry.weekIndex) !== weekIndex || Number(entry.stage ?? entry.stageIndex ?? 0) !== 1)
-      .map((entry) => Number(entry.weekIndex) === weekIndex && Number(entry.stage ?? entry.stageIndex ?? 0) === 2
-        ? { ...entry, stage: 1, stageIndex: 1 } : entry),
-  } : snapshot;
+  if (isOffseason(snapshot)) return { published: false, reason: 'No rating recommendations are issued during offseason.' };
+  const progressionSnapshot = weekIndex >= 18 ? playoffProgressionSnapshot(snapshot) : snapshot;
   return publishProgression({
     client,
     guildId,
@@ -2363,7 +2374,7 @@ export async function refreshProgressionForAwardChange({ client, guildId, league
 }
 
 export async function refreshProgressionForSeasonAwardChange({ client, guildId, snapshot }) {
-  return { published: false, reason: 'Season awards saved; the regular-season finale batch is evaluated when playoffs begin.' };
+  return { published: false, reason: 'Season awards saved for history; ratings change only through weekly gameplay.' };
 }
 
 export async function recordSeasonAwards({ leagueId, seasonKey, awards }) {

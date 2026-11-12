@@ -272,6 +272,7 @@ const rules = structuredClone(baseRules);
 // Synthetic scores below isolate the base allocation and streak rules.
 // Production rookie/elite acceleration is covered by test_rookie_pipeline.js.
 delete rules.developmentPipeline;
+delete rules.weekly.gameplayMovement;
 rules.weekly.performanceWeight = 1;
 rules.weekly.expectationWeight = 0;
 rules.weekly.individualGameWeight = 0.4;
@@ -872,8 +873,8 @@ league.weeklyStats = [{ weekIndex: 1, stage: 1, passing: { playerPassingStatInfo
 const leagueRecord = buildWeeklyProgressionRecommendations(league, {
   weekIndex: 1, rules: baseRules, history: { periods: {}, seasonAwards: {} },
 });
-assert.equal(leagueRecord.recommendations.length, 20);
-assert.equal(leagueRecord.selectionDiagnostics.preferredMinimum, 15);
+assert.equal(leagueRecord.recommendations.length, 30);
+assert.equal(leagueRecord.selectionDiagnostics.preferredMinimum, 20);
 assert.equal(leagueRecord.selectionDiagnostics.eligibleCandidates, 32);
 assert.ok(leagueRecord.recommendations.some((item) => item.direction === 'upgrade'));
 assert.ok(leagueRecord.recommendations.some((item) => item.direction === 'downgrade'));

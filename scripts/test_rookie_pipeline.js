@@ -163,7 +163,7 @@ const history = { periods: {}, seasonAwards: {} };
 for (let games = 1; games <= 6; games++) {
   const record = buildWeeklyProgressionRecommendations(snapshot(games), { weekIndex: games - 1, rules, history });
   const inactive = find('bench', record);
-  assert.equal(Boolean(inactive), games === 6, 'Rookie inactivity requires six verified missing-stat games');
+  assert.equal(Boolean(inactive), false, 'Missing-stat inactivity is not gameplay evidence for a rookie penalty');
   if (inactive) assert.equal(inactive.attributes[0].points, -1);
   assert.ok(!find('injured', record));
   history.periods[record.periodKey] = record;
@@ -219,6 +219,13 @@ assert.ok([...parentMessages.values()].every((message) => message.embeds.every((
 const historyPath = getMaddenDataFilePath('progression_history/rookie-pipeline.json');
 const stored = JSON.parse(await fs.readFile(historyPath, 'utf8'));
 assert.equal(stored.periods.year_2026_week_2.rookieMonitoring.length, 3);
+const beforeTargets = stored.periods.year_2026_week_2.recommendations.map((item) => item.attributes);
+const manuallyChanged = structuredClone(current);
+manuallyChanged.rosters.teams[1].rosterInfoList.forEach((player) => { player.throwAccShortRating = 95; });
+await publishProgressionReports({ client, guildId: 'pipeline-guild', snapshot: manuallyChanged });
+const stableWeekly = JSON.parse(await fs.readFile(historyPath, 'utf8'));
+assert.deepEqual(stableWeekly.periods.year_2026_week_2.recommendations.map((item) => item.attributes), beforeTargets,
+  'Repeated syncs after a manual Madden edit must not issue another boost for the same weekly evidence');
 const registry = JSON.parse(await fs.readFile(getMaddenDataFilePath('progression_threads/pipeline-guild.json'), 'utf8'));
 const [teamId, team] = Object.entries(registry.teams)[0];
 const thread = channels.get(team.threadId);

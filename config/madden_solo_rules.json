@@ -70,9 +70,23 @@
       "minimumExcellentSeasonShare": 0.6
     },
     "weekly": {
-      "maximumRecommendations": 20,
+      "maximumRecommendations": 30,
       "attributesPerRecommendation": 5,
-      "preferredRecommendationRange": [15, 20],
+      "gameplayMovement": {
+        "requirePlayedGame": true,
+        "minimumCurrentUpgradeScore": 65,
+        "maximumCurrentDowngradeScore": 38,
+        "minimumStrongGames": 2,
+        "minimumStrongScore": 75,
+        "minimumPoorGames": 2,
+        "maximumPoorScore": 28,
+        "acceleratedAttributes": 2,
+        "extraAttributePoints": 1,
+        "recentSelectionWindow": 3,
+        "repeatSelectionPenalty": 2,
+        "maximumRepeatSelectionPenalty": 6
+      },
+      "preferredRecommendationRange": [20, 30],
       "minimumUpgradeSelectionScore": 58,
       "performanceWeight": 0.8,
       "expectationWeight": 0.2,
@@ -363,8 +377,6 @@
       }
     },
     "offseason": {
-      "maximumSeasonEndUpgrades": 50,
-      "preferredSeasonEndUpgradeRange": [40, 50],
       "attributesPerRecommendation": 2,
       "minimumUpgradePerformanceScore": 65,
       "minimumUpgradeSelectionScore": 62,
