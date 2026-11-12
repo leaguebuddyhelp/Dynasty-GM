@@ -689,7 +689,30 @@ function pipelineMomentum(player, windows, positionKey, rules) {
     + (elite ? Number(policy.eliteSelectionBonus) : 0) };
 }
 
-function addRookieMonitoring(record, players, byWeek, endWeek, candidates, startingOveralls, rules) {
+function rookiePerformanceOutcome(player, windows, positionKey, rules, verifiedPoorStreak = 0) {
+  const policy = rules.developmentPipeline?.rookieOutcomes;
+  if (!policy || experienceYears(player) !== 0) return null;
+  const integer = (value) => {
+    const number = typeof value === 'boolean' ? null : numberOrNull(value);
+    return Number.isInteger(number) && number > 0 ? number : null;
+  };
+  const round = integer(player.draftRound ?? player.draftYearRound ?? player.collegeDraftRound);
+  const overall = integer(player.overallPick ?? player.draftOverallPick);
+  // Conflicting or undrafted metadata cannot create premium-pick expectations.
+  const highPick = (round !== null || overall !== null)
+    && (round === null || round <= Number(policy.maximumHighPickRound))
+    && (overall === null || overall <= Number(policy.maximumHighOverallPick));
+  const qualified = windows?.metrics.filter(({ row }) => opportunityConfirmed(row.totals, positionKey, rules.weekly)) || [];
+  let trajectory = 'monitoring';
+  const healthy = Number(player.injuryLength || 0) <= 0;
+  const individual = positionKey && positionKey !== 'OL';
+  if (healthy && individual && windows && pipelineMomentum(player, windows, positionKey, rules).rookie) trajectory = 'boom';
+  else if (healthy && individual && verifiedPoorStreak >= Math.max(3, Number(policy.minimumBustGames))) trajectory = 'bust';
+  else if (healthy && individual && qualified.length >= Number(policy.minimumEvaluationGames)) trajectory = 'average';
+  return { trajectory, highPick, qualifyingGames: qualified.length, verifiedPoorStreak };
+}
+
+function addRookieMonitoring(record, players, byWeek, endWeek, candidates, startingOveralls, rules, outcomes = new Map()) {
   const selected = new Map(record.recommendations.map((item) => [item.playerKey, item.direction]));
   const eligible = new Set(candidates.filter((item) => item.selectionScore >= item.minimumSelectionScore).map((item) => item.playerKey));
   record.rookieMonitoring = players.filter((player) => experienceYears(player) === 0).map((player) => {
@@ -711,6 +734,7 @@ function addRookieMonitoring(record, players, byWeek, endWeek, candidates, start
         : player.ovr === null ? 'missing_rating' : !positionKey ? 'unsupported_position'
           : Number(player.injuryLength || 0) > 0 && !hasCurrentStats ? 'injured'
           : !hasCurrentStats ? 'no_current_stats' : !currentUsage ? 'limited_usage' : 'monitoring'),
+      performanceOutcome: outcomes.get(player.key) || rookiePerformanceOutcome(player, windows, positionKey, rules),
       teamLineProxy: positionKey === 'OL',
     };
   }).sort((a, b) => a.team.localeCompare(b.team) || a.player.localeCompare(b.player));
@@ -1109,6 +1133,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       : readWeeklyAwardResults(snapshot.leagueId, weekNumber - index, seasonKey));
   const population = populationSnapshot(players, rules);
   const candidates = [];
+  const rookieOutcomes = new Map();
   const awardReasons = new Map();
   for (const player of players) {
     const weeklyAwards = getWeeklyAwardPoints(awardWinners, player, players, aliases, weeklyRules);
@@ -1160,6 +1185,10 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       player, positionKey, positionRule, observations, history, seasonKey, Number(weekIndex),
       snapshot?.schedule?.schedules, byWeek, weeklyRules,
     );
+    const rookieOutcome = rookiePerformanceOutcome(player, windows, positionKey, rules, verifiedPoorStreak);
+    if (rookieOutcome) rookieOutcomes.set(player.key, rookieOutcome);
+    const rookieBust = rookieOutcome?.trajectory === 'bust';
+    const outcomePolicy = rules.developmentPipeline?.rookieOutcomes;
     const rotatedAttributes = positionRule.attributes.length
       ? (() => {
         const offset = (parseInt(stableHash(player.key).slice(0, 8), 16) + Number(weekIndex)) % positionRule.attributes.length;
@@ -1227,7 +1256,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     let points = 0;
     let evidence = [];
     let priorityBase = 0;
-    if ((windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
+    if (!rookieBust && (windows.performanceScore >= Number(weeklyRules.minimumUpgradePerformanceScore) || breakout || weeklyAwards > 0)
       && currentAttributeEvidence.length) {
       const tier = getTier(breakout ? Math.max(windows.performanceScore, currentMetrics.score) : windows.performanceScore, weeklyRules.positiveChangeTiers, 'minimumScore')
         || (weeklyAwards ? { attributePoints: 1 } : null);
@@ -1239,8 +1268,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
             + exceptionalConsistencyBonus + weeklyAwards
           - soft.penalty - populationAdjustment;
       }
-    } else if (windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)
-      || verifiedPoorStreak >= Number(weeklyRules.poorPerformanceMinimumGames ?? 3)) {
+    } else if ((!rookieOutcome || positionKey === 'OL' || rookieBust) && (windows.performanceScore <= Number(weeklyRules.maximumDowngradePerformanceScore)
+      || verifiedPoorStreak >= Number(weeklyRules.poorPerformanceMinimumGames ?? 3))) {
       const negative = selectNegativeAttributes(
         current.totals,
         player,
@@ -1268,6 +1297,11 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       priorityBase += pipeline.selectionBonus;
       selectionAdjustments.developmentPipeline = pipeline.selectionBonus;
     }
+    const rookieOutcomeBonus = (direction === 'upgrade' && rookieOutcome?.trajectory === 'boom') || (direction === 'downgrade' && rookieBust)
+      ? (rookieOutcome.highPick ? Number(outcomePolicy.highPickSelectionBonus) : 0)
+        + (direction === 'downgrade' ? Number(outcomePolicy.bustSelectionBonus) : 0) : 0;
+    priorityBase += rookieOutcomeBonus;
+    selectionAdjustments.rookieOutcome = rookieOutcomeBonus;
     selectionAdjustments.consistency = direction === 'downgrade'
       ? poorConsistencyBonus + decliningTrendBonus
       : consistencyBonus + improvingTrendBonus + exceptionalConsistencyBonus;
@@ -1310,6 +1344,9 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         }
         if (pipeline.elite && index === 0) magnitude += Number(rules.developmentPipeline.eliteExtraPrimaryPoints);
       }
+      if (index === 0 && rookieOutcome?.highPick && rookieOutcomeBonus > 0) {
+        magnitude += Number(outcomePolicy.highPickExtraPrimaryPoints);
+      }
       magnitude = Math.min(maxPoints, magnitude);
       return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
     });
@@ -1336,7 +1373,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       seasonToDateScore: windows.seasonScore,
       explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
-    selected.changeContext = { breakout, streakBonus, youngMomentum, awardMomentum,
+    selected.changeContext = { rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
       rookieMomentum: direction === 'upgrade' && pipeline.rookie,
       eliteMomentum: direction === 'upgrade' && pipeline.elite,
       sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0, teamLineProxy: positionKey === 'OL' };
@@ -1372,7 +1409,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       candidate.selectionScore >= candidate.minimumSelectionScore).length,
     preferredMinimum: Number(weeklyRules.preferredRecommendationRange?.[0] || 0),
   };
-  addRookieMonitoring(record, players, byWeek, Number(weekIndex), candidates, startingOveralls, rules);
+  addRookieMonitoring(record, players, byWeek, Number(weekIndex), candidates, startingOveralls, rules, rookieOutcomes);
   const missingAwards = new Map();
   for (const category of WEEKLY_AWARD_CATEGORIES) {
     const winner = awardWinners?.[category];
@@ -1662,6 +1699,9 @@ function recommendationWhy(record, item) {
     reasons.push('Exceptional play for a lower-rated player earned a larger boost.');
   }
   if (item.changeContext?.youngMomentum) reasons.push('Sustained strong play accelerated this young player’s development.');
+  const rookieOutcome = item.changeContext?.rookieOutcome;
+  if (rookieOutcome?.trajectory === 'boom') reasons.push(`Rookie boom trajectory${rookieOutcome.highPick ? ': early-round expectations met with stronger growth' : ''}.`);
+  if (rookieOutcome?.trajectory === 'bust') reasons.push(`Rookie bust trajectory: ${rookieOutcome.verifiedPoorStreak} verified poor games${rookieOutcome.highPick ? '; early-round expectations increased this penalty' : ''}.`);
   if (item.changeContext?.rookieMomentum) reasons.push('Two qualifying excellent games earned this rookie faster growth on supported attributes.');
   if (item.changeContext?.eliteMomentum) reasons.push('Repeated elite performance accelerated the strongest supported attribute change.');
   if (item.changeContext?.awardMomentum) reasons.push('Multiple recent weekly awards increased the strongest change.');

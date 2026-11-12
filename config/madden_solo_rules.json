@@ -51,7 +51,16 @@
       "rookieExtraAttributePoints": 1,
       "rookieAcceleratedAttributes": 2,
       "eliteExtraPrimaryPoints": 1,
-      "rookieInactivityMinimumGames": 6
+      "rookieInactivityMinimumGames": 6,
+      "rookieOutcomes": {
+        "minimumEvaluationGames": 3,
+        "minimumBustGames": 3,
+        "maximumHighPickRound": 2,
+        "maximumHighOverallPick": 64,
+        "highPickSelectionBonus": 6,
+        "bustSelectionBonus": 3,
+        "highPickExtraPrimaryPoints": 1
+      }
     },
     "sustainedGrowth": {
       "minimumWeeklyGames": 3,

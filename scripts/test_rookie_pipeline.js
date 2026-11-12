@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import { Collection, EmbedBuilder } from 'discord.js';
 import {
   buildWeeklyProgressionRecommendations, buildOffseasonProgressionRecommendations,
-  removeRookieRecapMessages, publishProgressionReports,
+  removeRookieRecapMessages, publishProgressionReports, buildProgressionCardEmbed,
 } from '../src/madden/progression.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
 import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
@@ -94,6 +94,71 @@ for (const [position, bucket, list, stats, fields] of [
   assert.equal(emerging.changeContext.rookieMomentum, true, `${position} rookie pipeline`);
   assert.ok(emerging.totalAttributePoints > established.totalAttributePoints, `${position} supported growth acceleration`);
 }
+// Outcomes are reversible performance trajectories, never random draft labels.
+const poorGame = { passAtt: 30, passComp: 8, passYds: 65, passTDs: 0, passInts: 4 };
+const averageGame = { passAtt: 30, passComp: 18, passYds: 220, passTDs: 1, passInts: 1 };
+const greatGame = { passAtt: 30, passComp: 24, passYds: 400, passTDs: 4, passInts: 0 };
+function evaluateRookieGames(games, metadata = { draftRound: 1 }, mutate = () => {}) {
+  const past = { periods: {}, seasonAwards: {} };
+  let record;
+  for (let count = 1; count <= games.length; count++) {
+    const target = snapshot(count);
+    target.rosters.teams[1].rosterInfoList = [{ ...makePlayer('rookie', 0), ...metadata }];
+    target.weeklyStats.forEach((week, index) => {
+      week.passing.playerPassingStatInfoList = [{ rosterId: 'rookie', teamId: 1, position: 'QB', ...games[index] }];
+    });
+    mutate(target, past);
+    record = buildWeeklyProgressionRecommendations(target, { weekIndex: count - 1, rules, history: past });
+    past.periods[record.periodKey] = record;
+  }
+  return record;
+}
+const outcome = (record) => record.rookieMonitoring[0].performanceOutcome;
+for (const count of [1, 2]) {
+  const record = evaluateRookieGames(Array(count).fill(poorGame));
+  assert.notEqual(outcome(record).trajectory, 'bust');
+  assert.ok(!find('rookie', record), 'No premature rookie performance penalty');
+}
+const busted = evaluateRookieGames(Array(3).fill(poorGame));
+const lateBust = evaluateRookieGames(Array(3).fill(poorGame), { draftRound: 6 });
+assert.equal(outcome(busted).trajectory, 'bust');
+assert.equal(outcome(busted).verifiedPoorStreak, 3);
+assert.equal(find('rookie', busted).direction, 'downgrade');
+assert.match(JSON.stringify(buildProgressionCardEmbed(busted, find('rookie', busted)).toJSON()), /Rookie bust trajectory/);
+assert.ok(find('rookie', busted).selectionScore > find('rookie', lateBust).selectionScore);
+assert.ok(find('rookie', busted).totalAttributePoints < find('rookie', lateBust).totalAttributePoints, 'Premium picks receive a stronger evidence-based penalty');
+assert.equal(outcome(evaluateRookieGames(Array(3).fill(averageGame))).trajectory, 'average');
+const booming = evaluateRookieGames(Array(2).fill(greatGame));
+const lateBoom = evaluateRookieGames(Array(2).fill(greatGame), { draftRound: 6 });
+assert.equal(outcome(booming).trajectory, 'boom');
+assert.equal(find('rookie', booming).direction, 'upgrade');
+assert.match(JSON.stringify(buildProgressionCardEmbed(booming, find('rookie', booming)).toJSON()), /Rookie boom trajectory/);
+assert.ok(find('rookie', booming).selectionScore > find('rookie', lateBoom).selectionScore);
+for (const metadata of [{}, { draftRound: 64, draftPick: 0 }, { draftRound: false }, { draftRound: 1, overallPick: 200 }]) {
+  assert.equal(outcome(evaluateRookieGames(Array(3).fill(poorGame), metadata)).highPick, false);
+}
+assert.equal(outcome(evaluateRookieGames(Array(2).fill(greatGame), { draftYearRound: 2 })).highPick, true);
+assert.equal(outcome(evaluateRookieGames(Array(2).fill(greatGame), { draftOverallPick: 5 })).highPick, true);
+const recovered = evaluateRookieGames([...Array(3).fill(poorGame), greatGame, greatGame]);
+assert.equal(outcome(recovered).trajectory, 'boom');
+assert.equal(find('rookie', recovered).direction, 'upgrade');
+const declining = evaluateRookieGames([...Array(4).fill(greatGame), ...Array(3).fill(poorGame)]);
+assert.equal(outcome(declining).trajectory, 'bust');
+assert.equal(find('rookie', declining).direction, 'downgrade', 'Sustained recent poor play overrides old excellent games');
+for (const [metadata, mutate] of [
+  [{ injuryLength: 2 }, () => {}],
+  [{}, (target) => { target.weeklyStats.at(-1).passing.playerPassingStatInfoList[0].passAtt = 0; }],
+  [{}, (target) => { target.schedule.schedules.at(-1).status = 1; }],
+  [{}, (target, past) => { for (const record of Object.values(past.periods)) record.inactivityObservations = {}; }],
+]) {
+  const record = evaluateRookieGames(Array(3).fill(poorGame), metadata, mutate);
+  assert.notEqual(outcome(record).trajectory, 'bust');
+  assert.notEqual(find('rookie', record)?.direction, 'downgrade');
+}
+const capped = evaluateRookieGames(Array(8).fill(poorGame));
+assert.ok(find('rookie', capped).attributes.every((attribute) => attribute.points >= -5 && attribute.targetValue >= 0));
+console.log('PASS rookie boom/average/bust, draft expectations, sustained penalties, recovery, and evidence safeguards');
+
 const history = { periods: {}, seasonAwards: {} };
 for (let games = 1; games <= 6; games++) {
   const record = buildWeeklyProgressionRecommendations(snapshot(games), { weekIndex: games - 1, rules, history });
