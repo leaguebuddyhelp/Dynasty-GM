@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import { Collection } from 'discord.js';
 import { runFullSeasonSync, resolveSyncMode } from '../src/madden/full_season.js';
 import { loadFullSeasonRun, matchesFullSeason } from '../src/madden/full_season_store.js';
-import { publishProgressionReports, refreshProgressionForAwardChange } from '../src/madden/progression.js';
+import { publishProgressionReports, refreshProgressionForAwardChange, buildFullSeasonCardEmbeds } from '../src/madden/progression.js';
 import { publishWeeklyAwards, updateAwards } from '../src/madden/awards.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
 import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
@@ -42,17 +42,23 @@ const parent = { id: 'upgrades', guild, isTextBased: () => true,
   threads: { fetchActive: async () => ({ threads }), fetchArchived: async () => ({ threads: new Collection() }) },
   send: async (payload) => {
     const row = message(payload, parentMessages);
-    row.startThread = async ({ name }) => {
-      const store = new Map();
-      const thread = { id: `thread-${++sequence}`, name, archived: false, store, isThread: () => true,
-        messages: { fetch: fetchMessage(store) }, send: async (value) => {
-          if (failCombined && value.embeds?.[0]?.toJSON().title.startsWith('Season Total')) { failCombined = false; throw new Error('Combined report outage'); }
-          return message(value, store);
-        } };
-      threads.set(thread.id, thread); channels.set(thread.id, thread); return thread;
-    };
+    row.startThread = async ({ name }) => createThread(name);
     return row;
   } };
+function createThread(name) {
+  const store = new Map();
+  const thread = { id: `thread-${++sequence}`, name, archived: false, store, isThread: () => true,
+    messages: { fetch: fetchMessage(store) }, send: async (value) => {
+      if (failCombined && value.embeds?.[0]?.toJSON().footer?.text.includes('Season totals, Weeks')) {
+        failCombined = false; throw new Error('Combined report outage');
+      }
+      return message(value, store);
+    } };
+  threads.set(thread.id, thread); channels.set(thread.id, thread); return thread;
+}
+// Simulate the permanent team threads already used by weekly reports.
+for (const team of teams) createThread(`${team.cityName} ${team.nickName}`);
+const existingThreadIds = [...threads.keys()];
 channels.set('upgrades', parent);
 channels.set('awards', { isTextBased: () => true, send: async (payload) => {
   if (failAward && awardMessages.size === 4) { failAward = false; throw new Error('Award publication outage'); }
@@ -101,10 +107,27 @@ assert.match(result.reportUrl, /discord.com/);
 const titles = [...awardMessages.values()].map((row) => row.payload.embeds[0].toJSON().title);
 assert.equal(new Set(titles).size, 18);
 assert.ok(titles[0].includes('Week 1') && titles[17].includes('Week 18'));
-const combined = [...parentMessages.values()].find((row) => row.payload.embeds?.[0]?.toJSON().title.includes('Combined Attribute Changes'));
+const combined = [...parentMessages.values()].find((row) => row.payload.embeds?.[0]?.toJSON().title.includes('Season Upgrades & Downgrades'));
 assert.equal(combined.payload.files.length, 2);
 assert.match(combined.payload.files[0].attachment.toString(), /Gross upgrades/);
 assert.match(combined.payload.files[1].attachment.toString(), /Virtual rating before/);
+assert.deepEqual([...threads.keys()], existingThreadIds, 'Full-season cards must reuse all existing team threads');
+const seasonCards = [...threads.values()].flatMap((thread) => [...thread.store.values()].flatMap((message) => message.payload.embeds || []))
+  .map((embed) => embed.toJSON()).filter((embed) => embed.footer?.text.includes('Season totals, Weeks'));
+assert.ok(seasonCards.some((embed) => embed.title.startsWith('📈 Upgrade') && embed.color === 0x2ecc71));
+assert.ok(seasonCards.some((embed) => embed.title.startsWith('📉 Downgrade') && embed.color === 0xe74c3c));
+assert.ok(seasonCards.every((embed) => embed.description.includes('**City') && embed.fields.some((field) => field.name === 'Status')));
+assert.ok([...parentMessages.values()].every((message) => !message.payload.embeds?.some((embed) => embed.toJSON().footer?.text.includes('Season totals, Weeks'))),
+  'Player changes belong in team threads; the parent channel contains navigation and summary only');
+const mixedCards = buildFullSeasonCardEmbeds({ player: 'Mixed Player', team: 'Denver Broncos', position: 'WR', attributes: [
+  { attribute: 'Catching', net: 4, positive: 7, negative: 3, currentValue: 80, targetValue: 84, pointsToApply: 4 },
+  { attribute: 'Awareness', net: -2, positive: 1, negative: 3, currentValue: 80, targetValue: 78, pointsToApply: -2 },
+  { attribute: 'Short Route Running', net: 0, positive: 2, negative: 2, currentValue: 80, targetValue: 80, pointsToApply: 0 },
+] }, 'year_2027').map((embed) => embed.toJSON());
+assert.equal(mixedCards.length, 2, 'Mixed results get separate upgrade and downgrade cards in the same team thread');
+assert.match(mixedCards[0].description, /80 → 84 \(\+4\)/);
+assert.match(mixedCards[1].description, /80 → 78 \(-2\)/);
+assert.ok(mixedCards.every((embed) => !embed.description.includes('Short Route Running')), 'Net-zero attributes need no Madden update');
 const counts = [parentMessages.size, awardMessages.size, [...threads.values()].reduce((sum, thread) => sum + thread.store.size, 0)];
 assert.equal((await sync(retained)).duplicate, true);
 assert.deepEqual([parentMessages.size, awardMessages.size, [...threads.values()].reduce((sum, thread) => sum + thread.store.size, 0)], counts);

@@ -2440,14 +2440,29 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   };
 }
 
-function fullSeasonCard(row, seasonKey) {
+export function buildFullSeasonCardEmbeds(row, seasonKey, teamName = row.team) {
   const signed = (number) => `${number >= 0 ? '+' : ''}${number}`;
-  const lines = row.attributes.filter((attribute) => attribute.net || attribute.needsReview).map((attribute) =>
-    attribute.needsReview ? `**${attribute.attribute}** · earned ${signed(attribute.net)} · imported rating missing; review in Madden`
-      : `**${attribute.attribute}** ${attribute.currentValue} → ${attribute.targetValue} (${signed(attribute.pointsToApply)}) · season +${attribute.positive}/−${attribute.negative} = ${signed(attribute.net)}`);
-  return new EmbedBuilder().setTitle(`Season Total · ${row.player}`.slice(0, 256))
-    .setDescription(`**${row.position}**\n\n${lines.join('\n')}`.slice(0, 3900))
-    .setColor(0x5865f2).setFooter({ text: `${seasonLabel(seasonKey)} · Apply these final targets ONCE in Madden · Includes all 18 weekly evaluations` });
+  const emoji = getTeamEmojiByName(teamName);
+  return ['upgrade', 'downgrade', 'review'].flatMap((direction) => {
+    const attributes = row.attributes.filter((attribute) => direction === 'review'
+      ? !attribute.net && attribute.needsReview
+      : direction === 'upgrade' ? attribute.net > 0 : attribute.net < 0);
+    if (!attributes.length) return [];
+    const lines = attributes.map((attribute) => attribute.needsReview
+      ? `**${attribute.attribute}** · earned ${signed(attribute.net)} · imported rating missing; review in Madden`
+      : `**${attribute.attribute}** ${attribute.currentValue} → ${attribute.targetValue} (${signed(attribute.pointsToApply)})`);
+    const positive = attributes.reduce((sum, attribute) => sum + attribute.positive, 0);
+    const negative = attributes.reduce((sum, attribute) => sum + attribute.negative, 0);
+    const label = direction === 'upgrade' ? '📈 Upgrade' : direction === 'downgrade' ? '📉 Downgrade' : '📋 Review';
+    return [new EmbedBuilder().setTitle(`${label} · ${row.player}`.slice(0, 256))
+      .setDescription(`${emoji ? `${emoji} ` : ''}**${teamName}** · ${row.position}\n\n${lines.join('\n')}`.slice(0, 3900))
+      .addFields(
+        { name: 'Why', value: 'Weeks 1–18 evaluated individually; each attribute shows the sum of its earned upgrades minus downgrades. Net changes are added to the latest Madden ratings.', inline: false },
+        { name: 'Season attribute totals', value: `+${positive} / −${negative} · Net ${signed(positive - negative)}`, inline: false },
+        { name: 'Status', value: '🕒 Waiting for your Madden update · Apply these final targets once', inline: false })
+      .setColor(direction === 'upgrade' ? 0x2ecc71 : direction === 'downgrade' ? 0xe74c3c : 0x5865f2)
+      .setFooter({ text: `${seasonLabel(seasonKey)} · Season totals, Weeks 1–18 · Changes are manual in Madden` })];
+  });
 }
 function encodeSeasonCsv(rows) {
   const cell = (value) => {
@@ -2502,14 +2517,8 @@ export async function publishFullSeasonTotals({ client, guildId, snapshot, run }
     const thread = await client.channels.fetch(registry.teams[teamId].threadId);
     if (!thread?.isThread()) throw new Error('Full-season progression thread is unavailable.');
     if (thread.archived) await thread.setArchived(false, 'Full-season attribute totals');
-    const pages = [];
-    let page = [], size = 0;
-    for (const player of players) {
-      const embed = fullSeasonCard(player, run.seasonKey), length = JSON.stringify(embed.toJSON()).length;
-      if (page.length && (size + length > 5500 || page.length >= 5)) { pages.push(page); page = []; size = 0; }
-      page.push(embed); size += length;
-    }
-    if (page.length) pages.push(page);
+    const pages = players.flatMap((player) => buildFullSeasonCardEmbeds(player, run.seasonKey, registry.teams[teamId].teamName))
+      .map((embed) => [embed]);
     const previous = record.teamMessages[teamId] || [];
     const ids = [];
     for (const [index, embeds] of pages.entries()) {
@@ -2527,8 +2536,8 @@ export async function publishFullSeasonTotals({ client, guildId, snapshot, run }
     reports.push({ teamName: registry.teams[teamId].teamName, url: `https://discord.com/channels/${guildId}/${thread.id}/${ids[0]}` });
   }
   const totals = run.totals;
-  const embed = buildTeamReportIndex({ title: `📋 ${seasonLabel(run.seasonKey)} · Combined Attribute Changes`,
-    description: `**All 18 weeks evaluated separately**\n${totals.upgradeEvents} weekly upgrade events · ${totals.downgradeEvents} downgrade events\n**Attribute points earned: +${totals.positivePoints} / −${totals.negativePoints} · Net ${totals.netPoints >= 0 ? '+' : ''}${totals.netPoints}**\n\nApply each player's final targets **once**. Net earned changes were added to the final imported ratings, preserving Madden's own development. The attached CSVs include combined totals and every weekly attribute change.`, reports });
+  const embed = buildTeamReportIndex({ title: `📋 ${seasonLabel(run.seasonKey)} · Season Upgrades & Downgrades`,
+    description: `**All 18 weeks evaluated separately**\n${totals.upgradeEvents} weekly upgrade events · ${totals.downgradeEvents} downgrade events\n**Attribute points earned: +${totals.positivePoints} / −${totals.negativePoints} · Net ${totals.netPoints >= 0 ? '+' : ''}${totals.netPoints}**\n\nOpen your existing team thread below for the season's upgrade and downgrade cards. Each attribute adds up all 18 weeks; apply its final target **once**. The attached CSVs are backup totals and the weekly audit.`, reports });
   if (run.unmatchedPlayers?.length) embed.addFields({ name: 'Players needing review', value: `${run.unmatchedPlayers.length} players had no starting baseline and were excluded from rating calculations.` });
   const tally = Object.values(run.weeks).map((week) => `Week ${week.weekNumber}: ${week.recommendations.filter((item) => item.direction === 'upgrade').length} upgrades / ${week.recommendations.filter((item) => item.direction === 'downgrade').length} downgrades`);
   embed.addFields({ name: 'Weeks 1–9', value: tally.slice(0, 9).join('\n') }, { name: 'Weeks 10–18', value: tally.slice(9).join('\n') });
@@ -2591,7 +2600,7 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
   const phase = getFranchisePhase(snapshot);
   const seasonRun = await loadFullSeasonRun(guildId, snapshot.leagueId);
   const fullSeason = matchesFullSeason(seasonRun, snapshot) ? seasonRun : null;
-  if (fullSeason && fullSeason.status !== 'complete') return { published: false, recommendationCount: 0, reason: 'Full-season mode is active. Use /sync mode:full-season for the combined list.' };
+  if (fullSeason && fullSeason.status !== 'complete') return { published: false, recommendationCount: 0, reason: 'Full-season mode is active. Use /sync mode:full-season for season totals in your team threads.' };
   if (phase === 'preseason') return { published: false, reason: 'Progression starts after regular-season games.' };
   let summary = {};
   if (['playoffs', 'offseason'].includes(phase)) {

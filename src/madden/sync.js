@@ -853,7 +853,7 @@ async function execute(interaction) {
         ...(weeklyMockStatus ? [{ name: 'Weekly mock draft', value: weeklyMockStatus, inline: false }] : []),
         { name: 'Saved', value: summary.outPath, inline: false },
         { name: 'Next', value: summary.fullSeason
-          ? summary.fullSeason.status === 'complete' ? 'Open the combined list and apply each final target once. Future `/sync` commands return to weekly playoff changes.'
+          ? summary.fullSeason.status === 'complete' ? 'Open your team thread for the season upgrade/downgrade cards and apply each final target once. Future `/sync` commands return to weekly playoff changes.'
             : summary.fullSeason.status === 'awaiting_data' ? 'Recover the listed missing weeks and retry `/sync mode:full-season`. No incomplete season total was issued.'
               : 'Simulate Weeks 1–18, then run `/sync mode:full-season` in the first playoff week. Optional checkpoint syncs preserve earlier weeks.'
           : 'Return to `/setup` and press Check Again.', inline: false }
