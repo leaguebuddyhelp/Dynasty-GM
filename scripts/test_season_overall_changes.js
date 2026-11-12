@@ -312,4 +312,21 @@ const repairedNavigation = JSON.parse(await fs.readFile(periodHistoryPath, 'utf8
 assert.deepEqual(repairedNavigation.periods.year_2038_week_18.recommendations.map((item) => item.attributes), originalTargets, 'Backfill never issues another set of rating changes');
 assert.equal(await repairProgressionReportNavigation(client, guildId), undefined);
 assert.equal(parentMessages.size, parentCount + 2, 'Restarting again cannot duplicate the report indexes');
-console.log('PASS weekly and season indexes, startup backfill without rating changes, repeat-sync deduplication, and actual OVR lists');
+const mixedStages = structuredClone(seasonEnd);
+mixedStages.info.careerHubInfo.seasonInfo.calendarYear = 2039;
+mixedStages.currentWeek = 20;
+mixedStages.syncId = 'mixed-playoff-stages';
+mixedStages.weeklyStats.push({ ...structuredClone(mixedStages.weeklyStats[0]), stage: 1, weekIndex: 18 }, { stage: 2, weekIndex: 18 });
+mixedStages.schedule = { schedules: [{ stageIndex: 1, weekIndex: 18, status: 2, homeTeamId: 1, awayTeamId: 2 }] };
+await fs.writeFile(getMaddenLeagueSnapshotPath(leagueId), JSON.stringify(mixedStages));
+const brokenHistory = JSON.parse(await fs.readFile(periodHistoryPath, 'utf8'));
+brokenHistory.periods.year_2039_week_19 = { ...brokenHistory.periods.year_2038_week_18,
+  periodKey: 'year_2039_week_19', seasonKey: 'year_2039', weekIndex: 18, weekNumber: 19,
+  recommendations: [], teamMessages: {}, reportIndexMessages: {}, statusById: {} };
+delete brokenHistory.periods.year_2039_week_19.playoffStatsVersion;
+await fs.writeFile(periodHistoryPath, JSON.stringify(brokenHistory));
+const repairedPlayoff = await repairProgressionReportNavigation(client, guildId);
+assert.equal(repairedPlayoff.periodKey, 'year_2039_week_19');
+assert.equal(repairedPlayoff.recommendationCount, 30, 'A saved zero-player playoff report is repaired from actual stage-1 stats without another EA import');
+assert.equal(await repairProgressionReportNavigation(client, guildId), undefined, 'The repaired report is not reissued on every restart');
+console.log('PASS saved playoff-stat repair, weekly/season indexes, startup replay without EA, and repeat-sync deduplication');

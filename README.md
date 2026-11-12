@@ -94,3 +94,5 @@ Opening the EA Madden session retries temporary service failures up to three tim
 `src/leaguebuddy/solo_mode.js` defines the shared runtime/deployment command catalog. The app fails startup when either solo ID is missing. Command import failures stop startup and deployment instead of leaving a partial catalog.
 
 `apps/snallabot-service` is retained as a separate reference checkout and is not a workspace dependency or started by this app.
+
+Playoff imports use populated player-stat buckets across EA stages 0, 1 and 2. Empty stage-2 placeholders cannot replace real stage-1 data. Split buckets are combined and repeated player rows are counted once. Older zero-player playoff reports caused by stage selection are retried from the saved snapshot after upgrade, without another EA import or duplicate rating changes.

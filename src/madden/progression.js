@@ -14,6 +14,7 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getMaddenStatValue, normalizeMaddenStatField } from './madden_stat_fields.js';
 import { seasonProductionReward, buildTeamFormContexts } from './weekly_progression_context.js';
+import { normalizePlayoffProgressionSnapshot, hasPlayoffPlayerData } from './playoff_stats.js';
 import { buildTeamReportIndex } from './report_navigation.js';
 import { getFranchisePhase } from './franchise_phase.js';
 import { stablePlayerKey } from './player_identity.js';
@@ -2405,6 +2406,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
     status: recommendedRookies.get(player.playerKey) || (['upgrade', 'downgrade'].includes(player.status) ? 'eligible_not_selected' : player.status),
   }));
   record.gameplayPolicyVersion = 2;
+  if (Number(weekIndex) >= 18) record.playoffStatsVersion = 1;
   history.periods[record.periodKey] = record;
   await saveHistory(leagueId, history);
   const output = await publishTeamThreadReports(client, guildId, snapshot, record, history, rules);
@@ -2439,15 +2441,7 @@ async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
 }
 
 function playoffProgressionSnapshot(snapshot) {
-  const postseasonWeeks = new Set((snapshot.weeklyStats || []).filter((entry) => Number(entry.stage ?? entry.stageIndex) === 2).map((entry) => Number(entry.weekIndex)));
-  const scheduleWeeks = new Set((snapshot.schedule?.schedules || []).filter((game) => Number(game.stageIndex ?? game.stage) === 2).map((game) => Number(game.weekIndex)));
-  return {
-    ...snapshot,
-    weeklyStats: (snapshot.weeklyStats || []).filter((entry) => Number(entry.stage ?? entry.stageIndex) !== 1 || !postseasonWeeks.has(Number(entry.weekIndex)))
-      .map((entry) => Number(entry.stage ?? entry.stageIndex) === 2 ? { ...entry, stage: 1, stageIndex: 1 } : entry),
-    schedule: { ...snapshot.schedule, schedules: (snapshot.schedule?.schedules || []).filter((game) => Number(game.stageIndex ?? game.stage) !== 1 || !scheduleWeeks.has(Number(game.weekIndex))).map((game) =>
-      Number(game.stageIndex ?? game.stage) === 2 ? { ...game, stageIndex: 1, stage: 1 } : game) },
-  };
+  return normalizePlayoffProgressionSnapshot(snapshot);
 }
 
 export function resolveProgressionWeek(snapshot) {
@@ -2456,10 +2450,11 @@ export function resolveProgressionWeek(snapshot) {
   const info = snapshot?.info?.careerHubInfo?.seasonInfo || {};
   const current = Number(snapshot.currentWeek ?? info.displayWeek ?? (Number.isInteger(info.seasonWeek) ? info.seasonWeek + 1 : 0));
   if (phase === 'playoffs') {
-    const completed = (snapshot.weeklyStats || []).filter((entry) => [1, 2].includes(Number(entry.stage ?? entry.stageIndex))
+    const normalized = playoffProgressionSnapshot(snapshot);
+    const completed = (normalized.weeklyStats || []).filter(hasPlayoffPlayerData).filter((entry) => [1, 2].includes(Number(entry.stage ?? entry.stageIndex))
       && Number(entry.weekIndex) >= 18 && Number(entry.weekIndex) <= 22)
       .map((entry) => Number(entry.weekIndex)).filter((index) => {
-        const games = (snapshot.schedule?.schedules || []).filter((game) => [1, 2].includes(Number(game.stageIndex ?? game.stage)) && Number(game.weekIndex) === index);
+        const games = (normalized.schedule?.schedules || []).filter((game) => [1, 2].includes(Number(game.stageIndex ?? game.stage)) && Number(game.weekIndex) === index);
         return index < current - 1 || (games.length > 0 && games.every((game) => Number(game.status) >= 2));
       });
     if (completed.length) return Math.max(...completed);
@@ -2486,6 +2481,10 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
   }
   const weekIndex = resolveProgressionWeek(snapshot);
   console.log('[progression] evaluation', { phase, currentWeek: snapshot.currentWeek, targetWeek: weekIndex === null ? null : weekIndex + 1 });
+  if (phase === 'playoffs' && weekIndex >= 18) console.log('[progression] playoff source buckets',
+    (snapshot.weeklyStats || []).filter((entry) => Number(entry.weekIndex) === weekIndex).map((entry) => ({
+      stage: entry.stage ?? entry.stageIndex, rows: STAT_BUCKETS.reduce((count, [bucket, list]) => count + (entry[bucket]?.[list]?.length || 0), 0),
+    })));
   if (weekIndex === null) {
     const registry = await ensureTeamThreads({ client, guildId, snapshot, rules: readRules().progression });
     return { ...summary, published: false, recommendationCount: 0, reason: 'Waiting for reliable completed-week statistics.', threadCount: Object.keys(registry.teams).length };
@@ -2495,7 +2494,7 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
     ...(summary.seasonChangesError ? { seasonChangesError: summary.seasonChangesError } : {}) };
 }
 
-// Backfill navigation for already-issued reports after upgrading the bot.
+// Backfill navigation and retry empty playoff reports from older stage handling.
 // This reads the saved snapshot and never contacts EA or advances the league.
 export async function repairProgressionReportNavigation(client, guildId) {
   const { resolveLeagueIdWithConfig, loadLeagueSnapshot } = await import('./madden_data.js');
@@ -2510,9 +2509,11 @@ export async function repairProgressionReportNavigation(client, guildId) {
   const seasonal = history.periods[`${seasonKey}_ovr_summary`];
   const needsWeekly = weekly?.recommendations?.length && !weekly.reportIndexMessages?.[guildId];
   const needsSeasonal = seasonal?.seasonChangeMessages?.[guildId] && !seasonal.reportIndexMessages?.[guildId];
-  if (!needsWeekly && !needsSeasonal) return;
+  const needsPlayoffRepair = getFranchisePhase(snapshot) === 'playoffs' && weekIndex >= 18
+    && weekly && !weekly.recommendations?.length && weekly.playoffStatsVersion !== 1;
+  if (!needsWeekly && !needsSeasonal && !needsPlayoffRepair) return;
   const result = await publishProgressionReports({ client, guildId, snapshot });
-  console.log('[progression] Report navigation repaired', { week: weekIndex === null ? null : weekIndex + 1,
+  console.log('[progression] Saved reports repaired', { playoffStatsRepaired: Boolean(needsPlayoffRepair), week: weekIndex === null ? null : weekIndex + 1,
     changes: result.recommendationCount, teams: result.seasonChanges?.teamCount });
   return result;
 }
