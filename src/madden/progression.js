@@ -2193,7 +2193,7 @@ function seasonOverallChangesEmbed(record, teamName, baseline, changes) {
       { name: '📉 Top 10 Fallers', value: format(changes?.downgrades || []) },
     )
     .setColor(0x5865f2)
-    .setFooter({ text: 'Actual Madden OVR · Updates on playoff and offseason syncs' });
+    .setFooter({ text: 'Actual Madden OVR · Updates on offseason syncs' });
 }
 
 async function publishSeasonOverallChanges(client, guildId, snapshot, record, history, registry) {
@@ -2299,7 +2299,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   history.periods[record.periodKey] = record;
   await saveHistory(leagueId, history);
   const output = await publishTeamThreadReports(client, guildId, snapshot, record, history, rules);
-  const seasonChanges = type === 'offseason'
+  const seasonChanges = type === 'offseason' && isOffseason(snapshot)
     ? await publishSeasonOverallChanges(client, guildId, snapshot, record, history, await loadJsonFile(threadsFile(guildId), null))
     : null;
   return {
