@@ -19,6 +19,10 @@ export async function logFullSeasonStatus(guildId) {
     games: games.filter((game) => Number(game.weekIndex) === Number(week.weekIndex)).length,
     statuses: [...new Set(games.filter((game) => Number(game.weekIndex) === Number(week.weekIndex)).map((game) => game.status))],
     passTeams: [...new Set((week.passing?.playerPassingStatInfoList || []).filter((row) => Number(row.passAtt) > 0).map((row) => row.teamId))],
+    ...(run.coverage?.missingWeeks?.includes(Number(week.weekIndex) + 1) ? {
+      scheduleRows: games.filter((game) => Number(game.weekIndex) === Number(week.weekIndex)),
+      statGames: [...new Map((week.passing?.playerPassingStatInfoList || []).map((row) => [String(row.teamId), { teamId: row.teamId, scheduleId: row.scheduleId }])).values()],
+    } : {}),
     defenseTeams: [...new Set((week.defense?.playerDefensiveStatInfoList || []).filter((row) => ['defTotalTackles', 'defSacks', 'defInts', 'defPassDeflections'].some((field) => Number(row[field]) > 0)).map((row) => row.teamId))],
     ...(Number(week.weekIndex) === 0 ? { defenseFields: Object.keys(week.defense?.playerDefensiveStatInfoList?.[0] || {}) } : {}),
   }));
