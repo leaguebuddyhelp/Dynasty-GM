@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getMaddenDataFilePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 import { getMaddenSeasonKey } from '../shared/madden_metadata.js';
+import { isolateSeasonStats, belongsToSeason, franchiseSeasonIndex } from './season_stat_isolation.js';
 import { getFranchisePhase } from './franchise_phase.js';
 
 function safe(value) {
@@ -33,8 +34,8 @@ export function isStartingSeasonSnapshot(snapshot) {
   if (Object.values(snapshot.rosters.teams).some((roster) => !(roster.rosterInfoList || roster.rosterPlayerInfoList || []).length)) return false;
   if (phase === 'preseason') return true;
   // Week 1 is eligible only before games have been played, not a stale hub label.
-  if ((snapshot.schedule?.schedules || []).some((game) => Number(game.stageIndex ?? game.stage) === 1 && Number(game.status) >= 2)) return false;
-  return !(snapshot.weeklyStats || []).some((week) => Number(week.stage ?? week.stageIndex) === 1
+  if ((snapshot.schedule?.schedules || []).some((game) => belongsToSeason(game, franchiseSeasonIndex(snapshot)) && Number(game.stageIndex ?? game.stage) === 1 && Number(game.status) >= 2)) return false;
+  return !isolateSeasonStats(snapshot.weeklyStats, snapshot).some((week) => Number(week.stage ?? week.stageIndex) === 1
     && (week.passing?.playerPassingStatInfoList || []).some((player) => Number(player.passAtt) > 0));
 }
 export async function findArchivedSeasonBaseline(snapshot) {

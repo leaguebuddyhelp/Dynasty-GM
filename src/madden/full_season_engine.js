@@ -1,3 +1,4 @@
+import { isolateSeasonStats } from './season_stat_isolation.js';
 import { stablePlayerKey } from './player_identity.js';
 import { buildWeeklyProgressionRecommendations } from './progression.js';
 import { getMaddenSeasonKey } from '../shared/madden_metadata.js';
@@ -7,7 +8,7 @@ const BUCKETS = [['passing', 'playerPassingStatInfoList'], ['rushing', 'playerRu
   ['kicking', 'playerKickingStatInfoList'], ['punting', 'playerPuntingStatInfoList']];
 export function regularSeasonWeeks(snapshot) {
   const weeks = {};
-  for (const source of snapshot.weeklyStats || []) {
+  for (const source of isolateSeasonStats(snapshot.weeklyStats, snapshot)) {
     const index = Number(source.weekIndex);
     if (Number(source.stage ?? source.stageIndex) !== 1 || !Number.isInteger(index) || index < 0 || index > 17) continue;
     const target = weeks[index] ||= { weekIndex: index, stage: 1 };

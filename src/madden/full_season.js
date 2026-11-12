@@ -1,3 +1,4 @@
+import { hasForeignSeasonStats } from './season_stat_isolation.js';
 import { getMaddenSeasonKey } from '../shared/madden_metadata.js';
 import { getFranchisePhase } from './franchise_phase.js';
 import { loadFullSeasonRun, saveFullSeasonRun, archiveFullSeasonRun, fullSeasonIdentity, matchesFullSeason, findArchivedSeasonBaseline, isStartingSeasonSnapshot } from './full_season_store.js';
@@ -70,6 +71,14 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
     } else return { mode: 'full-season', status: run.status, published: false, recommendationCount: 0,
       reason: 'Full-season baseline saved. Simulate Weeks 1–18, then run /sync mode:full-season in the first playoff week.' };
   }
+  if (run.recoveredBaseline && !run.calculationComplete && getFranchisePhase(run.baseline) === 'preseason') {
+    const recovered = await findArchivedSeasonBaseline(snapshot);
+    if (recovered && getFranchisePhase(recovered) === 'regular') {
+      run.baseline = baselineSnapshot(recovered);
+      run.baselineSyncId = recovered.syncId;
+      await saveFullSeasonRun(run);
+    }
+  }
   if (run.status === 'complete') return { ...run.result, duplicate: true, reason: 'The season upgrade/downgrade cards are already posted in your team threads. Apply the targets once; playoff syncs use normal weekly progression.' };
   if (phase === 'preseason' || (phase === 'regular' && Number(snapshot.currentWeek) === 1)) return {
     mode: 'full-season', status: run.status, published: false, recommendationCount: 0,
@@ -77,7 +86,7 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
   };
   const cap = phase === 'regular' ? Math.min(17, Number(snapshot.currentWeek) - 2) : 17;
   const currentWeeks = (snapshot.weeklyStats || []).filter((entry) => Number(entry.weekIndex) <= cap);
-  const merged = regularSeasonWeeks({ weeklyStats: [...Object.values(run.importedWeeks), ...currentWeeks] });
+  const merged = regularSeasonWeeks({ ...snapshot, weeklyStats: [...Object.values(run.importedWeeks), ...currentWeeks] });
   const schedule = new Map(run.importedSchedule.map((game) => [`${game.weekIndex}:${game.homeTeamId}:${game.awayTeamId}`, game]));
   const teamIds = new Set((snapshot.teams?.leagueTeamInfoList || []).map((team) => String(team.teamId)));
   for (const game of snapshot.schedule?.schedules || []) {
@@ -158,4 +167,21 @@ export async function runFullSeasonSync(options) {
   const pending = previous.catch(() => {}).then(() => processSeason(options));
   queues.set(key, pending);
   try { return await pending; } finally { if (queues.get(key) === pending) queues.delete(key); }
+}
+
+// Resume only an explicitly requested season run affected by the stale-year bug.
+// No baseline is armed and no unrelated league is synced by this repair.
+export async function repairSavedFullSeasonSync(client, guildId) {
+  const { resolveLeagueIdWithConfig, loadLeagueSnapshot } = await import('./madden_data.js');
+  const leagueId = resolveLeagueIdWithConfig(guildId, 'full-season:season-repair');
+  const snapshot = await loadLeagueSnapshot(leagueId);
+  if (!snapshot || getFranchisePhase(snapshot) !== 'playoffs') return;
+  const run = await loadFullSeasonRun(guildId, leagueId);
+  if (!matchesFullSeason(run, snapshot) || run.status !== 'awaiting_data' || run.calculationComplete
+    || !hasForeignSeasonStats(Object.values(run.importedWeeks || {}), snapshot)) return;
+  console.log('[full-season] repairing stale-season imports', JSON.stringify({ leagueId, baselineSyncId: run.baselineSyncId }));
+  const { runSync } = await import('./sync.js');
+  const result = await runSync(leagueId, null, { client, guildId, mode: 'full-season',
+    requestId: `season-isolation-repair-v1:${guildId}:${leagueId}:${run.baselineSyncId}` });
+  console.log('[full-season] season repair result', JSON.stringify({ leagueId, fullSeason: result.fullSeason, progression: result.progression }));
 }

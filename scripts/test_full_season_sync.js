@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { Collection } from 'discord.js';
 import { runFullSeasonSync, resolveSyncMode } from '../src/madden/full_season.js';
-import { loadFullSeasonRun, matchesFullSeason, findArchivedSeasonBaseline, isStartingSeasonSnapshot } from '../src/madden/full_season_store.js';
+import { loadFullSeasonRun, matchesFullSeason, findArchivedSeasonBaseline, isStartingSeasonSnapshot, saveFullSeasonRun } from '../src/madden/full_season_store.js';
 import { publishProgressionReports, refreshProgressionForAwardChange, buildFullSeasonCardEmbeds } from '../src/madden/progression.js';
 import { publishWeeklyAwards, updateAwards } from '../src/madden/awards.js';
 import { saveGuildMaddenConfig } from '../src/shared/madden_guild_config.js';
@@ -122,6 +122,10 @@ checkpoint.weeklyStats = checkpoint.weeklyStats.slice(0, 8);
 assert.equal((await sync(checkpoint)).coverage.completedWeeks, 8);
 assert.equal(awardMessages.size, 0);
 assert.equal((await publishProgressionReports({ client, guildId, snapshot: checkpoint })).published, false, 'Normal progression cannot overlap full-season mode');
+// A previous failed sync retained a larger export from the wrong year.
+const mixedRun = await loadFullSeasonRun(guildId, leagueId);
+mixedRun.importedWeeks[5].passing.playerPassingStatInfoList.push({ rosterId: 'last-year-only', teamId: 999, seasonIndex: 0, passAtt: 30 });
+await saveFullSeasonRun(mixedRun);
 const incomplete = structuredClone(final); incomplete.weeklyStats = incomplete.weeklyStats.filter((entry) => entry.weekIndex !== 12);
 const waiting = await sync(incomplete);
 assert.equal(waiting.status, 'awaiting_data');
@@ -131,6 +135,7 @@ const retained = structuredClone(final); retained.weeklyStats = retained.weeklyS
 await assert.rejects(sync(retained), /Award publication outage/);
 assert.equal(awardMessages.size, 4);
 const calculationTime = (await loadFullSeasonRun(guildId, leagueId)).calculatedAt;
+assert.ok(!(await loadFullSeasonRun(guildId, leagueId)).importedWeeks[5].passing.playerPassingStatInfoList.some((row) => row.rosterId === 'last-year-only'));
 assert.equal((await loadFullSeasonRun(guildId, leagueId)).coverage.complete, true, 'A saved checkpoint preserves older weeks missing from the final EA response');
 await assert.rejects(sync(retained), /Combined report outage/);
 assert.equal(awardMessages.size, 18, 'Retry resumes only the remaining weekly award posts');

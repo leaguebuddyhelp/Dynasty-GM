@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { replayFullSeason, collectSeasonTotals, buildSeasonApplication, seasonCoverage } from '../src/madden/full_season_engine.js';
+import { replayFullSeason, collectSeasonTotals, buildSeasonApplication, seasonCoverage, regularSeasonWeeks } from '../src/madden/full_season_engine.js';
 
 const rules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
 const teams = [{ teamId: 1, cityName: 'Denver', nickName: 'Broncos' }, { teamId: 2, cityName: 'Los Angeles', nickName: 'Rams' }];
@@ -38,6 +38,16 @@ for (const player of replay.totals.players) for (const attribute of Object.value
   const initial = Object.values(baseline.rosters.teams).flatMap((roster) => roster.rosterInfoList).find((row) => `roster:${row.rosterId}` === player.playerKey)[attribute.field];
   assert.ok(initial + attribute.net >= 0 && initial + attribute.net <= 99);
 }
+const staleSeason = structuredClone(snapshot);
+for (const week of staleSeason.weeklyStats) {
+  week.passing.playerPassingStatInfoList.push({ rosterId: 'last-year-qb', teamId: 999, seasonIndex: 0, passAtt: 30, passYds: 500, passTDs: 7 });
+  week.defense.playerDefensiveStatInfoList.push({ rosterId: 'last-year-defender', teamId: 999, seasonIndex: 0, defTotalTackles: 20 });
+}
+const cleanWeeks = regularSeasonWeeks(staleSeason);
+assert.equal(seasonCoverage(staleSeason, cleanWeeks).complete, true);
+assert.ok(Object.values(cleanWeeks).every((week) => week.passing.playerPassingStatInfoList.length === 2));
+const staleReplay = await replayFullSeason({ baseline, snapshot: staleSeason, rules, computeAwards: async () => ({}) });
+assert.deepEqual(staleReplay.totals, replay.totals, 'Foreign-season cache rows must not change the current season’s awards/progression inputs');
 const missing = structuredClone(snapshot);
 missing.weeklyStats = missing.weeklyStats.filter((week) => week.weekIndex !== 3);
 assert.deepEqual(seasonCoverage(missing).missingWeeks, [4]);

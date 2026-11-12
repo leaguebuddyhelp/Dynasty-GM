@@ -66,7 +66,10 @@ client.once(Events.ClientReady, () => {
     .then(() => repairProgressionReportNavigation(client, getSoloModeConfig().guildId))
     .catch((error) => console.warn('[progression] Navigation repair failed', error.message));
   refreshApplicationEmojiMap(client).catch((error) => console.warn('[emoji] refresh failed', error.message));
-  import('./madden/full_season.js').then(({ logFullSeasonStatus }) => logFullSeasonStatus(getSoloModeConfig().guildId))
+  import('./madden/full_season.js').then(async ({ logFullSeasonStatus, repairSavedFullSeasonSync }) => {
+    await logFullSeasonStatus(getSoloModeConfig().guildId);
+    await repairSavedFullSeasonSync(client, getSoloModeConfig().guildId);
+  })
     .catch((error) => console.warn('[full-season] Diagnostics unavailable', error.message));
 });
 client.on(Events.ShardDisconnect, () => markHealthReady(false));

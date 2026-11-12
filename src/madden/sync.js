@@ -25,6 +25,7 @@ import {
 import { getMaddenChannelId } from '../shared/madden_metadata.js';
 import { getMaddenStatValue } from './madden_stat_fields.js';
 import { appendProgressionResultFields } from './report_navigation.js';
+import { isolateSeasonStats, franchiseSeasonIndex } from './season_stat_isolation.js';
 import { updateWeeklyGameLog } from './weekly_game_log.js';
 
 const leagueDir = getMaddenLeaguesDir();
@@ -479,7 +480,12 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       existingSnapshot.weeklyStats = [];
     }
 
-    // Merge collected weeks with existing weekly stats, picking the richer entry per week/stage
+    const currentSeason = { info };
+    const existingSeason = franchiseSeasonIndex(existingSnapshot);
+    const importedSeason = franchiseSeasonIndex(currentSeason);
+    const cachedWeeks = existingSeason !== null && importedSeason !== null && existingSeason !== importedSeason
+      ? [] : isolateSeasonStats(existingSnapshot?.weeklyStats, currentSeason);
+    // Compare only current-season rows when retaining richer checkpoint exports.
     const mergedWeekly = (() => {
       const byKey = new Map();
       const addEntry = (e) => {
@@ -493,19 +499,19 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         // prefer entry with more players; if tie, prefer the new one
         const prevCount = prev.playerCount ?? 0;
         const newCount = e.playerCount ?? countPlayers(e);
-        if (newCount > prevCount) {
+        if (newCount >= prevCount) {
           byKey.set(key, e);
         }
       };
 
       // existing
-      (existingSnapshot?.weeklyStats || []).forEach(w => {
-        w.playerCount = w.playerCount ?? countPlayers(w);
+      cachedWeeks.forEach(w => {
+        w.playerCount = countPlayers(w);
         w.isIncomplete = w.isIncomplete ?? !isWeekComplete(w);
         addEntry(w);
       });
       // newly collected
-      Array.from(collectedByKey.values()).forEach(addEntry);
+      isolateSeasonStats(Array.from(collectedByKey.values()), currentSeason).forEach((entry) => addEntry({ ...entry, playerCount: countPlayers(entry) }));
 
       return Array.from(byKey.values()).map(w => {
         // update completeness flag using current data
@@ -538,7 +544,7 @@ async function runSyncInternal(leagueId, provider, options = {}) {
       },
       weeklyStats: mergedWeekly,
     };
-    snapshot.season = seasonInfoFinal.seasonNumber ?? seasonInfoFinal.seasonIndex ?? null;
+    snapshot.season = seasonInfoFinal.seasonNumber ?? seasonInfoFinal.seasonIndex ?? seasonInfoFinal.seasonYear ?? null;
     snapshot.week = currentWeek;
     const validation = validateFranchiseSnapshot(snapshot, leagueId);
     if (!validation.valid) {
