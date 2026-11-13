@@ -18,6 +18,7 @@ import { normalizePlayoffProgressionSnapshot, hasPlayoffPlayerData } from './pla
 import { loadFullSeasonRun, matchesFullSeason } from './full_season_store.js';
 import { buildTeamReportIndex } from './report_navigation.js';
 import { getFranchisePhase } from './franchise_phase.js';
+import { ensurePositionThreads, buildPositionChangeEmbeds, publishPositionPages, buildSeasonResultEmbeds } from './position_reports.js';
 import { stablePlayerKey } from './player_identity.js';
 import { getLatestReliableRegularSeasonWeekIndex } from './top_players.js';
 
@@ -2105,7 +2106,25 @@ async function publishReportIndex(client, guildId, registry, record, history, em
   return `https://discord.com/channels/${guildId}/${registry.channelId}/${message.id}`;
 }
 
+function usesPositionThreads() { return readRules().progression.discord.progressionLayout === 'positions'; }
+async function positionRegistry(client, guildId) {
+  const discord = readRules().progression.discord;
+  const channelId = getMaddenChannelId(discord.playerUpgradesChannelKey, guildId);
+  if (!channelId) throw new Error('Player Upgrades channel is not configured.');
+  return ensurePositionThreads({ client, guildId, channelId, archiveDuration: Number(discord.threadAutoArchiveDuration) });
+}
+async function publishWeeklyPositionReports(client, guildId, snapshot, record, history) {
+  const registry = await positionRegistry(client, guildId);
+  const groups = buildPositionChangeEmbeds(snapshot, record);
+  const reports = await publishPositionPages({ client, guildId, registry, record, groups, save: () => saveHistory(record.leagueId, history) });
+  const upgrades = record.recommendations.filter((item) => item.direction === 'upgrade').length;
+  const reportUrl = reports.length ? await publishReportIndex(client, guildId, registry, record, history, buildTeamReportIndex({
+    title: `📈 Weekly Player Changes · Week ${record.weekNumber}`,
+    description: `**${seasonLabel(record.seasonKey)} · ${record.recommendations.length} player changes**\n${upgrades} upgrades · ${record.recommendations.length - upgrades} downgrades\n\nOpen your position below. Teams are sorted by mascot, then players A–Z. Apply changes in Madden.`, reports, navigationLabel: 'Open your position report', moreLabel: 'More positions' })) : null;
+  return { published: record.recommendations.length > 0, reportUrl, recommendationCount: record.recommendations.length, threadCount: 21, positionCount: groups.size };
+}
 async function publishTeamThreadReports(client, guildId, snapshot, record, history, rules) {
+  if (usesPositionThreads()) return publishWeeklyPositionReports(client, guildId, snapshot, record, history);
   const registry = await ensureTeamThreads({ client, guildId, snapshot, rules });
   const byTeam = new Map();
   for (const item of record.recommendations) {
@@ -2508,7 +2527,7 @@ export async function publishFullSeasonTotals({ client, guildId, snapshot, run }
   const rules = readRules().progression;
   const history = await loadHistory(snapshot.leagueId);
   const seasonKey = getMaddenSeasonKey(snapshot);
-  const registry = await ensureTeamThreads({ client, guildId, snapshot, rules });
+  const registry = usesPositionThreads() ? await positionRegistry(client, guildId) : await ensureTeamThreads({ client, guildId, snapshot, rules });
   const periodKey = `${seasonKey}_full_season`;
   const record = history.periods[periodKey] ||= {
     version: 1, leagueId: String(snapshot.leagueId), periodKey, seasonKey, season: snapshot.season,
@@ -2521,6 +2540,16 @@ export async function publishFullSeasonTotals({ client, guildId, snapshot, run }
     history.periods[key] = { ...week, periodKey: key, seasonKey, season: snapshot.season, issuedAsAggregate: true };
   }
   await saveHistory(snapshot.leagueId, history);
+  if (usesPositionThreads()) {
+    const groups = buildPositionChangeEmbeds(snapshot, record, { fullSeason: true });
+    const reports = await publishPositionPages({ client, guildId, registry, record, groups, save: () => saveHistory(snapshot.leagueId, history) });
+    const totals = run.totals;
+    const embed = buildTeamReportIndex({ title: `📋 ${seasonLabel(run.seasonKey)} · Season Changes by Position`,
+      description: `**Weeks 1–18 added up per player**\n${totals.upgradeEvents} upgrade events · ${totals.downgradeEvents} downgrade events\nAttribute points: +${totals.positivePoints} / −${totals.negativePoints} · Net ${totals.netPoints >= 0 ? '+' : ''}${totals.netPoints}\n\nOpen your position thread. Apply each final target **once**. These are the saved season totals; reposting does not earn new changes.`, reports, navigationLabel: 'Open your position report', moreLabel: 'More positions' });
+    const reportUrl = await publishReportIndex(client, guildId, registry, record, history, embed,
+      [{ attachment: seasonCsv(run), name: `${run.seasonKey}-combined-attribute-changes.csv` }, { attachment: seasonWeeklyCsv(run), name: `${run.seasonKey}-weekly-attribute-audit.csv` }]);
+    return { published: true, recommendationCount: [...groups.values()].reduce((sum, group) => sum + group.count, 0), type: 'full_season', periodKey, reportUrl, positionCount: groups.size };
+  }
   const grouped = new Map();
   for (const player of record.application) {
     if (!player.attributes.some((attribute) => attribute.net || attribute.needsReview) || !registry.teams[player.teamId]) continue;
@@ -2603,7 +2632,7 @@ async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
     return { published: false, recommendationCount: 0, type: 'season_summary', reason: 'Top 10 risers/fallers publish in playoff Week 2, after the first-week rating changes are applied in Madden.' };
   }
   const rules = readRules().progression;
-  const registry = await ensureTeamThreads({ client, guildId, snapshot, rules });
+  const registry = usesPositionThreads() ? await positionRegistry(client, guildId) : await ensureTeamThreads({ client, guildId, snapshot, rules });
   const seasonKey = getMaddenSeasonKey(snapshot);
   const periodKey = `${seasonKey}_ovr_summary`;
   const record = history.periods[periodKey] || {
@@ -2613,6 +2642,14 @@ async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
   };
   history.periods[periodKey] = record;
   record.deferredUntilPlayoffWeek = null;
+  if (usesPositionThreads()) {
+    const baseline = await seasonComparisonBaseline(snapshot.leagueId, seasonKey);
+    const changes = buildSeasonOverallChanges(snapshot, baseline?.snapshot);
+    const groups = new Map([['Season Results', { embeds: buildSeasonResultEmbeds(snapshot, changes, baseline) }]]);
+    const reports = await publishPositionPages({ client, guildId, registry, record, groups, save: () => saveHistory(snapshot.leagueId, history) });
+    const indexUrl = await publishReportIndex(client, guildId, registry, record, history, buildTeamReportIndex({ title: `📊 ${seasonLabel(seasonKey)} · Top 10 Risers / Fallers`, description: 'Actual Madden OVR movement · Grouped by mascot A–Z · Available from playoff Week 2.', reports, navigationLabel: 'Open Season Results' }));
+    return { published: false, recommendationCount: 0, type: 'season_summary', periodKey, seasonChanges: { teamCount: (snapshot.teams?.leagueTeamInfoList || []).length, baseline: baseline?.label || null, partial: Boolean(baseline?.partial), indexUrl }, reason: 'Top 10 lists updated in Season Results.' };
+  }
   const seasonChanges = await publishSeasonOverallChanges(client, guildId, snapshot, record, history, registry);
   return { published: false, recommendationCount: 0, type: 'season_summary', periodKey, seasonChanges,
     reason: 'Season OVR risers/fallers updated. Ratings change only through weekly gameplay recommendations.' };
@@ -2649,7 +2686,9 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
   const phase = getFranchisePhase(snapshot);
   const seasonRun = await loadFullSeasonRun(guildId, snapshot.leagueId);
   const fullSeason = matchesFullSeason(seasonRun, snapshot) ? seasonRun : null;
-  if (fullSeason && fullSeason.status !== 'complete') return { published: false, recommendationCount: 0, reason: 'Full-season mode is active. Use /sync mode:full-season for season totals in your team threads.' };
+  let restoredSeason = null;
+  if (usesPositionThreads() && fullSeason?.status === 'complete') restoredSeason = await publishFullSeasonTotals({ client, guildId, snapshot, run: fullSeason });
+  if (fullSeason && fullSeason.status !== 'complete') return { published: false, recommendationCount: 0, reason: 'Full-season mode is active. Use /sync mode:full-season for season totals in your position threads.' };
   if (phase === 'preseason') return { published: false, reason: 'Progression starts after regular-season games.' };
   let summary = {};
   if (['playoffs', 'offseason'].includes(phase)) {
@@ -2662,7 +2701,7 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
   }
   const weekIndex = resolveProgressionWeek(snapshot);
   if (fullSeason?.status === 'complete' && weekIndex !== null && weekIndex < 18) return {
-    ...summary, published: false, recommendationCount: 0, reason: 'Regular-season changes are already included in the combined season list. Playoff games use weekly progression.',
+    ...summary, ...(restoredSeason ? { seasonReportUrl: restoredSeason.reportUrl } : {}), published: false, recommendationCount: 0, reason: 'Saved season totals are available in the position threads. Playoff games use weekly progression.',
   };
   console.log('[progression] evaluation', { phase, currentWeek: snapshot.currentWeek, targetWeek: weekIndex === null ? null : weekIndex + 1 });
   if (phase === 'playoffs' && weekIndex >= 18) console.log('[progression] playoff source buckets',
@@ -2670,8 +2709,8 @@ export async function publishProgressionReports({ client, guildId, snapshot }) {
       stage: entry.stage ?? entry.stageIndex, rows: STAT_BUCKETS.reduce((count, [bucket, list]) => count + (entry[bucket]?.[list]?.length || 0), 0),
     })));
   if (weekIndex === null) {
-    const registry = await ensureTeamThreads({ client, guildId, snapshot, rules: readRules().progression });
-    return { ...summary, published: false, recommendationCount: 0, reason: 'Waiting for reliable completed-week statistics.', threadCount: Object.keys(registry.teams).length };
+    const registry = usesPositionThreads() ? await positionRegistry(client, guildId) : await ensureTeamThreads({ client, guildId, snapshot, rules: readRules().progression });
+    return { ...summary, published: false, recommendationCount: 0, reason: 'Waiting for reliable completed-week statistics.', threadCount: usesPositionThreads() ? 21 : Object.keys(registry.teams).length };
   }
   const weekly = await publishProgression({ client, guildId, snapshot: phase === 'playoffs' ? playoffProgressionSnapshot(snapshot) : snapshot, type: 'weekly', weekIndex });
   return { ...weekly, ...(summary.seasonChanges ? { seasonChanges: summary.seasonChanges } : {}),
@@ -2775,7 +2814,13 @@ export async function updateProgressionStatus({ leagueId, periodKey, recommendat
 }
 
 export async function refreshProgressionMessages({ client, guildId, leagueId, periodKey }) {
-  const { record } = await loadPeriod(leagueId, periodKey);
+  const { record, history } = await loadPeriod(leagueId, periodKey);
+  if (usesPositionThreads()) {
+    const { loadLeagueSnapshot } = await import('./madden_data.js');
+    const snapshot = loadLeagueSnapshot(leagueId);
+    await publishWeeklyPositionReports(client, guildId, snapshot, record, history);
+    return record;
+  }
   const rules = readRules().progression;
   const registry = await loadJsonFile(threadsFile(guildId), null);
   if (!registry?.teams) throw new Error('Player Upgrades team-thread registry was not found.');

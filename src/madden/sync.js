@@ -815,7 +815,7 @@ async function execute(interaction) {
       : null;
     const progressionStatus = summary.progression
       ? `${summary.progression.published
-        ? `${summary.progression.recommendationCount} recommendation(s) posted to team threads${summary.progression.type === 'weekly' && summary.progression.recommendationCount < (summary.progression.selectionDiagnostics?.preferredMinimum || 0) ? `; fewer than the target because only ${summary.progression.selectionDiagnostics.eligibleCandidates} eligible player(s) were found` : ''}`
+        ? `${summary.progression.recommendationCount} recommendation(s) posted to position threads${summary.progression.type === 'weekly' && summary.progression.recommendationCount < (summary.progression.selectionDiagnostics?.preferredMinimum || 0) ? `; fewer than the target because only ${summary.progression.selectionDiagnostics.eligibleCandidates} eligible player(s) were found` : ''}`
         : summary.progression.error || summary.progression.reason || 'No recommendations met evidence thresholds'}${summary.progression.seasonChangesError ? `; OVR lists failed: ${summary.progression.seasonChangesError}` : ''}${summary.progression.seasonChanges ? `; season OVR summaries updated for ${summary.progression.seasonChanges.teamCount} teams${summary.progression.seasonChanges.baseline ? ` (${summary.progression.seasonChanges.partial ? 'partial-season baseline: ' : 'baseline: '}${summary.progression.seasonChanges.baseline})` : ' (season baseline unavailable)'}` : ''}${summary.progression.unupgradedAwardWinners?.length ? `; award winners needing review: ${summary.progression.unupgradedAwardWinners.map((winner) => winner.player).join(', ')}` : ''}${summary.playoffAwardProgression ? `; playoff week ${summary.weeklyAwards.weekNumber}: ${summary.playoffAwardProgression.error || `${summary.playoffAwardProgression.recommendationCount} recommendation(s)`}${summary.playoffAwardProgression.unupgradedAwardWinners?.length ? `; award winners needing review: ${summary.playoffAwardProgression.unupgradedAwardWinners.map((winner) => winner.player).join(', ')}` : ''}` : ''}`
       : null;
     const weeklyAwardsStatus = summary.weeklyAwards
@@ -861,7 +861,7 @@ async function execute(interaction) {
         { name: 'Next', value: summary.progression?.error
           ? 'Resolve the Player progression error above, then retry the same sync mode. Your imported league data was saved.'
           : summary.fullSeason
-          ? summary.fullSeason.status === 'complete' ? 'Open your team thread for the season upgrade/downgrade cards and apply each final target once. Future `/sync` commands return to weekly playoff changes.'
+          ? summary.fullSeason.status === 'complete' ? 'Open your position thread for the season upgrade/downgrade cards and apply each final target once. Future `/sync` commands return to weekly playoff changes.'
             : summary.fullSeason.status === 'awaiting_data' ? 'Recover the listed missing weeks and retry `/sync mode:full-season`. No incomplete season total was issued.'
               : 'Simulate Weeks 1–18, then run `/sync mode:full-season` in the first playoff week. Optional checkpoint syncs preserve earlier weeks.'
           : 'Return to `/setup` and press Check Again.', inline: false }

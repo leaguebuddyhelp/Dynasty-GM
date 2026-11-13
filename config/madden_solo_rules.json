@@ -576,6 +576,7 @@
       "informationalSuperstarTarget": 60
     },
     "discord": {
+      "progressionLayout": "positions",
       "playerUpgradesChannelKey": "Player Upgrades",
       "franchiseManagerRoleIdEnv": "MADDEN_FRANCHISE_MANAGER_ROLE_ID",
       "notificationRoleName": "Franchise Manager",

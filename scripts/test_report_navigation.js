@@ -30,5 +30,5 @@ const fullSeason = appendProgressionResultFields(new EmbedBuilder().setTitle('Im
 assert.equal(fullSeason.fields[0].name, 'Full-season attribute totals');
 assert.match(fullSeason.fields[0].value, /18 weekly evaluations/);
 assert.match(fullSeason.fields[0].value, /900.*300.*600/s);
-assert.match(fullSeason.fields[0].value, /Apply the final targets in your team thread once/);
+assert.match(fullSeason.fields[0].value, /Apply the final targets in your position thread once/);
 console.log('PASS 32-team navigation, Discord embed limits, visible 30-player results, report links, and failure reporting');

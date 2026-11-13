@@ -28,7 +28,7 @@ final.weeklyStats = Array.from({ length: 18 }, (_, weekIndex) => ({ weekIndex, s
   defense: { playerDefensiveStatInfoList: teams.map(({ teamId }) => ({ rosterId: `d${teamId}`, teamId, position: 'CB', defTotalTackles: 8, defInts: teamId % 4 ? 0 : 1, defPassDeflections: 2 })) },
 }));
 for (const roster of Object.values(final.rosters.teams)) for (const row of roster.rosterInfoList) row.awareRating = 80;
-let sequence = 0, failAward = true, failCombined = true;
+let sequence = 0, failAward = true, failCombined = true, seasonPageSends = 0;
 const channels = new Map(), parentMessages = new Map(), awardMessages = new Map(), threads = new Collection();
 function message(payload, store) {
   const row = { id: `message-${++sequence}`, payload, pinned: true, pin: async () => {}, edit: async (next) => { row.payload = next; return row; } };
@@ -49,7 +49,7 @@ function createThread(name) {
   const store = new Map();
   const thread = { id: `thread-${++sequence}`, name, archived: false, store, isThread: () => true,
     messages: { fetch: fetchMessage(store) }, send: async (value) => {
-      if (failCombined && value.embeds?.[0]?.toJSON().footer?.text.includes('Season totals, Weeks')) {
+      if (failCombined && value.embeds?.[0]?.toJSON().footer?.text.includes('Summed season changes') && seasonPageSends++ >= 1) {
         failCombined = false; throw new Error('Combined report outage');
       }
       return message(value, store);
@@ -139,6 +139,8 @@ assert.ok(!(await loadFullSeasonRun(guildId, leagueId)).importedWeeks[5].passing
 assert.equal((await loadFullSeasonRun(guildId, leagueId)).coverage.complete, true, 'A saved checkpoint preserves older weeks missing from the final EA response');
 await assert.rejects(sync(retained), /Combined report outage/);
 assert.equal(awardMessages.size, 18, 'Retry resumes only the remaining weekly award posts');
+const firstPosition = [...threads.values()].find((thread) => thread.name === 'QB');
+assert.equal(firstPosition.store.size, 1, 'The first position page was saved before a later page failed');
 const result = await sync(retained);
 assert.equal(result.status, 'complete');
 assert.equal(result.awardsPosted, 18);
@@ -150,18 +152,21 @@ assert.match(result.reportUrl, /discord.com/);
 const titles = [...awardMessages.values()].map((row) => row.payload.embeds[0].toJSON().title);
 assert.equal(new Set(titles).size, 18);
 assert.ok(titles[0].includes('Week 1') && titles[17].includes('Week 18'));
-const combined = [...parentMessages.values()].find((row) => row.payload.embeds?.[0]?.toJSON().title.includes('Season Upgrades & Downgrades'));
+const combined = [...parentMessages.values()].find((row) => row.payload.embeds?.[0]?.toJSON().title.includes('Season Changes by Position'));
 assert.equal(combined.payload.files.length, 2);
 assert.match(combined.payload.files[0].attachment.toString(), /Gross upgrades/);
 assert.match(combined.payload.files[1].attachment.toString(), /Virtual rating before/);
-assert.deepEqual([...threads.keys()], existingThreadIds, 'Full-season cards must reuse all existing team threads');
+const positionNames = ['QB', 'HB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'FS', 'SS', 'K', 'P'];
+assert.ok(positionNames.every((name) => [...threads.values()].some((thread) => thread.name === name)));
+assert.ok([...threads.values()].some((thread) => thread.name === 'Season Results'));
+assert.equal(threads.size, existingThreadIds.length + 22, 'Create 21 position threads plus Season Results; do not recreate extra team threads');
 const seasonCards = [...threads.values()].flatMap((thread) => [...thread.store.values()].flatMap((message) => message.payload.embeds || []))
-  .map((embed) => embed.toJSON()).filter((embed) => embed.footer?.text.includes('Season totals, Weeks'));
-assert.ok(seasonCards.some((embed) => embed.title.startsWith('📈 Upgrade') && embed.color === 0x2ecc71));
-assert.ok(seasonCards.some((embed) => embed.title.startsWith('📉 Downgrade') && embed.color === 0xe74c3c));
-assert.ok(seasonCards.every((embed) => embed.description.includes('**City') && embed.fields.some((field) => field.name === 'Status')));
-assert.ok([...parentMessages.values()].every((message) => !message.payload.embeds?.some((embed) => embed.toJSON().footer?.text.includes('Season totals, Weeks'))),
-  'Player changes belong in team threads; the parent channel contains navigation and summary only');
+  .map((embed) => embed.toJSON()).filter((embed) => embed.footer?.text.includes('Summed season changes'));
+assert.ok(seasonCards.some((embed) => embed.title.startsWith('QB · Season Total')));
+assert.ok(seasonCards.some((embed) => embed.title.startsWith('CB · Season Total')));
+assert.ok(seasonCards.every((embed) => embed.description.includes('**Club') && embed.footer.text.includes('ONCE')));
+assert.ok([...parentMessages.values()].every((message) => !message.payload.embeds?.some((embed) => embed.toJSON().footer?.text.includes('Summed season changes'))),
+  'Player changes belong in position threads; the parent channel contains navigation and summary only');
 const mixedCards = buildFullSeasonCardEmbeds({ player: 'Mixed Player', team: 'Denver Broncos', position: 'WR', attributes: [
   { attribute: 'Catching', net: 4, positive: 7, negative: 3, currentValue: 80, targetValue: 84, pointsToApply: 4 },
   { attribute: 'Awareness', net: -2, positive: 1, negative: 3, currentValue: 80, targetValue: 78, pointsToApply: -2 },
@@ -181,11 +186,35 @@ assert.equal((await publishWeeklyAwards({ client, guildId, snapshot: final, dedu
 const regularAgain = await publishProgressionReports({ client, guildId, snapshot: final });
 assert.equal(regularAgain.recommendationCount, 0, 'Week 18 cannot be issued a second time after aggregation');
 assert.equal((await refreshProgressionForAwardChange({ client, guildId, snapshot: final, weekNumber: 18 })).published, false);
+const savedBeforeDeletion = await loadFullSeasonRun(guildId, leagueId);
+for (const thread of threads.values()) channels.delete(thread.id);
+threads.clear();
+const latestRatingsChanged = structuredClone(final);
+latestRatingsChanged.rosters.teams[1].rosterInfoList[0].awareRating = 98;
+await publishProgressionReports({ client, guildId, snapshot: latestRatingsChanged });
+assert.equal(threads.size, 22, 'Next normal sync recreates only 21 position threads and Season Results');
+assert.equal(awardMessages.size, 18, 'Rebuilding position threads cannot repost awards');
+const afterRebuild = await loadFullSeasonRun(guildId, leagueId);
+assert.deepEqual(afterRebuild.application, savedBeforeDeletion.application, 'Reposting saved season totals cannot recompute targets from newer Madden ratings');
+assert.equal(afterRebuild.calculatedAt, calculationTime);
+const rebuiltQb = [...threads.values()].find((thread) => thread.name === 'QB');
+assert.ok([...rebuiltQb.store.values()].some((message) => message.payload.embeds[0].toJSON().title.startsWith('QB · Season Total')));
 const playoffs = structuredClone(final); playoffs.currentWeek = 20;
 playoffs.weeklyStats.push({ ...structuredClone(final.weeklyStats[0]), weekIndex: 18, stage: 1 });
 playoffs.schedule.schedules.push({ weekIndex: 18, stageIndex: 1, status: 2, homeTeamId: 1, awayTeamId: 2, homeScore: 28, awayScore: 7 });
 const playoffReport = await publishProgressionReports({ client, guildId, snapshot: playoffs });
 assert.equal(playoffReport.type, 'weekly');
+const seasonResults = [...threads.values()].find((thread) => thread.name === 'Season Results');
+assert.ok([...seasonResults.store.values()].some((message) => message.payload.embeds[0].toJSON().title.startsWith('Top 10 Risers / Fallers')));
+const weeklyQbPages = [...rebuiltQb.store.values()].filter((message) => message.payload.embeds[0].toJSON().title.startsWith('QB · Week 19'));
+assert.equal(weeklyQbPages.length, 1, 'One weekly embed combines all QB changes across teams');
+assert.equal(weeklyQbPages[0].payload.embeds.length, 1);
+await publishProgressionReports({ client, guildId, snapshot: playoffs });
+assert.equal([...rebuiltQb.store.values()].filter((message) => message.payload.embeds[0].toJSON().title.startsWith('QB · Week 19')).length, 1, 'Repeat sync updates the weekly position embed without duplicating it');
+assert.equal(threads.size, 22, 'Second playoff week cannot recreate team threads');
 const history = JSON.parse(await fs.readFile(getMaddenDataFilePath(`progression_history/${leagueId}.json`), 'utf8'));
 assert.ok(history.periods.year_2028_week_19.recommendations.every((row) => ['1', '2'].includes(row.teamId)));
-console.log('PASS full-season preparation, checkpoint retention, all 18 weekly awards, combined/audit CSVs, retry safety, year boundary, and return to weekly playoffs');
+const emptyWeek = { ...structuredClone(baseline), leagueId: 'empty-position-week', syncId: 'empty-position-sync' };
+assert.equal((await publishProgressionReports({ client, guildId, snapshot: emptyWeek })).threadCount, 21);
+assert.equal(threads.size, 22, 'An empty active week keeps the position layout instead of creating team threads');
+console.log('PASS full-season preparation, checkpoint retention, all 18 weekly awards, position threads, saved-total rebuild after deletion, combined/audit CSVs, retry safety, year boundary, and return to weekly playoffs');

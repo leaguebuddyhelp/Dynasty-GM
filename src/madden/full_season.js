@@ -79,7 +79,14 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
       await saveFullSeasonRun(run);
     }
   }
-  if (run.status === 'complete') return { ...run.result, duplicate: true, reason: 'The season upgrade/downgrade cards are already posted in your team threads. Apply the targets once; playoff syncs use normal weekly progression.' };
+  if (run.status === 'complete') {
+    if (readProgressionRules().discord.progressionLayout === 'positions') {
+      const publication = await publishFullSeasonTotals({ client, guildId, snapshot, run });
+      run.result = { ...run.result, ...publication };
+      await saveFullSeasonRun(run);
+    }
+    return { ...run.result, duplicate: true, reason: 'Saved season totals are posted in the position threads. Apply final targets once; playoff syncs use normal weekly progression.' };
+  }
   if (phase === 'preseason' || (phase === 'regular' && Number(snapshot.currentWeek) === 1)) return {
     mode: 'full-season', status: run.status, published: false, recommendationCount: 0,
     reason: 'Starting baseline is already saved. Simulate Weeks 1–18, then use full-season sync in the first playoff week. Optional checkpoint syncs preserve earlier stats.',
@@ -106,7 +113,7 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
     run.status = 'collecting';
     await saveFullSeasonRun(run);
     return { mode: 'full-season', status: run.status, published: false, recommendationCount: 0, coverage: run.coverage,
-      reason: `Season data saved: ${run.coverage.completedWeeks}/18 complete weeks. Season upgrade/downgrade cards post in your existing team threads in the first playoff week.` };
+      reason: `Season data saved: ${run.coverage.completedWeeks}/18 complete weeks. Season upgrade/downgrade cards post in your position threads in the first playoff week.` };
   }
   if (phase !== 'playoffs') throw new Error('Full-season rating totals are delivered during playoffs, not offseason.');
   if (!run.coverage.complete) {
@@ -147,7 +154,7 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
     run.awardPosts[week] = result.messageId || 'existing';
     await saveFullSeasonRun(run);
   }
-  if (onProgress) await onProgress('Posting season upgrades and downgrades', 'Posting summed player attribute changes in your existing team threads. Apply each final target once.');
+  if (onProgress) await onProgress('Posting season upgrades and downgrades', 'Posting summed player attribute changes in your position threads. Apply each final target once.');
   const progression = await publishFullSeasonTotals({ client, guildId, snapshot, run });
   run.status = 'complete';
   run.completedAt = new Date().toISOString();
