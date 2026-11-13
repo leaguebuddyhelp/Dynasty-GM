@@ -7,7 +7,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
 } from 'discord.js';
-import { getDataFilePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
+import { getDataFilePath, getMaddenDataFilePath, getMaddenLeaguesDir } from '../leaguebuddy/paths.js';
 import { getSoloModeConfig, isSoloModeEnabled } from '../leaguebuddy/solo_mode.js';
 import { getMaddenChannelId, getMaddenSeasonKey } from '../shared/madden_metadata.js';
 import { getFullTeamName } from '../shared/madden_team_names.js';

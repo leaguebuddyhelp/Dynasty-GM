@@ -222,6 +222,11 @@ assert.ok([...seasonResults.store.values()].some((message) => message.payload.em
 const recapMessageCount = seasonResults.store.size;
 await publishProgressionReports({ client, guildId, snapshot: offseason });
 assert.equal(seasonResults.store.size, recapMessageCount, 'Repeated offseason syncs edit the same recap');
+const deferred = await publishProgressionReports({ client, guildId, snapshot: playoffs });
+assert.equal(deferred.seasonChangesError, undefined, 'Deferring previously posted position recaps must work without missing imports or legacy thread registries');
+assert.ok([...seasonResults.store.values()].every((message) => message.payload.embeds[0].toJSON().title.includes('Offseason Week 1')));
+await publishProgressionReports({ client, guildId, snapshot: offseason });
+assert.equal(seasonResults.store.size, recapMessageCount, 'The first offseason sync reuses the deferred position recap pages');
 const history = JSON.parse(await fs.readFile(getMaddenDataFilePath(`progression_history/${leagueId}.json`), 'utf8'));
 assert.ok(history.periods.year_2028_week_19.recommendations.every((row) => ['1', '2'].includes(row.teamId)));
 const emptyWeek = { ...structuredClone(baseline), leagueId: 'empty-position-week', syncId: 'empty-position-sync' };
