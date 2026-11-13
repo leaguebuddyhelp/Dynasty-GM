@@ -40,7 +40,7 @@ function paginateBlocks(title, blocks, footer) {
     .setTitle(`${title}${pages.length > 1 ? ` · ${index + 1}/${pages.length}` : ''}`.slice(0, 256))
     .setDescription(description).setColor(0x5865f2).setFooter({ text: footer }));
 }
-export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false } = {}) {
+export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false, reportLabel = null, reportFooter = null } = {}) {
   const rows = (fullSeason ? record.application : record.recommendations) || [];
   const grouped = new Map();
   for (const row of rows) {
@@ -68,7 +68,7 @@ export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false
       });
       const positive = attributes.some((attribute) => (fullSeason ? attribute.net : attribute.points) > 0);
       const negative = attributes.some((attribute) => (fullSeason ? attribute.net : attribute.points) < 0);
-      return { header: `${emoji ? `${emoji} ` : ''}**${team.mascot}**`, body: `${positive && negative ? '↕' : positive ? '↑' : '↓'} **${row.player}**${row.position !== position ? ` (${row.position})` : ''}${row.changeContext?.playoffStakes ? ` · Playoffs ×${row.changeContext.playoffStakes.multiplier}` : ''}\n${lines.join(' · ')}` };
+      return { header: `${emoji ? `${emoji} ` : ''}**${team.mascot}**`, body: `${positive && negative ? '↕' : positive ? '↑' : '↓'} **${row.player}**${row.position !== position ? ` (${row.position})` : ''}${row.ovrCeiling < 99 ? ` · **OVR ceiling ${row.ovrCeiling}**` : ''}${row.changeContext?.playoffStakes ? ` · Playoffs ×${row.changeContext.playoffStakes.multiplier}` : ''}\n${lines.join(' · ')}${row.populationReason ? `\n${row.populationReason}` : ''}` };
     });
     const blocks = [];
     let header = '', body = '';
@@ -80,9 +80,9 @@ export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false
       body += `${body ? '\n\n' : ''}${block.body}`;
     }
     if (body) blocks.push(`${header}\n${body}`);
-    const label = fullSeason ? 'Season Total · Weeks 1–18' : `Week ${record.weekNumber}`;
+    const label = reportLabel || (fullSeason ? 'Season Total · Weeks 1–18' : `Week ${record.weekNumber}`);
     result.set(position, { count: list.length, embeds: paginateBlocks(`${position} · ${label}`, blocks,
-      `${String(record.seasonKey).replace(/^year_/, 'Season ')} · ${fullSeason ? 'Summed season changes · Apply final targets ONCE' : 'Apply changes manually in Madden'} · Mascot A–Z, then player A–Z`) });
+      reportFooter || `${String(record.seasonKey).replace(/^year_/, 'Season ')} · ${fullSeason ? 'Summed season changes · Apply final targets ONCE' : 'Apply changes manually in Madden'} · Mascot A–Z, then player A–Z`) });
   }
   return result;
 }

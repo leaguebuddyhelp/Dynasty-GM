@@ -18,6 +18,8 @@ import { normalizePlayoffProgressionSnapshot, hasPlayoffPlayerData } from './pla
 import { loadFullSeasonRun, matchesFullSeason } from './full_season_store.js';
 import { buildTeamReportIndex } from './report_navigation.js';
 import { getFranchisePhase } from './franchise_phase.js';
+import { buildPopulationCapPlan } from './population_caps.js';
+import { isolateSeasonStats } from './season_stat_isolation.js';
 import { positionThreadKey, ensurePositionThreads, buildPositionChangeEmbeds, publishPositionPages, buildSeasonResultEmbeds } from './position_reports.js';
 import { stablePlayerKey } from './player_identity.js';
 import { getLatestReliableRegularSeasonWeekIndex } from './top_players.js';
@@ -1167,6 +1169,47 @@ function playedTeamIds(snapshot, weekIndex) {
     .map((row) => row.teamId).filter((id) => id != null).map(String));
 }
 
+export function getRatingPopulationPlan(snapshot, rules = readRules().progression, history = { periods: {} }) {
+  const { players, aliases } = getRosterPlayers(snapshot);
+  const normalized = normalizePlayoffProgressionSnapshot({ ...snapshot, weeklyStats: isolateSeasonStats(snapshot.weeklyStats, snapshot) });
+  const phase = getFranchisePhase(snapshot);
+  const endWeek = phase === 'offseason' ? 22 : phase === 'preseason' ? -1 : resolveProgressionWeek(normalized) ?? -1;
+  normalized.weeklyStats = normalized.weeklyStats.filter((week) => Number(week.weekIndex) <= endWeek);
+  const byWeek = buildWeeklyPlayerStats(normalized, aliases, { requestedWeekIndex: endWeek, includePostseason: true });
+  clearOffensiveLineStats(byWeek, players);
+  if (endWeek >= 0) addOffensiveLineProxies(normalized, players, aliases, byWeek, endWeek);
+  restoreLineObservations(byWeek, players, history, getMaddenSeasonKey(snapshot), endWeek);
+  const policy = rules.populationCaps;
+  const evidence = players.filter((player) => player.ovr !== null).map((player) => {
+    const positionKey = progressionPositionKey(player.position, rules.weekly.positions);
+    const role = positionKey ? rolePositionRule(player, positionKey, rules.weekly) : null;
+    const rows = [...byWeek.entries()].sort(([a], [b]) => a - b).map(([, week]) => week.get(player.key)).filter((row) => row && opportunityConfirmed(row.totals, positionKey, rules.weekly)
+      && !row.missingTeamId && (!row.observedTeamIds || row.observedTeamIds.size > 0));
+    const games = rows.length;
+    const { totals, averages } = seasonStatSummaries(rows);
+    let rawScore = role ? performanceMetrics(averages, 70, role, rules.weekly).score : 75;
+    const attempts = Number(totals.passAtt || 0);
+    if (player.position === 'QB' && attempts > 0) {
+      // A shared, uncapped production/efficiency index distinguishes elite QBs
+      // even when their ordinary game grades have all saturated at 100.
+      rawScore = clamp(45 * (Number(totals.passComp || 0) / attempts / 0.70)
+        + 25 * (Number(totals.passYds || 0) / attempts / 8.5)
+        + 25 * (Number(totals.passTDs || 0) / attempts / 0.065)
+        - 25 * (Number(totals.passInts || 0) / attempts / 0.025)
+        + 5 * (Number(totals.passYds || 0) / Math.max(1, games) / 275), 0, 150);
+    }
+    const completeQbStats = player.position !== 'QB' || rows.every((row) => ['passAtt', 'passComp', 'passYds', 'passTDs', 'passInts'].every((field) => numberOrNull(row.totals[field]) !== null));
+    const sufficient = player.position === 'QB' ? completeQbStats && games >= policy.minimumQbGames && attempts >= policy.minimumQbAttempts : games >= 3;
+    return { playerKey: player.key, player: player.name, teamId: player.teamId, team: player.team, position: player.position,
+      currentOvr: player.ovr, yearsPro: experienceYears(player), games, attempts, rawScore, rankScore: sufficient ? rawScore : 75,
+      eligibleForGrowth: !['offseason', 'preseason'].includes(phase)
+        && (player.position === 'QB' ? completeQbStats && games >= 2 && attempts >= 50 : games >= 3) && rawScore >= 75
+        && role && rows.at(-1) && performanceMetrics(rows.at(-1).totals, 70, role, rules.weekly).score >= 75
+        && getEvidenceAttributes(rows.at(-1).totals, player, rules.weekly, role).length > 0,
+      sufficientSample: sufficient, passingYards: Number(totals.passYds || 0), touchdowns: Number(totals.passTDs || 0), interceptions: Number(totals.passInts || 0) };
+  });
+  return buildPopulationCapPlan(evidence, policy, (snapshot.teams?.leagueTeamInfoList || []).map((team) => String(team.teamId)));
+}
 export function buildWeeklyProgressionRecommendations(snapshot, {
   weekIndex,
   awardWinners = {},
@@ -1175,6 +1218,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   rules = readRules().progression,
 } = {}) {
   const weeklyRules = rules.weekly;
+  const capPlan = rules.populationCaps?.enabled ? getRatingPopulationPlan(snapshot, rules, history) : null;
   const seasonKey = getMaddenSeasonKey(snapshot);
   const weekNumber = Number(weekIndex) + 1;
   const { players, aliases } = getRosterPlayers(snapshot);
@@ -1391,6 +1435,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     }
     if (reserve) evidence = evidence.filter((item) => item.evidence !== 'currentGameScore').slice(0, Number(volume.maximumAttributes));
     if (!direction || !evidence.length || !points) continue;
+    const ovrCeiling = capPlan?.ceilings[player.key] ?? 99;
+    if (direction === 'upgrade' && player.ovr >= ovrCeiling) continue;
     if (direction === 'upgrade') {
       priorityBase += pipeline.selectionBonus;
       selectionAdjustments.developmentPipeline = pipeline.selectionBonus;
@@ -1533,6 +1579,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       seasonToDateScore: windows.seasonScore,
       explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
+    selected.ovrCeiling = ovrCeiling;
     selected.eligibilityTier = reserve ? 'reserve' : 'primary';
     selected.changeContext = { playoffStakes: playoffExtraPoints ? { multiplier: Number(stakes.multiplier), extraAttributePoints: playoffExtraPoints } : null, seasonProduction: productionBonus ? production : null,
       teamForm: teamMultiplier > 1 ? { ...form, multiplier: teamMultiplier } : null, reserveSelection: reserve, gameplayMomentum: !reserve && gameplayMomentum, rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
@@ -2210,7 +2257,9 @@ async function positionRegistry(client, guildId) {
 }
 async function publishWeeklyPositionReports(client, guildId, snapshot, record, history) {
   const registry = await positionRegistry(client, guildId);
-  const groups = buildPositionChangeEmbeds(snapshot, record);
+  const limits = readRules().progression.populationCaps?.enabled ? getRatingPopulationPlan(snapshot, readRules().progression, history) : null;
+  const display = { ...record, recommendations: record.recommendations.map((row) => ({ ...row, ovrCeiling: limits?.ceilings[row.playerKey] ?? row.ovrCeiling ?? 99 })) };
+  const groups = buildPositionChangeEmbeds(snapshot, display);
   const reports = await publishPositionPages({ client, guildId, registry, record, groups, save: () => saveHistory(record.leagueId, history) });
   const upgrades = record.recommendations.filter((item) => item.direction === 'upgrade').length;
   const reportUrl = reports.length ? await publishReportIndex(client, guildId, registry, record, history, buildTeamReportIndex({
@@ -2636,7 +2685,9 @@ export async function publishFullSeasonTotals({ client, guildId, snapshot, run }
   }
   await saveHistory(snapshot.leagueId, history);
   if (usesPositionThreads()) {
-    const groups = buildPositionChangeEmbeds(snapshot, record, { fullSeason: true });
+    const limits = rules.populationCaps?.enabled ? getRatingPopulationPlan(snapshot, rules, history) : null;
+    const display = { ...record, application: record.application.map((row) => ({ ...row, ovrCeiling: limits?.ceilings[row.playerKey] ?? 99 })) };
+    const groups = buildPositionChangeEmbeds(snapshot, display, { fullSeason: true });
     const reports = await publishPositionPages({ client, guildId, registry, record, groups, save: () => saveHistory(snapshot.leagueId, history) });
     const totals = run.totals;
     const embed = buildTeamReportIndex({ title: `📋 ${seasonLabel(run.seasonKey)} · Season Changes by Position`,

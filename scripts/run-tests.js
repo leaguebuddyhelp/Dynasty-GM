@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const scripts = [
+  'test_population_caps.js',
   'test_position_boom_bust.js',
   'test_position_reports.js',
   'test_full_season_sync.js',

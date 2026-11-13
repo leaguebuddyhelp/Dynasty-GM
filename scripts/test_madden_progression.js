@@ -872,8 +872,11 @@ for (let index = 0; index < 36; index += 1) {
   });
 }
 league.weeklyStats = [{ weekIndex: 1, stage: 1, passing: { playerPassingStatInfoList: leagueStats } }];
+// Isolate league-volume selection here; population scarcity is tested separately.
+const volumeRules = structuredClone(baseRules);
+volumeRules.populationCaps.enabled = false;
 const leagueRecord = buildWeeklyProgressionRecommendations(league, {
-  weekIndex: 1, rules: baseRules, history: { periods: {}, seasonAwards: {} },
+  weekIndex: 1, rules: volumeRules, history: { periods: {}, seasonAwards: {} },
 });
 assert.equal(leagueRecord.recommendations.length, 30);
 assert.equal(leagueRecord.selectionDiagnostics.preferredMinimum, 20);
@@ -884,7 +887,7 @@ assert.ok(leagueRecord.recommendations.every((item) => item.attributes.length > 
 const limitedLeague = structuredClone(league);
 limitedLeague.weeklyStats[0].passing.playerPassingStatInfoList = leagueStats.slice(0, 4);
 const limitedRecord = buildWeeklyProgressionRecommendations(limitedLeague, {
-  weekIndex: 1, rules: baseRules, history: { periods: {}, seasonAwards: {} },
+  weekIndex: 1, rules: volumeRules, history: { periods: {}, seasonAwards: {} },
 });
 assert.equal(limitedRecord.recommendations.length, 4);
 assert.equal(limitedRecord.selectionDiagnostics.eligibleCandidates, 4);

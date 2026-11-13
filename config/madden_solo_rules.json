@@ -69,6 +69,23 @@
       "minimumOffseasonGames": 8,
       "minimumExcellentSeasonShare": 0.6
     },
+    "populationCaps": {
+      "enabled": true,
+      "quarterbacks90PlusTarget": [5, 7],
+      "quarterbacks90PlusMaximum": 7,
+      "quarterbacks80PlusMaximum": 18,
+      "quarterbacks70PlusMaximum": 40,
+      "overall90PlusMaximum": 90,
+      "overall80PlusMaximum": 400,
+      "minimumQbGames": 6,
+      "minimumQbAttempts": 150,
+      "minimumChallengerOvr": 80,
+      "minimumEliteQbScore": 85,
+      "draftNeedTarget": [3, 4],
+      "viableStarterOvr": 75,
+      "poorStarterScore": 55,
+      "maximumDevelopingYearsPro": 2
+    },
     "weekly": {
       "maximumRecommendations": 30,
       "playoffRecommendationsPerTeam": [1, 5],
@@ -929,7 +946,7 @@
     "softBalancing": {
       "teamPenaltyPerPriorSelection": 3,
       "positionPenaltyPerPriorSelection": 2,
-      "global80PlusTarget": [325, 375],
+      "global80PlusTarget": [325, 400],
       "global90PlusTarget": [75, 90],
       "quarterback80PlusTarget": [13, 18],
       "quarterback70PlusTarget": [35, 40],

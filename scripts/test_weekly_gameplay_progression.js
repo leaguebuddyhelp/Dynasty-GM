@@ -8,6 +8,8 @@ assert.equal(getFranchisePhase({ currentWeek: 1, info: { careerHubInfo: { season
 assert.equal(getFranchisePhase({ currentWeek: 23, info: { careerHubInfo: { seasonInfo: { seasonWeekType: 5, seasonTitle: 'Playoffs', offSeasonStage: 10 } } } }), 'playoffs');
 const rules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
 const calibrated = structuredClone(rules);
+// These fixtures isolate gameplay strength and round volume; cap policy has its own integration tests.
+calibrated.populationCaps.enabled = false;
 calibrated.weekly.performanceWeight = 1;
 calibrated.weekly.expectationWeight = 0;
 calibrated.weekly.positions.QB.weights = { passTDs: 20 };

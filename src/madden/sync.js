@@ -71,6 +71,9 @@ async function postDataImportSummary(client, guildId, summary) {
     )
     .setTimestamp(new Date(summary.syncedAt));
   appendProgressionResultFields(embed, summary.progression);
+  if (summary.populationCaps) embed.addFields({ name: 'Hard roster limits', value: summary.populationCaps.posted
+    ? `${summary.populationCaps.adjustments} manual OVR targets · [Open cap targets](${summary.populationCaps.reportUrl}) · Apply in Madden, then sync to verify.`
+    : `Failed: ${summary.populationCaps.error || summary.populationCaps.reason}` });
   await channel.send({ embeds: [embed] });
   return { posted: true, channelId };
 }
@@ -708,6 +711,13 @@ async function runSyncInternal(leagueId, provider, options = {}) {
         }
       }
       try {
+        const { publishPopulationCaps } = await import('./population_caps.js');
+        result.populationCaps = await publishPopulationCaps({ client: options.client, guildId: options.guildId, snapshot });
+      } catch (error) {
+        result.populationCaps = { posted: false, error: error.message };
+        console.error('[population-caps] report failed', error);
+      }
+      try {
         result.dataImportSummary = await postDataImportSummary(options.client, options.guildId, result);
       } catch (error) {
         result.dataImportSummary = { posted: false, error: error?.message || String(error) };
@@ -852,6 +862,7 @@ async function execute(interaction) {
         { name: 'Coverage', value: `Schedule weeks: ${summary.coverage?.scheduleWeeks ?? 0}\nMissing stat buckets: ${summary.coverage?.missingBuckets?.length ?? 0}`, inline: true },
         ...(soloReportStatus ? [{ name: 'Solo reports', value: soloReportStatus, inline: false }] : []),
         ...(progressionStatus ? [{ name: 'Player progression', value: progressionStatus, inline: false }] : []),
+        ...(summary.populationCaps ? [{ name: 'Hard roster limits', value: summary.populationCaps.posted ? `[Open ${summary.populationCaps.adjustments} manual OVR targets](${summary.populationCaps.reportUrl})` : `Failed: ${summary.populationCaps.error || summary.populationCaps.reason}`, inline: false }] : []),
         ...(weeklyAwardsStatus ? [{ name: 'Weekly awards', value: weeklyAwardsStatus, inline: false }] : []),
         ...(top100Status ? [{ name: 'Top 100', value: top100Status, inline: false }] : []),
         ...(draftGradesStatus ? [{ name: 'Draft grades', value: draftGradesStatus, inline: false }] : []),

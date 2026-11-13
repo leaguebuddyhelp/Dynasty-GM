@@ -11,6 +11,7 @@ export async function execute(interaction) {
       { name: 'Franchise Data', value: '`/sync` · `/schedule` · `/roster` · `/playersearch` · `/awards`' },
       { name: 'Draft', value: '`/bigboard` · `/mockdraft` · `/draftexport`' },
       { name: 'Progression', value: 'Review changes in the 21 position threads in `#player-upgrades`, grouped by mascot A–Z. Apply each posted target manually in Madden. Top 10 risers/fallers appear in Season Results from offseason Week 1.' },
+      { name: 'Roster Rating Limits', value: 'Every sync posts manual OVR targets in the position threads when rating caps require changes. Apply demotions before promotions, apply caps after gameplay edits, then sync to verify. Elite QBs: at most seven; all players 80+: at most 400.' },
       { name: 'Connection Check', value: '`/ping`' },
     )] });
 }
