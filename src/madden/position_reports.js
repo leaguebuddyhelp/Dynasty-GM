@@ -114,7 +114,7 @@ async function ensurePositionThreadsInternal({ client, guildId, channelId, archi
     if (!thread?.isThread()) thread = existing.get(name.toLowerCase());
     if (thread?.parentId && thread.parentId !== channelId) thread = null;
     if (!thread) {
-      const starter = await parent.send({ content: name === 'Season Results' ? '**Season Results** · Top 10 risers/fallers from playoff Week 2.' : `**${name}** · Weekly player changes and summed season totals.` });
+      const starter = await parent.send({ content: name === 'Season Results' ? '**Season Results** · Top 10 risers/fallers from offseason Week 1.' : `**${name}** · Weekly player changes and summed season totals.` });
       thread = await starter.startThread({ name, autoArchiveDuration: archiveDuration, reason: 'Madden position progression reports' });
     }
     if (thread.archived) await thread.setArchived(false, 'Madden position reports');

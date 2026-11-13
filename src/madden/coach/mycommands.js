@@ -10,7 +10,7 @@ export async function execute(interaction) {
       { name: 'Full-season simulation', value: 'Before Week 1, run `/sync mode:full-season` to save your starting ratings. Sim Weeks 1–18, then run it again in the first playoff week for all weekly awards and summed upgrade/downgrade cards in your position threads. Optional checkpoint syncs preserve earlier stats.' },
       { name: 'Franchise Data', value: '`/sync` · `/schedule` · `/roster` · `/playersearch` · `/awards`' },
       { name: 'Draft', value: '`/bigboard` · `/mockdraft` · `/draftexport`' },
-      { name: 'Progression', value: 'Review changes in the 21 position threads in `#player-upgrades`, grouped by mascot A–Z. Apply each posted target manually in Madden. Top 10 risers/fallers appear in Season Results from playoff Week 2.' },
+      { name: 'Progression', value: 'Review changes in the 21 position threads in `#player-upgrades`, grouped by mascot A–Z. Apply each posted target manually in Madden. Top 10 risers/fallers appear in Season Results from offseason Week 1.' },
       { name: 'Connection Check', value: '`/ping`' },
     )] });
 }
