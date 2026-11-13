@@ -752,6 +752,8 @@ assert.equal(offseasonNegative.direction, 'downgrade');
 assert.equal(offseasonNegative.attributes.length, 2);
 
 const defensiveRules = structuredClone(rules);
+// This fixture isolates alias aggregation using its explicitly calibrated DEF scale.
+delete defensiveRules.weekly.rolePerformance;
 defensiveRules.weekly.meaningfulOpportunityMinimums.DEF = { defPassDeflections: 1 };
 defensiveRules.weekly.positions.DEF = {
   scale: 10,

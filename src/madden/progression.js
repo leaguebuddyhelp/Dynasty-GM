@@ -18,7 +18,7 @@ import { normalizePlayoffProgressionSnapshot, hasPlayoffPlayerData } from './pla
 import { loadFullSeasonRun, matchesFullSeason } from './full_season_store.js';
 import { buildTeamReportIndex } from './report_navigation.js';
 import { getFranchisePhase } from './franchise_phase.js';
-import { ensurePositionThreads, buildPositionChangeEmbeds, publishPositionPages, buildSeasonResultEmbeds } from './position_reports.js';
+import { positionThreadKey, ensurePositionThreads, buildPositionChangeEmbeds, publishPositionPages, buildSeasonResultEmbeds } from './position_reports.js';
 import { stablePlayerKey } from './player_identity.js';
 import { getLatestReliableRegularSeasonWeekIndex } from './top_players.js';
 
@@ -370,11 +370,45 @@ function addOffensiveLineProxies(snapshot, players, aliases, byWeek, weekIndex) 
     const scores = [totals.teamRunScore, totals.teamPassScore].filter((score) => score != null);
     if (!scores.length) continue;
     totals.teamLineScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-    week.set(player.key, { playerKey: player.key, position: player.position, games: 1, totals });
+    week.set(player.key, { playerKey: player.key, position: player.position, games: 1, totals, observedTeamIds: new Set([player.teamId]), observedPositions: new Set([player.position]), missingTeamId: false });
   }
   if (week.size) byWeek.set(weekIndex, week);
 }
 
+function rolePositionRule(player, positionKey, rules) {
+  const base = rules.positions[positionKey];
+  if (!base) return null;
+  const role = rules.rolePerformance?.[positionThreadKey(player.position)] || rules.rolePerformance?.[positionKey];
+  return role ? { ...base, ...role } : base;
+}
+function specialistGameScore(stats, policy) {
+  if (policy === 'kicker') {
+    const attempts = numberOrNull(stats.fgAtt), made = numberOrNull(stats.fgMade);
+    if (attempts > 0 && made !== null) return clamp(made / attempts * 100 - (attempts - made) * 15, 0, 100);
+    const xpAttempts = numberOrNull(stats.xpAtt), xpMade = numberOrNull(stats.xpMade);
+    if (xpAttempts >= 2 && xpMade !== null) return clamp(xpMade / xpAttempts * 65 - (xpAttempts - xpMade) * 20, 0, 65);
+  }
+  if (policy === 'punter') {
+    const attempts = numberOrNull(stats.pntAtt);
+    const gross = numberOrNull(stats.pntYdsPerAtt), net = numberOrNull(stats.pntNetYdsPerAtt);
+    if (attempts >= 2 && gross !== null) return clamp((net !== null ? (net - 28) * 4 + Math.max(0, gross - 40) * 2 : (gross - 32) * 5)
+      + Number(stats.pntInside20 || 0) / attempts * 20 - Number(stats.puntsBlocked || 0) * 20, 0, 100);
+  }
+  return null;
+}
+function restoreLineObservations(byWeek, players, history, seasonKey, endWeek) {
+  const currentPlayers = new Map(players.filter((player) => OFFENSIVE_LINE_POSITIONS.has(player.position)).map((player) => [player.key, player]));
+  for (const period of Object.values(history.periods || {})) {
+    if (period.seasonKey !== seasonKey || period.weekIndex >= endWeek) continue;
+    for (const [key, observed] of Object.entries(period.lineProxyObservations || {})) {
+      const player = currentPlayers.get(key);
+      if (!player || player.teamId !== observed.teamId || player.position !== observed.position) continue;
+      const week = byWeek.get(period.weekIndex) || new Map();
+      week.set(key, { playerKey: key, position: player.position, games: 1, totals: observed.totals });
+      byWeek.set(period.weekIndex, week);
+    }
+  }
+}
 function performanceRaw(stats, positionRule) {
   return Object.entries(positionRule?.weights || {}).reduce((total, [field, weight]) =>
     total + Number(stats?.[field] || 0) * Number(weight), 0);
@@ -382,6 +416,8 @@ function performanceRaw(stats, positionRule) {
 
 function performanceMetrics(stats, ovr, positionRule, rules) {
   if (!positionRule) return null;
+  const efficiency = specialistGameScore(stats, positionRule.efficiency);
+  if (efficiency !== null) return { raw: efficiency, performanceScore: efficiency, expectationScore: efficiency, score: efficiency };
   const raw = Math.max(0, performanceRaw(stats, positionRule));
   const performance = clamp(raw / Number(positionRule.scale) * 100, 0, 100);
   const expected = Number(positionRule.expectedAt70)
@@ -871,6 +907,7 @@ function stableHash(value) {
 
 function selectWithSoftBalance(candidates, rules, maximum, { balanceDirections = false } = {}) {
   const remaining = [...candidates];
+  const groupFor = (position) => rules.positionOpportunityBalance?.enabled ? positionThreadKey(position) || positionGroup(position) : positionGroup(position);
   const selected = [];
   const teamCount = new Map();
   const positionCount = new Map();
@@ -885,13 +922,16 @@ function selectWithSoftBalance(candidates, rules, maximum, { balanceDirections =
         - Number(teamCount.get(b.teamId) || 0) * Number(rules.teamBalancePenalty)
         - Number(positionCount.get(b.position) || 0) * Number(rules.positionBalancePenalty);
       const groupDifference = balanceDirections
-        ? (groupCount.get(positionGroup(a.position)) || 0) - (groupCount.get(positionGroup(b.position)) || 0)
+        ? (groupCount.get(groupFor(a.position)) || 0) - (groupCount.get(groupFor(b.position)) || 0)
         : 0;
       return groupDifference || bPriority - aPriority || a.player.localeCompare(b.player);
     });
     const preferred = directionCount.upgrade <= directionCount.downgrade ? 'upgrade' : 'downgrade';
+    const eligible = remaining.filter((candidate) => candidate.selectionScore >= Number(candidate.minimumSelectionScore));
+    const minimumGroupCount = eligible.length ? Math.min(...eligible.map((candidate) => groupCount.get(groupFor(candidate.position)) || 0)) : 0;
     const eligibleIndex = balanceDirections ? remaining.findIndex((candidate) =>
-      candidate.direction === preferred && candidate.selectionScore >= Number(candidate.minimumSelectionScore)) : -1;
+      candidate.direction === preferred && candidate.selectionScore >= Number(candidate.minimumSelectionScore)
+      && (!rules.positionOpportunityBalance?.enabled || (groupCount.get(groupFor(candidate.position)) || 0) === minimumGroupCount)) : -1;
     const next = remaining.splice(eligibleIndex < 0 ? 0 : eligibleIndex, 1)[0];
     const selectionScore = next.selectionScore
       - Number(teamCount.get(next.teamId) || 0) * Number(rules.teamBalancePenalty)
@@ -908,7 +948,7 @@ function selectWithSoftBalance(candidates, rules, maximum, { balanceDirections =
     directionCount[next.direction] += 1;
     teamCount.set(next.teamId, (teamCount.get(next.teamId) || 0) + 1);
     positionCount.set(next.position, (positionCount.get(next.position) || 0) + 1);
-    const group = positionGroup(next.position);
+    const group = groupFor(next.position);
     const groupWeight = group === 'K' || group === 'P' ? 3 : 1;
     groupCount.set(group, (groupCount.get(group) || 0) + groupWeight);
   }
@@ -931,7 +971,7 @@ function getPlayerWindowScores(playerKey, player, byWeek, endWeek, positionKey, 
     .sort(([a], [b]) => a - b)
     .map(([weekIndex, players]) => ({ weekIndex, row: players.get(playerKey) }))
     .filter(({ row }) => row?.games);
-  const positionRule = weeklyRules.positions[positionKey];
+  const positionRule = rolePositionRule(player, positionKey, weeklyRules);
   const metrics = gameRows.map(({ weekIndex, row }) => ({
     weekIndex,
     row,
@@ -985,6 +1025,7 @@ function selectNegativeAttributes(stats, player, position, rules, games = 1, max
   const selected = [];
   const usedFields = new Set();
   for (const check of checks) {
+    if (check.positions && !check.positions.includes(player.position)) continue;
     const requiredFields = [check.field, check.opportunityField];
     if (check.minimumMisses !== undefined) requiredFields.push(check.attemptsField);
     if (check.maximumRate !== undefined) requiredFields.push(check.rateField);
@@ -1140,6 +1181,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   const byWeek = buildWeeklyPlayerStats(snapshot, aliases);
   clearOffensiveLineStats(byWeek, players);
   addOffensiveLineProxies(snapshot, players, aliases, byWeek, Number(weekIndex));
+  restoreLineObservations(byWeek, players, history, seasonKey, Number(weekIndex));
   const weekPlayers = byWeek.get(Number(weekIndex)) || new Map();
   const observations = inactivityObservations(snapshot, players, byWeek, Number(weekIndex));
   const recentAwardWinners = Array.from({ length: Math.min(4, Number(weekIndex) + 1) }, (_, index) =>
@@ -1161,7 +1203,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     }
     const positionRules = weeklyRules.positions;
     const positionKey = progressionPositionKey(player.position, positionRules);
-    const positionRule = positionKey ? positionRules[positionKey] : null;
+    const positionRule = positionKey ? rolePositionRule(player, positionKey, weeklyRules) : null;
     if (!positionRule) {
       if (weeklyAwards) awardReasons.set(player.key, 'No progression rules for this position.');
       continue;
@@ -1425,7 +1467,15 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         magnitude += Number(outcomePolicy.highPickExtraPrimaryPoints);
       }
       if (direction === 'upgrade' && productionUpgrade && index < production.attributes && attribute.evidence !== 'currentGameScore') magnitude += production.extraPoints;
-      magnitude = reserve ? 1 : Math.min(maxPoints, Math.ceil(magnitude * teamMultiplier));
+      const line = weeklyRules.lineMomentum;
+      if (positionKey === 'OL' && line) {
+        const recentLine = windows.metrics.slice(-Number(line.minimumGames));
+        const sustainedLine = recentLine.length === Number(line.minimumGames) && recentLine.every(({ score }) =>
+          direction === 'upgrade' ? score >= Number(line.minimumStrongScore) : score <= Number(line.maximumPoorScore));
+        if (sustainedLine && index < 2) magnitude += 1;
+        magnitude = Math.min(Number(line.maximumAttributePoints), magnitude);
+      }
+      magnitude = reserve ? 1 : Math.min(positionKey === 'OL' && weeklyRules.lineMomentum ? Number(weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints, Math.ceil(magnitude * teamMultiplier));
       return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
     });
     if (!allocation.length) continue;
@@ -1474,11 +1524,20 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   const selectGroup = (pool, maximum, minimum) => {
     const awards = pool.filter((candidate) => candidate.direction === 'upgrade' && candidate.awardPoints > 0)
       .sort((a, b) => b.selectionScore - a.selectionScore || a.player.localeCompare(b.player));
+    const primary = pool.filter((candidate) => !awards.includes(candidate) && candidate.eligibilityTier !== 'reserve');
+    const unrepresented = [];
+    if (weeklyRules.positionOpportunityBalance?.includeUnrepresentedReserves) {
+      const represented = new Set([...primary, ...awards].filter((candidate) => candidate.selectionScore >= candidate.minimumSelectionScore).map((candidate) => positionThreadKey(candidate.position)));
+      for (const candidate of pool.filter((candidate) => candidate.eligibilityTier === 'reserve' && candidate.selectionScore >= candidate.minimumSelectionScore).sort((a, b) => b.selectionScore - a.selectionScore)) {
+        const key = positionThreadKey(candidate.position);
+        if (!represented.has(key)) { represented.add(key); unrepresented.push(candidate); }
+      }
+    }
     const picked = [...awards.slice(0, maximum), ...selectWithSoftBalance(
-      pool.filter((candidate) => !awards.includes(candidate) && candidate.eligibilityTier !== 'reserve'),
+      [...primary, ...unrepresented],
       weeklyRules, Math.max(0, maximum - awards.length), { balanceDirections: true })];
     if (picked.length < minimum) picked.push(...selectWithSoftBalance(
-      pool.filter((candidate) => candidate.eligibilityTier === 'reserve' && !picked.includes(candidate)),
+      pool.filter((candidate) => candidate.eligibilityTier === 'reserve' && !picked.some((item) => item.playerKey === candidate.playerKey)),
       weeklyRules, minimum - picked.length, { balanceDirections: true }));
     return picked;
   };
@@ -1495,6 +1554,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     population,
     rules,
   });
+  record.lineProxyObservations = Object.fromEntries(players.filter((player) => OFFENSIVE_LINE_POSITIONS.has(player.position) && weekPlayers.has(player.key)).map((player) =>
+    [player.key, { teamId: player.teamId, position: player.position, totals: structuredClone(weekPlayers.get(player.key).totals) }]));
   record.selectionDiagnostics = {
     eligibleCandidates: candidates.filter((candidate) =>
       candidate.selectionScore >= candidate.minimumSelectionScore).length,
@@ -2399,7 +2460,7 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   if (old && ((old.gameplayPolicyVersion >= 1 && old.recommendations?.length > 0) || Object.values(old.statusById || {}).some((status) => status.status === 'applied'))) {
     record = {
       ...old,
-      ...(type === 'weekly' ? { inactivityObservations: current.inactivityObservations } : {}),
+      ...(type === 'weekly' ? { inactivityObservations: current.inactivityObservations, lineProxyObservations: current.lineProxyObservations } : {}),
       latestSyncId: current.syncId,
       syncIds: [...new Set([...(old.syncIds || [old.syncId]), current.syncId].filter(Boolean))],
       updatedAt: new Date().toISOString(),

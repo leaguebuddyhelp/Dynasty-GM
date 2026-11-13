@@ -283,7 +283,7 @@
         "FB": { "rushAtt": 3, "recCatches": 2 },
         "WR": { "recCatches": 2 },
         "TE": { "recCatches": 2 },
-        "DEF": { "defTotalTackles": 2, "defSacks": 1, "defInts": 1, "defPassDeflections": 1 },
+        "DEF": { "defTotalTackles": 2, "defSacks": 1, "defInts": 1, "defPassDeflections": 1, "defCatchAllowed": 3 },
         "OL": { "teamRushAtt": 10, "teamPassAtt": 10 },
         "K": { "fgAtt": 1, "xpAtt": 1 },
         "P": { "pntAtt": 2 }
@@ -313,10 +313,64 @@
           { "attribute": "Pass Blocking", "field": "teamSacks", "minimum": 4, "minimumOpportunities": 10, "opportunityField": "teamPassAtt" }
         ],
         "K": [
-          { "attribute": "Kick Accuracy", "field": "fgMade", "minimumMisses": 2, "minimumOpportunities": 3, "opportunityField": "fgAtt", "attemptsField": "fgAtt" }
+          {
+            "attribute": "Kick Accuracy",
+            "field": "fgMade",
+            "minimumMisses": 2,
+            "minimumOpportunities": 2,
+            "opportunityField": "fgAtt",
+            "attemptsField": "fgAtt"
+          },
+          {
+            "attribute": "Kick Accuracy",
+            "field": "xpMade",
+            "minimumMisses": 2,
+            "minimumOpportunities": 3,
+            "opportunityField": "xpAtt",
+            "attemptsField": "xpAtt"
+          }
         ],
         "P": [
           { "attribute": "Kick Power", "field": "pntYds", "maximumRate": 38, "minimumOpportunities": 3, "opportunityField": "pntAtt", "rateField": "pntAtt" }
+        ],
+        "DEF": [
+          {
+            "attribute": "Man Coverage",
+            "field": "defCatchAllowed",
+            "minimum": 6,
+            "minimumOpportunities": 6,
+            "opportunityField": "defCatchAllowed",
+            "positions": [
+              "CB",
+              "FS",
+              "SS",
+              "DB",
+              "S"
+            ]
+          },
+          {
+            "attribute": "Zone Coverage",
+            "field": "defCatchAllowed",
+            "minimum": 8,
+            "minimumOpportunities": 8,
+            "opportunityField": "defCatchAllowed",
+            "positions": [
+              "CB",
+              "FS",
+              "SS",
+              "DB",
+              "S",
+              "LOLB",
+              "MLB",
+              "ROLB",
+              "LB",
+              "ILB",
+              "OLB",
+              "SAM",
+              "MIKE",
+              "WILL"
+            ]
+          }
         ]
       },
       "attributeFields": {
@@ -467,15 +521,144 @@
           "expectedPerOvr": 0.12,
           "weights": { "defTotalTackles": 0.75, "defSacks": 4, "defInts": 5, "defForcedFumbles": 3, "defRecoveredFumbles": 2, "defPassDeflections": 2, "defTDs": 7, "defSafeties": 7 },
           "attributes": [
-            { "attribute": "Tackling", "evidence": "defTotalTackles", "minimum": 5 },
-            { "attribute": "Power Moves", "evidence": "defSacks", "minimum": 1, "positions": ["LE", "RE", "DT", "DE", "EDGE", "NT", "DL", "LEDGE", "REDGE", "LEDG", "REDG", "LDE", "RDE", "LOLB", "ROLB", "OLB", "SAM", "WILL"] },
-            { "attribute": "Zone Coverage", "evidence": "defInts", "minimum": 1, "positions": ["CB", "FS", "SS", "DB", "S", "MLB", "LB", "ILB", "MIKE", "LOLB", "ROLB", "OLB", "SAM", "WILL"] },
-            { "attribute": "Play Recognition", "evidence": "defPassDeflections", "minimum": 1 },
-            { "attribute": "Hit Power", "evidence": "defForcedFumbles", "minimum": 1 },
-            { "attribute": "Pursuit", "evidence": "defTotalTackles", "minimum": 6 },
-            { "attribute": "Finesse Moves", "evidence": "defSacks", "minimum": 1, "positions": ["LE", "RE", "DT", "DE", "EDGE", "NT", "DL", "LEDGE", "REDGE", "LEDG", "REDG", "LDE", "RDE", "LOLB", "ROLB", "OLB", "SAM", "WILL"] },
-            { "attribute": "Man Coverage", "evidence": "defPassDeflections", "minimum": 1, "positions": ["CB", "FS", "SS", "DB", "S", "MLB", "LB", "ILB", "MIKE"] }
-          ]
+            {
+              "attribute": "Tackling",
+              "evidence": "defTotalTackles",
+              "minimum": 3
+            },
+            {
+              "attribute": "Power Moves",
+              "evidence": "defSacks",
+              "minimum": 1,
+              "positions": [
+                "LE",
+                "RE",
+                "DT",
+                "DE",
+                "EDGE",
+                "NT",
+                "DL",
+                "LEDGE",
+                "REDGE",
+                "LEDG",
+                "REDG",
+                "LDE",
+                "RDE",
+                "LOLB",
+                "ROLB",
+                "OLB",
+                "SAM",
+                "WILL"
+              ]
+            },
+            {
+              "attribute": "Zone Coverage",
+              "evidence": "defInts",
+              "minimum": 1,
+              "positions": [
+                "CB",
+                "FS",
+                "SS",
+                "DB",
+                "S",
+                "MLB",
+                "LB",
+                "ILB",
+                "MIKE",
+                "LOLB",
+                "ROLB",
+                "OLB",
+                "SAM",
+                "WILL"
+              ]
+            },
+            {
+              "attribute": "Play Recognition",
+              "evidence": "defPassDeflections",
+              "minimum": 1
+            },
+            {
+              "attribute": "Hit Power",
+              "evidence": "defForcedFumbles",
+              "minimum": 1
+            },
+            {
+              "attribute": "Pursuit",
+              "evidence": "defTotalTackles",
+              "minimum": 6
+            },
+            {
+              "attribute": "Finesse Moves",
+              "evidence": "defSacks",
+              "minimum": 1,
+              "positions": [
+                "LE",
+                "RE",
+                "DT",
+                "DE",
+                "EDGE",
+                "NT",
+                "DL",
+                "LEDGE",
+                "REDGE",
+                "LEDG",
+                "REDG",
+                "LDE",
+                "RDE",
+                "LOLB",
+                "ROLB",
+                "OLB",
+                "SAM",
+                "WILL"
+              ]
+            },
+            {
+              "attribute": "Man Coverage",
+              "evidence": "defPassDeflections",
+              "minimum": 1,
+              "positions": [
+                "CB",
+                "FS",
+                "SS",
+                "DB",
+                "S",
+                "MLB",
+                "LB",
+                "ILB",
+                "MIKE"
+              ]
+            },
+            {
+              "attribute": "Block Shedding",
+              "evidence": "defTotalTackles",
+              "minimum": 4,
+              "positions": [
+                "LE",
+                "RE",
+                "DT",
+                "DE",
+                "EDGE",
+                "NT",
+                "DL",
+                "LEDGE",
+                "REDGE",
+                "LEDG",
+                "REDG",
+                "LDE",
+                "RDE",
+                "LOLB",
+                "MLB",
+                "ROLB",
+                "LB",
+                "ILB",
+                "OLB",
+                "SAM",
+                "MIKE",
+                "WILL"
+              ]
+            }
+          ],
+          "allowRepeatedEvidence": true
         },
         "OL": {
           "scale": 100,
@@ -513,6 +696,175 @@
             { "attribute": "Kick Accuracy", "evidence": "pntInside20", "minimum": 1 }
           ]
         }
+      },
+      "positionOpportunityBalance": {
+        "enabled": true,
+        "includeUnrepresentedReserves": true
+      },
+      "rolePerformance": {
+        "LEDG": {
+          "scale": 9,
+          "expectedAt70": 4,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 0.7,
+            "defSacks": 6,
+            "defInts": 7,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defPassDeflections": 1.5,
+            "defTDs": 7,
+            "defSafeties": 7
+          }
+        },
+        "REDG": {
+          "scale": 9,
+          "expectedAt70": 4,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 0.7,
+            "defSacks": 6,
+            "defInts": 7,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defPassDeflections": 1.5,
+            "defTDs": 7,
+            "defSafeties": 7
+          }
+        },
+        "DT": {
+          "scale": 7,
+          "expectedAt70": 3.5,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 1.2,
+            "defSacks": 5,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defInts": 7,
+            "defPassDeflections": 1.5,
+            "defTDs": 7,
+            "defSafeties": 7
+          }
+        },
+        "SAM": {
+          "scale": 9,
+          "expectedAt70": 4.5,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 0.95,
+            "defSacks": 4,
+            "defInts": 6,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defPassDeflections": 2.5,
+            "defTDs": 7,
+            "defSafeties": 7,
+            "defCatchAllowed": -1
+          }
+        },
+        "MIKE": {
+          "scale": 9,
+          "expectedAt70": 4.5,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 0.95,
+            "defSacks": 4,
+            "defInts": 6,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defPassDeflections": 2.5,
+            "defTDs": 7,
+            "defSafeties": 7,
+            "defCatchAllowed": -1
+          }
+        },
+        "WILL": {
+          "scale": 9,
+          "expectedAt70": 4.5,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 0.95,
+            "defSacks": 4,
+            "defInts": 6,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defPassDeflections": 2.5,
+            "defTDs": 7,
+            "defSafeties": 7,
+            "defCatchAllowed": -1
+          }
+        },
+        "CB": {
+          "scale": 8,
+          "expectedAt70": 3.5,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 0.5,
+            "defSacks": 3,
+            "defInts": 7,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defPassDeflections": 3,
+            "defTDs": 7,
+            "defSafeties": 7,
+            "defCatchAllowed": -1.5
+          }
+        },
+        "FS": {
+          "scale": 8.5,
+          "expectedAt70": 3.5,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 0.8,
+            "defSacks": 3,
+            "defInts": 7,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defPassDeflections": 3,
+            "defTDs": 7,
+            "defSafeties": 7,
+            "defCatchAllowed": -1.5
+          }
+        },
+        "SS": {
+          "scale": 8.5,
+          "expectedAt70": 3.5,
+          "expectedPerOvr": 0.07,
+          "weights": {
+            "defTotalTackles": 0.8,
+            "defSacks": 3,
+            "defInts": 7,
+            "defForcedFumbles": 4,
+            "defRecoveredFumbles": 2,
+            "defPassDeflections": 3,
+            "defTDs": 7,
+            "defSafeties": 7,
+            "defCatchAllowed": -1.5
+          }
+        },
+        "TE": {
+          "scale": 11,
+          "expectedAt70": 4,
+          "expectedPerOvr": 0.08
+        },
+        "FB": {
+          "scale": 8,
+          "expectedAt70": 3,
+          "expectedPerOvr": 0.06
+        },
+        "K": {
+          "efficiency": "kicker"
+        },
+        "P": {
+          "efficiency": "punter"
+        }
+      },
+      "lineMomentum": {
+        "minimumGames": 3,
+        "minimumStrongScore": 80,
+        "maximumPoorScore": 34,
+        "maximumAttributePoints": 2
       }
     },
     "offseason": {
