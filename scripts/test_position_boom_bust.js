@@ -36,11 +36,11 @@ function fixture(position, poor, games = 4) {
     rosters: { teams: { 1: { rosterInfoList: roster } } }, weeklyStats,
     schedule: { schedules: weeklyStats.map(({ weekIndex }) => ({ stageIndex: 1, weekIndex, status: 2, homeTeamId: 1, awayTeamId: 2 })) } };
 }
-function evaluate(snapshot) {
+function evaluate(snapshot, policy = rules) {
   const history = { periods: {}, seasonAwards: {} };
   let record;
   for (let weekIndex = 0; weekIndex < snapshot.weeklyStats.length; weekIndex++) {
-    record = buildWeeklyProgressionRecommendations(snapshot, { rules, weekIndex, history });
+    record = buildWeeklyProgressionRecommendations(snapshot, { rules: policy, weekIndex, history });
     history.periods[record.periodKey] = record;
   }
   return { record, history };
@@ -58,6 +58,31 @@ for (const position of secondary) for (const poor of [false, true]) {
   if (position === 'CB' && poor) assert.ok(result.attributes.some((a) => a.field === 'manCoverRating'));
   const injured = structuredClone(snapshot); injured.rosters.teams[1].rosterInfoList[0].injuryLength = 4;
   if (poor) assert.ok(!evaluate(injured).record.recommendations.some((row) => row.playerKey === 'roster:focus'), `${position}: injury cannot create a bust penalty`);
+}
+const unrestricted = structuredClone(rules);
+delete unrestricted.weekly.specialistMovement;
+for (const position of ['K', 'P']) for (const poor of [false, true]) {
+  const target = fixture(position, poor, 6);
+  for (const game of target.schedule.schedules) { game.homeScore = poor ? 10 : 35; game.awayScore = poor ? 35 : 10; }
+  const base = evaluate(target, unrestricted).record.recommendations.find((row) => row.playerKey === 'roster:focus');
+  const reduced = evaluate(target).record.recommendations.find((row) => row.playerKey === 'roster:focus');
+  assert.equal(reduced.direction, base.direction, 'Specialists retain earned upgrades/downgrades');
+  assert.ok(Math.abs(reduced.totalAttributePoints) < Math.abs(base.totalAttributePoints), `${position}: reduce both growth and decline even with team-form bonuses`);
+  assert.ok(reduced.attributes.length <= 2 && reduced.attributes.every((a) => Math.abs(a.points) <= 2));
+  const playoff = structuredClone(target);
+  playoff.currentWeek = 20; playoff.info.careerHubInfo.seasonInfo.seasonWeekType = 2;
+  for (const week of playoff.weeklyStats) week.weekIndex += 13;
+  for (const game of playoff.schedule.schedules) game.weekIndex += 13;
+  const playoffHistory = { periods: {}, seasonAwards: {} };
+  let result;
+  for (let weekIndex = 13; weekIndex <= 18; weekIndex++) {
+    result = buildWeeklyProgressionRecommendations(playoff, { rules, weekIndex, history: playoffHistory });
+    playoffHistory.periods[result.periodKey] = result;
+  }
+  const changed = result.recommendations.find((row) => row.playerKey === 'roster:focus');
+  assert.ok(changed);
+  assert.ok(changed.attributes.length <= 2 && changed.attributes.every((a) => Math.abs(a.points) <= 2), 'Playoff stakes cannot bypass the lower specialist caps');
+  assert.ok(Math.abs(changed.totalAttributePoints) <= 4);
 }
 // A genuinely quiet stat line is not evidence that a player did not play well.
 const missing = fixture('CB', true);

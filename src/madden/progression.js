@@ -1421,6 +1421,13 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const streak = direction === 'upgrade' ? windows.consistency.strongStreak
       : awarenessPoorFallback ? verifiedPoorStreak : windows.consistency.poorStreak;
     const maxPoints = Number(weeklyRules.maximumWeeklyAttributePoints ?? 5);
+    const specialist = ['K', 'P'].includes(positionKey) ? weeklyRules.specialistMovement : null;
+    const attributePointCap = Math.min(maxPoints, positionKey === 'OL' && weeklyRules.lineMomentum ? Number(weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints, specialist ? Number(specialist.maximumAttributePoints) : maxPoints);
+    if (specialist) {
+      const awareness = evidence.find((attribute) => attribute.attribute === 'Awareness');
+      evidence = evidence.slice(0, Number(specialist.maximumAttributes));
+      if (awareness && !evidence.includes(awareness) && evidence.length) evidence[evidence.length - 1] = awareness;
+    }
     const streakThreshold = Number(weeklyRules.streakGamesForExtraPoint ?? 3);
     const streakBonus = Math.max(0, streak - streakThreshold + 1);
     const youngMomentum = direction === 'upgrade'
@@ -1475,7 +1482,9 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         if (sustainedLine && index < 2) magnitude += 1;
         magnitude = Math.min(Number(line.maximumAttributePoints), magnitude);
       }
-      magnitude = reserve ? 1 : Math.min(positionKey === 'OL' && weeklyRules.lineMomentum ? Number(weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints, Math.ceil(magnitude * teamMultiplier));
+      magnitude = reserve ? 1 : Math.ceil(magnitude * teamMultiplier);
+      if (specialist) magnitude = Math.ceil(magnitude * Number(specialist.multiplier));
+      magnitude = Math.min(attributePointCap, magnitude);
       return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
     });
     if (!allocation.length) continue;
@@ -1489,7 +1498,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       // Integer ratings need rounding; distribute the small boost across the
       // existing, directly evidenced attributes, never add a new attribute.
       let remaining = Math.min(Number(stakes.maximumExtraPointsPerPlayer), Math.max(1, Math.round(earnedPoints * (Number(stakes.multiplier) - 1))));
-      const attributeCap = positionKey === 'OL' && weeklyRules.lineMomentum ? Number(weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints;
+      const attributeCap = attributePointCap;
       for (const attribute of allocation) {
         if (remaining <= 0) break;
         if (attribute.evidence === 'currentGameScore') continue;
