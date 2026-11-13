@@ -68,7 +68,7 @@ export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false
       });
       const positive = attributes.some((attribute) => (fullSeason ? attribute.net : attribute.points) > 0);
       const negative = attributes.some((attribute) => (fullSeason ? attribute.net : attribute.points) < 0);
-      return { header: `${emoji ? `${emoji} ` : ''}**${team.mascot}**`, body: `${positive && negative ? '↕' : positive ? '↑' : '↓'} **${row.player}**${row.position !== position ? ` (${row.position})` : ''}\n${lines.join(' · ')}` };
+      return { header: `${emoji ? `${emoji} ` : ''}**${team.mascot}**`, body: `${positive && negative ? '↕' : positive ? '↑' : '↓'} **${row.player}**${row.position !== position ? ` (${row.position})` : ''}${row.changeContext?.playoffStakes ? ` · Playoffs ×${row.changeContext.playoffStakes.multiplier}` : ''}\n${lines.join(' · ')}` };
     });
     const blocks = [];
     let header = '', body = '';

@@ -125,6 +125,33 @@ smallSample.weeklyStats[0].passing.playerPassingStatInfoList = roundRows.filter(
 const supported = buildWeeklyProgressionRecommendations(smallSample, { rules: calibrated, weekIndex: 18 });
 assert.equal(supported.recommendations.length, 1, 'One supported player is sufficient; missing evidence cannot create extra changes');
 assert.equal(supported.selectionDiagnostics.teamCounts['2'], 0);
+const noStakes = structuredClone(calibrated);
+delete noStakes.weekly.playoffStakes;
+for (const poor of [false, true]) {
+  const stakesWeek = snapshot(85, { poor, games: 2 });
+  stakesWeek.currentWeek = 20;
+  stakesWeek.info = { careerHubInfo: { seasonInfo: { seasonWeekType: 2 } } };
+  stakesWeek.weeklyStats.forEach((week, index) => { week.weekIndex = 17 + index; });
+  stakesWeek.schedule.schedules.forEach((game, index) => { game.weekIndex = 17 + index; });
+  const original = structuredClone(stakesWeek);
+  const base = buildWeeklyProgressionRecommendations(stakesWeek, { weekIndex: 18, rules: noStakes }).recommendations[0];
+  const boosted = buildWeeklyProgressionRecommendations(stakesWeek, { weekIndex: 18, rules: calibrated }).recommendations[0];
+  assert.equal(boosted.direction, poor ? 'downgrade' : 'upgrade');
+  assert.equal(Math.abs(boosted.totalAttributePoints), Math.abs(base.totalAttributePoints) + 1, 'Good and bad playoff performances receive one modest extra earned point');
+  assert.deepEqual(boosted.changeContext.playoffStakes, { multiplier: 1.15, extraAttributePoints: 1 });
+  assert.deepEqual(boosted.attributes.map((a) => a.field), base.attributes.map((a) => a.field), 'Stakes cannot invent a new attribute');
+  assert.ok(boosted.attributes.every((a) => Math.abs(a.points) <= 5 && a.targetValue >= 0 && a.targetValue <= 99));
+  assert.deepEqual(stakesWeek, original);
+  stakesWeek.rosters.teams[1].rosterInfoList[0].injuryLength = 3;
+  if (poor) assert.equal(buildWeeklyProgressionRecommendations(stakesWeek, { weekIndex: 18, rules: calibrated }).recommendations.length, 0);
+}
+const finale = snapshot(85, { games: 2 });
+finale.currentWeek = 19; finale.info = { careerHubInfo: { seasonInfo: { seasonWeekType: 2 } } };
+finale.weeklyStats.forEach((week, index) => { week.weekIndex = 16 + index; });
+finale.schedule.schedules.forEach((game, index) => { game.weekIndex = 16 + index; });
+assert.deepEqual(buildWeeklyProgressionRecommendations(finale, { weekIndex: 17, rules: calibrated }).recommendations,
+  buildWeeklyProgressionRecommendations(finale, { weekIndex: 17, rules: noStakes }).recommendations,
+  'First playoff sync evaluating regular-season Week 18 must not receive playoff stakes');
 for (const snapshotPhase of [
   { seasonWeekType: 3 }, { seasonWeekType: 8 },
   { seasonWeekType: 1, seasonTitle: '2026 Offseason' },

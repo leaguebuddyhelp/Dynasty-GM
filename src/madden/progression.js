@@ -1479,6 +1479,29 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
     });
     if (!allocation.length) continue;
+    const stakes = weeklyRules.playoffStakes;
+    const earnedPoints = allocation.reduce((sum, attribute) => sum + Math.abs(attribute.points), 0);
+    let playoffExtraPoints = 0;
+    if (participants && Number(weekIndex) <= 22 && Number(weekIndex) !== 21 && !reserve
+      && stakes && Number(stakes.multiplier) > 1
+      && earnedPoints >= Number(stakes.minimumEarnedPoints)
+      && (direction === 'upgrade' ? currentMetrics.score >= Number(stakes.minimumUpgradeScore) : currentMetrics.score <= Number(stakes.maximumDowngradeScore))) {
+      // Integer ratings need rounding; distribute the small boost across the
+      // existing, directly evidenced attributes, never add a new attribute.
+      let remaining = Math.min(Number(stakes.maximumExtraPointsPerPlayer), Math.max(1, Math.round(earnedPoints * (Number(stakes.multiplier) - 1))));
+      const attributeCap = positionKey === 'OL' && weeklyRules.lineMomentum ? Number(weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints;
+      for (const attribute of allocation) {
+        if (remaining <= 0) break;
+        if (attribute.evidence === 'currentGameScore') continue;
+        const sign = direction === 'upgrade' ? 1 : -1;
+        const available = Math.min(attributeCap - Math.abs(attribute.points), sign > 0 ? 99 - attribute.targetValue : attribute.targetValue);
+        const bonus = Math.max(0, Math.min(remaining, available));
+        attribute.points += sign * bonus;
+        attribute.targetValue += sign * bonus;
+        remaining -= bonus;
+        playoffExtraPoints += bonus;
+      }
+    }
     const selected = recommendation({
       player,
       seasonKey,
@@ -1502,7 +1525,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       explanation: `${breakout ? `Breakout: ${player.ovr} OVR, weekly award, game score ${currentMetrics.score.toFixed(1)}. ` : ''}${streak >= streakThreshold ? `${streak}-game ${direction === 'upgrade' ? 'strong' : 'poor'} streak increased supported changes. ` : ''}${direction === 'upgrade' ? 'Positive' : 'Negative'} evidence: ${allocation.map((item) => `${item.attribute} (${item.evidence})`).join(', ')}. Stronger evidence and game performance can change individual amounts.`,
     });
     selected.eligibilityTier = reserve ? 'reserve' : 'primary';
-    selected.changeContext = { seasonProduction: productionBonus ? production : null,
+    selected.changeContext = { playoffStakes: playoffExtraPoints ? { multiplier: Number(stakes.multiplier), extraAttributePoints: playoffExtraPoints } : null, seasonProduction: productionBonus ? production : null,
       teamForm: teamMultiplier > 1 ? { ...form, multiplier: teamMultiplier } : null, reserveSelection: reserve, gameplayMomentum: !reserve && gameplayMomentum, rookieOutcome, breakout, streakBonus, youngMomentum, awardMomentum,
       rookieMomentum: direction === 'upgrade' && pipeline.rookie,
       eliteMomentum: direction === 'upgrade' && pipeline.elite,
@@ -1859,6 +1882,8 @@ function recommendationWhy(record, item) {
       .map(([field, value]) => `${Math.round(value)} ${statLabel(field).toLowerCase()}`).join(', ');
     reasons.push(`${production.label}: ${totals} in ${production.games} games earned faster attribute growth.`);
   }
+  const playoff = item.changeContext?.playoffStakes;
+  if (playoff) reasons.push(`Playoff stakes: ${playoff.multiplier}× earned movement, adding ${playoff.extraAttributePoints} attribute point within the existing caps.`);
   const team = item.changeContext?.teamForm;
   if (team) reasons.push(`Team form ${team.wins}-${team.losses} over ${team.games} games: ${team.multiplier}× earned ${item.direction === 'upgrade' ? 'upgrade' : 'downgrade'} points, within the weekly cap.`);
   if (item.changeContext?.teamLineProxy) {

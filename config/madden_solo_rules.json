@@ -72,6 +72,13 @@
     "weekly": {
       "maximumRecommendations": 30,
       "playoffRecommendationsPerTeam": [1, 5],
+      "playoffStakes": {
+        "multiplier": 1.15,
+        "minimumUpgradeScore": 75,
+        "maximumDowngradeScore": 28,
+        "minimumEarnedPoints": 2,
+        "maximumExtraPointsPerPlayer": 1
+      },
       "attributesPerRecommendation": 5,
       "gameplayMovement": {
         "requirePlayedGame": true,
