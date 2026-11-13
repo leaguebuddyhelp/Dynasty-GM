@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { getFranchisePhase } from '../src/madden/franchise_phase.js';
 import { buildWeeklyProgressionRecommendations, resolveProgressionWeek } from '../src/madden/progression.js';
 
+assert.equal(getFranchisePhase({ currentWeek: 1, info: { careerHubInfo: { seasonInfo: { seasonWeekType: 8, seasonTitle: 'Playoffs', offSeasonStage: 10 } } } }), 'offseason');
+assert.equal(getFranchisePhase({ currentWeek: 1, info: { careerHubInfo: { seasonInfo: { seasonWeekType: 0, seasonTitle: 'Playoffs', offSeasonStage: 10 } } } }), 'preseason');
+assert.equal(getFranchisePhase({ currentWeek: 23, info: { careerHubInfo: { seasonInfo: { seasonWeekType: 5, seasonTitle: 'Playoffs', offSeasonStage: 10 } } } }), 'playoffs');
 const rules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
 const calibrated = structuredClone(rules);
 calibrated.weekly.performanceWeight = 1;

@@ -4,7 +4,7 @@ import { getFranchisePhase } from './franchise_phase.js';
 import { loadFullSeasonRun, saveFullSeasonRun, archiveFullSeasonRun, fullSeasonIdentity, matchesFullSeason, findArchivedSeasonBaseline, isStartingSeasonSnapshot } from './full_season_store.js';
 import { regularSeasonWeeks, seasonCoverage, replayFullSeason, buildSeasonApplication } from './full_season_engine.js';
 import { updateAwards, publishWeeklyAwards } from './awards.js';
-import { publishFullSeasonTotals, readProgressionRules, hasIssuedSeasonWeeklyChanges } from './progression.js';
+import { publishFullSeasonTotals, publishSeasonMovementSummary, readProgressionRules, hasIssuedSeasonWeeklyChanges } from './progression.js';
 
 const queues = new Map();
 export async function logFullSeasonStatus(guildId) {
@@ -82,7 +82,8 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
   if (run.status === 'complete') {
     if (readProgressionRules().discord.progressionLayout === 'positions') {
       const publication = await publishFullSeasonTotals({ client, guildId, snapshot, run });
-      run.result = { ...run.result, ...publication };
+      const recap = getFranchisePhase(snapshot) === 'offseason' ? await publishSeasonMovementSummary({ client, guildId, snapshot }) : null;
+      run.result = { ...run.result, ...publication, ...(recap?.seasonChanges ? { seasonChanges: recap.seasonChanges } : {}) };
       await saveFullSeasonRun(run);
     }
     return { ...run.result, duplicate: true, reason: 'Saved season totals are posted in the position threads. Apply final targets once; playoff syncs use normal weekly progression.' };

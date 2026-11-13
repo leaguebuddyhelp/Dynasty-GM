@@ -2719,7 +2719,7 @@ async function deferPublishedSeasonMovement(client, guildId, snapshot, history) 
   record.deferredUntilPhase = 'offseason';
   await saveHistory(snapshot.leagueId, history);
 }
-async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
+export async function publishSeasonMovementSummary({ client, guildId, snapshot }) {
   const history = await loadHistory(snapshot.leagueId);
   if (!isSeasonMovementDue(snapshot)) {
     await deferPublishedSeasonMovement(client, guildId, snapshot, history);
@@ -2821,6 +2821,8 @@ export async function repairProgressionReportNavigation(client, guildId) {
   if (!snapshot?.syncId) return;
   const history = await loadHistory(leagueId);
   const seasonKey = getMaddenSeasonKey(snapshot);
+  const savedInfo = snapshot.info?.careerHubInfo?.seasonInfo || {};
+  console.log('[progression] saved phase', JSON.stringify({ leagueId, currentWeek: snapshot.currentWeek, seasonWeekType: savedInfo.seasonWeekType, seasonTitle: savedInfo.seasonTitle, weekTitle: savedInfo.weekTitle, phase: getFranchisePhase(snapshot) }));
   const weekIndex = resolveProgressionWeek(snapshot);
   const weekly = weekIndex === null ? null : history.periods[`${seasonKey}_week_${weekIndex + 1}`];
   const seasonal = history.periods[`${seasonKey}_ovr_summary`];
@@ -2828,10 +2830,15 @@ export async function repairProgressionReportNavigation(client, guildId) {
     await deferPublishedSeasonMovement(client, guildId, snapshot, history);
   }
   const needsWeekly = !weekly?.issuedAsAggregate && weekly?.recommendations?.length && !weekly.reportIndexMessages?.[guildId];
-  const needsSeasonal = isSeasonMovementDue(snapshot) && (seasonal?.seasonChangeMessages?.[guildId] || seasonal?.positionMessages?.[guildId]) && !seasonal.reportIndexMessages?.[guildId];
+  const needsSeasonal = isSeasonMovementDue(snapshot) && (!seasonal || seasonal.deferredUntilPhase === 'offseason' || !seasonal.reportIndexMessages?.[guildId]);
   const needsPlayoffRepair = getFranchisePhase(snapshot) === 'playoffs' && weekIndex >= 18
     && weekly && !weekly.recommendations?.length && weekly.playoffStatsVersion !== 1;
   if (!needsWeekly && !needsSeasonal && !needsPlayoffRepair) return;
+  if (getFranchisePhase(snapshot) === 'offseason' && needsSeasonal) {
+    const result = await publishSeasonMovementSummary({ client, guildId, snapshot });
+    console.log('[progression] Saved offseason recap repaired', JSON.stringify({ leagueId, teams: result.seasonChanges?.teamCount, reportUrl: result.seasonChanges?.indexUrl }));
+    return result;
+  }
   const result = await publishProgressionReports({ client, guildId, snapshot });
   console.log('[progression] Saved reports repaired', { playoffStatsRepaired: Boolean(needsPlayoffRepair), week: weekIndex === null ? null : weekIndex + 1,
     changes: result.recommendationCount, teams: result.seasonChanges?.teamCount });
