@@ -1,9 +1,22 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { buildPopulationCapPlan, countRatingBands } from '../src/madden/population_caps.js';
+import { buildPopulationCapPlan, countRatingBands, buildCapAttributeEdits } from '../src/madden/population_caps.js';
 import { getRatingPopulationPlan, buildWeeklyProgressionRecommendations } from '../src/madden/progression.js';
 const rules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
 const policy = rules.populationCaps;
+const editPlayer = { currentOvr: 96, targetOvr: 89, ratingAttributes: [
+  { attribute: 'Throw Accuracy Short', field: 'throwAccShortRating', currentValue: 94 },
+  { attribute: 'Throw Accuracy Mid', field: 'throwAccMidRating', currentValue: 92 },
+  { attribute: 'Missing', field: 'missing', currentValue: null },
+  { attribute: 'Duplicate', field: 'throwAccShortRating', currentValue: 94 },
+] };
+assert.deepEqual(buildCapAttributeEdits(editPlayer).map((a) => [a.attribute, a.currentValue, a.targetValue, a.points]), [
+  ['Throw Accuracy Short', 94, 87, -7], ['Throw Accuracy Mid', 92, 85, -7],
+], 'Cap posts must specify real imported attribute edits, never an OVR pseudo-attribute');
+assert.equal(buildCapAttributeEdits({ ...editPlayer, targetOvr: 69 })[0].points, -10, 'Large gaps are bounded pending OVR verification');
+assert.deepEqual(buildCapAttributeEdits({ currentOvr: 90, targetOvr: 89 }), [], 'Missing ratings cannot be invented');
+assert.equal(buildCapAttributeEdits({ currentOvr: 89, targetOvr: 90, ratingAttributes: [{ attribute: 'Awareness', field: 'awareRating', currentValue: 99 }] }).length, 0);
+assert.equal(buildCapAttributeEdits({ currentOvr: 95, targetOvr: 69, ratingAttributes: [{ attribute: 'Awareness', field: 'awareRating', currentValue: 3 }] })[0].targetValue, 1);
 const player = (id, position, currentOvr, score = 80, extra = {}) => ({ playerKey: `roster:${id}`, player: id, position, currentOvr,
   rankScore: score, rawScore: score, games: 16, attempts: position === 'QB' ? 400 : 0, sufficientSample: true, yearsPro: 5, teamId: id, team: `Team ${id}`, ...extra });
 const roster = Array.from({ length: 12 }, (_, index) => player(`elite-${index}`, 'QB', 95, 120 - index));
@@ -54,6 +67,11 @@ const snapshot = { leagueId: 'caps-evidence', syncId: 'caps-evidence', currentWe
 };
 const computed = getRatingPopulationPlan(snapshot, rules);
 assert.equal(computed.adjustments.find((p) => p.playerKey === 'roster:real-qb').targetOvr, 90);
+const importedEdits = buildCapAttributeEdits(getRatingPopulationPlan(snapshot, rules).adjustments[0]);
+assert.ok(importedEdits.length >= 3, 'Real roster evidence must supply editable position skills to cap publishing');
+assert.deepEqual(importedEdits.find((a) => a.attribute === 'Throw Accuracy Short'), {
+  attribute: 'Throw Accuracy Short', field: 'throwAccShortRating', currentValue: 85, targetValue: 86, points: 1,
+});
 const traded = structuredClone(snapshot);
 for (const week of traded.weeklyStats.slice(0, 12)) week.passing.playerPassingStatInfoList[0].teamId = '2';
 assert.equal(getRatingPopulationPlan(traded, rules).eliteQbs[0].games, 18, 'Verified player identity retains same-season performance across trades');

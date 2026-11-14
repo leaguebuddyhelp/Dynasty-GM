@@ -1201,6 +1201,9 @@ export function getRatingPopulationPlan(snapshot, rules = readRules().progressio
     const completeQbStats = player.position !== 'QB' || rows.every((row) => ['passAtt', 'passComp', 'passYds', 'passTDs', 'passInts'].every((field) => numberOrNull(row.totals[field]) !== null));
     const sufficient = player.position === 'QB' ? completeQbStats && games >= policy.minimumQbGames && attempts >= policy.minimumQbAttempts : games >= 3;
     return { playerKey: player.key, player: player.name, teamId: player.teamId, team: player.team, position: player.position,
+      ratingAttributes: [...new Set([...(role?.attributes || []).filter((rule) => !rule.positions || rule.positions.includes(player.position))
+        .map((rule) => rule.attribute).filter((attribute) => !['Speed', 'Acceleration', 'Agility', 'Strength', 'Jump'].includes(attribute)), 'Awareness'])]
+        .map((attribute) => ({ attribute, field: rules.weekly.attributeFields[attribute], currentValue: numberOrNull(player[rules.weekly.attributeFields[attribute]]) })),
       currentOvr: player.ovr, yearsPro: experienceYears(player), games, attempts, rawScore, rankScore: sufficient ? rawScore : 75,
       eligibleForGrowth: !['offseason', 'preseason'].includes(phase)
         && (player.position === 'QB' ? completeQbStats && games >= 2 && attempts >= 50 : games >= 3) && rawScore >= 75

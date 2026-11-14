@@ -5,6 +5,21 @@ import { getMaddenSeasonKey, getMaddenChannelId } from '../shared/madden_metadat
 import { ensurePositionThreads, buildPositionChangeEmbeds, publishPositionPages } from './position_reports.js';
 import { buildTeamReportIndex } from './report_navigation.js';
 
+// These are concrete edits to imported skills, not an inverse Madden OVR formula.
+// Limit each pass so large cap gaps can be verified in Madden before another pass.
+export function buildCapAttributeEdits(player, maximumStep = 10) {
+  const gap = player.targetOvr - player.currentOvr;
+  if (!Number.isFinite(gap) || !gap) return [];
+  const step = Math.sign(gap) * Math.min(Math.abs(gap), maximumStep);
+  const seen = new Set();
+  return (player.ratingAttributes || []).flatMap(({ attribute, field, currentValue }) => {
+    if (!field || seen.has(field) || !Number.isInteger(currentValue) || currentValue < 1 || currentValue > 99) return [];
+    seen.add(field);
+    const targetValue = Math.max(1, Math.min(99, currentValue + step));
+    return targetValue === currentValue ? [] : [{ attribute, field, currentValue, targetValue, points: targetValue - currentValue }];
+  });
+}
+
 export function countRatingBands(players, ratings = new Map(players.map((p) => [p.playerKey, p.currentOvr]))) {
   const at = (minimum, qb = false) => players.filter((p) => (!qb || p.position === 'QB') && ratings.get(p.playerKey) >= minimum).length;
   return { overall80Plus: at(80), overall90Plus: at(90), quarterbacks70Plus: at(70, true), quarterbacks80Plus: at(80, true), quarterbacks90Plus: at(90, true) };
@@ -101,28 +116,32 @@ async function publishInternal({ client, guildId, snapshot }) {
   };
   const channelId = getMaddenChannelId(rules.discord.playerUpgradesChannelKey, guildId);
   const registry = await ensurePositionThreads({ client, guildId, channelId, archiveDuration: rules.discord.threadAutoArchiveDuration });
-  const groups = buildPositionChangeEmbeds(snapshot, { seasonKey: record.seasonKey, weekNumber: 'Roster Limits', recommendations: plan.adjustments.map((p) => ({ ...p,
-    attributes: [{ attribute: 'Manual OVR target', currentValue: p.currentOvr, targetValue: p.targetOvr, points: p.targetOvr - p.currentOvr }],
+  const edits = plan.adjustments.map((p) => ({ ...p, attributes: buildCapAttributeEdits(p) }));
+  record.attributeEdits = edits;
+  const groups = buildPositionChangeEmbeds(snapshot, { seasonKey: record.seasonKey, weekNumber: 'Roster Limits', recommendations: edits.map((p) => ({ ...p,
+    attributes: p.attributes.length ? p.attributes : [{ attribute: 'Attribute review required', reviewMessage: 'Imported skill ratings are missing or already at the rating boundary. Re-import this roster before applying changes.' }],
     populationReason: p.reasons.join(' '),
-  })) }, { reportLabel: 'Roster Caps', reportFooter: 'Manual OVR targets · Apply demotions first, then promotions · Apply caps AFTER gameplay edits · Sync to verify' });
+  })) }, { reportLabel: 'Roster Caps', reportFooter: 'Set listed attributes to exact values · Demotions first · Apply AFTER gameplay edits · Sync to verify OVR' });
   const reports = await publishPositionPages({ client, guildId, registry, record, groups, save });
   const before = plan.currentCounts, after = plan.projectedCounts;
   const policy = rules.populationCaps;
   const pending = plan.adjustments.length;
-  const embed = buildTeamReportIndex({ title: '📊 Roster Rating Limits', navigationLabel: 'Open required OVR targets', moreLabel: 'More positions',
-    description: `${pending ? `**${pending} manual OVR adjustments required**` : '**Imported roster is within the hard limits**'}\n\n**Imported → after applying targets / maximum**\nQBs 90+: ${before.quarterbacks90Plus} → ${after.quarterbacks90Plus} / ${policy.quarterbacks90PlusMaximum}\nQBs 80+: ${before.quarterbacks80Plus} → ${after.quarterbacks80Plus} / ${policy.quarterbacks80PlusMaximum}\nQBs 70+: ${before.quarterbacks70Plus} → ${after.quarterbacks70Plus} / ${policy.quarterbacks70PlusMaximum}\nAll players 90+: ${before.overall90Plus} → ${after.overall90Plus} / ${policy.overall90PlusMaximum}\nAll players 80+: ${before.overall80Plus} → ${after.overall80Plus} / ${policy.overall80PlusMaximum}\n\nCounts cover active team rosters; tiers overlap. Targets are instructions, not confirmed Madden ratings. Adjust Madden attributes until each target OVR is reached. Apply demotions first, then earned promotions, and apply caps after gameplay changes. Sync again to verify. Empty slots are not filled artificially.`, reports });
+  const embed = buildTeamReportIndex({ title: '📊 Roster Rating Limits', navigationLabel: 'Open attribute edits', moreLabel: 'More positions',
+    description: `${pending ? `**${pending} players require attribute edits**` : '**Imported roster is within the hard limits**'}\n\n**Imported → allocation goal / maximum**\nQBs 90+: ${before.quarterbacks90Plus} → ${after.quarterbacks90Plus} / ${policy.quarterbacks90PlusMaximum}\nQBs 80+: ${before.quarterbacks80Plus} → ${after.quarterbacks80Plus} / ${policy.quarterbacks80PlusMaximum}\nQBs 70+: ${before.quarterbacks70Plus} → ${after.quarterbacks70Plus} / ${policy.quarterbacks70PlusMaximum}\nAll players 90+: ${before.overall90Plus} → ${after.overall90Plus} / ${policy.overall90PlusMaximum}\nAll players 80+: ${before.overall80Plus} → ${after.overall80Plus} / ${policy.overall80PlusMaximum}\n\nSet the listed attributes to their exact new values in Madden; do not add the deltas again on a retry. Apply demotions first, then promotions, AFTER gameplay changes. These edits use imported position skills, with at most 10 points per attribute per pass. Madden calculates OVR: allocation counts are goals, not predicted results. Sync again to verify and calculate any remaining edits. Counts cover active rosters and tiers overlap. Empty slots are not filled artificially.`, reports });
   const outlook = plan.qbOutlook;
   embed.addFields({ name: 'QB draft / offseason needs', value: `Planning target: ${outlook.target.join('–')} teams · Identified needs: ${outlook.actualNeeds}\n${outlook.teams.slice(0, 10).map((team) => `${team.team}: ${team.reason}`).join('\n') || 'No clear need identified from current evidence.'}\nPromising young QBs with limited samples are protected; no needs are manufactured.`.slice(0, 1024) });
   embed.addFields({ name: '90+ QB slots', value: plan.eliteQbs.map((p) => `${p.player}: ${p.currentOvr} OVR · ${p.games} games${p.protectedSmallSample ? ' · limited-sample protection' : ` · season index ${p.rankScore.toFixed(1)}`}`).join('\n') || 'No qualified elite QB slots; the target is 5–7, with no forced minimum.' });
   const parent = await client.channels.fetch(channelId);
   const id = record.capIndexMessageId;
   const prior = id ? await parent.messages.fetch(id).catch((error) => { if (error.code === 10008) return null; throw error; }) : null;
-  const csv = [['Player','Position','Team','Current OVR','Target OVR','Games','Attempts','Season score','Reason'], ...plan.adjustments.map((p) => [p.player,p.position,p.team,p.currentOvr,p.targetOvr,p.games,p.attempts,p.rankScore,p.reasons.join(' ')])]
+  const csv = [['Player','Position','Team','Attribute','Current rating','New rating','Change','Reason'], ...edits.flatMap((p) => p.attributes.length
+    ? p.attributes.map((a) => [p.player,p.position,p.team,a.attribute,a.currentValue,a.targetValue,a.points,p.reasons.join(' ')])
+    : [[p.player,p.position,p.team,'Attribute review required','','','','Missing or bounded ratings; re-import roster. No attribute values fabricated.']])]
     .map((row) => row.map((value) => `"${(typeof value === 'string' && /^[=+@\-\t\r]/.test(value) ? "'" + value : String(value ?? '')).replaceAll('"','""')}"`).join(',')).join('\r\n');
-  const payload = { embeds: [embed], files: [{ attachment: Buffer.from(csv), name: 'roster-ovr-targets.csv' }], attachments: [], allowedMentions: { parse: [] } };
+  const payload = { embeds: [embed], files: [{ attachment: Buffer.from(csv), name: 'roster-attribute-edits.csv' }], attachments: [], allowedMentions: { parse: [] } };
   const posted = prior ? await prior.edit(payload) : await parent.send(payload);
   record.capIndexMessageId = posted.id;
   await save();
-  await fs.writeFile(path.join(root, `${String(snapshot.syncId).replace(/[^a-zA-Z0-9_-]/g,'_')}.json`), JSON.stringify(plan, null, 2));
+  await fs.writeFile(path.join(root, `${String(snapshot.syncId).replace(/[^a-zA-Z0-9_-]/g,'_')}.json`), JSON.stringify({ ...plan, attributeEdits: edits }, null, 2));
   return { posted: true, adjustments: pending, currentCounts: before, projectedCounts: after, reportUrl: `https://discord.com/channels/${guildId}/${channelId}/${posted.id}` };
 }

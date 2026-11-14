@@ -257,7 +257,13 @@ assert.ok(caps.projectedCounts.quarterbacks90Plus <= 7 && caps.projectedCounts.q
 assert.equal(caps.currentCounts.quarterbacks90Plus, 0, 'Imported counts must not pretend manual targets were applied');
 assert.deepEqual(offseason, originalOffseason, 'Cap report cannot alter the Madden import');
 const capIndex = [...parentMessages.values()].find((row) => row.payload.embeds?.[0]?.toJSON().title === '📊 Roster Rating Limits');
-assert.ok(capIndex && capIndex.payload.files[0].attachment.toString().includes('Target OVR'));
+assert.ok(capIndex && capIndex.payload.files[0].name === 'roster-attribute-edits.csv');
+const capCsv = capIndex.payload.files[0].attachment.toString();
+assert.ok(capCsv.includes('New rating') && capCsv.includes('Throw Accuracy Short'));
+assert.ok(!capCsv.includes('Manual OVR target'));
+const capPosts = [...rebuiltQb.store.values()].filter((row) => row.payload.embeds?.[0]?.toJSON().title.includes('Roster Caps'));
+assert.ok(capPosts.length && capPosts.some((row) => row.payload.embeds[0].toJSON().description.includes('**Throw Accuracy Short**:')));
+assert.ok(capPosts.every((row) => !row.payload.embeds[0].toJSON().description.includes('Manual OVR target')));
 const parentBeforeCapRetry = parentMessages.size;
 const qbBeforeCapRetry = rebuiltQb.store.size;
 await publishPopulationCaps({ client, guildId, snapshot: offseason });

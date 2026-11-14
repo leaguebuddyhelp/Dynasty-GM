@@ -60,6 +60,7 @@ export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false
     const playerBlocks = list.map(({ row, attributes, team }) => {
       const emoji = getTeamEmojiByName(team.full);
       const lines = attributes.map((attribute) => {
+        if (attribute.reviewMessage) return `**${attribute.attribute}**: ${attribute.reviewMessage}`;
         const points = fullSeason ? attribute.pointsToApply : attribute.points;
         const earned = fullSeason ? attribute.net : points;
         const label = `**${attribute.attribute}**`;
