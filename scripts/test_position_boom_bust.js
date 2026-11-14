@@ -46,6 +46,49 @@ function evaluate(snapshot, policy = rules) {
   return { record, history };
 }
 const secondary = POSITION_THREADS.filter((position) => !['QB', 'WR', 'HB'].includes(position));
+// Compare identical evidence with/without the new leader reward, across roles.
+const leaderRules = structuredClone(rules);
+delete leaderRules.developmentPipeline;
+delete leaderRules.weekly.statProduction;
+delete leaderRules.weekly.teamForm;
+delete leaderRules.weekly.gameplayMovement;
+leaderRules.weekly.streakGamesForExtraPoint = 100;
+leaderRules.weekly.youngMomentumMaxYearsPro = -1;
+const noLeaderRules = structuredClone(leaderRules);
+delete noLeaderRules.weekly.statLeaders;
+for (const position of POSITION_THREADS.filter((p) => !line(p))) {
+  const snapshot = fixture(position, false);
+  for (const id of ['peer-one', 'peer-two']) {
+    snapshot.rosters.teams[1].rosterInfoList.push(player(id, position));
+    for (const week of snapshot.weeklyStats) {
+      const [bucket, row] = stats(position, true);
+      week[bucket][fields[bucket]].push({ ...row, rosterId: id, teamId: 1, position });
+    }
+  }
+  const find = (s, r) => evaluate(s, r).record.recommendations.find((p) => p.playerKey === 'roster:focus');
+  const adult = find(snapshot, leaderRules), baseline = find(snapshot, noLeaderRules);
+  assert.ok(adult?.changeContext.positionStandout?.leader, `${position}: position leaders qualify independently of QB stats`);
+  assert.ok(adult.selectionScore > baseline.selectionScore, `${position}: stat leaders receive greater selection priority`);
+  if (!['K', 'P'].includes(position)) assert.ok(adult.totalAttributePoints > baseline.totalAttributePoints, `${position}: leaders earn larger skill edits`);
+  const young = structuredClone(snapshot); young.rosters.teams[1].rosterInfoList[0].yearsPro = 2;
+  const youngResult = find(young, leaderRules);
+  assert.ok(youngResult.selectionScore > adult.selectionScore, `${position}: young leaders earn extra priority`);
+  if (!['K', 'P'].includes(position)) assert.ok(youngResult.totalAttributePoints > adult.totalAttributePoints, `${position}: young leaders earn larger edits`);
+  const short = structuredClone(snapshot); short.weeklyStats.pop(); short.currentWeek = 4;
+  assert.ok(!find(short, leaderRules)?.changeContext.positionStandout, 'Three games cannot earn a sustained season-leader bonus');
+  const bad = fixture(position, true);
+  for (const id of ['peer-one', 'peer-two']) {
+    bad.rosters.teams[1].rosterInfoList.push(player(id, position));
+    for (const week of bad.weeklyStats) {
+      const [bucket, row] = stats(position, false);
+      week[bucket][fields[bucket]].push({ ...row, rosterId: id, teamId: 1, position });
+    }
+  }
+  const faller = find(bad, leaderRules), oldFaller = find(bad, noLeaderRules);
+  assert.ok(faller?.changeContext.positionStandout?.faller, `${position}: sustained poor performers have a faller path`);
+  assert.ok(faller.selectionScore > oldFaller.selectionScore, `${position}: sustained fallers get meaningful downgrade priority`);
+  if (!['K', 'P'].includes(position) && faller.attributes.some((a) => a.evidence !== 'currentGameScore')) assert.ok(faller.totalAttributePoints < oldFaller.totalAttributePoints, `${position}: supported losses grow for sustained fallers`);
+}
 for (const position of secondary) for (const poor of [false, true]) {
   const snapshot = fixture(position, poor);
   const { record } = evaluate(snapshot);

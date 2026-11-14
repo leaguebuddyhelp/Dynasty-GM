@@ -1213,6 +1213,39 @@ export function getRatingPopulationPlan(snapshot, rules = readRules().progressio
   });
   return buildPopulationCapPlan(evidence, policy, (snapshot.teams?.leagueTeamInfoList || []).map((team) => String(team.teamId)));
 }
+// Rank uncapped production within each exact position, so saturated 100-point
+// grades and QB/WR volume cannot obscure exceptional players at other roles.
+function positionSeasonStandouts(players, byWeek, weekIndex, rules) {
+  const policy = rules.statLeaders;
+  const result = new Map();
+  if (!policy) return result;
+  const groups = new Map();
+  for (const player of players) {
+    const key = progressionPositionKey(player.position, rules.positions);
+    const role = key && rolePositionRule(player, key, rules);
+    if (!role) continue;
+    const rows = [...byWeek].filter(([week]) => week <= weekIndex).map(([, rows]) => rows.get(player.key))
+      .filter((row) => row && !row.missingTeamId && row.observedTeamIds?.has(player.teamId) && opportunityConfirmed(row.totals, key, rules));
+    if (rows.length < Number(policy.minimumGames)) continue;
+    const { averages } = seasonStatSummaries(rows);
+    const raw = performanceMetrics(averages, 70, role, rules).raw;
+    const position = positionThreadKey(player.position);
+    const list = groups.get(position) || [];
+    list.push({ player, raw, games: rows.length, score: raw * Math.sqrt(rows.length) });
+    groups.set(position, list);
+  }
+  for (const list of groups.values()) {
+    if (list.length < Number(policy.minimumPeers) || new Set(list.map((p) => p.score)).size < 2) continue;
+    const cutoff = Math.max(1, Math.ceil(list.length * Number(policy.fraction)));
+    for (const entry of list) {
+      const rank = 1 + list.filter((p) => p.score > entry.score).length;
+      const bottomRank = 1 + list.filter((p) => p.score < entry.score).length;
+      result.set(entry.player.key, { rank, peers: list.length, games: entry.games,
+        leader: entry.raw > 0 && rank <= cutoff, faller: bottomRank <= cutoff });
+    }
+  }
+  return result;
+}
 export function buildWeeklyProgressionRecommendations(snapshot, {
   weekIndex,
   awardWinners = {},
@@ -1229,6 +1262,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   clearOffensiveLineStats(byWeek, players);
   addOffensiveLineProxies(snapshot, players, aliases, byWeek, Number(weekIndex));
   restoreLineObservations(byWeek, players, history, seasonKey, Number(weekIndex));
+  const positionStandouts = positionSeasonStandouts(players, byWeek, Number(weekIndex), weeklyRules);
   const weekPlayers = byWeek.get(Number(weekIndex)) || new Map();
   const observations = inactivityObservations(snapshot, players, byWeek, Number(weekIndex));
   const recentAwardWinners = Array.from({ length: Math.min(4, Number(weekIndex) + 1) }, (_, index) =>
@@ -1444,6 +1478,19 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       priorityBase += pipeline.selectionBonus;
       selectionAdjustments.developmentPipeline = pipeline.selectionBonus;
     }
+    const standing = positionStandouts.get(player.key);
+    const leaderPolicy = weeklyRules.statLeaders;
+    const statLeader = !reserve && direction === 'upgrade' && standing?.leader
+      && currentMetrics.score >= Number(leaderPolicy.minimumCurrentUpgradeScore);
+    const statFaller = !reserve && direction === 'downgrade' && standing?.faller
+      && verifiedPoorStreak >= Number(weeklyRules.poorPerformanceMinimumGames ?? 3)
+      && currentMetrics.score <= Number(leaderPolicy.maximumCurrentDowngradeScore);
+    const youngLeader = statLeader && experienceYears(player) !== null
+      && experienceYears(player) <= Number(leaderPolicy.maximumYoungYearsPro);
+    const standoutBonus = statLeader ? Number(leaderPolicy.selectionBonus) + (youngLeader ? Number(leaderPolicy.youngSelectionBonus) : 0)
+      : statFaller ? Number(leaderPolicy.selectionBonus) : 0;
+    priorityBase += standoutBonus;
+    selectionAdjustments.positionStandout = standoutBonus;
     const rookieOutcomeBonus = (direction === 'upgrade' && rookieOutcome?.trajectory === 'boom') || (direction === 'downgrade' && rookieBust)
       ? (rookieOutcome.highPick ? Number(outcomePolicy.highPickSelectionBonus) : 0)
         + (direction === 'downgrade' ? Number(outcomePolicy.bustSelectionBonus) : 0) : 0;
@@ -1523,6 +1570,9 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         magnitude += Number(outcomePolicy.highPickExtraPrimaryPoints);
       }
       if (direction === 'upgrade' && productionUpgrade && index < production.attributes && attribute.evidence !== 'currentGameScore') magnitude += production.extraPoints;
+      if ((statLeader || statFaller) && index < Number(leaderPolicy.acceleratedAttributes) && attribute.evidence !== 'currentGameScore') {
+        magnitude += Number(leaderPolicy.extraAttributePoints) + (youngLeader ? Number(leaderPolicy.youngExtraAttributePoints) : 0);
+      }
       const line = weeklyRules.lineMomentum;
       if (positionKey === 'OL' && line) {
         const recentLine = windows.metrics.slice(-Number(line.minimumGames));
@@ -1589,6 +1639,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       rookieMomentum: direction === 'upgrade' && pipeline.rookie,
       eliteMomentum: direction === 'upgrade' && pipeline.elite,
       sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0, teamLineProxy: positionKey === 'OL' };
+    if (statLeader || statFaller) selected.changeContext.positionStandout = { ...standing, young: Boolean(youngLeader), direction };
     selected.minimumSelectionScore = direction === 'upgrade'
       ? Number(reserve ? volume.minimumUpgradePriority : weeklyRules.minimumUpgradeSelectionScore)
       : Number(reserve ? volume.minimumDowngradePriority : weeklyRules.minimumDowngradeSelectionPriority);

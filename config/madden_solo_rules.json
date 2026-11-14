@@ -123,6 +123,19 @@
           "maximumAttributes": 2
         }
       },
+      "statLeaders": {
+        "minimumGames": 4,
+        "minimumPeers": 3,
+        "fraction": 0.25,
+        "minimumCurrentUpgradeScore": 75,
+        "maximumCurrentDowngradeScore": 38,
+        "maximumYoungYearsPro": 2,
+        "selectionBonus": 18,
+        "youngSelectionBonus": 6,
+        "acceleratedAttributes": 2,
+        "extraAttributePoints": 1,
+        "youngExtraAttributePoints": 1
+      },
       "statProduction": {
         "minimumGames": 4,
         "minimumSeasonScore": 70,

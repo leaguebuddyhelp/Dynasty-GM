@@ -69,6 +69,10 @@ export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false
       });
       const positive = attributes.some((attribute) => (fullSeason ? attribute.net : attribute.points) > 0);
       const negative = attributes.some((attribute) => (fullSeason ? attribute.net : attribute.points) < 0);
+      const standout = row.changeContext?.positionStandout;
+      if (standout) lines.push(standout.direction === 'upgrade'
+        ? `${standout.young ? 'Young stat leader' : 'Position stat leader'} · #${standout.rank}/${standout.peers}`
+        : 'Sustained poor production · larger supported losses');
       return { header: `${emoji ? `${emoji} ` : ''}**${team.mascot}**`, body: `${positive && negative ? '↕' : positive ? '↑' : '↓'} **${row.player}**${row.position !== position ? ` (${row.position})` : ''}${row.ovrCeiling < 99 ? ` · **OVR ceiling ${row.ovrCeiling}**` : ''}${row.changeContext?.playoffStakes ? ` · Playoffs ×${row.changeContext.playoffStakes.multiplier}` : ''}\n${lines.join(' · ')}${row.populationReason ? `\n${row.populationReason}` : ''}` };
     });
     const blocks = [];
