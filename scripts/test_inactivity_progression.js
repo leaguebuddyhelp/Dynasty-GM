@@ -62,6 +62,9 @@ assert.ok(!evaluate(4, injuredNow).recommendations.some((item) => item.playerKey
 const poorRules = structuredClone(rules);
 poorRules.weekly.positions.DEF.scale = 100;
 poorRules.weekly.positions.DEF.weights = { defTotalTackles: 1 };
+// Force a low grade to isolate observed-poor-streak handling. Shipping DB
+// scoring treats a quiet game neutrally (covered in test_balanced_movement).
+poorRules.weekly.rolePerformance.CB = { ...poorRules.weekly.positions.DEF };
 poorRules.weekly.performanceWeight = 1;
 poorRules.weekly.expectationWeight = 0;
 const poor = {

@@ -127,7 +127,7 @@
         "minimumGames": 4,
         "minimumPeers": 3,
         "fraction": 0.25,
-        "minimumCurrentUpgradeScore": 75,
+        "minimumCurrentUpgradeScore": 65,
         "maximumCurrentDowngradeScore": 38,
         "maximumYoungYearsPro": 2,
         "selectionBonus": 18,
@@ -290,6 +290,7 @@
       "positionBalancePenalty": 6,
       "streakGamesForExtraPoint": 3,
       "maximumWeeklyAttributePoints": 5,
+      "pointBalance": { "weeklyPoints": 6, "exceptionalWeeklyPoints": 8, "seasonPoints": 40, "weeklyAwarenessPoints": 1, "seasonAwarenessPoints": 10, "coverageDecline": { "minimumGames": 6, "minimumCatchesAllowed": 10, "minimumAllowedEventShare": 0.85, "minimumPoorGames": 3 } },
       "strongEvidenceRatio": 1.5,
       "streakEvidenceRatio": 1.3,
       "outstandingGameScore": 90,
@@ -332,12 +333,15 @@
       },
       "negativeEvidence": {
         "QB": [
+          { "attribute": "Throw Accuracy Mid", "field": "passInts", "minimum": 2, "minimumOpportunities": 20, "opportunityField": "passAtt" },
+          { "attribute": "Throw Accuracy Deep", "field": "passInts", "minimum": 3, "minimumOpportunities": 20, "opportunityField": "passAtt" },
           { "attribute": "Throw Accuracy Short", "field": "passInts", "minimum": 1, "minimumOpportunities": 15, "opportunityField": "passAtt" },
           { "attribute": "Throw Accuracy Short", "field": "passComp", "maximumRate": 0.45, "minimumOpportunities": 20, "opportunityField": "passAtt", "rateField": "passAtt" }
         ],
         "HB": [
           { "attribute": "Carrying", "field": "fumbles", "minimum": 1, "minimumOpportunities": 8, "opportunityField": "rushAtt" },
-          { "attribute": "Ball Carrier Vision", "field": "rushYds", "maximumRate": 2.5, "minimumOpportunities": 12, "opportunityField": "rushAtt", "rateField": "rushAtt" }
+          { "attribute": "Break Tackle", "field": "rushBrokenTackles", "maximumRate": 0.1, "minimumOpportunities": 12, "opportunityField": "rushAtt", "rateField": "rushAtt" },
+          { "attribute": "Ball Carrier Vision", "field": "rushYds", "maximumRate": 3.2, "minimumOpportunities": 12, "opportunityField": "rushAtt", "rateField": "rushAtt" }
         ],
         "FB": [
           { "attribute": "Carrying", "field": "fumbles", "minimum": 1, "minimumOpportunities": 5, "opportunityField": "rushAtt" }
@@ -351,6 +355,8 @@
           { "attribute": "Medium Route Running", "field": "recYds", "maximumRate": 5, "minimumOpportunities": 3, "opportunityField": "recCatches", "rateField": "recCatches" }
         ],
         "OL": [
+          { "attribute": "Run Block Power", "field": "teamRushYds", "maximumRate": 2.5, "minimumOpportunities": 10, "opportunityField": "teamRushAtt", "rateField": "teamRushAtt" },
+          { "attribute": "Pass Block Power", "field": "teamSacks", "minimum": 4, "minimumOpportunities": 20, "opportunityField": "teamPassAtt" },
           { "attribute": "Run Blocking", "field": "teamRushYds", "maximumRate": 2.5, "minimumOpportunities": 10, "opportunityField": "teamRushAtt", "rateField": "teamRushAtt" },
           { "attribute": "Pass Blocking", "field": "teamSacks", "minimum": 4, "minimumOpportunities": 10, "opportunityField": "teamPassAtt" }
         ],
@@ -505,8 +511,8 @@
           ]
         },
         "HB": {
-          "scale": 17,
-          "expectedAt70": 7,
+          "scale": 11,
+          "expectedAt70": 4.5,
           "expectedPerOvr": 0.12,
           "weights": { "rushYds": 0.06, "rushTDs": 7, "recYds": 0.03, "recTDs": 5, "fumbles": -4 },
           "attributes": [
@@ -703,6 +709,7 @@
           "allowRepeatedEvidence": true
         },
         "OL": {
+          "lineUnitScoring": true,
           "scale": 100,
           "expectedAt70": 65,
           "expectedPerOvr": 0.25,
@@ -838,7 +845,7 @@
           }
         },
         "CB": {
-          "scale": 8,
+          "scale": 6,
           "expectedAt70": 3.5,
           "expectedPerOvr": 0.07,
           "weights": {
@@ -849,9 +856,10 @@
             "defRecoveredFumbles": 2,
             "defPassDeflections": 3,
             "defTDs": 7,
-            "defSafeties": 7,
-            "defCatchAllowed": -1.5
-          }
+            "defSafeties": 7
+          },
+          "neutralScore": 55,
+          "coveragePenaltyPerCatch": 4
         },
         "FS": {
           "scale": 8.5,
@@ -865,9 +873,10 @@
             "defRecoveredFumbles": 2,
             "defPassDeflections": 3,
             "defTDs": 7,
-            "defSafeties": 7,
-            "defCatchAllowed": -1.5
-          }
+            "defSafeties": 7
+          },
+          "neutralScore": 50,
+          "coveragePenaltyPerCatch": 4
         },
         "SS": {
           "scale": 8.5,
@@ -881,9 +890,10 @@
             "defRecoveredFumbles": 2,
             "defPassDeflections": 3,
             "defTDs": 7,
-            "defSafeties": 7,
-            "defCatchAllowed": -1.5
-          }
+            "defSafeties": 7
+          },
+          "neutralScore": 50,
+          "coveragePenaltyPerCatch": 4
         },
         "TE": {
           "scale": 11,

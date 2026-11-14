@@ -10,6 +10,9 @@ import { getMaddenDataFilePath } from '../src/leaguebuddy/paths.js';
 
 if (!process.env.LB_DATA_ROOT) throw new Error('Run through npm test with an isolated data root.');
 const rules = JSON.parse(await fs.readFile('config/madden_solo_rules.json', 'utf8')).progression;
+// Isolate rookie acceleration before shared player budgets; shipping caps have
+// dedicated integration tests and saved-season replay coverage.
+delete rules.weekly.pointBalance;
 const makePlayer = (rosterId, yearsPro, extra = {}) => ({
   rosterId, firstName: 'Test', lastName: rosterId, position: 'QB', yearsPro, playerBestOvr: 75,
   throwAccShortRating: 75, throwAccMidRating: 75, throwAccDeepRating: 75,

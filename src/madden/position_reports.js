@@ -73,6 +73,9 @@ export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false
       if (standout) lines.push(standout.direction === 'upgrade'
         ? `${standout.young ? 'Young stat leader' : 'Position stat leader'} · #${standout.rank}/${standout.peers}`
         : 'Sustained poor production · larger supported losses');
+      const decline = row.changeContext?.roleDecline;
+      if (decline?.type === 'coverageEvents') lines.push(`Coverage proxy: ${decline.catchesAllowed} catches allowed vs ${decline.stops} breakups/INTs over ${decline.games} observed games; targets are unavailable.`);
+      if (decline?.type === 'blockingUnit') lines.push(`Blocking proxy: ${decline.recentPoorGames} of the last four observed starter games had poor team rushing/sack results.`);
       return { header: `${emoji ? `${emoji} ` : ''}**${team.mascot}**`, body: `${positive && negative ? '↕' : positive ? '↑' : '↓'} **${row.player}**${row.position !== position ? ` (${row.position})` : ''}${row.ovrCeiling < 99 ? ` · **OVR ceiling ${row.ovrCeiling}**` : ''}${row.changeContext?.playoffStakes ? ` · Playoffs ×${row.changeContext.playoffStakes.multiplier}` : ''}\n${lines.join(' · ')}${row.populationReason ? `\n${row.populationReason}` : ''}` };
     });
     const blocks = [];

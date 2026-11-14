@@ -68,7 +68,7 @@ for (const week of balancedSeason.weeklyStats) {
   week.passing.playerPassingStatInfoList.push({ rosterId: 'poor-qb', teamId: 1, position: 'QB', passAtt: 30, passComp: 8, passYds: 40, passTDs: 0, passInts: 3 });
   week.rushing.playerRushingStatInfoList.push({ rosterId: 'poor-hb', teamId: 1, position: 'HB', rushAtt: 15, rushYds: 20, rushTDs: 0 });
   week.receiving.playerReceivingStatInfoList.push({ rosterId: 'poor-wr', teamId: 1, position: 'WR', recCatches: 4, recYds: 8, recTDs: 0 });
-  week.defense.playerDefensiveStatInfoList.push({ rosterId: 'poor-cb', teamId: 1, position: 'CB', defTotalTackles: 2 });
+  week.defense.playerDefensiveStatInfoList.push({ rosterId: 'poor-cb', teamId: 1, position: 'CB', defTotalTackles: 2, defCatchAllowed: 8 });
   week.kicking.playerKickingStatInfoList.push({ rosterId: 'poor-k', teamId: 1, position: 'K', fGAtt: 3, fGMade: 0 });
   week.punting.playerPuntingStatInfoList.push({ rosterId: 'poor-p', teamId: 1, position: 'P', puntAtt: 4, puntYds: 80, puntNetYds: 32, puntsIn20: 0 });
 }
@@ -94,7 +94,7 @@ for (const mutation of [
   (week) => { delete week.defense.playerDefensiveStatInfoList[1].teamId; },
   (week) => { week.defense.playerDefensiveStatInfoList[1].teamId = 2; },
   (week) => { week.defense.playerDefensiveStatInfoList[1].position = 'FS'; },
-  (week) => { week.defense.playerDefensiveStatInfoList[1].defTotalTackles = 0; },
+  (week) => { week.defense.playerDefensiveStatInfoList[1].defTotalTackles = 0; week.defense.playerDefensiveStatInfoList[1].defCatchAllowed = 0; },
 ]) {
   const incomplete = structuredClone(balancedSeason);
   incomplete.weeklyStats.forEach(mutation);
@@ -269,6 +269,9 @@ for (const weekType of [3, 8]) {
 }
 assert.equal(isOffseason({ info: { careerHubInfo: { seasonInfo: { offSeasonStage: 10 } } } }), true);
 const rules = structuredClone(baseRules);
+// The following calibrated fixtures isolate per-attribute mechanics before
+// shared player budgets, which have separate shipping-policy integration tests.
+delete rules.weekly.pointBalance;
 // Synthetic scores below isolate the base allocation and streak rules.
 // Production rookie/elite acceleration is covered by test_rookie_pipeline.js.
 delete rules.developmentPipeline;
@@ -579,7 +582,8 @@ const breakoutRecord = buildWeeklyProgressionRecommendations(breakoutSnapshot, {
 const breakout = breakoutRecord.recommendations[0];
 assert.equal(breakout.direction, 'upgrade');
 assert.equal(breakout.attributes.length, 5);
-assert.deepEqual(new Set(breakout.attributes.map((attribute) => attribute.points)), new Set([3, 4, 5]));
+assert.equal(breakout.totalAttributePoints, 6, 'A breakout shares the same player budget instead of multiplying it across five skills');
+assert.ok(breakout.attributes.every((a) => a.points > 0));
 assert.ok(breakout.performanceScore < baseRules.weekly.minimumUpgradePerformanceScore);
 assert.match(breakout.explanation, /65 OVR, weekly award/);
 const breakoutCard = buildProgressionCardEmbed(breakoutRecord, breakout).toJSON();
@@ -720,7 +724,7 @@ const sustainedReceiver = buildWeeklyProgressionRecommendations(
   { weekIndex: 5, rules: baseRules, history: { periods: {}, seasonAwards: {} } },
 ).recommendations[0];
 assert.equal(sustainedReceiver.attributes.length, 5);
-assert.deepEqual(new Set(sustainedReceiver.attributes.map((attribute) => attribute.points)), new Set([1, 5]));
+assert.equal(sustainedReceiver.totalAttributePoints, 6, 'Sustained receiver growth is distributed across skills within the shared budget');
 
 const multiNegativeRules = structuredClone(rules);
 multiNegativeRules.weekly.attributesPerRecommendation = 5;

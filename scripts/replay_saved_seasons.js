@@ -66,7 +66,9 @@ for (const [season, entry] of [...seasons].sort(([a], [b]) => a.localeCompare(b)
     if (!awards.has(week)) awards.set(week, (await updateAwards(null, snapshot.leagueId, week, { snapshot: view, stage: 1, captureOnly: true, refreshProgression: false })).winners);
     return awards.get(week);
   };
-  const oldRules = structuredClone(rules); delete oldRules.weekly.statLeaders;
+  const oldRules = process.env.MADDEN_REPLAY_COMPARISON_RULES
+    ? JSON.parse(await fs.readFile(process.env.MADDEN_REPLAY_COMPARISON_RULES, 'utf8')).progression : structuredClone(rules);
+  if (!process.env.MADDEN_REPLAY_COMPARISON_RULES) delete oldRules.weekly.statLeaders;
   const runs = {};
   for (const [label, policy] of [['previous', oldRules], ['updated', rules]]) {
     console.log(`REPLAY ${season} ${label}`);

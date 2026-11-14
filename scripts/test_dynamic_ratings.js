@@ -42,7 +42,8 @@ try {
   }));
   const withoutAwards = buildWeeklyProgressionRecommendations(snapshot, { weekIndex: 1, rules }).recommendations[0];
   assert.equal(withoutAwards.changeContext.awardMomentum, false);
-  assert.ok(withAwards.attributes[0].points > withoutAwards.attributes[0].points);
+  assert.ok(withAwards.selectionScore > withoutAwards.selectionScore, 'Awards improve selection priority even when both players reach the shared point ceiling');
+  assert.ok(withAwards.totalAttributePoints <= rules.weekly.pointBalance.weeklyPoints);
   assert.equal(formWithAwards.adjusted, performanceAdjustedRatings(snapshot, rules).get('roster:kelly').adjusted + 1);
 } finally {
   if (previous === undefined) delete process.env.LB_DATA_ROOT;

@@ -138,10 +138,15 @@ for (const [rising, falling, reverse] of [[76, 94], [79, 90], [86, 84], [89, 80]
   }
   const risen = weeklyPlayers[0], fallen = weeklyPlayers[1];
   for (const field of ['throwAccShortRating', 'throwAccMidRating', 'throwAccDeepRating']) {
-    assert.ok(risen[field] >= 90, `${rising}-rated strong performer must earn core accuracy into the 90s (${field}: ${risen[field]})`);
+    const nextTier = rising < 80 ? 80 : 90;
+    assert.ok(risen[field] >= nextTier, `${rising}-rated strong performer must earn core accuracy into the next tier (${field}: ${risen[field]})`);
   }
-  for (const field of ['throwAccShortRating', 'awareRating']) {
-    assert.ok(fallen[field] < 80, `${falling}-rated poor performer must lose core ratings through the 80s (${field}: ${fallen[field]})`);
+  assert.ok(fallen.throwAccShortRating < (falling >= 90 ? 90 : 80), 'Sustained poor play must move core skills below the incumbent tier');
+  assert.ok(fallen.awareRating < falling && fallen.awareRating >= falling - 10, 'Awareness decline stays bounded while supported passing skills carry the loss');
+  for (const player of full.totals.players) {
+    const gains = Object.values(player.attributes).reduce((s, a) => s + a.positive, 0);
+    const losses = Object.values(player.attributes).reduce((s, a) => s + a.negative, 0);
+    assert.ok(gains <= 40 && losses <= 40, 'Both weekly and full-season paths obey symmetric regular-season player budgets');
   }
 }
 const onePoorGame = buildWeeklyProgressionRecommendations(snapshot(90, { poor: true, games: 1 }), { rules, weekIndex: 0 });

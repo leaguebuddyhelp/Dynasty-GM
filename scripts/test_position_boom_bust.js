@@ -48,6 +48,8 @@ function evaluate(snapshot, policy = rules) {
 const secondary = POSITION_THREADS.filter((position) => !['QB', 'WR', 'HB'].includes(position));
 // Compare identical evidence with/without the new leader reward, across roles.
 const leaderRules = structuredClone(rules);
+// Isolate the incremental leader reward; shared budgets are tested separately.
+delete leaderRules.weekly.pointBalance;
 delete leaderRules.developmentPipeline;
 delete leaderRules.weekly.statProduction;
 delete leaderRules.weekly.teamForm;
@@ -95,7 +97,8 @@ for (const position of secondary) for (const poor of [false, true]) {
   const result = record.recommendations.find((row) => row.playerKey === 'roster:focus');
   assert.ok(result, `${position} must have a supported ${poor ? 'bust' : 'boom'} path`);
   assert.equal(result.direction, poor ? 'downgrade' : 'upgrade', position);
-  assert.ok(result.attributes.some((attribute) => Math.abs(attribute.points) >= 2), `${position} sustained performance must earn consequential movement`);
+  if (result.attributes.every((a) => a.evidence === 'currentGameScore')) assert.ok(result.attributes.every((a) => Math.abs(a.points) <= 1), 'Proxy-only Awareness losses must stay small');
+  else assert.ok(result.attributes.some((attribute) => Math.abs(attribute.points) >= 2), `${position} sustained performance must earn consequential movement`);
   assert.ok(result.attributes.every((attribute) => Math.abs(attribute.points) <= (line(position) ? 2 : 5) && attribute.targetValue >= 0 && attribute.targetValue <= 99));
   if (position === 'LEDG' && !poor) assert.ok(result.attributes.some((a) => a.field === 'powerMovesRating') && result.attributes.some((a) => a.field === 'finesseMovesRating'));
   if (position === 'CB' && poor) assert.ok(result.attributes.some((a) => a.field === 'manCoverRating'));
