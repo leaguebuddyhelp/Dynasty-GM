@@ -56,6 +56,12 @@ export function collectSeasonTotals(weeks) {
       recommendation.direction === 'upgrade' ? upgradeEvents++ : downgradeEvents++;
       const player = players.get(recommendation.playerKey) || { playerKey: recommendation.playerKey, player: recommendation.player,
         teamId: recommendation.teamId, team: recommendation.team, position: recommendation.position, attributes: {} };
+      if (recommendation.changeContext?.roleDecline?.type === 'defensiveLineUnit') {
+        const summary = player.defensiveLineProxySummary ||= { weeks: [], points: 0, kinds: [] };
+        summary.weeks.push(week.weekIndex + 1);
+        summary.points += recommendation.attributes.filter((a) => a.evidence === 'defensiveLineTeamProxy').reduce((sum, a) => sum + Math.abs(a.points), 0);
+        summary.kinds = [...new Set([...summary.kinds, recommendation.changeContext.roleDecline.kind])];
+      }
       for (const attribute of recommendation.attributes) {
         const value = player.attributes[attribute.field] ||= { attribute: attribute.attribute, field: attribute.field, positive: 0, negative: 0, net: 0, weeks: [] };
         if (attribute.points > 0) { value.positive += attribute.points; positivePoints += attribute.points; }

@@ -14,6 +14,7 @@ import { getFullTeamName } from '../shared/madden_team_names.js';
 import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getMaddenStatValue, normalizeMaddenStatField } from './madden_stat_fields.js';
 import { seasonProductionReward, buildTeamFormContexts } from './weekly_progression_context.js';
+import { buildDefensiveLineProxy } from './defensive_line_proxy.js';
 import { normalizePlayoffProgressionSnapshot, hasPlayoffPlayerData } from './playoff_stats.js';
 import { loadFullSeasonRun, matchesFullSeason } from './full_season_store.js';
 import { buildTeamReportIndex } from './report_navigation.js';
@@ -1312,6 +1313,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   const population = populationSnapshot(players, rules);
   const participants = Number(weekIndex) >= 18 ? playedTeamIds(snapshot, weekIndex) : null;
   const teamForms = buildTeamFormContexts(snapshot, Number(weekIndex), weeklyRules.teamForm);
+  const defensiveLine = buildDefensiveLineProxy({ snapshot, players, byWeek, weekIndex: Number(weekIndex), seasonKey, history, policy: weeklyRules.defensiveLineProxy });
   const candidates = [];
   const rookieOutcomes = new Map();
   const awardReasons = new Map();
@@ -1366,6 +1368,12 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const pipeline = pipelineMomentum(player, windows, positionKey, rules);
     const qualified = windows.metrics.filter(({ row }) => opportunityConfirmed(row.totals, positionKey, weeklyRules));
     const roleDeclineAttributes = [];
+    const dlDecline = !weeklyAwards ? defensiveLine.declines.get(player.key) : null;
+    if (dlDecline) for (const attribute of dlDecline.attributes) {
+      const field = weeklyRules.attributeFields[attribute], currentValue = numberOrNull(player[field]);
+      if (currentValue !== null && currentValue > 0 && currentValue <= 99) roleDeclineAttributes.push({ attribute, field, currentValue,
+        evidence: 'defensiveLineTeamProxy', evidenceRatio: 1 });
+    }
     const coveragePolicy = weeklyRules.pointBalance?.coverageDecline;
     const coverageRows = qualified.filter(({ row }) => !row.missingTeamId && row.observedTeamIds?.size > 0).map(({ row }) => row.totals).filter((stats) =>
       ['defCatchAllowed', 'defPassDeflections', 'defInts'].every((field) => numberOrNull(stats[field]) !== null));
@@ -1387,7 +1395,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const lineDecline = positionKey === 'OL' && weeklyRules.pointBalance && qualified.length >= 3
       && qualified.slice(-4).filter(({ row }) => linePoor(row.totals)).length >= 3 && linePoor(current.totals)
       && Number(player.injuryLength || 0) <= 0;
-    const supportedRoleDecline = Boolean(coverageDecline || lineDecline);
+    const supportedRoleDecline = Boolean(coverageDecline || lineDecline || dlDecline);
     const seasonStats = seasonStatSummaries(qualified.map(({ row }) => row));
     const productionAverages = { ...seasonStats.averages };
     for (const field of ['passYds', 'passTDs', 'recYds', 'recTDs', 'rushYds', 'rushTDs', 'defSacks', 'defInts', 'defTotalTackles', 'defPassDeflections']) {
@@ -1519,7 +1527,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       // Repeated poor decisions affect awareness as well as the evidenced skill.
       // Keeping this alongside skill losses lets struggling highly rated players
       // decline instead of repeatedly reducing only one attribute.
-      if (sustainedPoor && !negative.some((attribute) => attribute.attribute === 'Awareness')
+      if (sustainedPoor && !dlDecline && !negative.some((attribute) => attribute.attribute === 'Awareness')
         && awarenessValue !== null && awarenessValue > 0 && awarenessValue <= 99) {
         negative.splice(Math.max(0, Number(weeklyRules.attributesPerRecommendation || 3) - 1));
         negative.push({ attribute: 'Awareness', field: weeklyRules.attributeFields.Awareness, evidence: 'currentGameScore', currentValue: awarenessValue, evidenceRatio: 1 });
@@ -1583,7 +1591,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       : awarenessPoorFallback ? verifiedPoorStreak : windows.consistency.poorStreak;
     const maxPoints = Number(weeklyRules.maximumWeeklyAttributePoints ?? 5);
     const specialist = ['K', 'P'].includes(positionKey) ? weeklyRules.specialistMovement : null;
-    const attributePointCap = Math.min(maxPoints, positionKey === 'OL' && weeklyRules.lineMomentum ? Number(weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints, specialist ? Number(specialist.maximumAttributePoints) : maxPoints);
+    const attributePointCap = Math.min(maxPoints, positionKey === 'OL' && weeklyRules.lineMomentum ? Number(weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints, specialist ? Number(specialist.maximumAttributePoints) : maxPoints,
+      dlDecline ? Number(weeklyRules.defensiveLineProxy.maximumAttributePoints) : maxPoints);
     if (specialist) {
       const awareness = evidence.find((attribute) => attribute.attribute === 'Awareness');
       evidence = evidence.slice(0, Number(specialist.maximumAttributes));
@@ -1711,9 +1720,9 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       eliteMomentum: direction === 'upgrade' && pipeline.elite,
       sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0, teamLineProxy: positionKey === 'OL' };
     if (statLeader || statFaller) selected.changeContext.positionStandout = { ...standing, young: Boolean(youngLeader), direction };
-    if (supportedRoleDecline) selected.changeContext.roleDecline = coverageDecline
+    if (supportedRoleDecline) selected.changeContext.roleDecline = dlDecline || (coverageDecline
       ? { type: 'coverageEvents', games: coverageRows.length, catchesAllowed: coverageAllowed, stops: coverageStops }
-      : { type: 'blockingUnit', recentPoorGames: qualified.slice(-4).filter(({ row }) => linePoor(row.totals)).length };
+      : { type: 'blockingUnit', recentPoorGames: qualified.slice(-4).filter(({ row }) => linePoor(row.totals)).length });
     selected.minimumSelectionScore = direction === 'upgrade'
       ? Number(reserve ? volume.minimumUpgradePriority : weeklyRules.minimumUpgradeSelectionScore)
       : Number(reserve ? volume.minimumDowngradePriority : weeklyRules.minimumDowngradeSelectionPriority);
@@ -1763,6 +1772,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
   });
   record.lineProxyObservations = Object.fromEntries(players.filter((player) => OFFENSIVE_LINE_POSITIONS.has(player.position) && weekPlayers.has(player.key)).map((player) =>
     [player.key, { teamId: player.teamId, position: player.position, totals: structuredClone(weekPlayers.get(player.key).totals) }]));
+  record.defensiveLineProxyObservations = defensiveLine.observations;
   record.selectionDiagnostics = {
     eligibleCandidates: candidates.filter((candidate) =>
       candidate.selectionScore >= candidate.minimumSelectionScore).length,
@@ -2074,6 +2084,8 @@ function recommendationWhy(record, item) {
     const sources = [item.stats?.teamRunScore != null ? 'rushing' : null, item.stats?.teamPassScore != null ? 'pass protection' : null].filter(Boolean).join(' and ');
     reasons[0] = `Team ${sources} performance is a proxy, not individual blocking stats. Projected starter is the highest-OVR healthy player at this position${record.type !== 'weekly' ? '; season evidence comes only from weeks when this player was also the projected starter' : ''}.`;
   }
+  const dlProxy = item.changeContext?.roleDecline;
+  if (dlProxy?.type === 'defensiveLineUnit') reasons[0] = `DL team-performance proxy: ${dlProxy.poorGames} of ${dlProxy.games} observed starter games combined weak ${dlProxy.kind === 'runDefense' ? 'run defense' : 'pass rush'} with low individual production. Individual snaps/pressures are unavailable.`;
   if (record.type === 'weekly' && item.awardPoints > 0) reasons.push('Won a weekly award.');
   if (item.attributes.some((attribute) => attribute.attribute === 'Awareness' && attribute.evidence === 'currentGameScore')) {
     reasons.push('Awareness is estimated from game performance, not measured directly.');
@@ -2671,7 +2683,8 @@ async function publishProgression({ client, guildId, snapshot, type, weekIndex =
   if (old && ((old.gameplayPolicyVersion >= 1 && old.recommendations?.length > 0) || Object.values(old.statusById || {}).some((status) => status.status === 'applied'))) {
     record = {
       ...old,
-      ...(type === 'weekly' ? { inactivityObservations: current.inactivityObservations, lineProxyObservations: current.lineProxyObservations } : {}),
+      ...(type === 'weekly' ? { inactivityObservations: current.inactivityObservations, lineProxyObservations: current.lineProxyObservations,
+        defensiveLineProxyObservations: current.defensiveLineProxyObservations } : {}),
       latestSyncId: current.syncId,
       syncIds: [...new Set([...(old.syncIds || [old.syncId]), current.syncId].filter(Boolean))],
       updatedAt: new Date().toISOString(),
@@ -2758,6 +2771,7 @@ export function buildFullSeasonCardEmbeds(row, seasonKey, teamName = row.team) {
     const lines = attributes.map((attribute) => attribute.needsReview
       ? `**${attribute.attribute}** · earned ${signed(attribute.net)} · imported rating missing; review in Madden`
       : `**${attribute.attribute}** ${attribute.currentValue} → ${attribute.targetValue} (${signed(attribute.pointsToApply)})`);
+    if (row.defensiveLineProxySummary?.points) lines.push(`Includes ${row.defensiveLineProxySummary.points} points of DL team-proxy losses; individual snaps/pressures are unavailable.`);
     const positive = attributes.reduce((sum, attribute) => sum + attribute.positive, 0);
     const negative = attributes.reduce((sum, attribute) => sum + attribute.negative, 0);
     const label = direction === 'upgrade' ? '📈 Upgrade' : direction === 'downgrade' ? '📉 Downgrade' : '📋 Review';
