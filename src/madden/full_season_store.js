@@ -67,6 +67,33 @@ export async function saveFullSeasonRun(run) {
     await fs.rename(temporary, file);
   } catch (error) { await fs.rm(temporary, { force: true }); throw error; }
 }
+export function matchesUnappliedRecalculation(run, snapshot, grant, guildId) {
+  return Boolean(grant?.confirmedUnapplied && run && matchesFullSeason(run, snapshot)
+    && String(guildId) === String(grant.guildId) && String(run.guildId) === String(grant.guildId)
+    && String(run.leagueId) === String(grant.leagueId) && run.baselineSyncId === grant.baselineSyncId);
+}
+export async function prepareUnappliedRecalculation(run, snapshot, grant, guildId) {
+  if (!matchesUnappliedRecalculation(run, snapshot, grant, guildId) || run.recalculation?.requestId === grant.requestId) return false;
+  if (run.status !== 'complete' || !run.calculationComplete) return false;
+  const directory = path.join(path.dirname(stateFile(run.guildId, run.leagueId)), 'revisions');
+  await fs.mkdir(directory, { recursive: true });
+  const backup = path.join(directory, `${safe(grant.requestId)}.json`);
+  try { await fs.writeFile(backup, JSON.stringify(run, null, 2), { flag: 'wx' }); }
+  catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+    const prior = JSON.parse(await fs.readFile(backup, 'utf8'));
+    if (prior.baselineSyncId !== run.baselineSyncId || prior.leagueId !== run.leagueId || prior.guildId !== run.guildId || prior.status !== 'complete') {
+      throw new Error('The recalculation backup is incomplete or belongs to a different season. Original targets were not replaced.');
+    }
+  }
+  run.preservedAwardWinners = Object.fromEntries(Object.entries(run.weeks || {}).map(([week, record]) => [week, record.awardWinners]));
+  run.recalculation = { requestId: grant.requestId, confirmedUnapplied: true, status: 'calculating', backup };
+  run.calculationComplete = false;
+  run.weeks = {}; run.application = []; run.totals = null;
+  run.status = 'collecting';
+  await saveFullSeasonRun(run);
+  return true;
+}
 export async function archiveFullSeasonRun(run) {
   const directory = path.dirname(stateFile(run.guildId, run.leagueId));
   await fs.mkdir(directory, { recursive: true });

@@ -6,6 +6,7 @@ import { buildTeamFormContexts } from '../src/madden/weekly_progression_context.
 const rules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8')).progression;
 // Compare production/team multipliers before the shared player-point ceiling.
 delete rules.weekly.pointBalance;
+delete rules.weekly.seasonImpact;
 const oldRules = structuredClone(rules);
 delete oldRules.weekly.statProduction;
 delete oldRules.weekly.teamForm;

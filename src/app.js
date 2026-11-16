@@ -61,12 +61,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.once(Events.ClientReady, () => {
   markHealthReady(true);
   console.log(`[ready] Madden Franchise HQ connected as ${client.user.tag}`);
-  removeRookieRecapMessages(client, getSoloModeConfig().guildId)
+  const reportRepairs = removeRookieRecapMessages(client, getSoloModeConfig().guildId)
     .catch((error) => console.warn('[progression] Recap cleanup failed', error.message))
     .then(() => repairProgressionReportNavigation(client, getSoloModeConfig().guildId))
     .catch((error) => console.warn('[progression] Navigation repair failed', error.message));
   refreshApplicationEmojiMap(client).catch((error) => console.warn('[emoji] refresh failed', error.message));
   import('./madden/full_season.js').then(async ({ logFullSeasonStatus, repairSavedFullSeasonSync }) => {
+    await reportRepairs;
     await logFullSeasonStatus(getSoloModeConfig().guildId);
     await repairSavedFullSeasonSync(client, getSoloModeConfig().guildId);
   })

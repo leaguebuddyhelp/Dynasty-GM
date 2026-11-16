@@ -1,7 +1,7 @@
 import { hasForeignSeasonStats } from './season_stat_isolation.js';
 import { getMaddenSeasonKey } from '../shared/madden_metadata.js';
 import { getFranchisePhase } from './franchise_phase.js';
-import { loadFullSeasonRun, saveFullSeasonRun, archiveFullSeasonRun, fullSeasonIdentity, matchesFullSeason, findArchivedSeasonBaseline, isStartingSeasonSnapshot } from './full_season_store.js';
+import { loadFullSeasonRun, saveFullSeasonRun, archiveFullSeasonRun, fullSeasonIdentity, matchesFullSeason, findArchivedSeasonBaseline, isStartingSeasonSnapshot, matchesUnappliedRecalculation, prepareUnappliedRecalculation } from './full_season_store.js';
 import { regularSeasonWeeks, seasonCoverage, replayFullSeason, buildSeasonApplication } from './full_season_engine.js';
 import { updateAwards, publishWeeklyAwards } from './awards.js';
 import { publishFullSeasonTotals, publishSeasonMovementSummary, readProgressionRules, hasIssuedSeasonWeeklyChanges } from './progression.js';
@@ -79,6 +79,7 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
       await saveFullSeasonRun(run);
     }
   }
+  if (phase === 'playoffs') await prepareUnappliedRecalculation(run, snapshot, readProgressionRules().confirmedUnappliedRecalculation, guildId);
   if (run.status === 'complete') {
     if (readProgressionRules().discord.progressionLayout === 'positions') {
       const publication = await publishFullSeasonTotals({ client, guildId, snapshot, run });
@@ -129,6 +130,7 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
     const replay = await replayFullSeason({ baseline: run.baseline, snapshot: regular, weeks: merged, rules,
       onWeek: onProgress ? async (week, record) => onProgress('Calculating full season', `Week ${week}/18: ${record.recommendations.filter((item) => item.direction === 'upgrade').length} upgrades, ${record.recommendations.filter((item) => item.direction === 'downgrade').length} downgrades; attribute points +${record.attributeTotals.positive}/−${record.attributeTotals.negative}.`) : null,
       computeAwards: async (view, week) => {
+        if (run.preservedAwardWinners?.[week]) return run.preservedAwardWinners[week];
         const result = await updateAwards(null, run.leagueId, week, { guildId, snapshot: view, stage: 1, captureOnly: true, refreshProgression: false });
         if (!result.winners) throw new Error(`Week ${week} awards could not be calculated.`);
         return result.winners;
@@ -158,6 +160,7 @@ async function processSeason({ client, guildId, snapshot, onProgress }) {
   if (onProgress) await onProgress('Posting season upgrades and downgrades', 'Posting summed player attribute changes in your position threads. Apply each final target once.');
   const progression = await publishFullSeasonTotals({ client, guildId, snapshot, run });
   run.status = 'complete';
+  if (run.recalculation) run.recalculation.status = 'complete';
   run.completedAt = new Date().toISOString();
   run.result = { ...progression, mode: 'full-season', status: 'complete', awardsPosted: Object.keys(run.awardPosts).length,
     weeklyTallies: Object.values(run.weeks).map((week) => ({ weekNumber: week.weekNumber,
@@ -185,6 +188,14 @@ export async function repairSavedFullSeasonSync(client, guildId) {
   const snapshot = await loadLeagueSnapshot(leagueId);
   if (!snapshot || getFranchisePhase(snapshot) !== 'playoffs') return;
   const run = await loadFullSeasonRun(guildId, leagueId);
+  const grant = readProgressionRules().confirmedUnappliedRecalculation;
+  if (matchesUnappliedRecalculation(run, snapshot, grant, guildId)
+    && (run.recalculation?.requestId !== grant.requestId || run.recalculation.status !== 'complete')) {
+    console.log('[full-season] rebuilding confirmed unapplied season', JSON.stringify({ leagueId, baselineSyncId: run.baselineSyncId, requestId: grant.requestId }));
+    const result = await runFullSeasonSync({ client, guildId, snapshot });
+    console.log('[full-season] unapplied season rebuilt', JSON.stringify({ leagueId, result }));
+    return result;
+  }
   if (!matchesFullSeason(run, snapshot) || run.status !== 'awaiting_data' || run.calculationComplete
     || !hasForeignSeasonStats(Object.values(run.importedWeeks || {}), snapshot)) return;
   console.log('[full-season] repairing stale-season imports', JSON.stringify({ leagueId, baselineSyncId: run.baselineSyncId }));

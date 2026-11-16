@@ -70,6 +70,7 @@ export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false
       const positive = attributes.some((attribute) => (fullSeason ? attribute.net : attribute.points) > 0);
       const negative = attributes.some((attribute) => (fullSeason ? attribute.net : attribute.points) < 0);
       const standout = row.changeContext?.positionStandout;
+      if (row.changeContext?.seasonImpact) lines.push(`Sustained season ${row.changeContext.seasonImpact.direction === 'upgrade' ? 'breakout' : 'decline'} · concentrated core-skill changes`);
       if (standout) lines.push(standout.direction === 'upgrade'
         ? `${standout.young ? 'Young stat leader' : 'Position stat leader'} · #${standout.rank}/${standout.peers}`
         : 'Sustained poor production · larger supported losses');
@@ -80,7 +81,7 @@ export function buildPositionChangeEmbeds(snapshot, record, { fullSeason = false
         const current = decline.kind === 'runDefense' && Number.isFinite(decline.allowedYpc)
           ? `Opponent: ${decline.allowedYpc.toFixed(1)} yards/carry on ${decline.rushAttempts} attempts.`
           : Number.isFinite(decline.allowedYpa) ? `Opponent: ${decline.allowedYpa.toFixed(1)} yards/pass attempt; ${decline.sacks} team sacks on ${decline.passAttempts} attempts.` : '';
-        lines.push(`DL team proxy · ${decline.kind === 'runDefense' ? 'run defense' : 'pass rush'}: ${decline.poorGames}/${decline.games} observed starter games had weak unit results and low individual production. ${current} Individual snaps/pressures are unavailable.`);
+        lines.push(`DL team proxy · ${decline.kind === 'runDefense' ? 'run defense' : 'pass rush'}: ${decline.poorGames}/${decline.games} observed starter games had weak unit results and low individual production. ${decline.earnedGames > 1 ? `Includes previously unissued changes from ${decline.earnedGames} verified weak games. ` : ''}${current} Individual snaps/pressures are unavailable.`);
       }
       if (fullSeason && row.defensiveLineProxySummary?.points) lines.push(`Season totals include ${row.defensiveLineProxySummary.points} points of DL team-proxy losses over ${row.defensiveLineProxySummary.weeks.length} weeks. Individual snaps/pressures are unavailable.`);
       return { header: `${emoji ? `${emoji} ` : ''}**${team.mascot}**`, body: `${positive && negative ? '↕' : positive ? '↑' : '↓'} **${row.player}**${row.position !== position ? ` (${row.position})` : ''}${row.ovrCeiling < 99 ? ` · **OVR ceiling ${row.ovrCeiling}**` : ''}${row.changeContext?.playoffStakes ? ` · Playoffs ×${row.changeContext.playoffStakes.multiplier}` : ''}\n${lines.join(' · ')}${row.populationReason ? `\n${row.populationReason}` : ''}` };

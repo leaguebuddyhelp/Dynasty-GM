@@ -38,8 +38,8 @@ for (const position of ['LEDG', 'REDG', 'DT']) for (const kind of ['runDefense',
   assert.equal(loss.changeContext.roleDecline.type, 'defensiveLineUnit');
   assert.equal(loss.changeContext.roleDecline.kind, kind);
   assert.equal(loss.changeContext.roleDecline.games, 6);
-  assert.ok(loss.attributes.length <= 2 && Math.abs(loss.totalAttributePoints) <= 4);
-  assert.ok(loss.attributes.every((a) => a.points >= -2 && a.points < 0 && a.attribute !== 'Awareness'));
+  assert.ok(loss.attributes.length <= 2 && Math.abs(loss.totalAttributePoints) <= 10);
+  assert.ok(loss.attributes.every((a) => a.points >= -5 && a.points < 0 && a.attribute !== 'Awareness'));
   assert.deepEqual(snapshot, original, 'Proxy calculations cannot mutate imported data');
   const description = buildPositionChangeEmbeds(snapshot, record).get(position).embeds[0].toJSON().description;
   assert.match(description, /DL team proxy/);
@@ -48,11 +48,11 @@ for (const position of ['LEDG', 'REDG', 'DT']) for (const kind of ['runDefense',
   const totals = collectSeasonTotals(history.periods);
   const application = buildSeasonApplication({ totals, baseline: snapshot, snapshot, applicationMode: 'add_net' });
   const total = application.find((p) => p.playerKey === 'roster:focus');
-  assert.equal(total.defensiveLineProxySummary.points, 4);
+  assert.equal(total.defensiveLineProxySummary.points, Math.abs(loss.totalAttributePoints));
   assert.match(JSON.stringify(buildFullSeasonCardEmbeds(total, record.seasonKey).map((embed) => embed.toJSON())), /DL team-proxy losses/);
   assert.deepEqual(total.defensiveLineProxySummary.weeks, [6]);
   assert.match(buildPositionChangeEmbeds(snapshot, { seasonKey: record.seasonKey, application }, { fullSeason: true })
-    .get(position).embeds[0].toJSON().description, /Season totals include 4 points of DL team-proxy losses/, 'Full-season summed posts must retain the proxy disclosure');
+    .get(position).embeds[0].toJSON().description, /Season totals include 10 points of DL team-proxy losses/, 'Full-season summed posts must retain the proxy disclosure');
   assert.equal(buildWeeklyProgressionRecommendations(snapshot, { rules, history, weekIndex: 5 }).recommendations
     .find((p) => p.playerKey === 'roster:focus').changeContext.roleDecline.games, 6, 'Same-week retries cannot add another observation');
   for (const mutate of [

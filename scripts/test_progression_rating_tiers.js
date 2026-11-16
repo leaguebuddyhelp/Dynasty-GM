@@ -146,7 +146,7 @@ for (const [rising, falling, reverse] of [[76, 94], [79, 90], [86, 84], [89, 80]
   for (const player of full.totals.players) {
     const gains = Object.values(player.attributes).reduce((s, a) => s + a.positive, 0);
     const losses = Object.values(player.attributes).reduce((s, a) => s + a.negative, 0);
-    assert.ok(gains <= 40 && losses <= 40, 'Both weekly and full-season paths obey symmetric regular-season player budgets');
+    assert.ok(gains <= rules.weekly.pointBalance.seasonPoints && losses <= rules.weekly.pointBalance.seasonPoints, 'Both weekly and full-season paths obey symmetric regular-season player budgets');
   }
 }
 const onePoorGame = buildWeeklyProgressionRecommendations(snapshot(90, { poor: true, games: 1 }), { rules, weekIndex: 0 });

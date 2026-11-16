@@ -15,8 +15,9 @@ import { getTeamEmojiByName } from '../shared/madden_visuals.js';
 import { getMaddenStatValue, normalizeMaddenStatField } from './madden_stat_fields.js';
 import { seasonProductionReward, buildTeamFormContexts } from './weekly_progression_context.js';
 import { buildDefensiveLineProxy } from './defensive_line_proxy.js';
+import { concentrateSeasonEvidence, seasonImpact } from './season_impact.js';
 import { normalizePlayoffProgressionSnapshot, hasPlayoffPlayerData } from './playoff_stats.js';
-import { loadFullSeasonRun, matchesFullSeason } from './full_season_store.js';
+import { loadFullSeasonRun, matchesFullSeason, matchesUnappliedRecalculation } from './full_season_store.js';
 import { buildTeamReportIndex } from './report_navigation.js';
 import { getFranchisePhase } from './franchise_phase.js';
 import { buildPopulationCapPlan } from './population_caps.js';
@@ -1201,7 +1202,12 @@ export function getRatingPopulationPlan(snapshot, rules = readRules().progressio
       && !row.missingTeamId && (!row.observedTeamIds || row.observedTeamIds.size > 0));
     const games = rows.length;
     const { totals, averages } = seasonStatSummaries(rows);
-    let rawScore = role ? performanceMetrics(averages, 70, role, rules.weekly).score : 75;
+    const metric = role ? performanceMetrics(averages, 70, role, rules.weekly) : null;
+    let rawScore = metric?.score ?? 75;
+    const productionIndex = role && metric ? role.neutralScore != null
+      ? Number(role.neutralScore) + metric.raw / Number(role.scale) * (100 - Number(role.neutralScore))
+        - Number(averages.defCatchAllowed || 0) * Number(role.coveragePenaltyPerCatch || 0)
+      : metric.raw / Number(role.scale) * 100 : 0;
     const attempts = Number(totals.passAtt || 0);
     if (player.position === 'QB' && attempts > 0) {
       // A shared, uncapped production/efficiency index distinguishes elite QBs
@@ -1218,13 +1224,25 @@ export function getRatingPopulationPlan(snapshot, rules = readRules().progressio
       ratingAttributes: [...new Set([...(role?.attributes || []).filter((rule) => !rule.positions || rule.positions.includes(player.position))
         .map((rule) => rule.attribute).filter((attribute) => !['Speed', 'Acceleration', 'Agility', 'Strength', 'Jump'].includes(attribute)), 'Awareness'])]
         .map((attribute) => ({ attribute, field: rules.weekly.attributeFields[attribute], currentValue: numberOrNull(player[rules.weekly.attributeFields[attribute]]) })),
-      currentOvr: player.ovr, yearsPro: experienceYears(player), games, attempts, rawScore, rankScore: sufficient ? rawScore : 75,
+      currentOvr: player.ovr, yearsPro: experienceYears(player), games, attempts, rawScore, productionIndex, rankScore: sufficient ? rawScore : 75,
       eligibleForGrowth: !['offseason', 'preseason'].includes(phase)
         && (player.position === 'QB' ? completeQbStats && games >= 2 && attempts >= 50 : games >= 3) && rawScore >= 75
         && role && rows.at(-1) && performanceMetrics(rows.at(-1).totals, 70, role, rules.weekly).score >= 75
         && getEvidenceAttributes(rows.at(-1).totals, player, rules.weekly, role).length > 0,
       sufficientSample: sufficient, passingYards: Number(totals.passYds || 0), touchdowns: Number(totals.passTDs || 0), interceptions: Number(totals.passInts || 0) };
   });
+  if (rules.weekly.seasonImpact) {
+    const groups = new Map();
+    for (const p of evidence.filter((p) => p.position !== 'QB' && p.sufficientSample)) {
+      const key = positionThreadKey(p.position), list = groups.get(key) || [];
+      list.push(p); groups.set(key, list);
+    }
+    for (const list of groups.values()) for (const p of list) {
+      const below = list.filter((other) => other.productionIndex < p.productionIndex).length;
+      const tied = list.filter((other) => other.productionIndex === p.productionIndex).length;
+      p.rankScore = p.rawScore < 50 ? Math.min(74, p.rawScore) : 70 + 40 * (below + tied / 2) / list.length;
+    }
+  }
   return buildPopulationCapPlan(evidence, policy, (snapshot.teams?.leagueTeamInfoList || []).map((team) => String(team.teamId)));
 }
 // Rank uncapped production within each exact position, so saturated 100-point
@@ -1451,7 +1469,9 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     const negativePointsUsed = sumAttributePoints(history, seasonKey, player.key, 'negative');
     const soft = earnedGrowthPenalty(
       positiveSeasonPenalty(positivePointsUsed, seasonKeyOvr, rules.offseason),
-      Boolean(production) || sustainedWeeklyGrowth(windows, positionKey, rules), rules,
+      Boolean(production) || sustainedWeeklyGrowth(windows, positionKey, rules)
+        || (weeklyRules.seasonImpact && qualified.length >= weeklyRules.seasonImpact.minimumGames
+          && positionStandouts.get(player.key)?.leader && currentMetrics.score >= 65), rules,
     );
     const populationAdjustment = getPopulationSoftPenalty(player, population, rules);
     const awardEvidence = currentAttributeEvidence.some((item) => item.evidence !== 'currentGameScore');
@@ -1544,6 +1564,18 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
     }
     if (reserve) evidence = evidence.filter((item) => item.evidence !== 'currentGameScore').slice(0, Number(volume.maximumAttributes));
     if (!direction || !evidence.length || !points) continue;
+    const impact = seasonImpact({ policy: weeklyRules.seasonImpact, position: player.position, direction,
+      games: qualified.length, seasonScore: direction === 'upgrade' ? Math.max(windows.seasonScore, production?.seasonScore || 0,
+        positionStandouts.get(player.key)?.leader ? weeklyRules.seasonImpact?.minimumStrongSeasonScore || 75 : 0) : windows.seasonScore, currentScore: currentMetrics.score,
+      supportedDecline: supportedRoleDecline, young: experienceYears(player) !== null && experienceYears(player) <= 2, totals: seasonStats.totals,
+      completeEvidence: positionKey !== 'QB' || qualified.every(({ row }) => ['passAtt', 'passComp', 'passYds', 'passTDs', 'passInts'].every((field) => numberOrNull(row.totals[field]) !== null)) });
+    if (impact && direction === 'upgrade') {
+      const seasonEvidence = getEvidenceAttributes(productionAverages, player, weeklyRules, positionRule, Number.MAX_SAFE_INTEGER);
+      for (const attribute of seasonEvidence) if (!evidence.some((a) => a.field === attribute.field)) {
+        evidence.push({ ...attribute, evidenceWindow: 'seasonToDate' });
+      }
+    }
+    if (impact) evidence = concentrateSeasonEvidence(evidence, player.position, impact.coreAttributes);
     const ovrCeiling = capPlan?.ceilings[player.key] ?? 99;
     if (direction === 'upgrade' && player.ovr >= ovrCeiling) continue;
     if (direction === 'upgrade') {
@@ -1563,6 +1595,15 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       : statFaller ? Number(leaderPolicy?.selectionBonus || 0) : 0;
     priorityBase += standoutBonus;
     selectionAdjustments.positionStandout = standoutBonus;
+    if (impact && evidence.some((a) => a.evidence !== 'currentGameScore')) {
+      const eliteProduction = production?.label === 'Elite season production';
+      const rate = direction === 'upgrade' ? eliteProduction ? 5 : 3 : supportedRoleDecline ? 3 : 4;
+      const earnedTarget = Math.min(Number(weeklyRules.pointBalance?.seasonPoints || 90), qualified.length * rate * (youngLeader ? 1.2 : 1));
+      const issued = direction === 'upgrade' ? positivePointsUsed : negativePointsUsed;
+      const unissuedPriority = Math.min(40, Math.max(0, earnedTarget - issued));
+      priorityBase += unissuedPriority;
+      selectionAdjustments.unissuedSeasonMerit = unissuedPriority;
+    }
     const rookieOutcomeBonus = (direction === 'upgrade' && rookieOutcome?.trajectory === 'boom') || (direction === 'downgrade' && rookieBust)
       ? (rookieOutcome.highPick ? Number(outcomePolicy.highPickSelectionBonus) : 0)
         + (direction === 'downgrade' ? Number(outcomePolicy.bustSelectionBonus) : 0) : 0;
@@ -1591,8 +1632,8 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       : awarenessPoorFallback ? verifiedPoorStreak : windows.consistency.poorStreak;
     const maxPoints = Number(weeklyRules.maximumWeeklyAttributePoints ?? 5);
     const specialist = ['K', 'P'].includes(positionKey) ? weeklyRules.specialistMovement : null;
-    const attributePointCap = Math.min(maxPoints, positionKey === 'OL' && weeklyRules.lineMomentum ? Number(weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints, specialist ? Number(specialist.maximumAttributePoints) : maxPoints,
-      dlDecline ? Number(weeklyRules.defensiveLineProxy.maximumAttributePoints) : maxPoints);
+    const attributePointCap = Math.min(maxPoints, positionKey === 'OL' && weeklyRules.lineMomentum ? Number(impact ? weeklyRules.seasonImpact.maximumLineAttributePoints : weeklyRules.lineMomentum.maximumAttributePoints) : maxPoints, specialist ? Number(specialist.maximumAttributePoints) : maxPoints,
+      dlDecline ? Number(weeklyRules.defensiveLineProxy.maximumCatchUpPointsPerAttribute ?? weeklyRules.defensiveLineProxy.maximumAttributePoints) : maxPoints);
     if (specialist) {
       const awareness = evidence.find((attribute) => attribute.attribute === 'Awareness');
       evidence = evidence.slice(0, Number(specialist.maximumAttributes));
@@ -1648,17 +1689,21 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         magnitude += Number(leaderPolicy.extraAttributePoints) + (youngLeader ? Number(leaderPolicy.youngExtraAttributePoints) : 0);
       }
       if (supportedRoleDecline && attribute.evidence !== 'currentGameScore') magnitude += 1;
+      if (impact && attribute.evidence !== 'currentGameScore') magnitude += impact.extraPoints;
       const line = weeklyRules.lineMomentum;
       if (positionKey === 'OL' && line) {
         const recentLine = windows.metrics.slice(-Number(line.minimumGames));
         const sustainedLine = recentLine.length === Number(line.minimumGames) && recentLine.every(({ score }) =>
           direction === 'upgrade' ? score >= Number(line.minimumStrongScore) : score <= Number(line.maximumPoorScore));
         if (sustainedLine && index < 2) magnitude += 1;
-        magnitude = Math.min(Number(line.maximumAttributePoints), magnitude);
+        magnitude = Math.min(Number(impact ? weeklyRules.seasonImpact.maximumLineAttributePoints : line.maximumAttributePoints), magnitude);
       }
       magnitude = reserve ? 1 : Math.ceil(magnitude * teamMultiplier);
       if (specialist) magnitude = Math.ceil(magnitude * Number(specialist.multiplier));
       magnitude = Math.min(attributePointCap, magnitude);
+      if (dlDecline && attribute.evidence === 'defensiveLineTeamProxy' && dlDecline.owedByAttribute) {
+        magnitude = Math.min(attributePointCap, dlDecline.owedByAttribute[attribute.attribute] || 0);
+      }
       return attributeAllocation(attribute, direction === 'upgrade' ? magnitude : -magnitude);
     });
     if (!allocation.length) continue;
@@ -1685,7 +1730,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
         playoffExtraPoints += bonus;
       }
     }
-    const exceptional = (statLeader && currentMetrics.score >= 95 && streak >= 3)
+    const exceptional = Boolean(impact) || (statLeader && currentMetrics.score >= 95 && streak >= 3)
       || (coverageDecline && coverageAllowed / Math.max(1, coverageAllowed + coverageStops) >= 0.90)
       || (statFaller && currentMetrics.score <= 20 && verifiedPoorStreak >= 3);
     allocation = balanceWeeklyAttributePoints(allocation, { history, seasonKey, playerKey: player.key, weekIndex: Number(weekIndex), policy: weeklyRules.pointBalance, exceptional, playoffExtraPoints });
@@ -1720,6 +1765,7 @@ export function buildWeeklyProgressionRecommendations(snapshot, {
       eliteMomentum: direction === 'upgrade' && pipeline.elite,
       sustainedGrowth: direction === 'upgrade' && soft.earnedRelief > 0, teamLineProxy: positionKey === 'OL' };
     if (statLeader || statFaller) selected.changeContext.positionStandout = { ...standing, young: Boolean(youngLeader), direction };
+    if (impact) selected.changeContext.seasonImpact = impact;
     if (supportedRoleDecline) selected.changeContext.roleDecline = dlDecline || (coverageDecline
       ? { type: 'coverageEvents', games: coverageRows.length, catchesAllowed: coverageAllowed, stops: coverageStops }
       : { type: 'blockingUnit', recentPoorGames: qualified.slice(-4).filter(({ row }) => linePoor(row.totals)).length });
@@ -2805,7 +2851,8 @@ function seasonWeeklyCsv(run) {
   const rows = [['Week', 'Player', 'Team ID', 'Position', 'Direction', 'Attribute', 'Virtual rating before', 'Virtual rating after', 'Points', 'Evidence']];
   for (const week of Object.values(run.weeks)) for (const player of week.recommendations) for (const attribute of player.attributes) rows.push([
     week.weekNumber, player.player, player.teamId, player.position, player.direction,
-    attribute.attribute, attribute.currentValue, attribute.targetValue, attribute.points, attribute.evidence,
+    attribute.attribute, attribute.currentValue, attribute.targetValue, attribute.points,
+    `${attribute.evidence}${attribute.evidenceWindow === 'seasonToDate' ? ' (season to date)' : ''}`,
   ]);
   return encodeSeasonCsv(rows);
 }
@@ -2819,6 +2866,13 @@ export async function publishFullSeasonTotals({ client, guildId, snapshot, run }
     version: 1, leagueId: String(snapshot.leagueId), periodKey, seasonKey, season: snapshot.season,
     type: 'full_season', recommendations: [], application: run.application, teamMessages: {}, statusById: {},
   };
+  if (run.recalculation?.confirmedUnapplied && record.recalculationRequestId !== run.recalculation.requestId
+    && matchesUnappliedRecalculation(run, snapshot, rules.confirmedUnappliedRecalculation, guildId)) {
+    if (Object.values(record.statusById || {}).some((status) => status.status === 'applied')) throw new Error('Cannot replace season targets marked applied. Review their application status first.');
+    record.supersededApplication = { requestId: run.recalculation.requestId, application: record.application };
+    record.application = run.application;
+    record.recalculationRequestId = run.recalculation.requestId;
+  }
   for (const week of Object.values(run.weeks)) {
     const key = `${seasonKey}_week_${week.weekNumber}`;
     const prior = history.periods[key];
@@ -2834,6 +2888,7 @@ export async function publishFullSeasonTotals({ client, guildId, snapshot, run }
     const totals = run.totals;
     const embed = buildTeamReportIndex({ title: `📋 ${seasonLabel(run.seasonKey)} · Season Changes by Position`,
       description: `**Weeks 1–18 added up per player**\n${totals.upgradeEvents} upgrade events · ${totals.downgradeEvents} downgrade events\nAttribute points: +${totals.positivePoints} / −${totals.negativePoints} · Net ${totals.netPoints >= 0 ? '+' : ''}${totals.netPoints}\n\nOpen your position thread. Apply each final target **once**. These are the saved season totals; reposting does not earn new changes.`, reports, navigationLabel: 'Open your position report', moreLabel: 'More positions' });
+    if (record.recalculationRequestId) embed.addFields({ name: 'Revised unapplied totals', value: 'These targets replace the previous unapplied season list. Apply the new final values once; do not add both lists.' });
     const reportUrl = await publishReportIndex(client, guildId, registry, record, history, embed,
       [{ attachment: seasonCsv(run), name: `${run.seasonKey}-combined-attribute-changes.csv` }, { attachment: seasonWeeklyCsv(run), name: `${run.seasonKey}-weekly-attribute-audit.csv` }]);
     return { published: true, recommendationCount: [...groups.values()].reduce((sum, group) => sum + group.count, 0), type: 'full_season', periodKey, reportUrl, positionCount: groups.size };

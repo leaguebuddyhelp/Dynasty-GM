@@ -73,7 +73,7 @@ export function buildDefensiveLineProxy({ snapshot, players, byWeek, weekIndex, 
       const bigFields = ['defSacks', 'defInts', 'defForcedFumbles', 'defRecoveredFumbles', 'defSafeties', 'defTDs', 'defPassDeflections'];
       if (number(stats.defTotalTackles) === null || (stats.defTotalTackles < policy.minimumObservedTackles && !bigFields.some((field) => number(stats[field]) > 0))) continue;
       const quiet = stats.defTotalTackles <= policy.maximumQuietTackles && bigFields.every((field) => number(stats[field]) === 0);
-      const observation = { teamId: String(player.teamId), position, quiet, ...unit };
+      const observation = { teamId: String(player.teamId), position, quiet, tackles: stats.defTotalTackles, ...unit };
       observations[player.key] = observation;
       if (!quiet || stats.defTotalTackles < policy.minimumCurrentTackles) continue;
       const sample = Object.values(history.periods || {}).filter((period) => period.type === 'weekly'
@@ -89,9 +89,16 @@ export function buildDefensiveLineProxy({ snapshot, players, byWeek, weekIndex, 
       const passRush = unit.poorPass && passGames >= policy.minimumPoorGames;
       if (!run && !passRush) continue;
       const kind = run && (!passRush || runGames >= passGames) ? 'runDefense' : 'passRush';
+      const earnedGames = [...unique.values()].filter((p) => p.quiet && p.tackles >= policy.minimumCurrentTackles
+        && (kind === 'runDefense' ? p.poorRun : p.poorPass)).length;
+      const attributes = kind === 'runDefense' ? ['Block Shedding', 'Pursuit'] : ['Power Moves', 'Finesse Moves'];
+      const priorLosses = Object.values(history.periods || {}).filter((p) => p.type === 'weekly' && p.seasonKey === seasonKey && p.weekIndex < weekIndex)
+        .flatMap((p) => (p.recommendations || []).filter((r) => r.playerKey === player.key).flatMap((r) => r.attributes || []))
+        .filter((a) => a.evidence === 'defensiveLineTeamProxy' && a.points < 0);
+      const owedByAttribute = Object.fromEntries(attributes.map((attribute) => [attribute, Math.max(0,
+        earnedGames * policy.maximumAttributePoints - priorLosses.filter((a) => a.attribute === attribute).reduce((sum, a) => sum + Math.abs(a.points), 0))]));
       declines.set(player.key, { type: 'defensiveLineUnit', kind, games: unique.size,
-        poorGames: kind === 'runDefense' ? runGames : passGames, ...unit,
-        attributes: kind === 'runDefense' ? ['Block Shedding', 'Pursuit'] : ['Power Moves', 'Finesse Moves'] });
+        poorGames: kind === 'runDefense' ? runGames : passGames, earnedGames, owedByAttribute, ...unit, attributes });
     }
   }
   return { observations, declines };

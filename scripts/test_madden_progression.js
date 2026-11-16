@@ -272,6 +272,7 @@ const rules = structuredClone(baseRules);
 // The following calibrated fixtures isolate per-attribute mechanics before
 // shared player budgets, which have separate shipping-policy integration tests.
 delete rules.weekly.pointBalance;
+delete rules.weekly.seasonImpact;
 // Synthetic scores below isolate the base allocation and streak rules.
 // Production rookie/elite acceleration is covered by test_rookie_pipeline.js.
 delete rules.developmentPipeline;
@@ -582,7 +583,7 @@ const breakoutRecord = buildWeeklyProgressionRecommendations(breakoutSnapshot, {
 const breakout = breakoutRecord.recommendations[0];
 assert.equal(breakout.direction, 'upgrade');
 assert.equal(breakout.attributes.length, 5);
-assert.equal(breakout.totalAttributePoints, 6, 'A breakout shares the same player budget instead of multiplying it across five skills');
+assert.equal(breakout.totalAttributePoints, baseRules.weekly.pointBalance.weeklyPoints, 'A breakout shares the same player budget instead of multiplying it across five skills');
 assert.ok(breakout.attributes.every((a) => a.points > 0));
 assert.ok(breakout.performanceScore < baseRules.weekly.minimumUpgradePerformanceScore);
 assert.match(breakout.explanation, /65 OVR, weekly award/);
@@ -723,8 +724,8 @@ const sustainedReceiver = buildWeeklyProgressionRecommendations(
   snapshot(sixReceiverWeeks, receiver),
   { weekIndex: 5, rules: baseRules, history: { periods: {}, seasonAwards: {} } },
 ).recommendations[0];
-assert.equal(sustainedReceiver.attributes.length, 5);
-assert.equal(sustainedReceiver.totalAttributePoints, 6, 'Sustained receiver growth is distributed across skills within the shared budget');
+assert.equal(sustainedReceiver.attributes.length, baseRules.weekly.seasonImpact.coreAttributes);
+assert.equal(sustainedReceiver.totalAttributePoints, baseRules.weekly.pointBalance.exceptionalWeeklyPoints, 'Sustained receiver growth is distributed across skills within the shared budget');
 
 const multiNegativeRules = structuredClone(rules);
 multiNegativeRules.weekly.attributesPerRecommendation = 5;

@@ -39,6 +39,13 @@
     "returnSpecialistCount": 2
   },
   "progression": {
+    "confirmedUnappliedRecalculation": {
+      "requestId": "unapplied-core-impact-2026-11-16",
+      "confirmedUnapplied": true,
+      "guildId": "1516463916933189742",
+      "leagueId": "34176889",
+      "baselineSyncId": "f9f788ba-aadd-4cae-a8e6-bb9b34d62b29"
+    },
     "version": 1,
     "developmentPipeline": {
       "maximumYoungYearsPro": 2,
@@ -290,7 +297,21 @@
       "positionBalancePenalty": 6,
       "streakGamesForExtraPoint": 3,
       "maximumWeeklyAttributePoints": 5,
-      "pointBalance": { "weeklyPoints": 6, "exceptionalWeeklyPoints": 8, "seasonPoints": 40, "weeklyAwarenessPoints": 1, "seasonAwarenessPoints": 10, "coverageDecline": { "minimumGames": 6, "minimumCatchesAllowed": 10, "minimumAllowedEventShare": 0.85, "minimumPoorGames": 3 } },
+      "pointBalance": { "weeklyPoints": 8, "exceptionalWeeklyPoints": 15, "seasonPoints": 90, "weeklyAwarenessPoints": 1, "seasonAwarenessPoints": 10, "coverageDecline": { "minimumGames": 6, "minimumCatchesAllowed": 10, "minimumAllowedEventShare": 0.85, "minimumPoorGames": 3 } },
+      "seasonImpact": {
+        "minimumGames": 6,
+        "minimumQbAttempts": 150,
+        "minimumRbTouches": 80,
+        "minimumReceivingCatches": 25,
+        "minimumStrongSeasonScore": 75,
+        "minimumStrongCurrentScore": 65,
+        "maximumPoorSeasonScore": 40,
+        "maximumPoorCurrentScore": 45,
+        "coreAttributes": 3,
+        "extraCorePoints": 2,
+        "youngExtraCorePoints": 1,
+        "maximumLineAttributePoints": 3
+      },
       "defensiveLineProxy": {
         "enabled": true,
         "minimumObservedGames": 6,
@@ -304,7 +325,8 @@
         "minimumObservedTackles": 1,
         "minimumCurrentTackles": 2,
         "maximumQuietTackles": 4,
-        "maximumAttributePoints": 2
+        "maximumAttributePoints": 2,
+        "maximumCatchUpPointsPerAttribute": 5
       },
       "strongEvidenceRatio": 1.5,
       "streakEvidenceRatio": 1.3,
@@ -341,7 +363,7 @@
         "FB": { "rushAtt": 3, "recCatches": 2 },
         "WR": { "recCatches": 2 },
         "TE": { "recCatches": 2 },
-        "DEF": { "defTotalTackles": 2, "defSacks": 1, "defInts": 1, "defPassDeflections": 1, "defCatchAllowed": 3 },
+        "DEF": { "defTotalTackles": 2, "defSacks": 0.5, "defInts": 1, "defPassDeflections": 1, "defCatchAllowed": 3 },
         "OL": { "teamRushAtt": 10, "teamPassAtt": 10 },
         "K": { "fgAtt": 1, "xpAtt": 1 },
         "P": { "pntAtt": 2 }
@@ -675,6 +697,8 @@
                 "WILL"
               ]
             },
+            { "attribute": "Man Coverage", "evidence": "defInts", "minimum": 1, "positions": ["CB", "FS", "SS", "DB", "S"] },
+            { "attribute": "Play Recognition", "evidence": "defInts", "minimum": 1, "positions": ["CB", "FS", "SS", "DB", "S"] },
             {
               "attribute": "Man Coverage",
               "evidence": "defPassDeflections",

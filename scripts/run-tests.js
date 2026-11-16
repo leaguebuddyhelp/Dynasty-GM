@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const scripts = [
+  'test_season_impact.js',
   'test_defensive_line_proxy.js',
   'test_balanced_movement.js',
   'test_population_caps.js',
@@ -29,14 +30,15 @@ for (const script of scripts) {
     // All other tests, including position layout/rebuilds, use shipping defaults.
     const legacyFormat = ['test_season_overall_changes.js', 'test_rookie_pipeline.js'].includes(script);
     const legacyRulesFile = path.join(root, 'legacy-report-rules.json');
-    if (legacyFormat) {
+    const editableRules = script === 'test_full_season_sync.js';
+    if (legacyFormat || editableRules) {
       const rules = JSON.parse(fs.readFileSync('config/madden_solo_rules.json', 'utf8'));
-      rules.progression.discord.progressionLayout = 'teams';
+      if (legacyFormat) rules.progression.discord.progressionLayout = 'teams';
       fs.writeFileSync(legacyRulesFile, JSON.stringify(rules));
     }
     const result = spawnSync(process.execPath, [path.join('scripts', script)], {
       stdio: 'inherit',
-      env: { ...process.env, ...(legacyFormat ? { MADDEN_SOLO_RULES_FILE: legacyRulesFile } : {}), LB_DATA_ROOT: root, MADDEN_SOLO_USER_ID: 'operator-1', MADDEN_SOLO_GUILD_ID: 'guild-1' },
+      env: { ...process.env, ...(legacyFormat || editableRules ? { MADDEN_SOLO_RULES_FILE: legacyRulesFile } : {}), LB_DATA_ROOT: root, MADDEN_SOLO_USER_ID: 'operator-1', MADDEN_SOLO_GUILD_ID: 'guild-1' },
     });
     if (result.error) throw result.error;
     if (result.status !== 0) { process.exitCode = result.status || 1; break; }
