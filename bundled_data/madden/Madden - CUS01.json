@@ -65,7 +65,14 @@
     "jersey": "#2",
     "round": 1,
     "pick": 3,
-    "class": 1
+    "class": 1,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med afro tapered",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "achne"
   },
   "4": {
     "#": 4,
@@ -187,7 +194,14 @@
     "jersey": "#99",
     "round": 1,
     "pick": 9,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short fade",
+    "hair_color": "black",
+    "facial_hair": "none",
+    "features": "chubby face"
   },
   "10": {
     "#": 10,
@@ -552,7 +566,14 @@
     "jersey": "#97",
     "round": 1,
     "pick": 25,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "afro tapered",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "african"
   },
   "26": {
     "#": 26,
@@ -595,7 +616,14 @@
     "jersey": "#95",
     "round": 1,
     "pick": 27,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro tapered",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "black features"
   },
   "28": {
     "#": 28,
@@ -681,7 +709,14 @@
     "jersey": "#95",
     "round": 1,
     "pick": 31,
-    "class": 1
+    "class": 1,
+    "skin": "light skin black",
+    "eye_color": "hazel",
+    "ethnicity": "african american",
+    "hair": "short ceaser",
+    "hair_color": "light brown",
+    "facial_hair": "none",
+    "features": "mixxed race"
   },
   "32": {
     "#": 32,
@@ -760,7 +795,14 @@
     "jersey": "#97",
     "round": 2,
     "pick": 3,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "cornrows",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "black features"
   },
   "36": {
     "#": 36,
@@ -778,7 +820,14 @@
     "jersey": "#41",
     "round": 2,
     "pick": 4,
-    "class": 1
+    "class": 1,
+    "skin": "olive",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "long straight ponytail",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "spansih features"
   },
   "37": {
     "#": 37,
@@ -821,7 +870,14 @@
     "jersey": "#94",
     "round": 2,
     "pick": 6,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short dreads",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "black features"
   },
   "39": {
     "#": 39,
@@ -839,7 +895,14 @@
     "jersey": "#90",
     "round": 2,
     "pick": 7,
-    "class": 1
+    "class": 1,
+    "skin": "olive",
+    "eye_color": "hazel",
+    "ethnicity": "latin/african",
+    "hair": "short straight hair",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "spanish"
   },
   "40": {
     "#": 40,
@@ -875,7 +938,14 @@
     "jersey": "#54",
     "round": 2,
     "pick": 9,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "dreads designed",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "black features"
   },
   "42": {
     "#": 42,
@@ -961,7 +1031,14 @@
     "jersey": "#3",
     "round": 2,
     "pick": 13,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "afro tapered",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "black features"
   },
   "46": {
     "#": 46,
@@ -979,7 +1056,14 @@
     "jersey": "#3",
     "round": 2,
     "pick": 14,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "blue",
+    "ethnicity": "white",
+    "hair": "short straight",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "white features"
   },
   "47": {
     "#": 47,
@@ -1137,7 +1221,14 @@
     "jersey": "#19",
     "round": 2,
     "pick": 22,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "dreads designed",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "black features"
   },
   "55": {
     "#": 55,
@@ -1155,7 +1246,14 @@
     "jersey": "#97",
     "round": 2,
     "pick": 23,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "designed dreads",
+    "hair_color": "black",
+    "facial_hair": "none",
+    "features": "black features"
   },
   "56": {
     "#": 56,
@@ -1302,7 +1400,14 @@
     "jersey": "#55",
     "round": 2,
     "pick": 30,
-    "class": 1
+    "class": 1,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "chubby face"
   },
   "63": {
     "#": 63,
@@ -1467,7 +1572,14 @@
     "jersey": "#57",
     "round": 3,
     "pick": 6,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro tapered",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "african"
   },
   "71": {
     "#": 71,
@@ -1510,7 +1622,14 @@
     "jersey": "#41",
     "round": 3,
     "pick": 8,
-    "class": 1
+    "class": 1,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "clean face"
   },
   "73": {
     "#": 73,
@@ -1578,7 +1697,14 @@
     "jersey": "#99",
     "round": 3,
     "pick": 11,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "dreads designed with fade",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "african"
   },
   "76": {
     "#": 76,
@@ -1689,7 +1815,14 @@
     "jersey": "#95",
     "round": 3,
     "pick": 16,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "med straight hair fade",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "classic white DLINE"
   },
   "81": {
     "#": 81,
@@ -2008,7 +2141,14 @@
     "jersey": "#44",
     "round": 3,
     "pick": 31,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "long straight",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "classic white DLINE"
   },
   "96": {
     "#": 96,
@@ -2026,6 +2166,13 @@
     "jersey": "#90",
     "round": 3,
     "pick": 32,
-    "class": 1
+    "class": 1,
+    "skin": "light skin black",
+    "eye_color": "green",
+    "ethnicity": "african american",
+    "hair": "short dreads",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "light skin pretty boy"
   }
 }

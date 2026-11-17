@@ -43,6 +43,31 @@
         "fictional": true
       }
     },
+    "3": {
+      "headline": "An early pick who can change the front",
+      "bio": "Williams' fictional Georgia season pairs 61 pressures on 342 rushes with 14.5 sacks and 22 tackles for loss. The 17.8% pressure rate gives the No. 3 projection substance beyond a strong frame or a few clean finishes. He can drive an offensive tackle backward, separate after contact and still affect the play when the quarterback avoids the initial rush. Thirty-three run stops add value on ordinary downs. At age 21, he projects as a defensive centerpiece, with the next step being quicker counters when protection commits extra attention to his first move.",
+      "watch": "Develop quicker counters against extra protection and maintain rush-lane control when the first collision wins.",
+      "name": "Cardarion Williams",
+      "portrait": "cardarion-williams-transparent.png",
+      "statistics": {
+        "position": "LEDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 620,
+        "passRushSnaps": 342,
+        "runDefenseSnaps": 278,
+        "tackles": 68,
+        "missedTackles": 4,
+        "sacks": 14.5,
+        "sackPressures": 15,
+        "hits": 12,
+        "hurries": 34,
+        "pressures": 61,
+        "tacklesForLoss": 22,
+        "runStops": 33,
+        "forcedFumbles": 4
+      }
+    },
     "6": {
       "name": "Aaron Archuelta",
       "portrait": "aaron-archuelta-transparent.png",
@@ -81,6 +106,31 @@
         "pressuresAllowed": 14,
         "runBlockWins": 329,
         "penalties": 5
+      }
+    },
+    "9": {
+      "headline": "A heavy edge with first-round disruption",
+      "bio": "Patrick's fictional Texas Tech season produced 54 pressures, 11 sacks and 18 tackles for loss. His 16.2% pressure rate across 334 rushes supports a projection built on creating movement through contact rather than waiting for an untouched path. At 299 pounds, he can give a front options from a wider alignment or closer to the interior. Thirty run stops reinforce the case for meaningful responsibility at No. 9. More consistent pad level through longer rushes would help him keep his strength useful after the initial clash.",
+      "watch": "Keep his pad level controlled and sustain his rush when a blocker survives the first contact.",
+      "name": "Braeden Patrick",
+      "portrait": "braeden-patrick-transparent.png",
+      "statistics": {
+        "position": "LEDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 614,
+        "passRushSnaps": 334,
+        "runDefenseSnaps": 280,
+        "tackles": 63,
+        "missedTackles": 5,
+        "sacks": 11,
+        "sackPressures": 11,
+        "hits": 11,
+        "hurries": 32,
+        "pressures": 54,
+        "tacklesForLoss": 18,
+        "runStops": 30,
+        "forcedFumbles": 3
       }
     },
     "10": {
@@ -296,6 +346,31 @@
         "fictional": true
       }
     },
+    "25": {
+      "headline": "A young edge with a clear path to passing-down impact",
+      "bio": "White's fictional LSU season includes 46 pressures on 313 rushes, a 14.7% rate, with 9.5 sacks. His movement around the edge gives a defense a credible way to challenge protection without relying on an extra rusher. At age 21 and No. 25, there is room to grow into a larger role as his hand usage becomes more deliberate. The run-game contribution is less established: 18 stops and seven missed tackles leave a practical teaching priority. He needs to stay connected to his assignment when an offense runs toward him.",
+      "watch": "Improve his contact balance against the run and connect his initial rush to a reliable counter.",
+      "name": "Keshawn White",
+      "portrait": "keshawn-white-transparent.png",
+      "statistics": {
+        "position": "LEDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 531,
+        "passRushSnaps": 313,
+        "runDefenseSnaps": 218,
+        "tackles": 44,
+        "missedTackles": 7,
+        "sacks": 9.5,
+        "sackPressures": 10,
+        "hits": 9,
+        "hurries": 27,
+        "pressures": 46,
+        "tacklesForLoss": 14,
+        "runStops": 18,
+        "forcedFumbles": 2
+      }
+    },
     "26": {
       "portrait": "nasir-james-jr-transparent.png",
       "headline": "A passing-game weapon worth moving around",
@@ -315,6 +390,31 @@
         "runBlockSnaps": 119
       },
       "name": "Nasir James Jr."
+    },
+    "27": {
+      "headline": "A first-round edge with pressure and run-game utility",
+      "bio": "Robinson's fictional NC State season features 45 pressures, nine sacks and 15 tackles for loss. His 14.1% pressure rate across 319 rushes gives the No. 27 placement a useful combination of disruption and repeatable work through contact. He can attack a tackle's set, force a reaction and finish when the quarterback holds the ball. Twenty-four run stops keep the projection broader than a narrow rush package. He still needs more variation once a blocker recognizes his preferred approach, particularly when the initial strike does not create separation.",
+      "watch": "Vary his hand sequencing and respond sooner when the blocker sits on his first approach.",
+      "name": "Deacon Robinson",
+      "portrait": "deacon-robinson-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 573,
+        "passRushSnaps": 319,
+        "runDefenseSnaps": 254,
+        "tackles": 53,
+        "missedTackles": 6,
+        "sacks": 9,
+        "sackPressures": 9,
+        "hits": 9,
+        "hurries": 27,
+        "pressures": 45,
+        "tacklesForLoss": 15,
+        "runStops": 24,
+        "forcedFumbles": 2
+      }
     },
     "28": {
       "headline": "An imposing tackle with a starting pathway to refine",
@@ -356,6 +456,31 @@
         "fictional": true
       }
     },
+    "31": {
+      "headline": "A starting pathway with another rush answer to develop",
+      "bio": "Smith's fictional Wisconsin season delivered 43 pressures on 326 rushes, along with 8.5 sacks and 23 run stops. The production gives him a credible first-round foundation at No. 31, especially when he establishes contact on his terms and keeps the edge from opening cheaply. His 13.2% pressure rate is encouraging without suggesting every matchup is already solved. More precise hand placement and a quicker response after the first move stalls would help him become a more complete threat. The projection is early rotational value with a realistic route toward starting responsibility.",
+      "watch": "Add a quicker counter and keep his hands accurate when the offensive tackle changes the contact point.",
+      "name": "Hezekiah Smith",
+      "portrait": "hezekiah-smith-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 584,
+        "passRushSnaps": 326,
+        "runDefenseSnaps": 258,
+        "tackles": 50,
+        "missedTackles": 6,
+        "sacks": 8.5,
+        "sackPressures": 9,
+        "hits": 9,
+        "hurries": 25,
+        "pressures": 43,
+        "tacklesForLoss": 13,
+        "runStops": 23,
+        "forcedFumbles": 2
+      }
+    },
     "33": {
       "name": "Kerry Williams Jr.",
       "portrait": "kerry-williams-jr-transparent.png",
@@ -371,6 +496,56 @@
         "targets": 91,
         "routesRun": 362,
         "fictional": true
+      }
+    },
+    "35": {
+      "headline": "Useful edge pressure with a lighter initial role",
+      "bio": "Lake's fictional Oregon season produced 37 pressures and eight sacks across 297 rushes. His 12.5% pressure rate gives a passing-down package something useful to build around, particularly when he can challenge the outside angle before the tackle settles. At No. 35, the path to a larger role depends on the less glamorous work. Fourteen run stops and eight missed tackles show why he needs better control through contact. He must stay useful when an offense refuses the obvious passing situation instead of letting his rush assignment define every snap.",
+      "watch": "Improve his run fits and tackling control, then add a dependable answer when the edge closes.",
+      "name": "Desmond Lake",
+      "portrait": "desmond-lake-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 488,
+        "passRushSnaps": 297,
+        "runDefenseSnaps": 191,
+        "tackles": 39,
+        "missedTackles": 8,
+        "sacks": 8,
+        "sackPressures": 8,
+        "hits": 7,
+        "hurries": 22,
+        "pressures": 37,
+        "tacklesForLoss": 11,
+        "runStops": 14,
+        "forcedFumbles": 2
+      }
+    },
+    "36": {
+      "headline": "An edge rotation piece with room to sharpen the finish",
+      "bio": "Maldanado's fictional Ohio State season includes 38 pressures on 302 rushes, seven sacks and 22 run stops. He can challenge a block through contact and remain involved when a run stays near his side of the formation. That gives the No. 36 projection a broader foundation than a rush-only assignment. The next layer is turning early disruption into a cleaner finish: he needs more deliberate counters and better timing separating from the blocker. A rotational role is a reasonable opening, with larger responsibility tied to more consistent pressure and finishing.",
+      "watch": "Time his separation more effectively and develop a clearer second move after initial contact.",
+      "name": "Ricky Maldanado",
+      "portrait": "ricky-maldanado-transparent.png",
+      "statistics": {
+        "position": "LEDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 554,
+        "passRushSnaps": 302,
+        "runDefenseSnaps": 252,
+        "tackles": 49,
+        "missedTackles": 6,
+        "sacks": 7,
+        "sackPressures": 7,
+        "hits": 8,
+        "hurries": 23,
+        "pressures": 38,
+        "tacklesForLoss": 12,
+        "runStops": 22,
+        "forcedFumbles": 1
       }
     },
     "37": {
@@ -392,6 +567,81 @@
         "pressuresAllowed": 27,
         "runBlockWins": 245,
         "penalties": 5
+      }
+    },
+    "38": {
+      "headline": "Interior disruption with development time on his side",
+      "bio": "Crawford's fictional Clemson season produced 31 pressures on 288 rushes, a 10.8% rate from the interior, with 5.5 sacks. Those figures give his No. 38 projection a useful source of value: affecting the quarterback without requiring an untouched edge. Twenty-four run stops add evidence that he can remain involved beyond selected passing downs. At age 21, his next step is making his first contact more controlled and staying square when a blocker redirects him. The early role is a meaningful interior rotation, with room to grow into a more complete contributor.",
+      "watch": "Keep his pad level controlled and avoid losing his run responsibility while searching for an interior opening.",
+      "name": "Bobbie Crawford",
+      "portrait": "bobbie-crawford-transparent.png",
+      "statistics": {
+        "position": "DT",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 548,
+        "passRushSnaps": 288,
+        "runDefenseSnaps": 260,
+        "tackles": 48,
+        "missedTackles": 5,
+        "sacks": 5.5,
+        "sackPressures": 6,
+        "hits": 6,
+        "hurries": 19,
+        "pressures": 31,
+        "tacklesForLoss": 11,
+        "runStops": 24,
+        "forcedFumbles": 2
+      }
+    },
+    "39": {
+      "headline": "An interior run defender with a defined early role",
+      "bio": "Francisco's fictional Oregon season features 30 run stops on 306 run-defense snaps, a 9.8% rate, with three missed tackles. That provides a practical reason to involve him in the middle of a front even when the sack total is modest. He can occupy space, resist the initial movement and help keep an intended running lane from opening cleanly. At No. 39, his 17 pressures and 2.5 sacks leave a less developed passing-down case. More effective separation after contact would expand his usefulness when the offense shifts away from the run.",
+      "watch": "Separate from blocks more efficiently and develop a more productive passing-down response after first contact.",
+      "name": "Johnathan Francisco",
+      "portrait": "johnathan-francisco-transparent.png",
+      "statistics": {
+        "position": "DT",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 519,
+        "passRushSnaps": 213,
+        "runDefenseSnaps": 306,
+        "tackles": 52,
+        "missedTackles": 3,
+        "sacks": 2.5,
+        "sackPressures": 3,
+        "hits": 4,
+        "hurries": 10,
+        "pressures": 17,
+        "tacklesForLoss": 9,
+        "runStops": 30,
+        "forcedFumbles": 1
+      }
+    },
+    "41": {
+      "headline": "A rotational rusher with a broader role to earn",
+      "bio": "Robinson's fictional Missouri season includes 34 pressures on 286 rushes and 6.5 sacks. His 11.9% pressure rate gives a defense a workable reason to introduce him in selected situations, especially when his movement makes the blocker commit early. At No. 41, the challenge is becoming useful when those favorable rush conditions disappear. Fifteen run stops and seven missed tackles leave room to improve his positioning and control through contact. Better discipline at the edge and a more organized counter plan would make a larger workload easier to justify.",
+      "watch": "Hold his edge assignment against the run and connect his initial movement to a more reliable counter.",
+      "name": "Jahmiah Robinson",
+      "portrait": "jahmiah-robinson-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 493,
+        "passRushSnaps": 286,
+        "runDefenseSnaps": 207,
+        "tackles": 38,
+        "missedTackles": 7,
+        "sacks": 6.5,
+        "sackPressures": 7,
+        "hits": 7,
+        "hurries": 20,
+        "pressures": 34,
+        "tacklesForLoss": 10,
+        "runStops": 15,
+        "forcedFumbles": 1
       }
     },
     "43": {
@@ -434,6 +684,56 @@
       },
       "name": "Tyler Morgan-Stewart"
     },
+    "45": {
+      "headline": "A young interior contributor with a stronger rushing-down case",
+      "bio": "Browning's fictional Michigan season produced 28 run stops on 296 run-defense snaps, a 9.5% rate. He can keep contact useful in the middle, reduce space and help teammates reach a run before it develops into a clean lane. At age 21 and No. 45, that offers a practical foundation for rotational work. His passing-down contribution is less established: 19 pressures and three sacks across 227 rushes. Improving his separation timing and giving the blocker more than one problem after contact would help expand his role beyond the clearest rushing situations.",
+      "watch": "Improve his separation timing and develop a more effective second action when his initial rush is contained.",
+      "name": "Justice Browning",
+      "portrait": "justice-browning-transparent.png",
+      "statistics": {
+        "position": "DT",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 523,
+        "passRushSnaps": 227,
+        "runDefenseSnaps": 296,
+        "tackles": 50,
+        "missedTackles": 4,
+        "sacks": 3,
+        "sackPressures": 3,
+        "hits": 4,
+        "hurries": 12,
+        "pressures": 19,
+        "tacklesForLoss": 10,
+        "runStops": 28,
+        "forcedFumbles": 1
+      }
+    },
+    "46": {
+      "headline": "A reliable run-game assignment with limited rush impact",
+      "bio": "Schafer's fictional Duke season includes 29 run stops, 57 tackles and three missed tackles. The resulting 5.0% missed-tackle rate gives his No. 46 profile useful support as a defender who can turn correct positioning into a completed play. He can help control an edge and keep an offense from turning ordinary rushing calls into easy gains. The growth area is pressure: 24 disruptions and four sacks across 248 rushes suggest a supporting contribution. A sharper counter after his initial contact would make his role less dependent on the offense's run tendency.",
+      "watch": "Add a more effective counter after first contact while maintaining his dependable run-game positioning.",
+      "name": "Sam Schafer",
+      "portrait": "sam-schafer-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 534,
+        "passRushSnaps": 248,
+        "runDefenseSnaps": 286,
+        "tackles": 57,
+        "missedTackles": 3,
+        "sacks": 4,
+        "sackPressures": 4,
+        "hits": 5,
+        "hurries": 15,
+        "pressures": 24,
+        "tacklesForLoss": 12,
+        "runStops": 29,
+        "forcedFumbles": 1
+      }
+    },
     "48": {
       "portrait": "nik-mcfarland-transparent.png",
       "headline": "A workable receiving role with separation still to develop",
@@ -472,6 +772,56 @@
         "pressuresAllowed": 26,
         "runBlockWins": 250,
         "penalties": 6
+      }
+    },
+    "54": {
+      "headline": "Contact value with more consistency still to find",
+      "bio": "Bailey's fictional Georgia season features 32 pressures on 284 rushes and six sacks. There are useful moments of disruption when he lands his initial contact and keeps the blocker reacting, but the 11.3% pressure rate supports a rotational projection at No. 54. Eighteen run stops and eight missed tackles leave additional work before a larger role becomes dependable. He needs to keep his feet active through the collision and avoid turning a promising position into an unfinished tackle. More consistent technique would help the useful flashes survive less favorable matchups.",
+      "watch": "Keep his feet active through contact and improve tackle completion when the ball reaches his edge.",
+      "name": "Kash Bailey",
+      "portrait": "kash-bailey-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 520,
+        "passRushSnaps": 284,
+        "runDefenseSnaps": 236,
+        "tackles": 42,
+        "missedTackles": 8,
+        "sacks": 6,
+        "sackPressures": 6,
+        "hits": 6,
+        "hurries": 20,
+        "pressures": 32,
+        "tacklesForLoss": 10,
+        "runStops": 18,
+        "forcedFumbles": 1
+      }
+    },
+    "55": {
+      "headline": "Interior movement with a more complete role to develop",
+      "bio": "Andrews' fictional Utah season produced 24 pressures on 256 rushes, with 4.5 sacks and 20 run stops. His interior movement can create a useful passing-down opportunity, but a 9.4% pressure rate still leaves a substantial difference between flashes and a dependable primary role. At No. 55, he should compete for a rotation while refining the details that keep him involved against the run. Better leverage through contact and a more controlled finish would help him avoid being redirected before the ball arrives. The next step is building a firmer foundation beneath the disruption.",
+      "watch": "Improve leverage and contact balance so his interior movement does not come at the expense of his run responsibility.",
+      "name": "Braylen Andrews",
+      "portrait": "braylen-andrews-transparent.png",
+      "statistics": {
+        "position": "DT",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 504,
+        "passRushSnaps": 256,
+        "runDefenseSnaps": 248,
+        "tackles": 42,
+        "missedTackles": 6,
+        "sacks": 4.5,
+        "sackPressures": 5,
+        "hits": 5,
+        "hurries": 14,
+        "pressures": 24,
+        "tacklesForLoss": 8,
+        "runStops": 20,
+        "forcedFumbles": 1
       }
     },
     "56": {
@@ -533,6 +883,31 @@
         "fictional": true
       }
     },
+    "62": {
+      "headline": "A sturdy run contribution with a narrower passing-down role",
+      "bio": "Brothers' fictional Stanford season includes 29 run stops across 306 run-defense snaps, a 9.5% rate, with 55 tackles. His 298-pound frame can help a front keep the edge controlled when he stays square and maintains contact. That gives him a defined route into a rotation at No. 62. The pass-rush profile is less convincing: 19 pressures and three sacks over 216 rushes. He needs more urgency off the snap and more efficient separation once the blocker establishes contact. A useful run assignment should be the starting point, with broader work earned through those improvements.",
+      "watch": "Separate from blocks sooner and improve the urgency of his first steps on passing downs.",
+      "name": "Jonathan Brothers",
+      "portrait": "jonathan-brothers-transparent.png",
+      "statistics": {
+        "position": "LEDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 522,
+        "passRushSnaps": 216,
+        "runDefenseSnaps": 306,
+        "tackles": 55,
+        "missedTackles": 4,
+        "sacks": 3,
+        "sackPressures": 3,
+        "hits": 4,
+        "hurries": 12,
+        "pressures": 19,
+        "tacklesForLoss": 10,
+        "runStops": 29,
+        "forcedFumbles": 1
+      }
+    },
     "63": {
       "name": "Zac Williams",
       "portrait": "zac-williams-transparent.png",
@@ -591,6 +966,31 @@
         "fictional": true
       }
     },
+    "70": {
+      "headline": "A developmental edge with a rush plan to sharpen",
+      "bio": "Nyokare's fictional UConn season includes 28 pressures on 272 rushes and 5.5 sacks. His movement creates opportunities to attack an outside angle, but a 10.3% pressure rate does not yet establish a dependable featured role. At No. 70, he is a development candidate who needs a clearer answer when the initial path closes. Fourteen run stops and eight missed tackles add a second priority: becoming more controlled when the play comes toward him. Better hand sequencing and a firmer response through contact would help turn selected rush opportunities into a lasting job.",
+      "watch": "Build a more organized counter plan and improve his ability to finish tackles through contact.",
+      "name": "Kaziri Nyokare",
+      "portrait": "kaziri-nyokare-transparent.png",
+      "statistics": {
+        "position": "LEDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 485,
+        "passRushSnaps": 272,
+        "runDefenseSnaps": 213,
+        "tackles": 33,
+        "missedTackles": 8,
+        "sacks": 5.5,
+        "sackPressures": 6,
+        "hits": 5,
+        "hurries": 17,
+        "pressures": 28,
+        "tacklesForLoss": 8,
+        "runStops": 14,
+        "forcedFumbles": 1
+      }
+    },
     "71": {
       "headline": "A reserve-center pathway with finishing work ahead",
       "bio": "Bauer's fictional Michigan season features 753 offensive snaps, with 23 pressures allowed across 367 pass-blocking assignments. There are useful moments of patience and positioning in that protection profile, but a 69.9% run-block win rate makes consistent movement a clear development need. At No. 71, he is a candidate to compete for reserve-center work and earn more through technique. He must keep his base intact after the initial strike and sustain control when a defender resists the intended path. Reliable execution on ordinary interior assignments will matter more than occasional clean reps in space.",
@@ -610,6 +1010,31 @@
         "pressuresAllowed": 23,
         "runBlockWins": 270,
         "penalties": 4
+      }
+    },
+    "72": {
+      "headline": "A young rush option with a dependable floor to build",
+      "bio": "Thompson's fictional Clemson season produced 26 pressures and five sacks on 251 rushes. At age 21, he has time to make his movement more productive, but the 10.4% pressure rate supports a developmental projection at No. 72. He needs better timing between his first steps and his hands so a promising rush does not end in a controlled stalemate. Sixteen run stops and seven missed tackles show why a narrow package should come before a substantial workload. More disciplined positioning would help him remain useful when the offense chooses to attack his side.",
+      "watch": "Coordinate his hands with his first steps and improve run positioning before expanding his workload.",
+      "name": "Shad Thompson",
+      "portrait": "shad-thompson-transparent.png",
+      "statistics": {
+        "position": "LEDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 472,
+        "passRushSnaps": 251,
+        "runDefenseSnaps": 221,
+        "tackles": 36,
+        "missedTackles": 7,
+        "sacks": 5,
+        "sackPressures": 5,
+        "hits": 5,
+        "hurries": 16,
+        "pressures": 26,
+        "tacklesForLoss": 8,
+        "runStops": 16,
+        "forcedFumbles": 1
       }
     },
     "73": {
@@ -649,6 +1074,31 @@
         "routesRun": 282
       },
       "name": "Theodore Jackson Jr."
+    },
+    "75": {
+      "headline": "A passing-down opportunity that still needs a finish",
+      "bio": "Jennings' fictional South Carolina season yielded 23 pressures and four sacks across 239 rushes. He can make an offensive tackle respond to the outside path, but the 9.6% pressure rate leaves room to turn that initial reaction into more meaningful disruption. At No. 75, the sensible starting point is a selected rush package and a competition for reserve snaps. Ten run stops and seven missed tackles make a large early workload harder to support. He needs stronger contact balance, cleaner finishing and a more dependable counter when the edge is protected.",
+      "watch": "Improve contact balance and develop a reliable second action when his first rush path is closed.",
+      "name": "Jaquann Jennings",
+      "portrait": "jaquann-jennings-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 415,
+        "passRushSnaps": 239,
+        "runDefenseSnaps": 176,
+        "tackles": 28,
+        "missedTackles": 7,
+        "sacks": 4,
+        "sackPressures": 4,
+        "hits": 4,
+        "hurries": 15,
+        "pressures": 23,
+        "tacklesForLoss": 7,
+        "runStops": 10,
+        "forcedFumbles": 1
+      }
     },
     "76": {
       "headline": "Rushing value with protection that needs to catch up",
@@ -711,6 +1161,31 @@
         "pressuresAllowed": 39,
         "runBlockWins": 202,
         "penalties": 6
+      }
+    },
+    "80": {
+      "headline": "Interior depth with a defined rushing-down assignment",
+      "bio": "Vanwinkle's fictional USC season includes 25 run stops across 289 run-defense snaps, an 8.7% rate. His 330-pound frame offers a reason to compete for work in the middle when the assignment is to resist movement and keep a running lane crowded. At No. 80, that is a more convincing opening than projecting substantial quarterback pressure. Eleven pressures and one sack across 184 rushes show how limited the passing-down contribution remains. Better pad level and quicker separation after contact would help him become more than a situational depth option.",
+      "watch": "Keep his pad level controlled and develop a quicker way to separate once the blocker establishes contact.",
+      "name": "Hugh Vanwinkle",
+      "portrait": "hugh-vanwinkle-transparent.png",
+      "statistics": {
+        "position": "DT",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 473,
+        "passRushSnaps": 184,
+        "runDefenseSnaps": 289,
+        "tackles": 43,
+        "missedTackles": 4,
+        "sacks": 1,
+        "sackPressures": 1,
+        "hits": 2,
+        "hurries": 8,
+        "pressures": 11,
+        "tacklesForLoss": 6,
+        "runStops": 25,
+        "forcedFumbles": 0
       }
     },
     "83": {
@@ -842,6 +1317,56 @@
         "routesRun": 260
       },
       "name": "Brendan Whitney"
+    },
+    "95": {
+      "headline": "Reserve-edge competition with more impact to prove",
+      "bio": "Whitt's fictional Michigan season features 39 tackles and 18 run stops, but 16 pressures and two sacks across 221 rushes leave a limited disruption profile. He can contribute a controlled fit when his initial positioning is correct, yet seven missed tackles show that reaching the play is not always enough. At No. 95, he should be evaluated as competitive reserve depth with specific technique work ahead. A firmer response to contact, more efficient separation and cleaner tackling would give him a stronger case when an offense refuses the most favorable assignment.",
+      "watch": "Improve tackling through contact and separate from blocks more efficiently before seeking a larger role.",
+      "name": "Denver Whitt",
+      "portrait": "denver-whitt-transparent.png",
+      "statistics": {
+        "position": "LEDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 475,
+        "passRushSnaps": 221,
+        "runDefenseSnaps": 254,
+        "tackles": 39,
+        "missedTackles": 7,
+        "sacks": 2,
+        "sackPressures": 2,
+        "hits": 3,
+        "hurries": 11,
+        "pressures": 16,
+        "tacklesForLoss": 5,
+        "runStops": 18,
+        "forcedFumbles": 0
+      }
+    },
+    "96": {
+      "headline": "A developmental edge who needs a more complete sequence",
+      "bio": "McKinley's fictional Illinois season produced 18 pressures and three sacks on 246 rushes, a 7.3% pressure rate. His first contact can give a tackle something to manage, but too many rushes end before that moment becomes a meaningful threat to the quarterback. At No. 96, he needs a clearer second move and better control at the edge. Sixteen run stops and eight missed tackles reinforce the need for steadier execution. The starting projection is a depth competition, with a larger role dependent on connecting his approach, separation and finish.",
+      "watch": "Connect his first contact to a useful counter and improve his control when finishing at the edge.",
+      "name": "Jerrick McKinley",
+      "portrait": "jerrick-mckinley-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 478,
+        "passRushSnaps": 246,
+        "runDefenseSnaps": 232,
+        "tackles": 35,
+        "missedTackles": 8,
+        "sacks": 3,
+        "sackPressures": 3,
+        "hits": 3,
+        "hurries": 12,
+        "pressures": 18,
+        "tacklesForLoss": 6,
+        "runStops": 16,
+        "forcedFumbles": 1
+      }
     }
   }
 }

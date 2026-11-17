@@ -8,8 +8,10 @@ const sourceFile = fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS
 export const PROSPECT_POSITIONS = Object.freeze(['QB', 'HB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'FS', 'SS', 'K', 'P']);
 const appearanceKeys = ['skin', 'eye_color', 'ethnicity', 'hair', 'hair_color', 'facial_hair', 'features'];
 const offensiveLinePositions = ['LT', 'LG', 'C', 'RG', 'RT'];
+const defensiveLinePositions = ['LEDG', 'REDG', 'DT'];
+const schoolAliases = { Minneosta: 'Minnesota', Wiconsin: 'Wisconsin' };
 const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000, Missouri: 0xf1b82d, Colorado: 0xcfb87c, 'North Carolina': 0x7bafd4, Minnesota: 0x7a0019, 'Florida State': 0x782f40, Oklahoma: 0x841617, Texas: 0xbf5700, 'Iowa State': 0xc8102e, 'Boise State': 0x0033a0, Duke: 0x003087, 'South Carolina': 0x73000a, LSU: 0x461d7c, Oregon: 0x154733 };
-Object.assign(schoolColors, { Iowa: 0xffcd00, Auburn: 0x0c2340, 'Texas A&M': 0x500000, Louisville: 0xad0000, Syracuse: 0xf76900, Georgia: 0xba0c2f, Michigan: 0x00274c, Charlotte: 0x005035, 'Ole Miss': 0xce1126, Tennessee: 0xff8200 });
+Object.assign(schoolColors, { Iowa: 0xffcd00, Auburn: 0x0c2340, 'Texas A&M': 0x500000, Louisville: 0xad0000, Syracuse: 0xf76900, Georgia: 0xba0c2f, Michigan: 0x00274c, Charlotte: 0x005035, 'Ole Miss': 0xce1126, Tennessee: 0xff8200, 'Texas Tech': 0xcc0000, 'NC State': 0xcc0000, Wisconsin: 0xc5050c, Clemson: 0xf56600, Utah: 0xcc0000, Stanford: 0x8c1515, UConn: 0x000e2f, Illinois: 0xe84a27 });
 const schoolEmojis = {
   USC: { name: 'usc', id: '1572332490356555836' },
   'Penn State': { name: 'pennstate', id: '1572332489186480169' },
@@ -70,6 +72,13 @@ export function formatProspectStatistics(stats) {
     lines.push(`Allowed: ${stats.sacksAllowed} sacks · ${stats.hitsAllowed} hits · ${stats.hurriesAllowed} hurries`);
     lines.push(`Run-block wins: ${stats.runBlockWins}/${stats.runBlockSnaps} (${rate(stats.runBlockWins * 100, stats.runBlockSnaps, 1)}%)`);
     lines.push(`Penalties: ${stats.penalties}`);
+  } else if (defensiveLinePositions.includes(stats.position)) {
+    lines.push(`${stats.games} G · ${number(stats.defensiveSnaps)} defensive snaps`);
+    lines.push(`${stats.tackles} TKL · ${number(stats.sacks)} SACK · ${stats.tacklesForLoss} TFL · ${stats.forcedFumbles} FF`);
+    lines.push(`Pressures: ${stats.pressures}/${stats.passRushSnaps} rushes (${rate(stats.pressures * 100, stats.passRushSnaps, 1)}%)`);
+    lines.push(`Pressure breakdown: ${stats.sackPressures} sack plays · ${stats.hits} hits · ${stats.hurries} hurries`);
+    lines.push(`Run stops: ${stats.runStops}/${stats.runDefenseSnaps} run-defense snaps (${rate(stats.runStops * 100, stats.runDefenseSnaps, 1)}%)`);
+    lines.push(`Missed tackles: ${stats.missedTackles} · ${rate(stats.missedTackles * 100, stats.tackles + stats.missedTackles, 1)}% missed-tackle rate`);
   }
   return lines.length ? lines.join('\n') : null;
 }
@@ -83,7 +92,7 @@ export function loadProspects() {
     const row = source[id];
     if (!row || row.name !== profile.name || !appearanceKeys.every((key) => String(row[key] || '').trim())) return [];
     if (!PROSPECT_POSITIONS.includes(row.position)) return [];
-    return [{ id, name: row.name, position: row.position, school: row.school === 'Minneosta' ? 'Minnesota' : row.school,
+    return [{ id, name: row.name, position: row.position, school: schoolAliases[row.school] || row.school,
       age: row.age, year: row.year, height: row.height, weight: row.weight,
       jersey: row.jersey, rank: row['#'],
       headline: profile.headline, bio: profile.bio, watch: profile.watch,
