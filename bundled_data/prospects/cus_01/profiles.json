@@ -62,6 +62,48 @@
         "fictional": true
       }
     },
+    "8": {
+      "headline": "Size and finish worthy of an early pick",
+      "bio": "Pukahi's fictional Ohio State season includes 786 offensive snaps and an 84.8% run-block win rate. His 6-foot-8, 338-pound frame gives an offense a substantial edge to run behind, and his ability to displace a defender makes the size productive. Fourteen pressures allowed on 398 pass-blocking snaps leave a credible protection foundation alongside the rushing value. At No. 8, the projection is an immediate starting tackle with room to anchor a line for years. He still needs to keep his hips settled and avoid overcommitting when a rusher threatens inside.",
+      "watch": "Stay balanced against inside counters and keep his recovery steps compact when the first punch misses.",
+      "name": "Nakana'ela Pukahi",
+      "portrait": "nakanaela-pukahi-transparent.png",
+      "statistics": {
+        "position": "LT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 786,
+        "passBlockSnaps": 398,
+        "runBlockSnaps": 388,
+        "sacksAllowed": 2,
+        "hitsAllowed": 3,
+        "hurriesAllowed": 9,
+        "pressuresAllowed": 14,
+        "runBlockWins": 329,
+        "penalties": 5
+      }
+    },
+    "10": {
+      "headline": "A clean pocket starts with his side of the line",
+      "bio": "Fitzwilliam's fictional Iowa season shows seven pressures allowed across 420 pass-blocking snaps, a 1.7% rate, with no sacks charged to him. That supports an early starting projection built on patient sets, controlled hand placement and the ability to stay connected without lunging. He gives a passing offense a dependable starting point at No. 10. His run-blocking contribution is useful, but the next step is creating more movement against heavier fronts rather than settling for a stalemate. The protection floor is the strongest part of a well-developed tackle profile.",
+      "watch": "Create more displacement in the run game while preserving his patience and balance in protection.",
+      "name": "Garrison Fitzwilliam",
+      "portrait": "garrison-fitzwilliam-transparent.png",
+      "statistics": {
+        "position": "LT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 796,
+        "passBlockSnaps": 420,
+        "runBlockSnaps": 376,
+        "sacksAllowed": 0,
+        "hitsAllowed": 2,
+        "hurriesAllowed": 5,
+        "pressuresAllowed": 7,
+        "runBlockWins": 278,
+        "penalties": 3
+      }
+    },
     "11": {
       "name": "Narquise Jones",
       "portrait": "narquise-jones-transparent.png",
@@ -117,6 +159,27 @@
         "fictional": true
       }
     },
+    "15": {
+      "headline": "A first-round answer for a pass-heavy offense",
+      "bio": "Martens allowed nine pressures on 398 pass-blocking snaps in his fictional Alabama season, including one sack. His 2.3% pressure rate reinforces a projection built on clean set angles, repeatable footwork and keeping his hands available when a defender changes the rush plan. At No. 15, he has a persuasive case for early starting work at right tackle. The remaining question is how much more he can give a rushing attack. More consistent pad level and a stronger finish would turn dependable positioning into greater movement at the point of contact.",
+      "watch": "Improve pad level and sustain his run blocks through the finish without losing protection discipline.",
+      "name": "J.C. Martens",
+      "portrait": "jc-martens-transparent.png",
+      "statistics": {
+        "position": "RT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 717,
+        "passBlockSnaps": 398,
+        "runBlockSnaps": 319,
+        "sacksAllowed": 1,
+        "hitsAllowed": 2,
+        "hurriesAllowed": 6,
+        "pressuresAllowed": 9,
+        "runBlockWins": 233,
+        "penalties": 4
+      }
+    },
     "17": {
       "name": "Nick Monk",
       "portrait": "nick-monk-transparent.png",
@@ -152,6 +215,48 @@
         "receivingTD": 2,
         "rushingYardsAfterContact": 820,
         "fictional": true
+      }
+    },
+    "19": {
+      "headline": "A strong edge for an offense that wants to run",
+      "bio": "Ellis' fictional Penn State season features 774 offensive snaps and an 83.9% run-block win rate. He can generate movement on the edge, keep a defender occupied through contact and help an offense make its intended rushing lane usable. Eighteen pressures allowed across 426 pass-blocking snaps suggest a workable starting foundation, with technique still worth sharpening. At No. 19, his rushing contribution should translate into early responsibility. More patient hands and cleaner responses to late changes of direction would make the protection side of his game more dependable.",
+      "watch": "Keep his feet active after contact and improve the timing of his hands against changing rush angles.",
+      "name": "Cody Ellis",
+      "portrait": "cody-ellis-transparent.png",
+      "statistics": {
+        "position": "RT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 774,
+        "passBlockSnaps": 426,
+        "runBlockSnaps": 348,
+        "sacksAllowed": 3,
+        "hitsAllowed": 4,
+        "hurriesAllowed": 11,
+        "pressuresAllowed": 18,
+        "runBlockWins": 292,
+        "penalties": 6
+      }
+    },
+    "20": {
+      "headline": "A young tackle with real movement at the line",
+      "bio": "Falana's fictional Auburn season produced 309 run-block wins on 365 assignments, an 84.7% rate. He can move a defender off the intended path and has the mass to help finish a rushing play once contact is established. At age 21 and No. 20 on the board, the run-game foundation comes with meaningful development time. Protection is the clearer teaching priority: 22 pressures on 408 pass-blocking snaps show where his technique must catch up. Better set depth and more controlled recovery steps would help him avoid chasing a rusher after losing the initial angle.",
+      "watch": "Refine set depth and recover with his feet instead of reaching when the edge gets threatened.",
+      "name": "Salene Falana",
+      "portrait": "salene-falana-transparent.png",
+      "statistics": {
+        "position": "RT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 773,
+        "passBlockSnaps": 408,
+        "runBlockSnaps": 365,
+        "sacksAllowed": 3,
+        "hitsAllowed": 5,
+        "hurriesAllowed": 14,
+        "pressuresAllowed": 22,
+        "runBlockWins": 309,
+        "penalties": 7
       }
     },
     "21": {
@@ -211,6 +316,27 @@
       },
       "name": "Nasir James Jr."
     },
+    "28": {
+      "headline": "An imposing tackle with a starting pathway to refine",
+      "bio": "Howard's fictional Texas A&M season combines 733 offensive snaps with an 80.8% run-block win rate. His 6-foot-8 frame gives him room to control the edge, and he can turn initial contact into useful movement when his pad level stays under control. The No. 28 projection is promising rather than finished. Twenty-four pressures and four sacks allowed across 431 pass-blocking snaps highlight the cost of standing too tall or opening the corner early. A team can build toward a starting role by sharpening his balance before asking his size to solve everything.",
+      "watch": "Keep his pad level controlled and avoid opening his hips before the rusher commits.",
+      "name": "Jamarcus Howard",
+      "portrait": "jamarcus-howard-transparent.png",
+      "statistics": {
+        "position": "LT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 733,
+        "passBlockSnaps": 431,
+        "runBlockSnaps": 302,
+        "sacksAllowed": 4,
+        "hitsAllowed": 5,
+        "hurriesAllowed": 15,
+        "pressuresAllowed": 24,
+        "runBlockWins": 244,
+        "penalties": 7
+      }
+    },
     "30": {
       "name": "Tye Miller",
       "portrait": "tye-miller-transparent.png",
@@ -245,6 +371,27 @@
         "targets": 91,
         "routesRun": 362,
         "fictional": true
+      }
+    },
+    "37": {
+      "headline": "Useful movement with protection details to sharpen",
+      "bio": "Smith's fictional Louisville season includes a 76.6% run-block win rate across 320 assignments. He can work across a defender's path, stay involved on combination blocks and help a rushing scheme create space through positioning. At No. 37, that movement gives him a practical starting point, while 27 pressures allowed on 443 pass-blocking snaps leave a clear development assignment. He needs a firmer response when contact lands squarely and more consistent hand placement after the initial set. The route to a larger role is cleaner technique against defenders who can challenge his balance.",
+      "watch": "Strengthen his anchor and maintain hand position when the rush changes from movement to direct contact.",
+      "name": "Darell Smith",
+      "portrait": "darell-smith-transparent.png",
+      "statistics": {
+        "position": "LT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 763,
+        "passBlockSnaps": 443,
+        "runBlockSnaps": 320,
+        "sacksAllowed": 3,
+        "hitsAllowed": 6,
+        "hurriesAllowed": 18,
+        "pressuresAllowed": 27,
+        "runBlockWins": 245,
+        "penalties": 5
       }
     },
     "43": {
@@ -306,6 +453,27 @@
       },
       "name": "Nik McFarland"
     },
+    "49": {
+      "headline": "Interior movement with a starting job still to earn",
+      "bio": "McCue's fictional Syracuse season features 250 run-block wins on 311 assignments, an 80.4% rate. His size and ability to create movement give him a defined way to contribute in the middle of a rushing attack. The No. 49 placement also leaves room for the protection work: 26 pressures allowed on 417 pass-blocking snaps show that his base and reactions are not yet equally dependable. He can compete for meaningful guard snaps, but quicker recognition of interior movement and more controlled lateral steps would make a sustained starting role easier to trust.",
+      "watch": "Recognize interior exchanges earlier and keep his base controlled when a defender crosses his face.",
+      "name": "Jeramy McCue",
+      "portrait": "jeramy-mccue-transparent.png",
+      "statistics": {
+        "position": "RG",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 728,
+        "passBlockSnaps": 417,
+        "runBlockSnaps": 311,
+        "sacksAllowed": 3,
+        "hitsAllowed": 5,
+        "hurriesAllowed": 18,
+        "pressuresAllowed": 26,
+        "runBlockWins": 250,
+        "penalties": 6
+      }
+    },
     "56": {
       "name": "Nick Barrientos",
       "portrait": "nick-barrientos-transparent.png",
@@ -323,6 +491,27 @@
         "sacks": 27,
         "sackYards": 176,
         "fictional": true
+      }
+    },
+    "60": {
+      "headline": "A mobile interior option who needs a firmer base",
+      "bio": "Baines' fictional Georgia season includes 711 offensive snaps and a 72.9% run-block win rate. He can reach space and help finish a combination block, giving a scheme that asks its guards to move a useful development candidate. Twenty-nine pressures allowed across 390 pass-blocking snaps make the protection concerns harder to overlook. At No. 60, a rotational role is the sensible opening rather than an automatic starting assignment. Better lower-body positioning and a more accurate first strike would help him avoid getting displaced before he can use his movement skills.",
+      "watch": "Develop a firmer anchor and land his hands more consistently against direct interior pressure.",
+      "name": "Darnell Baines",
+      "portrait": "darnell-baines-transparent.png",
+      "statistics": {
+        "position": "LG",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 711,
+        "passBlockSnaps": 390,
+        "runBlockSnaps": 321,
+        "sacksAllowed": 4,
+        "hitsAllowed": 6,
+        "hurriesAllowed": 19,
+        "pressuresAllowed": 29,
+        "runBlockWins": 234,
+        "penalties": 6
       }
     },
     "61": {
@@ -363,6 +552,27 @@
         "fictional": true
       }
     },
+    "65": {
+      "headline": "A substantial middle with quicker reactions to develop",
+      "bio": "Shea's fictional Notre Dame season produced a 78.1% run-block win rate across 342 assignments. His 328-pound frame offers a useful base for controlling space in the middle, particularly when he can establish contact on schedule. The No. 65 projection becomes less certain when the protection speeds up: 28 pressures were allowed over 430 pass-blocking snaps. He needs cleaner foot placement against quick interior movement and more reliable transitions when helping a neighboring blocker. There is a workable reserve-center foundation, with a larger role dependent on steadier execution after the snap.",
+      "watch": "React sooner to quick interior movement and transition cleanly between helping and taking over a defender.",
+      "name": "Matt Shea",
+      "portrait": "matt-shea-transparent.png",
+      "statistics": {
+        "position": "C",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 772,
+        "passBlockSnaps": 430,
+        "runBlockSnaps": 342,
+        "sacksAllowed": 3,
+        "hitsAllowed": 7,
+        "hurriesAllowed": 18,
+        "pressuresAllowed": 28,
+        "runBlockWins": 267,
+        "penalties": 7
+      }
+    },
     "67": {
       "name": "Qualeek Leonard",
       "portrait": "qualeek-leonard-transparent.png",
@@ -381,6 +591,48 @@
         "fictional": true
       }
     },
+    "71": {
+      "headline": "A reserve-center pathway with finishing work ahead",
+      "bio": "Bauer's fictional Michigan season features 753 offensive snaps, with 23 pressures allowed across 367 pass-blocking assignments. There are useful moments of patience and positioning in that protection profile, but a 69.9% run-block win rate makes consistent movement a clear development need. At No. 71, he is a candidate to compete for reserve-center work and earn more through technique. He must keep his base intact after the initial strike and sustain control when a defender resists the intended path. Reliable execution on ordinary interior assignments will matter more than occasional clean reps in space.",
+      "watch": "Sustain control after first contact and improve the consistency of his run-block finish.",
+      "name": "Jacob Bauer",
+      "portrait": "jacob-bauer-transparent.png",
+      "statistics": {
+        "position": "C",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 753,
+        "passBlockSnaps": 367,
+        "runBlockSnaps": 386,
+        "sacksAllowed": 2,
+        "hitsAllowed": 5,
+        "hurriesAllowed": 16,
+        "pressuresAllowed": 23,
+        "runBlockWins": 270,
+        "penalties": 4
+      }
+    },
+    "73": {
+      "headline": "A tall tackle with a substantial technique assignment",
+      "bio": "Wilkins' fictional Charlotte season includes 692 offensive snaps, but 37 pressures and five sacks allowed across 404 pass-blocking assignments point to a developmental protection profile. His 6-foot-7 frame gives a coach something to work with; it does not yet guarantee a clean edge. At age 21 and No. 73, the reasonable plan is competitive depth with deliberate work on set angles and recovery. A 69.8% run-block win rate also leaves room to improve leverage. He needs more control before his size can translate into dependable starting snaps.",
+      "watch": "Improve set angles, lower his pad level and recover without reaching after losing position.",
+      "name": "Jaden Wilkins",
+      "portrait": "jaden-wilkins-transparent.png",
+      "statistics": {
+        "position": "RT",
+        "fictional": true,
+        "games": 12,
+        "offensiveSnaps": 692,
+        "passBlockSnaps": 404,
+        "runBlockSnaps": 288,
+        "sacksAllowed": 5,
+        "hitsAllowed": 8,
+        "hurriesAllowed": 24,
+        "pressuresAllowed": 37,
+        "runBlockWins": 201,
+        "penalties": 8
+      }
+    },
     "74": {
       "portrait": "theodore-jackson-jr-transparent.png",
       "headline": "Downfield options to develop, routine details to fix",
@@ -397,6 +649,69 @@
         "routesRun": 282
       },
       "name": "Theodore Jackson Jr."
+    },
+    "76": {
+      "headline": "Rushing value with protection that needs to catch up",
+      "bio": "Davison's fictional Ole Miss season shows a 78.2% run-block win rate, giving his 332-pound frame a practical role in creating rushing space. The protection results are less settled: 39 pressures and six sacks allowed across 427 pass-blocking snaps. At No. 76, he should compete for a defined backup role while improving his set discipline. He can remain useful when a play lets him establish contact early, but quicker edge threats expose the need for better positioning. The next step is making his feet reliable enough to keep the quarterback from inheriting the recovery problem.",
+      "watch": "Improve set discipline against the edge and stay connected when a defender avoids his initial contact.",
+      "name": "Dee Davison",
+      "portrait": "dee-davison-transparent.png",
+      "statistics": {
+        "position": "RT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 721,
+        "passBlockSnaps": 427,
+        "runBlockSnaps": 294,
+        "sacksAllowed": 6,
+        "hitsAllowed": 9,
+        "hurriesAllowed": 24,
+        "pressuresAllowed": 39,
+        "runBlockWins": 230,
+        "penalties": 8
+      }
+    },
+    "77": {
+      "headline": "A rotational guard with interior pressure to clean up",
+      "bio": "Lee's fictional Ole Miss season pairs a 77.3% run-block win rate with 36 pressures allowed on 419 pass-blocking snaps. His frame and ability to create movement give him a route into a rushing rotation, but the 8.6% pressure rate limits the case for immediate starting trust. At No. 77, the priority is improving the details that keep an interior pocket usable. He needs earlier recognition of moving fronts, a more consistent strike and better balance when passing a defender between blockers. Those improvements would make his run-game contribution easier to keep on the field.",
+      "watch": "Identify interior exchanges sooner and keep his feet and hands coordinated when the front shifts.",
+      "name": "Brandon Lee",
+      "portrait": "brandon-lee-transparent.png",
+      "statistics": {
+        "position": "LG",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 718,
+        "passBlockSnaps": 419,
+        "runBlockSnaps": 299,
+        "sacksAllowed": 5,
+        "hitsAllowed": 8,
+        "hurriesAllowed": 23,
+        "pressuresAllowed": 36,
+        "runBlockWins": 231,
+        "penalties": 7
+      }
+    },
+    "79": {
+      "headline": "Movement potential with a dependable floor still to build",
+      "bio": "Fisher's fictional Tennessee season produced 715 offensive snaps and a 71.1% run-block win rate. His movement gives him opportunities on plays that change the blocking angle, but 39 pressures allowed across 431 pass-blocking assignments show how much consistency remains to develop. At No. 79, he is better viewed as competitive tackle depth than a ready-made starting answer. He must improve the accuracy of his first strike, avoid crossing his feet during recovery and sustain blocks after reaching the right spot. Getting into position is useful only if he can stay effective there.",
+      "watch": "Improve first-contact accuracy, keep recovery steps controlled and sustain blocks beyond initial positioning.",
+      "name": "Colt Fisher",
+      "portrait": "colt-fisher-transparent.png",
+      "statistics": {
+        "position": "RT",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 715,
+        "passBlockSnaps": 431,
+        "runBlockSnaps": 284,
+        "sacksAllowed": 5,
+        "hitsAllowed": 9,
+        "hurriesAllowed": 25,
+        "pressuresAllowed": 39,
+        "runBlockWins": 202,
+        "penalties": 6
+      }
     },
     "83": {
       "name": "Demond Henderson",
@@ -488,6 +803,27 @@
         "receivingYards": 472,
         "receivingTD": 4,
         "fictional": true
+      }
+    },
+    "93": {
+      "headline": "A developmental guard with an anchor to strengthen",
+      "bio": "Varela's fictional USC season includes 669 offensive snaps, but 43 pressures allowed on 411 pass-blocking assignments leave a substantial protection concern. His movement can help on selected assignments, yet a 67.4% run-block win rate shows that getting to a defender is not the same as controlling him. At No. 93, the starting point is a depth competition with significant technique work ahead. He needs a firmer anchor, better timing at contact and fewer penalties before a larger role is justified. Improving the routine interior reps will do more for his prospects than isolated flashes in space.",
+      "watch": "Strengthen his anchor, improve strike timing and reduce penalties before taking on a larger workload.",
+      "name": "Renaldo Varela",
+      "portrait": "renaldo-varela-transparent.png",
+      "statistics": {
+        "position": "RG",
+        "fictional": true,
+        "games": 13,
+        "offensiveSnaps": 669,
+        "passBlockSnaps": 411,
+        "runBlockSnaps": 258,
+        "sacksAllowed": 6,
+        "hitsAllowed": 10,
+        "hurriesAllowed": 27,
+        "pressuresAllowed": 43,
+        "runBlockWins": 174,
+        "penalties": 9
       }
     },
     "94": {

@@ -162,7 +162,14 @@
     "jersey": "#78",
     "round": 1,
     "pick": 8,
-    "class": 1
+    "class": 1,
+    "skin": "olive",
+    "eye_color": "brown",
+    "ethnicity": "hawiann",
+    "hair": "med straight hair",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "hawiann face"
   },
   "9": {
     "#": 9,
@@ -198,7 +205,14 @@
     "jersey": "#58",
     "round": 1,
     "pick": 10,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "white OT"
   },
   "11": {
     "#": 11,
@@ -309,7 +323,14 @@
     "jersey": "#75",
     "round": 1,
     "pick": 15,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "blue",
+    "ethnicity": "white",
+    "hair": "med straight hair",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "classic OLINE"
   },
   "16": {
     "#": 16,
@@ -395,7 +416,14 @@
     "jersey": "#65",
     "round": 1,
     "pick": 19,
-    "class": 1
+    "class": 1,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "ceaser",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "mixxed race"
   },
   "20": {
     "#": 20,
@@ -413,7 +441,14 @@
     "jersey": "#75",
     "round": 1,
     "pick": 20,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "ceaser",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "african"
   },
   "21": {
     "#": 21,
@@ -578,7 +613,14 @@
     "jersey": "#64",
     "round": 1,
     "pick": 28,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "strong face"
   },
   "29": {
     "#": 29,
@@ -754,7 +796,14 @@
     "jersey": "#63",
     "round": 2,
     "pick": 5,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med afro",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "chubby face"
   },
   "38": {
     "#": 38,
@@ -991,7 +1040,14 @@
     "jersey": "#79",
     "round": 2,
     "pick": 17,
-    "class": 1
+    "class": 1,
+    "skin": "light brown",
+    "eye_color": "hazel",
+    "ethnicity": "african american",
+    "hair": "short tapered afro",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "lightskin"
   },
   "50": {
     "#": 50,
@@ -1196,7 +1252,14 @@
     "jersey": "#69",
     "round": 2,
     "pick": 28,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "long dreads",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "chubby face"
   },
   "61": {
     "#": 61,
@@ -1300,7 +1363,14 @@
     "jersey": "#67",
     "round": 3,
     "pick": 1,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "chubby face"
   },
   "66": {
     "#": 66,
@@ -1415,7 +1485,14 @@
     "jersey": "#58",
     "round": 3,
     "pick": 7,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short",
+    "hair_color": "brown",
+    "facial_hair": "med/clean",
+    "features": "classic OLINE"
   },
   "72": {
     "#": 72,
@@ -1451,7 +1528,14 @@
     "jersey": "#67",
     "round": 3,
     "pick": 9,
-    "class": 1
+    "class": 1,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "afro faded",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "long face"
   },
   "74": {
     "#": 74,
@@ -1512,7 +1596,14 @@
     "jersey": "#55",
     "round": 3,
     "pick": 12,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "cornrows",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "chubby face"
   },
   "77": {
     "#": 77,
@@ -1530,7 +1621,14 @@
     "jersey": "#71",
     "round": 3,
     "pick": 13,
-    "class": 1
+    "class": 1,
+    "skin": "light brown",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short tapered afro",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "narrow face"
   },
   "78": {
     "#": 78,
@@ -1566,7 +1664,14 @@
     "jersey": "#57",
     "round": 3,
     "pick": 15,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "blue",
+    "ethnicity": "white",
+    "hair": "straight",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "classic OLINE"
   },
   "80": {
     "#": 80,
@@ -1853,7 +1958,14 @@
     "jersey": "#64",
     "round": 3,
     "pick": 29,
-    "class": 1
+    "class": 1,
+    "skin": "olive",
+    "eye_color": "brown",
+    "ethnicity": "latin",
+    "hair": "med curly afro",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "spanish"
   },
   "94": {
     "#": 94,
