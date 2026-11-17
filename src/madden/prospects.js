@@ -18,6 +18,11 @@ const schoolEmojis = {
   Missouri: { name: 'missouri', id: '1572339527538843729' },
   Colorado: { name: 'colorado', id: '1572339526540730378' },
   'North Carolina': { name: 'northcarolina', id: '1572339525215326319' },
+  'Boise State': { name: 'boisestate', id: '1572342760273346670' },
+  Texas: { name: 'texas', id: '1572342759443144734' },
+  Oklahoma: { name: 'oklahoma', id: '1572342758235054080' },
+  'Florida State': { name: 'floridastate', id: '1572342757408899213' },
+  Minnesota: { name: 'minnesota', id: '1572342756410400849' },
 };
 function schoolLabel(school) {
   const emoji = schoolEmojis[school];
