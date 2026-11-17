@@ -1,0 +1,49 @@
+{
+  "classId": "cus_01",
+  "label": "CUS01",
+  "source": "Madden - CUS01.json",
+  "profiles": {
+    "1": {
+      "name": "J.T. Rhoads",
+      "portrait": "jt-rhoads-transparent.png",
+      "headline": "The huddle is his office",
+      "bio": "Rhoads treats the quarterback room like a second major. At USC, he started a weekly film club with his receivers, complete with handwritten quizzes and a strict bring-your-own-breakfast policy. Away from football, he restores old headphones and keeps a notebook of stadium sounds. The personality fits the Field General billing: curious, deliberate and comfortable owning the conversation. The appeal is a quarterback who wants answers before the snap. The next chapter is learning when the perfect answer can wait and a decisive throw cannot.",
+      "watch": "Command of the offense, anticipation and decisive play when the original plan breaks down."
+    },
+    "2": {
+      "name": "Jaquon Hall",
+      "portrait": "jaquon-hall-transparent.png",
+      "headline": "Built to turn a broken play into a problem",
+      "bio": "Hall's Alabama story starts with backyard games where the pocket was whatever space the lawn furniture left open. He still brings that improviser's imagination to a Scrambler profile, but his off-field obsession is surprisingly patient: cooking elaborate Sunday dinners for teammates. He is the loudest voice during competitive games and the first to laugh at his own mistake afterward. The intrigue is obvious: a sturdy quarterback whose style invites movement and invention. The challenge is knowing when the escape hatch is an advantage and when staying on schedule is the bigger play.",
+      "watch": "Pocket discipline, choices outside structure and balancing creation with the routine throw."
+    },
+    "6": {
+      "name": "Aaron Archuelta",
+      "portrait": "aaron-archuelta-transparent.png",
+      "headline": "Big frame. Bigger ambitions.",
+      "bio": "Archuelta carries the Strong Arm label and a frame that makes the projection easy to picture. His life away from Penn State football is quieter than that billing: he builds model airplanes, prefers long walks to crowded parties and turns fiercely competitive whenever a board game hits the table. He keeps a tiny model plane in his locker as a reminder that power means little without control. That is the theme of this prospect, too. The attraction is the vertical ambition; the developmental question is whether he can make the underneath game feel just as purposeful.",
+      "watch": "Touch, timing and willingness to take the available completion before hunting the big shot."
+    },
+    "14": {
+      "name": "Nick Gardiner",
+      "portrait": "nick-gardiner-transparent.png",
+      "headline": "A steady hand with something left to prove",
+      "bio": "Gardiner's Notre Dame routine begins with an early coffee and ends with a dog-eared notebook. The redshirt senior collects old mystery novels, coaches a neighborhood trivia team and refuses to leave a disagreement about a movie ending unresolved. He is the patient organizer rather than the speechmaker, a natural match for the Field General archetype. There is a clear identity here: preparation, structure and ownership. The interesting question is how that measured approach translates when a defense forces him to abandon the script.",
+      "watch": "Processing under pressure, rhythm and conviction when the pocket or coverage changes late."
+    },
+    "56": {
+      "name": "Nick Barrientos",
+      "portrait": "nick-barrientos-transparent.png",
+      "headline": "The bet is on the arm\u2014and the imagination",
+      "bio": "Barrientos brings a Strong Arm archetype to a Miami story with plenty of color. He sketches sneaker designs in the margins of his notebooks, DJs small get-togethers for teammates and insists every road trip needs a carefully sequenced playlist. The creative streak also defines his football personality: he likes possibilities, especially the ambitious ones. That makes for an intriguing developmental canvas. The next step is turning imagination into a repeatable process, with the patience to let a simple completion do useful work.",
+      "watch": "Consistency of decisions, controlled aggression and execution on the ordinary downs."
+    },
+    "63": {
+      "name": "Zac Williams",
+      "portrait": "zac-williams-transparent.png",
+      "headline": "A patient competitor chasing his opening",
+      "bio": "Williams' Ohio State backstory centers on persistence rather than a ready-made spotlight. He spends free afternoons repairing bicycles, has a dry joke for every tense meeting and keeps a list of small tasks he wants to master each month. He is not the loudest player in the room, but he has no interest in being background scenery. The Strong Arm archetype gives his profile its starting point. His next chapter is about making that tool part of a complete routine: timing, touch and the discipline to keep a drive alive.",
+      "watch": "Repeatable mechanics, rhythm throws and using arm strength without forcing the issue."
+    }
+  }
+}

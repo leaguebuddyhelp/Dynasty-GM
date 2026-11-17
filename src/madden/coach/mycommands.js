@@ -9,7 +9,7 @@ export async function execute(interaction) {
       { name: 'Setup and Connection', value: '`/setup` · `/league-status` · `/disconnectleague confirm:true` to reset your connection' },
       { name: 'Full-season simulation', value: 'Before Week 1, run `/sync mode:full-season` to save your starting ratings. Sim Weeks 1–18, then run it again in the first playoff week for all weekly awards and summed upgrade/downgrade cards in your position threads. Optional checkpoint syncs preserve earlier stats.' },
       { name: 'Franchise Data', value: '`/sync` · `/schedule` · `/roster` · `/playersearch` · `/awards`' },
-      { name: 'Draft', value: '`/bigboard` · `/mockdraft` · `/draftexport`' },
+      { name: 'Draft', value: '`/prospects` for player portraits and scouting profiles · `/bigboard` · `/mockdraft` · `/draftexport`' },
       { name: 'Progression', value: 'Review changes in the 21 position threads in `#player-upgrades`, grouped by mascot A–Z. Apply each posted target manually in Madden. Top 10 risers/fallers appear in Season Results from offseason Week 1.' },
       { name: 'Roster Rating Limits', value: 'Every sync posts attribute edit plans in the position threads when rating caps require changes. Apply demotions before promotions, apply caps after gameplay edits, then sync to verify. Elite QBs: at most seven; all players 80+: at most 400.' },
       { name: 'Connection Check', value: '`/ping`' },

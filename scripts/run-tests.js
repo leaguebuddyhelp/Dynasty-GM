@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const scripts = [
+  'test_prospects.js',
   'test_season_impact.js',
   'test_defensive_line_proxy.js',
   'test_balanced_movement.js',

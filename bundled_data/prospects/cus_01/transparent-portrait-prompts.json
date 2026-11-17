@@ -1,0 +1,44 @@
+[
+  {
+    "id": "jt-rhoads",
+    "prompt": "Use case: background-extraction. Edit this existing fictional football prospect portrait: remove only the entire charcoal gray studio background and replace it with genuine alpha transparency. Preserve the exact athlete identity, face, skin, hairstyle including fine hair edges, expression, body, pose, jersey, school branding, logos, colors and number. Keep the same square canvas, subject scale and framing. Clean natural cutout edges, with no gray halo and no background shadow. No checkerboard baked into the image, no new background, no new elements. Output a transparent PNG.",
+    "mode": "built-in imagegen edit",
+    "source": "/Users/brandongordon/.codex/generated_images/01a1c76a-70a0-7de2-a9cd-5af41c7423fc/exec-ab479b13-858e-4827-967e-d50a86643ab2.png",
+    "file": "portraits/jt-rhoads-transparent.png"
+  },
+  {
+    "id": "jaquon-hall",
+    "prompt": "Use case: background-extraction. Edit this existing fictional football prospect portrait: remove only the entire charcoal gray studio background and replace it with genuine alpha transparency. Preserve the exact athlete identity, face, skin, hairstyle including fine hair edges, expression, body, pose, jersey, school branding, logos, colors and number. Keep the same square canvas, subject scale and framing. Clean natural cutout edges, with no gray halo and no background shadow. No checkerboard baked into the image, no new background, no new elements. Output a transparent PNG.",
+    "mode": "built-in imagegen edit",
+    "source": "/Users/brandongordon/.codex/generated_images/01a1c76a-70a0-7de2-a9cd-5af41c7423fc/exec-02caa9d5-4a26-48de-988b-09bb06f8dea8.png",
+    "file": "portraits/jaquon-hall-transparent.png"
+  },
+  {
+    "id": "aaron-archuelta",
+    "prompt": "Use case: background-extraction. Edit this existing fictional football prospect portrait: remove only the entire charcoal gray studio background and replace it with genuine alpha transparency. Preserve the exact athlete identity, face, skin, hairstyle including fine hair edges, expression, body, pose, jersey, school branding, logos, colors and number. Keep the same square canvas, subject scale and framing. Clean natural cutout edges, with no gray halo and no background shadow. No checkerboard baked into the image, no new background, no new elements. Output a transparent PNG.",
+    "mode": "built-in imagegen edit",
+    "source": "/Users/brandongordon/.codex/generated_images/01a1c76a-70a0-7de2-a9cd-5af41c7423fc/exec-4f2d02a9-54ff-4f9a-9b38-121296a8f716.png",
+    "file": "portraits/aaron-archuelta-transparent.png"
+  },
+  {
+    "id": "nick-gardiner",
+    "prompt": "Use case: background-extraction. Edit this existing fictional football prospect portrait: remove only the entire charcoal gray studio background and replace it with genuine alpha transparency. Preserve the exact athlete identity, face, skin, hairstyle including fine hair edges, expression, body, pose, jersey, school branding, logos, colors and number. Keep the same square canvas, subject scale and framing. Clean natural cutout edges, with no gray halo and no background shadow. No checkerboard baked into the image, no new background, no new elements. Output a transparent PNG.",
+    "mode": "built-in imagegen edit",
+    "source": "/Users/brandongordon/.codex/generated_images/01a1c76a-70a0-7de2-a9cd-5af41c7423fc/exec-d76f9f57-6a68-4f6e-99a7-f9dca533d566.png",
+    "file": "portraits/nick-gardiner-transparent.png"
+  },
+  {
+    "id": "nick-barrientos",
+    "prompt": "Use case: background-extraction. Edit this existing fictional football prospect portrait: remove only the entire charcoal gray studio background and replace it with genuine alpha transparency. Preserve the exact athlete identity, face, skin, hairstyle including fine hair edges, expression, body, pose, jersey, school branding, logos, colors and number. Keep the same square canvas, subject scale and framing. Clean natural cutout edges, with no gray halo and no background shadow. No checkerboard baked into the image, no new background, no new elements. Output a transparent PNG.",
+    "mode": "built-in imagegen edit",
+    "source": "/Users/brandongordon/.codex/generated_images/01a1c76a-70a0-7de2-a9cd-5af41c7423fc/exec-34292b4e-ab9f-416e-95ff-7bf3fdf328f5.png",
+    "file": "portraits/nick-barrientos-transparent.png"
+  },
+  {
+    "id": "zac-williams",
+    "prompt": "Use case: background-extraction. Edit this existing fictional football prospect portrait: remove only the entire charcoal gray studio background and replace it with genuine alpha transparency. Preserve the exact athlete identity, face, skin, hairstyle including fine hair edges, expression, body, pose, jersey, school branding, logos, colors and number. Keep the same square canvas, subject scale and framing. Clean natural cutout edges, with no gray halo and no background shadow. No checkerboard baked into the image, no new background, no new elements. Output a transparent PNG.",
+    "mode": "built-in imagegen edit",
+    "source": "/Users/brandongordon/.codex/generated_images/01a1c76a-70a0-7de2-a9cd-5af41c7423fc/exec-fd432510-361c-487c-a5ff-7cab3c4da9bd.png",
+    "file": "portraits/zac-williams-transparent.png"
+  }
+]

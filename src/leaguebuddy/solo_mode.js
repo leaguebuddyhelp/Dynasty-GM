@@ -12,6 +12,7 @@ export const SOLO_COMMAND_MODULES = Object.freeze([
   ['playersearch', '../madden/coach/playersearch.js'],
   ['schedule', '../madden/coach/schedule.js'],
   ['bigboard', '../madden/coach/bigboard.js'],
+  ['prospects', '../madden/coach/prospects.js'],
   ['mockdraft', '../madden/coach/mockdraft.js'],
   ['draftexport', '../madden/staff/draftexport.js'],
   ['awards', '../madden/staff/awards.js'],
@@ -28,6 +29,7 @@ export const SOLO_INTERACTION_MODULES = Object.freeze([
   '../interactions/madden_schedule_game.js',
   '../interactions/madden_schedule_back.js',
   '../interactions/madden_bigboard_page.js',
+  '../interactions/madden_prospects.js',
   '../interactions/madden_awards_button.js',
 ]);
 
