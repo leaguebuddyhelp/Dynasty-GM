@@ -4,10 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { ActionRowBuilder, AttachmentBuilder, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
 
 const assetRoot = fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', import.meta.url));
-const sourceFile = fileURLToPath(new URL('../../bundled_data/draft_classes/madden/Madden - CUS01.json', import.meta.url));
+const sourceFile = fileURLToPath(new URL('../../bundled_data/draft_classes/Madden - CUS01.json', import.meta.url));
 export const PROSPECT_POSITIONS = Object.freeze(['QB', 'HB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'FS', 'SS', 'K', 'P']);
 const appearanceKeys = ['skin', 'eye_color', 'ethnicity', 'hair', 'hair_color', 'facial_hair', 'features'];
-const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000, Missouri: 0xf1b82d, Colorado: 0xcfb87c, 'North Carolina': 0x7bafd4, Minnesota: 0x7a0019, 'Florida State': 0x782f40, Oklahoma: 0x841617, Texas: 0xbf5700, 'Iowa State': 0xc8102e, 'Boise State': 0x0033a0 };
+const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000, Missouri: 0xf1b82d, Colorado: 0xcfb87c, 'North Carolina': 0x7bafd4, Minnesota: 0x7a0019, 'Florida State': 0x782f40, Oklahoma: 0x841617, Texas: 0xbf5700, 'Iowa State': 0xc8102e, 'Boise State': 0x0033a0, Duke: 0x003087, 'South Carolina': 0x73000a, LSU: 0x461d7c, Oregon: 0x154733 };
 const schoolEmojis = {
   USC: { name: 'usc', id: '1572332490356555836' },
   'Penn State': { name: 'pennstate', id: '1572332489186480169' },
@@ -44,12 +44,14 @@ export function formatProspectStatistics(stats) {
     if (stats.rushingYardsAfterContact !== undefined) lines.push(`After contact: ${rate(stats.rushingYardsAfterContact, stats.carries)} rushing yards/carry`);
     if (stats.missedTacklesForced !== undefined) lines.push(`Forced missed tackles: ${stats.missedTacklesForced}`);
     if (stats.fumbles !== undefined) lines.push(`Fumbles: ${stats.fumbles}`);
-  } else if (stats.position === 'WR') {
+  } else if (stats.position === 'WR' || stats.position === 'TE') {
     lines.push(`${stats.games} G · ${stats.receptions} REC / ${stats.targets} TGT · ${number(stats.receivingYards)} YD · ${stats.receivingTD} TD`);
     lines.push(`${rate(stats.receivingYards, stats.receptions)} YD/REC · ${rate(stats.receptions * 100, stats.targets, 1)}% catch rate`);
     lines.push(`${rate(stats.receivingYards, stats.routesRun)} yards/route run (${stats.routesRun} routes)`);
     if (stats.yardsAfterCatch !== undefined) lines.push(`After catch: ${number(stats.yardsAfterCatch)} YD · ${rate(stats.yardsAfterCatch, stats.receptions)} YD/REC`);
     if (stats.contestedTargets !== undefined) lines.push(`Contested catches: ${stats.contestedCatches}/${stats.contestedTargets} (${rate(stats.contestedCatches * 100, stats.contestedTargets, 1)}%)`);
+    if (stats.runBlockSnaps !== undefined) lines.push(`Run-block wins: ${stats.runBlockWins}/${stats.runBlockSnaps} (${rate(stats.runBlockWins * 100, stats.runBlockSnaps, 1)}%)`);
+    if (stats.passBlockSnaps !== undefined) lines.push(`Pressures allowed: ${stats.pressuresAllowed} on ${stats.passBlockSnaps} pass-block snaps (${rate(stats.pressuresAllowed * 100, stats.passBlockSnaps, 1)}%)`);
   }
   return lines.length ? lines.join('\n') : null;
 }

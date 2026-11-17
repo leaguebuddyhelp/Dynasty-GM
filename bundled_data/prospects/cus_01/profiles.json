@@ -79,6 +79,25 @@
         "fictional": true
       }
     },
+    "13": {
+      "portrait": "aleks-zakrzewski-transparent.png",
+      "headline": "A first-round matchup problem through the middle",
+      "bio": "Zakrzewski's fictional Penn State season pairs 67 catches, 986 yards and 11 touchdowns with 3.02 yards per route run. That is meaningful receiving efficiency for a tight end, not simply the benefit of a few uncovered throws. He can threaten the seam, find space behind linebackers and give the quarterback an answer when outside receivers draw extra attention. At No. 13, the projection is a featured receiving piece with the production to justify early targets. His next step is firmer hand placement and more consistent leverage when asked to stay attached to the formation.",
+      "watch": "Improve hand placement and sustain leverage as an inline run blocker without losing his receiving flexibility.",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 67,
+        "receivingYards": 986,
+        "receivingTD": 11,
+        "targets": 91,
+        "routesRun": 326,
+        "runBlockWins": 103,
+        "runBlockSnaps": 155
+      },
+      "name": "Aleks Zakrzewski"
+    },
     "14": {
       "name": "Nick Gardiner",
       "portrait": "nick-gardiner-transparent.png",
@@ -172,6 +191,26 @@
         "fictional": true
       }
     },
+    "26": {
+      "portrait": "nasir-james-jr-transparent.png",
+      "headline": "A passing-game weapon worth moving around",
+      "bio": "James' fictional Duke season produced 58 catches for 812 yards and nine touchdowns, including 348 yards after the catch. His 2.40 yards per route run supports a first-round projection built on getting him into useful space and letting him attack it. He can work across the formation, challenge intermediate coverage and turn a completed pass into another tackling problem. At No. 26, there is a clear path to early receiving work. His lighter frame and uneven run-blocking results make a full-time inline assignment less convincing until his leverage and contact timing improve.",
+      "watch": "Build a more dependable blocking base and preserve route timing when defenders disrupt his release.",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 58,
+        "receivingYards": 812,
+        "receivingTD": 9,
+        "targets": 87,
+        "routesRun": 339,
+        "yardsAfterCatch": 348,
+        "runBlockWins": 69,
+        "runBlockSnaps": 119
+      },
+      "name": "Nasir James Jr."
+    },
     "30": {
       "name": "Tye Miller",
       "portrait": "tye-miller-transparent.png",
@@ -226,6 +265,46 @@
         "rushingYardsAfterContact": 724,
         "fictional": true
       }
+    },
+    "44": {
+      "portrait": "tyler-morgan-stewart-transparent.png",
+      "headline": "Useful early snaps, with a more defined ceiling",
+      "bio": "Morgan-Stewart's fictional South Carolina line of 50 catches, 576 yards and six touchdowns points toward a useful complementary target. He works underneath, presents a large window and converted 14 of 24 contested targets in the authored season. A 74.2% run-block win rate adds a practical reason to keep him involved beyond passing situations. At No. 44, the value is a role that can be defined early. His 1.79 yards per route run and age-25 entry make a developmental-star projection harder to support; sharper transitions would help him create more than a safe outlet.",
+      "watch": "Tighten transitions out of breaks and create separation before contested catches become the only answer.",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 50,
+        "receivingYards": 576,
+        "receivingTD": 6,
+        "targets": 71,
+        "routesRun": 321,
+        "contestedCatches": 14,
+        "contestedTargets": 24,
+        "runBlockWins": 132,
+        "runBlockSnaps": 178
+      },
+      "name": "Tyler Morgan-Stewart"
+    },
+    "48": {
+      "portrait": "nik-mcfarland-transparent.png",
+      "headline": "A workable receiving role with separation still to develop",
+      "bio": "McFarland's fictional Alabama season includes 46 catches, 529 yards and five touchdowns. He can settle into underneath windows and offer a substantial target, but 1.66 yards per route run suggests supporting production rather than a ready-made focal point. His run-blocking results give him a chance to contribute to a rotation while the receiving details develop. At No. 48, the appeal is useful size and a manageable initial assignment. Better release variety and more decisive breaks against man coverage would help him turn those opportunities into a larger target share.",
+      "watch": "Vary his releases, finish route breaks with conviction and sustain blocks through the end of the play.",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 46,
+        "receivingYards": 529,
+        "receivingTD": 5,
+        "targets": 68,
+        "routesRun": 318,
+        "runBlockWins": 113,
+        "runBlockSnaps": 162
+      },
+      "name": "Nik McFarland"
     },
     "56": {
       "name": "Nick Barrientos",
@@ -302,6 +381,23 @@
         "fictional": true
       }
     },
+    "74": {
+      "portrait": "theodore-jackson-jr-transparent.png",
+      "headline": "Downfield options to develop, routine details to fix",
+      "bio": "Jackson's fictional LSU season produced 31 catches for 432 yards and five touchdowns. His 13.94 yards per reception offers a reason to explore selected seam and downfield assignments, but only 31 of 58 targets became completions. At No. 74, the receiving outline is more promising than its consistency. His size can create opportunities, yet he needs cleaner releases, more reliable ball tracking and better timing into the catch point. A limited package is a reasonable starting role while he works toward becoming a dependable option on ordinary downs.",
+      "watch": "Improve ball tracking and release timing, then broaden the routes he can execute reliably.",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 12,
+        "receptions": 31,
+        "receivingYards": 432,
+        "receivingTD": 5,
+        "targets": 58,
+        "routesRun": 282
+      },
+      "name": "Theodore Jackson Jr."
+    },
     "83": {
       "name": "Demond Henderson",
       "portrait": "demond-henderson-transparent.png",
@@ -320,6 +416,27 @@
         "fumbles": 4,
         "fictional": true
       }
+    },
+    "84": {
+      "portrait": "daronte-cook-transparent.png",
+      "headline": "A blocking role to earn before the target count grows",
+      "bio": "Cook's fictional LSU receiving line is modest: 14 catches for 138 yards and one touchdown. The stronger case for a roster role comes from 154 run-block wins on 196 assignments, a 78.6% rate, with three pressures allowed across 58 pass-blocking snaps. His 264-pound frame fits a job helping an offense finish its blocking structure. At No. 84, that contribution matters more than forcing a high-volume receiving projection. He still needs cleaner releases and more dependable hands to keep defenses from treating his presence as an automatic run indicator.",
+      "watch": "Develop cleaner releases and reliable short catches while maintaining his blocking contribution.",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 14,
+        "receivingYards": 138,
+        "receivingTD": 1,
+        "targets": 23,
+        "routesRun": 122,
+        "runBlockWins": 154,
+        "runBlockSnaps": 196,
+        "passBlockSnaps": 58,
+        "pressuresAllowed": 3
+      },
+      "name": "Daronte Cook"
     },
     "86": {
       "name": "Jaylon Clarke",
@@ -372,6 +489,23 @@
         "receivingTD": 4,
         "fictional": true
       }
+    },
+    "94": {
+      "portrait": "brendan-whitney-transparent.png",
+      "headline": "A developmental receiving option with trust to build",
+      "bio": "Whitney's fictional Oregon season includes 25 catches, 344 yards and three touchdowns. There are useful gains in that sample, but 25 completions on 49 targets and 1.32 yards per route run leave a significant gap between occasional impact and a dependable weekly role. At No. 94, he projects as competitive depth with selected receiving opportunities. His 259-pound frame gives him something to work with, but size alone will not secure snaps. He needs more precise route pacing, better adjustments to the ball and consistent execution on the shorter throws.",
+      "watch": "Improve catch-point adjustments, sharpen route pacing and become dependable on routine underneath throws.",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 25,
+        "receivingYards": 344,
+        "receivingTD": 3,
+        "targets": 49,
+        "routesRun": 260
+      },
+      "name": "Brendan Whitney"
     }
   }
 }
