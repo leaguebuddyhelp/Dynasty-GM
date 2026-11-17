@@ -3,6 +3,55 @@
   "label": "CUS01",
   "source": "Madden - CUS01.json",
   "profiles": {
+    "18": {
+      "name": "Francis Smith",
+      "portrait": "francis-smith-transparent.png",
+      "headline": "Bring the pads. He plans to use them.",
+      "bio": "Smith likes a straightforward challenge, whether he is assembling furniture without the instructions or arguing that the best meal on campus comes from a tiny breakfast counter. The Ohio State back keeps a stack of handwritten goals beside his bed and enjoys being the teammate who turns a long day into a competition. His Power Back archetype gives the football story a clear direction: a sturdy runner built around a physical identity. The question worth following is how that identity travels when patience, spacing and an unglamorous cut matter more than the collision.",
+      "watch": "Reading the first crease, keeping his feet organized through traffic and choosing when to press the run."
+    },
+    "24": {
+      "name": "Jaylan Matthews Jr.",
+      "portrait": "jaylan-matthews-jr-transparent.png",
+      "headline": "Small spaces. Big possibilities.",
+      "bio": "Matthews is the Alabama teammate who can turn waiting for the team bus into a debate, a dance contest or both. He grew up helping an uncle organize community cookouts and still volunteers to handle the music whenever the group gets together. There is a playful confidence to his story, paired with an Elusive Back profile that invites creativity. The next chapter is about putting that imagination on a schedule: recognizing the useful opening, committing to it and saving the extra move for a defender who actually demands one.",
+      "watch": "Decisive cuts, discipline behind the line and turning open-field ideas into efficient decisions."
+    },
+    "30": {
+      "name": "Tye Miller",
+      "portrait": "tye-miller-transparent.png",
+      "headline": "An elusive profile with a deliberate mindset",
+      "bio": "Miller's quiet habit is photography: campus corners, empty basketball courts and anything that changes with the light. At Missouri, he is the friend who remembers where everyone left their keys, then becomes unexpectedly relentless over a game of cards. That mix of observation and competition gives his story its personality. The Elusive Back archetype supplies the scouting starting point. What makes this projection interesting is the balance between seeing possibilities and acting on one, especially when a run offers a modest gain before it offers a highlight.",
+      "watch": "Vision, timing behind his blockers and choosing the productive lane over the tempting detour."
+    },
+    "43": {
+      "name": "De'Quan Coleman",
+      "portrait": "dequan-coleman-transparent.png",
+      "headline": "A big back with an appetite for the details",
+      "bio": "Coleman spends his Colorado downtime baking bread, a hobby he picked up from a family recipe book filled with handwritten corrections. He is patient with a slow rise and far less patient with anyone who skips cleaning the kitchen. That demanding, good-humored streak shapes his fictional locker-room identity. At 230 pounds with a Power Back archetype, the outline is easy to see. The useful question goes beyond size: can he keep the run on time, navigate a crowded exchange and make his physical approach fit the blocking in front of him?",
+      "watch": "Tempo, footwork in tight lanes and staying available when the play asks for something beyond the handoff."
+    },
+    "67": {
+      "name": "Qualeek Leonard",
+      "portrait": "qualeek-leonard-transparent.png",
+      "headline": "The dimensions say power. The profile invites invention.",
+      "bio": "Leonard has the build to make you check the position label twice: a 230-pound Notre Dame runner listed as an Elusive Back. Away from football, he writes short adventure stories and shares the unfinished chapters with a small circle of friends who are merciless editors. He likes a surprising turn, but he has learned that a story still needs a clear destination. That is a fitting theme for his projection. The intrigue is a larger runner with an elusive identity; the challenge is making every change of direction serve the play.",
+      "watch": "Balance between size and movement, efficient changes of direction and commitment to the designed lane."
+    },
+    "83": {
+      "name": "Demond Henderson",
+      "portrait": "demond-henderson-transparent.png",
+      "headline": "Compact frame. Plenty to unpack.",
+      "bio": "Henderson is the North Carolina teammate who plans the group outing, double-checks the reservation and still finds a way to get everyone lost looking for dessert. He collects old basketball jerseys and takes friendly arguments about their design much too seriously. His story has an easygoing surface and a competitive center. The 228-pound frame and Elusive Back archetype create an interesting combination. The next step is giving that combination a reliable rhythm, with enough patience to trust a developing lane and enough conviction to stop waiting once it opens.",
+      "watch": "Patience versus hesitation, clean footwork through congestion and consistent decisions at the line."
+    },
+    "92": {
+      "name": "Kiaan Brown",
+      "portrait": "kiaan-brown-transparent.png",
+      "headline": "An outlet with ambitions beyond the checkdown",
+      "bio": "Brown approaches USC life with a sketchbook in his backpack and a running list of restaurants he wants to try with friends. He designs imaginary food-truck menus, complete with names his teammates usually veto. That collaborative, detail-loving personality suits the story of a Receiving Back looking for a defined place in an offense. At 5-foot-8 and 213 pounds, he brings a compact outline to that role. The projection revolves around dependable execution: being where the quarterback expects, understanding the spacing and making the ordinary outlet feel like a purposeful part of the play.",
+      "watch": "Route detail, positioning as an outlet and building a complete role alongside his receiving identity."
+    },
     "1": {
       "name": "J.T. Rhoads",
       "portrait": "jt-rhoads-transparent.png",

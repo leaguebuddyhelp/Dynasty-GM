@@ -7,7 +7,7 @@ const assetRoot = fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', 
 const sourceFile = fileURLToPath(new URL('../../bundled_data/draft_classes/madden/Madden - CUS01.json', import.meta.url));
 export const PROSPECT_POSITIONS = Object.freeze(['QB', 'HB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'FS', 'SS', 'K', 'P']);
 const appearanceKeys = ['skin', 'eye_color', 'ethnicity', 'hair', 'hair_color', 'facial_hair', 'features'];
-const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000 };
+const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000, Missouri: 0xf1b82d, Colorado: 0xcfb87c, 'North Carolina': 0x7bafd4 };
 const schoolEmojis = {
   USC: { name: 'usc', id: '1572332490356555836' },
   'Penn State': { name: 'pennstate', id: '1572332489186480169' },
@@ -43,6 +43,8 @@ export function buildProspectView({ position = 'QB', playerId = null } = {}) {
   const all = loadProspects();
   const players = all.filter((player) => player.position === position);
   const player = playerId === null ? null : players.find((entry) => entry.id === String(playerId));
+  const availablePositions = PROSPECT_POSITIONS.filter((entry) => all.some((prospect) => prospect.position === entry));
+  const availableLabel = availablePositions.join(' / ');
   if (playerId !== null && !player) throw new Error('Prospect is not available in this position');
   const positionMenu = new StringSelectMenuBuilder()
     .setCustomId('madden_prospects_position').setPlaceholder('Choose a position')
@@ -78,8 +80,8 @@ export function buildProspectView({ position = 'QB', playerId = null } = {}) {
     embed.setTitle(`CUS01 Draft Prospects · ${position}`)
       .setDescription(players.length
         ? `Choose a player below to open their portrait and scouting profile.\n\n${players.map((entry) => `**${entry.name}** · ${schoolLabel(entry.school)}`).join('\n')}`
-        : 'No completed profiles have been published for this position yet. Choose QB to view the first six prospects.')
-      .setFooter({ text: 'Six QB profiles available · More positions as the board is completed' });
+        : `No completed profiles have been published for this position yet. Choose ${availableLabel} to view completed prospects.`)
+      .setFooter({ text: `${all.length} profiles available · ${availableLabel} · More positions as the board is completed` });
   }
   return { content: '', embeds: [embed], components, files, attachments: [], allowedMentions: { parse: [] } };
 }

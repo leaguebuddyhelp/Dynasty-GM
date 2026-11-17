@@ -349,7 +349,14 @@
     "jersey": "#25",
     "round": 1,
     "pick": 18,
-    "class": 1
+    "class": 1,
+    "skin": "light brown",
+    "eye_color": "green",
+    "ethnicity": "african american",
+    "hair": "short ceaser",
+    "hair_color": "light brown",
+    "facial_hair": "light/clean",
+    "features": "light skin pretty boy"
   },
   "19": {
     "#": 19,
@@ -457,7 +464,14 @@
     "jersey": "#12",
     "round": 1,
     "pick": 24,
-    "class": 1
+    "class": 1,
+    "skin": "brown",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short dreads",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "dreads have patterns"
   },
   "25": {
     "#": 25,
@@ -565,7 +579,14 @@
     "jersey": "#5",
     "round": 1,
     "pick": 30,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short high top",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "strong face"
   },
   "31": {
     "#": 31,
@@ -799,7 +820,14 @@
     "jersey": "#28",
     "round": 2,
     "pick": 11,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser fade",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "round face"
   },
   "44": {
     "#": 44,
@@ -1245,7 +1273,14 @@
     "jersey": "#38",
     "round": 3,
     "pick": 3,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "long dreads",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "narrow chin"
   },
   "68": {
     "#": 68,
@@ -1533,7 +1568,14 @@
     "jersey": "#15",
     "round": 3,
     "pick": 19,
-    "class": 1
+    "class": 1,
+    "skin": "light brown",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "strong face"
   },
   "84": {
     "#": 84,
@@ -1695,7 +1737,14 @@
     "jersey": "#8",
     "round": 3,
     "pick": 28,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro",
+    "hair_color": "brown",
+    "facial_hair": "med/clean",
+    "features": "chubby face"
   },
   "93": {
     "#": 93,
