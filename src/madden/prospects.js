@@ -23,6 +23,7 @@ const schoolEmojis = {
   Oklahoma: { name: 'oklahoma', id: '1572342758235054080' },
   'Florida State': { name: 'floridastate', id: '1572342757408899213' },
   Minnesota: { name: 'minnesota', id: '1572342756410400849' },
+  'Iowa State': { name: 'iowastate', id: '1572343727098306762' },
 };
 function schoolLabel(school) {
   const emoji = schoolEmojis[school];
