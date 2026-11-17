@@ -15,6 +15,9 @@ const schoolEmojis = {
   'Notre Dame': { name: 'notredame', id: '1572332487613354036' },
   'Ohio State': { name: 'ohiostate', id: '1572332486804119643' },
   Miami: { name: 'miami', id: '1572332485675847862' },
+  Missouri: { name: 'missouri', id: '1572339527538843729' },
+  Colorado: { name: 'colorado', id: '1572339526540730378' },
+  'North Carolina': { name: 'northcarolina', id: '1572339525215326319' },
 };
 function schoolLabel(school) {
   const emoji = schoolEmojis[school];
