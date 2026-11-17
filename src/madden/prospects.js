@@ -7,7 +7,7 @@ const assetRoot = fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', 
 const sourceFile = fileURLToPath(new URL('../../bundled_data/draft_classes/madden/Madden - CUS01.json', import.meta.url));
 export const PROSPECT_POSITIONS = Object.freeze(['QB', 'HB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'FS', 'SS', 'K', 'P']);
 const appearanceKeys = ['skin', 'eye_color', 'ethnicity', 'hair', 'hair_color', 'facial_hair', 'features'];
-const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000, Missouri: 0xf1b82d, Colorado: 0xcfb87c, 'North Carolina': 0x7bafd4 };
+const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000, Missouri: 0xf1b82d, Colorado: 0xcfb87c, 'North Carolina': 0x7bafd4, Minnesota: 0x7a0019, 'Florida State': 0x782f40, Oklahoma: 0x841617, Texas: 0xbf5700, 'Iowa State': 0xc8102e, 'Boise State': 0x0033a0 };
 const schoolEmojis = {
   USC: { name: 'usc', id: '1572332490356555836' },
   'Penn State': { name: 'pennstate', id: '1572332489186480169' },
@@ -21,6 +21,36 @@ function schoolLabel(school) {
   return emoji ? `<:${emoji.name}:${emoji.id}> ${school}` : school;
 }
 
+const number = (value) => Number(value).toLocaleString('en-US');
+const rate = (numerator, denominator, digits = 2) => denominator > 0 ? (numerator / denominator).toFixed(digits) : '—';
+
+// Authored fictional college data lives only in prospect profiles. It never feeds
+// EA imports, awards or progression. Compute efficiency from the authored totals.
+export function formatProspectStatistics(stats) {
+  if (!stats || stats.fictional !== true) return null;
+  const lines = [];
+  if (stats.position === 'QB') {
+    lines.push(`${stats.games} G · ${stats.completions}/${stats.attempts} (${rate(stats.completions * 100, stats.attempts, 1)}%)`);
+    lines.push(`${number(stats.passingYards)} pass YD · ${stats.passingTD} TD / ${stats.interceptions} INT`);
+    const adjustedNetYards = stats.passingYards + 20 * stats.passingTD - 45 * stats.interceptions - stats.sackYards;
+    lines.push(`${rate(stats.passingYards, stats.attempts)} YD/ATT · ${rate(adjustedNetYards, stats.attempts + stats.sacks)} adjusted net yards/attempt (ANY/A)`);
+    if (stats.rushingYards !== undefined) lines.push(`${number(stats.rushingYards)} rush YD · ${stats.rushingTD} rush TD`);
+  } else if (stats.position === 'HB') {
+    lines.push(`${stats.games} G · ${stats.carries} CAR · ${number(stats.rushingYards)} rush YD · ${stats.rushingTD} rush TD`);
+    lines.push(`${rate(stats.rushingYards, stats.carries)} YD/CAR · ${stats.receptions} REC · ${number(stats.receivingYards)} rec YD · ${stats.receivingTD} rec TD`);
+    if (stats.rushingYardsAfterContact !== undefined) lines.push(`After contact: ${rate(stats.rushingYardsAfterContact, stats.carries)} rushing yards/carry`);
+    if (stats.missedTacklesForced !== undefined) lines.push(`Forced missed tackles: ${stats.missedTacklesForced}`);
+    if (stats.fumbles !== undefined) lines.push(`Fumbles: ${stats.fumbles}`);
+  } else if (stats.position === 'WR') {
+    lines.push(`${stats.games} G · ${stats.receptions} REC / ${stats.targets} TGT · ${number(stats.receivingYards)} YD · ${stats.receivingTD} TD`);
+    lines.push(`${rate(stats.receivingYards, stats.receptions)} YD/REC · ${rate(stats.receptions * 100, stats.targets, 1)}% catch rate`);
+    lines.push(`${rate(stats.receivingYards, stats.routesRun)} yards/route run (${stats.routesRun} routes)`);
+    if (stats.yardsAfterCatch !== undefined) lines.push(`After catch: ${number(stats.yardsAfterCatch)} YD · ${rate(stats.yardsAfterCatch, stats.receptions)} YD/REC`);
+    if (stats.contestedTargets !== undefined) lines.push(`Contested catches: ${stats.contestedCatches}/${stats.contestedTargets} (${rate(stats.contestedCatches * 100, stats.contestedTargets, 1)}%)`);
+  }
+  return lines.length ? lines.join('\n') : null;
+}
+
 // Only explicitly authored profiles are published. Other board entries stay private
 // until their appearance and editorial content are ready. Never expose raw records.
 export function loadProspects() {
@@ -30,10 +60,11 @@ export function loadProspects() {
     const row = source[id];
     if (!row || row.name !== profile.name || !appearanceKeys.every((key) => String(row[key] || '').trim())) return [];
     if (!PROSPECT_POSITIONS.includes(row.position)) return [];
-    return [{ id, name: row.name, position: row.position, school: row.school,
+    return [{ id, name: row.name, position: row.position, school: row.school === 'Minneosta' ? 'Minnesota' : row.school,
       age: row.age, year: row.year, height: row.height, weight: row.weight,
-      jersey: row.jersey, archetype: row.archetype, rank: row['#'],
+      jersey: row.jersey, rank: row['#'],
       headline: profile.headline, bio: profile.bio, watch: profile.watch,
+      statistics: profile.statistics,
       portrait: path.join(assetRoot, 'portraits', path.basename(profile.portrait)) }];
   }).sort((a, b) => a.rank - b.rank);
 }
@@ -57,7 +88,7 @@ export function buildProspectView({ position = 'QB', playerId = null } = {}) {
     .setCustomId(`madden_prospects_player_${position}`).setPlaceholder('Open a player card')
     .addOptions(players.slice(0, 25).map((entry) => ({ label: entry.name, value: entry.id,
       ...(schoolEmojis[entry.school] ? { emoji: schoolEmojis[entry.school] } : {}),
-      description: `${entry.school} · ${entry.archetype}`, default: entry.id === player?.id })))));
+      description: `${entry.school} · Board #${entry.rank}`, default: entry.id === player?.id })))));
 
   const embed = new EmbedBuilder().setColor(0x5865f2);
   const files = [];
@@ -67,9 +98,11 @@ export function buildProspectView({ position = 'QB', playerId = null } = {}) {
       .addFields(
         { name: 'School', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
         { name: 'Age / Build', value: `${player.age} years · ${player.height} · ${player.weight} lb`, inline: true },
-        { name: 'Player profile', value: `${player.jersey} · ${player.archetype} · Board #${player.rank}`, inline: true },
+        { name: 'Player profile', value: `${player.jersey} · Board #${player.rank}`, inline: true },
         { name: 'What to watch', value: player.watch },
-      ).setFooter({ text: 'CUS01 · Fictional prospect biography · AI-generated portrait' });
+      ).setFooter({ text: 'CUS01 · Fictional scouting profiles and college stats · AI-generated portrait' });
+    const statistics = formatProspectStatistics(player.statistics);
+    if (statistics) embed.addFields({ name: 'Fictional final college season', value: statistics });
     const schoolEmoji = schoolEmojis[player.school];
     if (schoolEmoji) embed.setThumbnail(`https://cdn.discordapp.com/emojis/${schoolEmoji.id}.png`);
     if (fs.existsSync(player.portrait)) {

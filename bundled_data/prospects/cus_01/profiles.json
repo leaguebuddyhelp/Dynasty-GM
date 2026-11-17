@@ -3,96 +3,375 @@
   "label": "CUS01",
   "source": "Madden - CUS01.json",
   "profiles": {
-    "18": {
-      "name": "Francis Smith",
-      "portrait": "francis-smith-transparent.png",
-      "headline": "Bring the pads. He plans to use them.",
-      "bio": "Smith likes a straightforward challenge, whether he is assembling furniture without the instructions or arguing that the best meal on campus comes from a tiny breakfast counter. The Ohio State back keeps a stack of handwritten goals beside his bed and enjoys being the teammate who turns a long day into a competition. His Power Back archetype gives the football story a clear direction: a sturdy runner built around a physical identity. The question worth following is how that identity travels when patience, spacing and an unglamorous cut matter more than the collision.",
-      "watch": "Reading the first crease, keeping his feet organized through traffic and choosing when to press the run."
-    },
-    "24": {
-      "name": "Jaylan Matthews Jr.",
-      "portrait": "jaylan-matthews-jr-transparent.png",
-      "headline": "Small spaces. Big possibilities.",
-      "bio": "Matthews is the Alabama teammate who can turn waiting for the team bus into a debate, a dance contest or both. He grew up helping an uncle organize community cookouts and still volunteers to handle the music whenever the group gets together. There is a playful confidence to his story, paired with an Elusive Back profile that invites creativity. The next chapter is about putting that imagination on a schedule: recognizing the useful opening, committing to it and saving the extra move for a defender who actually demands one.",
-      "watch": "Decisive cuts, discipline behind the line and turning open-field ideas into efficient decisions."
-    },
-    "30": {
-      "name": "Tye Miller",
-      "portrait": "tye-miller-transparent.png",
-      "headline": "An elusive profile with a deliberate mindset",
-      "bio": "Miller's quiet habit is photography: campus corners, empty basketball courts and anything that changes with the light. At Missouri, he is the friend who remembers where everyone left their keys, then becomes unexpectedly relentless over a game of cards. That mix of observation and competition gives his story its personality. The Elusive Back archetype supplies the scouting starting point. What makes this projection interesting is the balance between seeing possibilities and acting on one, especially when a run offers a modest gain before it offers a highlight.",
-      "watch": "Vision, timing behind his blockers and choosing the productive lane over the tempting detour."
-    },
-    "43": {
-      "name": "De'Quan Coleman",
-      "portrait": "dequan-coleman-transparent.png",
-      "headline": "A big back with an appetite for the details",
-      "bio": "Coleman spends his Colorado downtime baking bread, a hobby he picked up from a family recipe book filled with handwritten corrections. He is patient with a slow rise and far less patient with anyone who skips cleaning the kitchen. That demanding, good-humored streak shapes his fictional locker-room identity. At 230 pounds with a Power Back archetype, the outline is easy to see. The useful question goes beyond size: can he keep the run on time, navigate a crowded exchange and make his physical approach fit the blocking in front of him?",
-      "watch": "Tempo, footwork in tight lanes and staying available when the play asks for something beyond the handoff."
-    },
-    "67": {
-      "name": "Qualeek Leonard",
-      "portrait": "qualeek-leonard-transparent.png",
-      "headline": "The dimensions say power. The profile invites invention.",
-      "bio": "Leonard has the build to make you check the position label twice: a 230-pound Notre Dame runner listed as an Elusive Back. Away from football, he writes short adventure stories and shares the unfinished chapters with a small circle of friends who are merciless editors. He likes a surprising turn, but he has learned that a story still needs a clear destination. That is a fitting theme for his projection. The intrigue is a larger runner with an elusive identity; the challenge is making every change of direction serve the play.",
-      "watch": "Balance between size and movement, efficient changes of direction and commitment to the designed lane."
-    },
-    "83": {
-      "name": "Demond Henderson",
-      "portrait": "demond-henderson-transparent.png",
-      "headline": "Compact frame. Plenty to unpack.",
-      "bio": "Henderson is the North Carolina teammate who plans the group outing, double-checks the reservation and still finds a way to get everyone lost looking for dessert. He collects old basketball jerseys and takes friendly arguments about their design much too seriously. His story has an easygoing surface and a competitive center. The 228-pound frame and Elusive Back archetype create an interesting combination. The next step is giving that combination a reliable rhythm, with enough patience to trust a developing lane and enough conviction to stop waiting once it opens.",
-      "watch": "Patience versus hesitation, clean footwork through congestion and consistent decisions at the line."
-    },
-    "92": {
-      "name": "Kiaan Brown",
-      "portrait": "kiaan-brown-transparent.png",
-      "headline": "An outlet with ambitions beyond the checkdown",
-      "bio": "Brown approaches USC life with a sketchbook in his backpack and a running list of restaurants he wants to try with friends. He designs imaginary food-truck menus, complete with names his teammates usually veto. That collaborative, detail-loving personality suits the story of a Receiving Back looking for a defined place in an offense. At 5-foot-8 and 213 pounds, he brings a compact outline to that role. The projection revolves around dependable execution: being where the quarterback expects, understanding the spacing and making the ordinary outlet feel like a purposeful part of the play.",
-      "watch": "Route detail, positioning as an outlet and building a complete role alongside his receiving identity."
-    },
     "1": {
       "name": "J.T. Rhoads",
       "portrait": "jt-rhoads-transparent.png",
-      "headline": "The huddle is his office",
-      "bio": "Rhoads treats the quarterback room like a second major. At USC, he started a weekly film club with his receivers, complete with handwritten quizzes and a strict bring-your-own-breakfast policy. Away from football, he restores old headphones and keeps a notebook of stadium sounds. The personality fits the Field General billing: curious, deliberate and comfortable owning the conversation. The appeal is a quarterback who wants answers before the snap. The next chapter is learning when the perfect answer can wait and a decisive throw cannot.",
-      "watch": "Command of the offense, anticipation and decisive play when the original plan breaks down."
+      "headline": "A franchise-caliber passing foundation",
+      "bio": "Rhoads gives a quarterback-needy team a strong case to stop searching. His fictional final season pairs 3,918 passing yards and 38 touchdowns with six interceptions. A 9.86 adjusted net yards-per-attempt mark captures that combination of explosive gains and controlled mistakes. Anticipation, coverage recognition and accuracy between the numbers lead the evaluation. The appeal at No. 1 is command of the whole passing game, rather than one spectacular throw. He changes launch points when needed and stays connected to his receivers' timing. The remaining work is handling late pressure without speeding up his lower body; the projection is a quarterback an offense can be built around.",
+      "watch": "Keep his base settled against interior pressure and maintain timing when the first window closes.",
+      "statistics": {
+        "position": "QB",
+        "games": 13,
+        "completions": 289,
+        "attempts": 416,
+        "passingYards": 3918,
+        "passingTD": 38,
+        "interceptions": 6,
+        "sacks": 19,
+        "sackYards": 119,
+        "fictional": true
+      }
     },
     "2": {
       "name": "Jaquon Hall",
       "portrait": "jaquon-hall-transparent.png",
-      "headline": "Built to turn a broken play into a problem",
-      "bio": "Hall's Alabama story starts with backyard games where the pocket was whatever space the lawn furniture left open. He still brings that improviser's imagination to a Scrambler profile, but his off-field obsession is surprisingly patient: cooking elaborate Sunday dinners for teammates. He is the loudest voice during competitive games and the first to laugh at his own mistake afterward. The intrigue is obvious: a sturdy quarterback whose style invites movement and invention. The challenge is knowing when the escape hatch is an advantage and when staying on schedule is the bigger play.",
-      "watch": "Pocket discipline, choices outside structure and balancing creation with the routine throw."
+      "headline": "A quarterback who changes the math for a defense",
+      "bio": "Hall's fictional production combines 3,264 passing yards and 29 passing touchdowns with 924 rushing yards and 12 scores on the ground. That gives his Alabama profile a credible answer when defenses win the initial coverage matchup. He threatens the edge, resets to throw and can turn a conservative call into an explosive gain. His passing efficiency keeps the No. 2 projection from depending entirely on running ability. The next step is taking the available pocket completion more consistently instead of inviting extra contact while searching for something bigger.",
+      "watch": "Stay ahead of pressure with the ball, preserve throwing rhythm and reduce unnecessary hits.",
+      "statistics": {
+        "position": "QB",
+        "games": 13,
+        "completions": 245,
+        "attempts": 372,
+        "passingYards": 3264,
+        "passingTD": 29,
+        "interceptions": 8,
+        "sacks": 28,
+        "sackYards": 162,
+        "rushingYards": 924,
+        "rushingTD": 12,
+        "fictional": true
+      }
     },
     "6": {
       "name": "Aaron Archuelta",
       "portrait": "aaron-archuelta-transparent.png",
-      "headline": "Big frame. Bigger ambitions.",
-      "bio": "Archuelta carries the Strong Arm label and a frame that makes the projection easy to picture. His life away from Penn State football is quieter than that billing: he builds model airplanes, prefers long walks to crowded parties and turns fiercely competitive whenever a board game hits the table. He keeps a tiny model plane in his locker as a reminder that power means little without control. That is the theme of this prospect, too. The attraction is the vertical ambition; the developmental question is whether he can make the underneath game feel just as purposeful.",
-      "watch": "Touch, timing and willingness to take the available completion before hunting the big shot."
+      "headline": "An early pick with a legitimate vertical ceiling",
+      "bio": "Archuelta's fictional Penn State season produced 3,758 passing yards and 34 touchdowns, giving substance to a profile built around driving the ball outside the numbers and attacking deeper windows. His size helps him work over traffic, and his downfield ambition can force a defense to protect more grass. At No. 6, the draw is a potential offensive centerpiece with room to sharpen his efficiency. Ten interceptions leave a clear teaching point: improve touch underneath and recognize when a contested deep throw is an unnecessary bet.",
+      "watch": "Layer intermediate throws, vary ball speed and take the underneath answer when the deep window disappears.",
+      "statistics": {
+        "position": "QB",
+        "games": 13,
+        "completions": 257,
+        "attempts": 405,
+        "passingYards": 3758,
+        "passingTD": 34,
+        "interceptions": 10,
+        "sacks": 25,
+        "sackYards": 157,
+        "fictional": true
+      }
+    },
+    "11": {
+      "name": "Narquise Jones",
+      "portrait": "narquise-jones-transparent.png",
+      "headline": "A first-round receiver who can tilt the coverage",
+      "bio": "Jones brings a fictional Minnesota season of 78 catches, 1,316 yards and 14 touchdowns to a profile with genuine lead-receiver ambition. His 3.23 yards per route run across 408 routes gives the No. 11 placement more substance than a handful of long catches. He can threaten a corner vertically, alter his pace into the break and create room for the rest of the passing game. The appeal is explosive production with enough route efficiency to project a substantial target share. The next step is keeping his releases clean against more patient, physical press coverage.",
+      "watch": "Defeat patient press coverage and preserve route timing when the release gets crowded.",
+      "statistics": {
+        "position": "WR",
+        "games": 13,
+        "receptions": 78,
+        "receivingYards": 1316,
+        "receivingTD": 14,
+        "targets": 118,
+        "routesRun": 408,
+        "fictional": true
+      }
     },
     "14": {
       "name": "Nick Gardiner",
       "portrait": "nick-gardiner-transparent.png",
-      "headline": "A steady hand with something left to prove",
-      "bio": "Gardiner's Notre Dame routine begins with an early coffee and ends with a dog-eared notebook. The redshirt senior collects old mystery novels, coaches a neighborhood trivia team and refuses to leave a disagreement about a movie ending unresolved. He is the patient organizer rather than the speechmaker, a natural match for the Field General archetype. There is a clear identity here: preparation, structure and ownership. The interesting question is how that measured approach translates when a defense forces him to abandon the script.",
-      "watch": "Processing under pressure, rhythm and conviction when the pocket or coverage changes late."
+      "headline": "A polished distributor with a starter's pathway",
+      "bio": "Gardiner's fictional final season features 3,551 passing yards, 28 touchdowns and eight interceptions. His appeal is the way those numbers fit a controlled passing game: quick identification, anticipation into intermediate windows and a willingness to keep the offense on schedule. The No. 14 placement reflects a strong starting projection without requiring every snap to become an improvisational showcase. He is comfortable directing traffic before the snap. His growth area is creating a second answer when protection breaks down, especially when moving away from his preferred throwing platform.",
+      "watch": "Maintain accuracy on a disrupted platform and create practical answers outside the initial structure.",
+      "statistics": {
+        "position": "QB",
+        "games": 13,
+        "completions": 286,
+        "attempts": 421,
+        "passingYards": 3551,
+        "passingTD": 28,
+        "interceptions": 8,
+        "sacks": 24,
+        "sackYards": 147,
+        "fictional": true
+      }
+    },
+    "17": {
+      "name": "Nick Monk",
+      "portrait": "nick-monk-transparent.png",
+      "headline": "Get him the ball and let the yards follow",
+      "bio": "Monk's fictional Florida State season produced 88 catches, 1,148 yards and 10 touchdowns, with 662 yards coming after the catch. Those 7.52 yards after catch per reception give a first-round evaluation meaningful support beyond the initial catch. He can find space underneath, turn upfield quickly and give an offense a credible manufactured-touch option without making that his entire role. At No. 17, the projection is a prominent target with room to become more complete. Finishing through contact and expanding his answers against outside press coverage remain useful next steps.",
+      "watch": "Strengthen catch-point consistency through contact and develop more outside-release counters.",
+      "statistics": {
+        "position": "WR",
+        "games": 13,
+        "receptions": 88,
+        "receivingYards": 1148,
+        "receivingTD": 10,
+        "targets": 121,
+        "routesRun": 412,
+        "yardsAfterCatch": 662,
+        "fictional": true
+      }
+    },
+    "18": {
+      "name": "Francis Smith",
+      "portrait": "francis-smith-transparent.png",
+      "headline": "An early-down engine with first-round substance",
+      "bio": "Smith's fictional Ohio State season delivered 1,438 rushing yards and 18 touchdowns on 238 carries. His 3.45 rushing yards after contact per carry reinforce the core appeal: he can stay on track through traffic, run behind his pads and finish gains after the blocking stops doing the work. The 225-pound frame supports a substantial workload, while 32 catches give the profile more flexibility than a pure handoff role. At No. 18, the expectation is meaningful offensive volume. The next step is making his protection recognition as dependable as his work between the tackles.",
+      "watch": "Sharpen protection assignments and stay patient when the first interior lane is crowded.",
+      "statistics": {
+        "position": "HB",
+        "games": 13,
+        "carries": 238,
+        "rushingYards": 1438,
+        "rushingTD": 18,
+        "receptions": 32,
+        "receivingYards": 281,
+        "receivingTD": 2,
+        "rushingYardsAfterContact": 820,
+        "fictional": true
+      }
+    },
+    "21": {
+      "name": "Chandu Chukwumerejie",
+      "portrait": "chandu-chukwumerejie-transparent.png",
+      "headline": "A sturdy target with first-round offensive utility",
+      "bio": "Chukwumerejie's fictional Oklahoma season combines 75 catches, 1,089 yards and 11 touchdowns with 489 yards after the catch. The 213-pound build and productive work after the reception give him a credible path to a large role in the middle of a passing game. He can carry momentum through contact and give the quarterback a substantial target without needing every throw perfectly placed. At No. 21, the next layer is sharper route pacing: sell the vertical stem, separate earlier and avoid letting defenders settle on his intended break.",
+      "watch": "Add deception to route stems and create cleaner separation before contact becomes necessary.",
+      "statistics": {
+        "position": "WR",
+        "games": 13,
+        "receptions": 75,
+        "receivingYards": 1089,
+        "receivingTD": 11,
+        "targets": 111,
+        "routesRun": 416,
+        "yardsAfterCatch": 489,
+        "fictional": true
+      }
+    },
+    "24": {
+      "name": "Jaylan Matthews Jr.",
+      "portrait": "jaylan-matthews-jr-transparent.png",
+      "headline": "A first-round creator who can manufacture extra yards",
+      "bio": "Matthews turns a modest crease into a difficult tackling assignment. His fictional Alabama production includes 1,286 rushing yards, 14 rushing touchdowns and 41 receptions, giving the No. 24 projection a strong combination of rushing efficiency and passing-game involvement. Sixty-seven forced missed tackles add context to the appeal: the movement is productive when he gets a defender isolated. His compact build and changes of direction fit a prominent offensive role. He still needs to cut out unnecessary lateral steps when a direct gain is already available.",
+      "watch": "Trust the first useful lane and improve consistency picking up pressure from the edge.",
+      "statistics": {
+        "position": "HB",
+        "games": 13,
+        "carries": 207,
+        "rushingYards": 1286,
+        "rushingTD": 14,
+        "receptions": 41,
+        "receivingYards": 376,
+        "receivingTD": 3,
+        "missedTacklesForced": 67,
+        "fictional": true
+      }
+    },
+    "30": {
+      "name": "Tye Miller",
+      "portrait": "tye-miller-transparent.png",
+      "headline": "A productive runner with room to broaden his role",
+      "bio": "Miller's fictional Missouri season brings 1,278 rushing yards and 12 touchdowns on 221 carries to the evaluation. His pacing and one-cut decisions give him a credible path to sustained carries, and he can make a defender miss without turning every run into a long detour. The No. 30 placement reflects a strong rushing foundation with another layer still to develop. Twenty-four catches show some involvement through the air, but a wider receiving menu and more reliable protection would make his weekly role harder to take away.",
+      "watch": "Expand his route detail and keep his feet disciplined when the intended lane closes.",
+      "statistics": {
+        "position": "HB",
+        "games": 13,
+        "carries": 221,
+        "rushingYards": 1278,
+        "rushingTD": 12,
+        "receptions": 24,
+        "receivingYards": 209,
+        "receivingTD": 1,
+        "rushingYardsAfterContact": 620,
+        "fictional": true
+      }
+    },
+    "33": {
+      "name": "Kerry Williams Jr.",
+      "portrait": "kerry-williams-jr-transparent.png",
+      "headline": "A vertical weapon with a larger route tree to build",
+      "bio": "Williams' fictional Texas season of 52 catches, 947 yards and nine touchdowns makes his downfield value easy to understand. His length gives him room to develop along the boundary, and the yards per catch fit a receiver who can stretch coverage. The No. 33 placement also reflects the unfinished work: only 52 of 91 targets became completions, and a lean 194-pound frame can make a clean release more important. He projects first as a complementary outside threat. Better functional strength and a more varied short-to-intermediate game would raise his ceiling.",
+      "watch": "Build strength against press coverage, improve release variety and broaden his route inventory.",
+      "statistics": {
+        "position": "WR",
+        "games": 12,
+        "receptions": 52,
+        "receivingYards": 947,
+        "receivingTD": 9,
+        "targets": 91,
+        "routesRun": 362,
+        "fictional": true
+      }
+    },
+    "43": {
+      "name": "De'Quan Coleman",
+      "portrait": "dequan-coleman-transparent.png",
+      "headline": "A physical rotation back with a clear early role",
+      "bio": "Coleman's fictional Colorado line of 1,167 rushing yards and 13 touchdowns supports a practical role in a rushing rotation. His 724 rushing yards after contact are the standout detail, pointing to a runner who can finish through contact and remain useful when space gets tight. At No. 43, his physical contribution is easier to project than a complete passing-down role. Seventeen catches leave that part of the profile less established. He needs cleaner transitions out of the backfield and better answers when a run asks him to redirect before building momentum.",
+      "watch": "Improve receiving transitions and lateral resets without losing forward momentum.",
+      "statistics": {
+        "position": "HB",
+        "games": 13,
+        "carries": 218,
+        "rushingYards": 1167,
+        "rushingTD": 13,
+        "receptions": 17,
+        "receivingYards": 142,
+        "receivingTD": 1,
+        "rushingYardsAfterContact": 724,
+        "fictional": true
+      }
     },
     "56": {
       "name": "Nick Barrientos",
       "portrait": "nick-barrientos-transparent.png",
-      "headline": "The bet is on the arm\u2014and the imagination",
-      "bio": "Barrientos brings a Strong Arm archetype to a Miami story with plenty of color. He sketches sneaker designs in the margins of his notebooks, DJs small get-togethers for teammates and insists every road trip needs a carefully sequenced playlist. The creative streak also defines his football personality: he likes possibilities, especially the ambitious ones. That makes for an intriguing developmental canvas. The next step is turning imagination into a repeatable process, with the patience to let a simple completion do useful work.",
-      "watch": "Consistency of decisions, controlled aggression and execution on the ordinary downs."
+      "headline": "The throwing tools are ahead of the consistency",
+      "bio": "Barrientos offers a developmental passing bet at No. 56. His fictional Miami line of 2,682 yards, 20 touchdowns and 12 interceptions shows both the vertical opportunity and the cost of uneven decisions. He can challenge distant windows, but the completion profile leaves too many routine plays unfinished. A team can build an early role around defined reads and selected deep shots while working on his base and release timing. The ceiling is useful; the case for immediate, every-down command of an offense still needs work.",
+      "watch": "Improve short-area touch, repeat his footwork and separate an aggressive opportunity from a forced throw.",
+      "statistics": {
+        "position": "QB",
+        "games": 12,
+        "completions": 206,
+        "attempts": 341,
+        "passingYards": 2682,
+        "passingTD": 20,
+        "interceptions": 12,
+        "sacks": 27,
+        "sackYards": 176,
+        "fictional": true
+      }
+    },
+    "61": {
+      "name": "Johnny Newman",
+      "portrait": "johnny-newman-transparent.png",
+      "headline": "A large receiving target with separation work ahead",
+      "bio": "Newman's fictional Notre Dame season yielded 54 catches for 722 yards and eight touchdowns. A 56.7% contested-catch rate on 30 such targets gives context to the appeal of a 6-foot-6 receiver, especially around the end zone. They also show why he needs more separation rather than relying on reach to rescue every window. At No. 61, his size supports a useful situational role, while his route transitions and release timing need refinement before a bigger target load makes sense. A team is buying defined receiving options and a development plan, not a finished lead receiver.",
+      "watch": "Sink into breaks more efficiently and create earlier separation against tight man coverage.",
+      "statistics": {
+        "position": "WR",
+        "games": 13,
+        "receptions": 54,
+        "receivingYards": 722,
+        "receivingTD": 8,
+        "targets": 92,
+        "routesRun": 359,
+        "contestedCatches": 17,
+        "contestedTargets": 30,
+        "fictional": true
+      }
     },
     "63": {
       "name": "Zac Williams",
       "portrait": "zac-williams-transparent.png",
-      "headline": "A patient competitor chasing his opening",
-      "bio": "Williams' Ohio State backstory centers on persistence rather than a ready-made spotlight. He spends free afternoons repairing bicycles, has a dry joke for every tense meeting and keeps a list of small tasks he wants to master each month. He is not the loudest player in the room, but he has no interest in being background scenery. The Strong Arm archetype gives his profile its starting point. His next chapter is about making that tool part of a complete routine: timing, touch and the discipline to keep a drive alive.",
-      "watch": "Repeatable mechanics, rhythm throws and using arm strength without forcing the issue."
+      "headline": "A developmental passer with a narrower margin for error",
+      "bio": "Williams' fictional Ohio State season yielded 2,857 passing yards and 22 touchdowns against 11 interceptions. There are throws worth developing, especially when he has a clean setup and a defined target, but the efficiency does not yet support a plug-and-play starting projection. At No. 63, the sensible plan is a competitive reserve role with opportunities to earn more. He needs better timing on routine concepts and quicker exits from covered reads. Turning occasional high-end throws into reliable possessions will determine how much room he has to rise.",
+      "watch": "Clean up routine accuracy, accelerate covered-read decisions and avoid holding the ball into sacks.",
+      "statistics": {
+        "position": "QB",
+        "games": 13,
+        "completions": 225,
+        "attempts": 371,
+        "passingYards": 2857,
+        "passingTD": 22,
+        "interceptions": 11,
+        "sacks": 31,
+        "sackYards": 201,
+        "fictional": true
+      }
+    },
+    "67": {
+      "name": "Qualeek Leonard",
+      "portrait": "qualeek-leonard-transparent.png",
+      "headline": "Useful size and movement, with a workload to earn",
+      "bio": "Leonard's fictional Notre Dame season produced 828 rushing yards and seven touchdowns on 156 carries. The efficiency gives him something to build on, but the smaller workload makes a featured-back projection premature. He can redirect for a larger runner, and his 230-pound frame offers options in a rotation. At No. 67, he is a development candidate who should earn touches before being handed a full role. More decisive reads through congested lanes and a stronger passing-down contribution would help turn those opportunities into a lasting job.",
+      "watch": "Make quicker interior decisions and improve protection reliability before expanding his workload.",
+      "statistics": {
+        "position": "HB",
+        "games": 12,
+        "carries": 156,
+        "rushingYards": 828,
+        "rushingTD": 7,
+        "receptions": 15,
+        "receivingYards": 143,
+        "receivingTD": 0,
+        "fictional": true
+      }
+    },
+    "83": {
+      "name": "Demond Henderson",
+      "portrait": "demond-henderson-transparent.png",
+      "headline": "A rotational option who needs cleaner possessions",
+      "bio": "Henderson's fictional North Carolina season offers 839 rushing yards and eight touchdowns, but four fumbles make ball security a central part of the evaluation. He has the build to handle contact and enough movement to compete for rotational carries. The No. 83 placement reflects the distance between those usable traits and a dependable expanded role. He needs to secure the ball through traffic, reach decisions sooner and get more from ordinary rushing opportunities. Until those details improve, a limited workload is a more reasonable starting point than featured usage.",
+      "watch": "Protect the ball through contact, eliminate hesitation and earn trust on passing downs.",
+      "statistics": {
+        "position": "HB",
+        "games": 13,
+        "carries": 174,
+        "rushingYards": 839,
+        "rushingTD": 8,
+        "receptions": 21,
+        "receivingYards": 168,
+        "receivingTD": 1,
+        "fumbles": 4,
+        "fictional": true
+      }
+    },
+    "86": {
+      "name": "Jaylon Clarke",
+      "portrait": "jaylon-clarke-transparent.png",
+      "headline": "Downfield size that still needs a dependable floor",
+      "bio": "Clarke's fictional Iowa State season includes 39 catches, 684 yards and six touchdowns. The explosive average gives his 6-foot-4 frame a possible boundary role, but 39 completions on 76 targets make consistency a substantial part of the projection. At No. 86, he should begin as a selective vertical option rather than an automatic starter. He needs more purposeful releases, better timing locating the ball and a route tree that creates work when the deep shot is unavailable. The tools can earn an opportunity; the routine details will decide whether he keeps it.",
+      "watch": "Improve ball tracking, tighten release timing and become useful on nonvertical routes.",
+      "statistics": {
+        "position": "WR",
+        "games": 12,
+        "receptions": 39,
+        "receivingYards": 684,
+        "receivingTD": 6,
+        "targets": 76,
+        "routesRun": 334,
+        "fictional": true
+      }
+    },
+    "89": {
+      "name": "Joseph Lomeli",
+      "portrait": "joseph-lomeli-transparent.png",
+      "headline": "An underneath contributor with a limited initial projection",
+      "bio": "Lomeli's fictional Boise State season produced 62 catches, 714 yards and four touchdowns. His 62 completions on 86 targets suggest a workable underneath connection, but the modest output across 421 routes points toward a supporting role. At No. 89, he can compete to keep possessions moving from inside alignments. He still needs to create more against tight man coverage, threaten defenders beyond the first break and turn short catches into more meaningful gains. The initial appeal is practical receiving depth; a larger role will require more separation and more explosive production.",
+      "watch": "Generate separation against man coverage and add more value after short receptions.",
+      "statistics": {
+        "position": "WR",
+        "games": 13,
+        "receptions": 62,
+        "receivingYards": 714,
+        "receivingTD": 4,
+        "targets": 86,
+        "routesRun": 421,
+        "fictional": true
+      }
+    },
+    "92": {
+      "name": "Kiaan Brown",
+      "portrait": "kiaan-brown-transparent.png",
+      "headline": "Receiving value in a role that still needs definition",
+      "bio": "Brown's fictional USC line includes 46 receptions for 472 yards and four receiving touchdowns, alongside 451 rushing yards on 96 carries. That passing-game involvement gives him an identifiable way onto the field at No. 92. He can work as an outlet and underneath option, but the rushing volume does not establish an every-down answer. His development priorities are practical: hold up in protection, add detail against tighter coverage and prove he can handle more carries without sacrificing efficiency. A targeted receiving package is the clearest initial projection.",
+      "watch": "Improve protection, win routes beyond easy outlets and build evidence for a larger rushing role.",
+      "statistics": {
+        "position": "HB",
+        "games": 13,
+        "carries": 96,
+        "rushingYards": 451,
+        "rushingTD": 3,
+        "receptions": 46,
+        "receivingYards": 472,
+        "receivingTD": 4,
+        "fictional": true
+      }
     }
   }
 }

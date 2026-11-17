@@ -216,7 +216,14 @@
     "jersey": "#12",
     "round": 1,
     "pick": 11,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "black features"
   },
   "12": {
     "#": 12,
@@ -331,7 +338,14 @@
     "jersey": "#10",
     "round": 1,
     "pick": 17,
-    "class": 1
+    "class": 1,
+    "skin": "light skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "braids designed",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "atheltic face"
   },
   "18": {
     "#": 18,
@@ -410,7 +424,14 @@
     "jersey": "#0",
     "round": 1,
     "pick": 21,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "african"
   },
   "22": {
     "#": 22,
@@ -640,7 +661,14 @@
     "jersey": "#14",
     "round": 2,
     "pick": 1,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro fade",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "slight face"
   },
   "34": {
     "#": 34,
@@ -1158,7 +1186,14 @@
     "jersey": "#6",
     "round": 2,
     "pick": 29,
-    "class": 1
+    "class": 1,
+    "skin": "olive",
+    "eye_color": "green",
+    "ethnicity": "african american",
+    "hair": "curly afro",
+    "hair_color": "light brown",
+    "facial_hair": "none",
+    "features": "big body"
   },
   "62": {
     "#": 62,
@@ -1629,7 +1664,14 @@
     "jersey": "#19",
     "round": 3,
     "pick": 22,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "long dreads",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "oval head"
   },
   "87": {
     "#": 87,
@@ -1683,7 +1725,14 @@
     "jersey": "#12",
     "round": 3,
     "pick": 25,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short straight hair",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "classic white WR"
   },
   "90": {
     "#": 90,
