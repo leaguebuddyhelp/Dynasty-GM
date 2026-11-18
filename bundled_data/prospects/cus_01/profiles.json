@@ -68,6 +68,54 @@
         "forcedFumbles": 4
       }
     },
+    "4": {
+      "name": "Kenneth Bell",
+      "headline": "An outside corner with first-round coverage upside",
+      "bio": "Bell projects as a boundary corner who can stay connected through a route and contest the catch. His fictional Memphis season includes five interceptions and 12 pass breakups, giving evaluators a strong ball-production profile. He must keep his technique patient when receivers alter their tempo. His fourth-place board position reflects the potential to contribute early against leading targets.",
+      "watch": "Stay patient against double moves and finish consistently in run support.",
+      "portrait": "kenneth-bell-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 791,
+        "runDefenseSnaps": 265,
+        "tackles": 55,
+        "missedTackles": 6,
+        "tacklesForLoss": 4,
+        "sacks": 0,
+        "runStops": 15,
+        "forcedFumbles": 1,
+        "targets": 61,
+        "receptionsAllowed": 30,
+        "passBreakups": 12,
+        "interceptions": 5
+      }
+    },
+    "5": {
+      "name": "Malachi Robinson",
+      "headline": "A versatile safety with range and a physical edge",
+      "bio": "Robinson offers a blend of coverage range and physicality that can support several roles in the secondary. His fictional Ohio State season produced 91 tackles, four interceptions and eight pass breakups. He must balance his aggressive downhill triggers with the discipline to protect space behind him. At No. 5, he profiles as an early contributor with substantial starting potential.",
+      "watch": "Pair decisive run support with disciplined angles and reliable deep coverage.",
+      "portrait": "malachi-robinson-transparent.png",
+      "statistics": {
+        "position": "SS",
+        "fictional": true,
+        "games": 14,
+        "defensiveSnaps": 831,
+        "runDefenseSnaps": 358,
+        "tackles": 91,
+        "missedTackles": 7,
+        "tacklesForLoss": 7,
+        "sacks": 1,
+        "runStops": 27,
+        "forcedFumbles": 2,
+        "targets": 54,
+        "receptionsAllowed": 29,
+        "passBreakups": 8,
+        "interceptions": 4
+      }
+    },
     "6": {
       "name": "Aaron Archuelta",
       "portrait": "aaron-archuelta-transparent.png",
@@ -278,6 +326,30 @@
         "penalties": 4
       }
     },
+    "16": {
+      "name": "Mwenye Obasanjo",
+      "headline": "A competitive outside corner with starting potential",
+      "bio": "Obasanjo brings a competitive coverage profile and can challenge receivers through the catch point. His fictional Ohio State season produced four interceptions and ten breakups across 58 targets. His transition when a receiver changes direction will be a key test against more polished releases. His board position points to early playing time if that technique carries over.",
+      "watch": "Keep his footwork controlled against releases and transitions at the top of routes.",
+      "portrait": "mwenye-obasanjo-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 14,
+        "defensiveSnaps": 773,
+        "runDefenseSnaps": 250,
+        "tackles": 49,
+        "missedTackles": 7,
+        "tacklesForLoss": 3,
+        "sacks": 0,
+        "runStops": 12,
+        "forcedFumbles": 1,
+        "targets": 58,
+        "receptionsAllowed": 31,
+        "passBreakups": 10,
+        "interceptions": 4
+      }
+    },
     "17": {
       "name": "Nick Monk",
       "portrait": "nick-monk-transparent.png",
@@ -373,6 +445,54 @@
         "routesRun": 416,
         "yardsAfterCatch": 489,
         "fictional": true
+      }
+    },
+    "22": {
+      "name": "Keanu Jones",
+      "headline": "A deep safety who can cover ground",
+      "bio": "Jones gives a defense a safety profile built around range and awareness in space. In his fictional Ohio State season he recorded 73 tackles, four interceptions and seven breakups. His ability to come downhill under control will help determine how many alignments he can handle. At No. 22, his coverage range gives him a credible path to an early role.",
+      "watch": "Take efficient angles from depth and secure tackles in the open field.",
+      "portrait": "keanu-jones-transparent.png",
+      "statistics": {
+        "position": "FS",
+        "fictional": true,
+        "games": 14,
+        "defensiveSnaps": 756,
+        "runDefenseSnaps": 302,
+        "tackles": 73,
+        "missedTackles": 7,
+        "tacklesForLoss": 4,
+        "sacks": 0,
+        "runStops": 19,
+        "forcedFumbles": 1,
+        "targets": 47,
+        "receptionsAllowed": 25,
+        "passBreakups": 7,
+        "interceptions": 4
+      }
+    },
+    "23": {
+      "name": "A.J. Simms",
+      "headline": "A coverage prospect with a chance to compete early",
+      "bio": "Simms brings movement skills that can translate to a variety of coverage assignments. His fictional Clemson season includes 48 tackles, three interceptions and nine breakups; eight missed tackles highlight a skill that needs attention. He has first-round competition potential if his tackling and route discipline become as dependable as his ball skills.",
+      "watch": "Improve tackling and avoid guessing when receivers change pace.",
+      "portrait": "a-j-simms-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 732,
+        "runDefenseSnaps": 243,
+        "tackles": 48,
+        "missedTackles": 8,
+        "tacklesForLoss": 3,
+        "sacks": 0,
+        "runStops": 11,
+        "forcedFumbles": 1,
+        "targets": 55,
+        "receptionsAllowed": 30,
+        "passBreakups": 9,
+        "interceptions": 3
       }
     },
     "24": {
@@ -485,6 +605,30 @@
         "penalties": 7
       }
     },
+    "29": {
+      "name": "Cyrus Johnson III",
+      "headline": "A long-term corner candidate with ball skills",
+      "bio": "Johnson offers the tools to contest throws on the outside and compete through the receiver’s hands. His fictional Texas season produced three interceptions and nine breakups on 57 targets. At No. 29, his development will depend on keeping his hips and feet coordinated against sharp route breaks. A steadier tackling finish would make him more useful on every down.",
+      "watch": "Control transitions at route breaks and finish tackles after short completions.",
+      "portrait": "cyrus-johnson-iii-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 718,
+        "runDefenseSnaps": 239,
+        "tackles": 47,
+        "missedTackles": 8,
+        "tacklesForLoss": 2,
+        "sacks": 0,
+        "runStops": 10,
+        "forcedFumbles": 1,
+        "targets": 57,
+        "receptionsAllowed": 32,
+        "passBreakups": 9,
+        "interceptions": 3
+      }
+    },
     "30": {
       "name": "Tye Miller",
       "portrait": "tye-miller-transparent.png",
@@ -529,6 +673,30 @@
         "forcedFumbles": 2
       }
     },
+    "32": {
+      "name": "Tyreke Stump",
+      "headline": "A strong safety who can play downhill",
+      "bio": "Stump brings a run-support dimension to the back end and can close on throws in front of him. His fictional Rutgers season produced 86 tackles, 24 run stops and two interceptions. He must avoid letting his downhill mentality create space behind him when offenses disguise their intent. His board position supports a path to early rotational work.",
+      "watch": "Read play action patiently and maintain leverage when tackling near the box.",
+      "portrait": "tyreke-stump-transparent.png",
+      "statistics": {
+        "position": "SS",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 730,
+        "runDefenseSnaps": 330,
+        "tackles": 86,
+        "missedTackles": 9,
+        "tacklesForLoss": 7,
+        "sacks": 1,
+        "runStops": 24,
+        "forcedFumbles": 2,
+        "targets": 45,
+        "receptionsAllowed": 27,
+        "passBreakups": 5,
+        "interceptions": 2
+      }
+    },
     "33": {
       "name": "Kerry Williams Jr.",
       "portrait": "kerry-williams-jr-transparent.png",
@@ -544,6 +712,30 @@
         "targets": 91,
         "routesRun": 362,
         "fictional": true
+      }
+    },
+    "34": {
+      "name": "Kemal Sheppard",
+      "headline": "An outside corner with competitive coverage ability",
+      "bio": "Sheppard can challenge receivers at the catch point and is willing to support plays toward the sideline. His fictional Kentucky season includes 50 tackles, eight breakups and three interceptions. He will need quicker recognition when routes cross his face. The early second-round placement makes him a candidate to compete for a substantial role.",
+      "watch": "Recognize crossing routes sooner and tackle with consistent leverage.",
+      "portrait": "kemal-sheppard-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 699,
+        "runDefenseSnaps": 240,
+        "tackles": 50,
+        "missedTackles": 8,
+        "tacklesForLoss": 3,
+        "sacks": 0,
+        "runStops": 12,
+        "forcedFumbles": 1,
+        "targets": 56,
+        "receptionsAllowed": 33,
+        "passBreakups": 8,
+        "interceptions": 3
       }
     },
     "35": {
@@ -667,6 +859,30 @@
         "forcedFumbles": 1
       }
     },
+    "40": {
+      "name": "Amir Robinson",
+      "headline": "A corner with coverage versatility to develop",
+      "bio": "Robinson projects as a competitive defensive back who can work in both leverage and space. His fictional Arizona State season features 52 tackles, seven breakups and two interceptions. He needs to avoid conceding easy separation at the top of routes, particularly when facing quick changes of direction. He can compete for rotational snaps while refining that technique.",
+      "watch": "Improve route transitions and avoid opening his hips too early.",
+      "portrait": "amir-robinson-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 685,
+        "runDefenseSnaps": 230,
+        "tackles": 52,
+        "missedTackles": 8,
+        "tacklesForLoss": 3,
+        "sacks": 0,
+        "runStops": 12,
+        "forcedFumbles": 1,
+        "targets": 54,
+        "receptionsAllowed": 33,
+        "passBreakups": 7,
+        "interceptions": 2
+      }
+    },
     "41": {
       "headline": "A rotational rusher with a broader role to earn",
       "bio": "Robinson's fictional Missouri season includes 34 pressures on 286 rushes and 6.5 sacks. His 11.9% pressure rate gives a defense a workable reason to introduce him in selected situations, especially when his movement makes the blocker commit early. At No. 41, the challenge is becoming useful when those favorable rush conditions disappear. Fifteen run stops and seven missed tackles leave room to improve his positioning and control through contact. Better discipline at the edge and a more organized counter plan would make a larger workload easier to justify.",
@@ -690,6 +906,30 @@
         "tacklesForLoss": 10,
         "runStops": 15,
         "forcedFumbles": 1
+      }
+    },
+    "42": {
+      "name": "Devoreaux Flowers",
+      "headline": "A boundary defender with opportunities on the ball",
+      "bio": "Flowers brings a long-term coverage profile and the ability to challenge the catch point. His fictional Western Kentucky season produced 46 tackles, eight breakups and two interceptions, though nine missed tackles show that his finishing needs work. A rotational role is a reasonable starting projection while he adjusts to faster releases and improves his tackling.",
+      "watch": "Finish tackles cleanly and keep his balance through receiver releases.",
+      "portrait": "devoreaux-flowers-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 671,
+        "runDefenseSnaps": 225,
+        "tackles": 46,
+        "missedTackles": 9,
+        "tacklesForLoss": 2,
+        "sacks": 0,
+        "runStops": 10,
+        "forcedFumbles": 0,
+        "targets": 55,
+        "receptionsAllowed": 34,
+        "passBreakups": 8,
+        "interceptions": 2
       }
     },
     "43": {
@@ -782,6 +1022,30 @@
         "forcedFumbles": 1
       }
     },
+    "47": {
+      "name": "Keon Booker",
+      "headline": "A safety with useful range and route awareness",
+      "bio": "Booker can contribute over the top and close on underneath throws when he recognizes the route combination. His fictional Alabama season yielded 70 tackles, six breakups and three interceptions. He will need to take more reliable angles in run support to make his coverage range useful across downs. His second-round projection suggests a path to meaningful snaps.",
+      "watch": "Take cleaner pursuit angles and diagnose route combinations from depth.",
+      "portrait": "keon-booker-transparent.png",
+      "statistics": {
+        "position": "FS",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 693,
+        "runDefenseSnaps": 288,
+        "tackles": 70,
+        "missedTackles": 8,
+        "tacklesForLoss": 4,
+        "sacks": 0,
+        "runStops": 17,
+        "forcedFumbles": 1,
+        "targets": 46,
+        "receptionsAllowed": 28,
+        "passBreakups": 6,
+        "interceptions": 3
+      }
+    },
     "48": {
       "portrait": "nik-mcfarland-transparent.png",
       "headline": "A workable receiving role with separation still to develop",
@@ -820,6 +1084,30 @@
         "pressuresAllowed": 26,
         "runBlockWins": 250,
         "penalties": 6
+      }
+    },
+    "50": {
+      "name": "Markus Finn Jr.",
+      "headline": "An outside corner with a developing coverage profile",
+      "bio": "Finn shows the potential to compete at the catch point and close on throws outside. His fictional Missouri season produced 49 tackles, seven breakups and two interceptions. Route transitions and recovery speed after an initial misstep are important points to evaluate. He projects as a rotational competitor with a chance to grow into a larger assignment.",
+      "watch": "Reduce wasted steps out of breaks and recover without drawing contact.",
+      "portrait": "markus-finn-jr-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 661,
+        "runDefenseSnaps": 226,
+        "tackles": 49,
+        "missedTackles": 8,
+        "tacklesForLoss": 2,
+        "sacks": 0,
+        "runStops": 11,
+        "forcedFumbles": 1,
+        "targets": 53,
+        "receptionsAllowed": 33,
+        "passBreakups": 7,
+        "interceptions": 2
       }
     },
     "51": {
@@ -1119,6 +1407,30 @@
         "fictional": true
       }
     },
+    "64": {
+      "name": "Mike Swizter",
+      "headline": "A deep safety competing for a defined role",
+      "bio": "Swizter offers a back-end profile centered on positioning and reading the quarterback. His fictional Clemson season includes 68 tackles, four breakups and two interceptions. Ten missed tackles show why his pursuit angles and finishing need attention. He projects as depth with a path to situational snaps if he consistently arrives under control.",
+      "watch": "Improve tackling from depth and react earlier to developing routes.",
+      "portrait": "mike-swizter-transparent.png",
+      "statistics": {
+        "position": "FS",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 623,
+        "runDefenseSnaps": 259,
+        "tackles": 68,
+        "missedTackles": 10,
+        "tacklesForLoss": 3,
+        "sacks": 0,
+        "runStops": 15,
+        "forcedFumbles": 0,
+        "targets": 42,
+        "receptionsAllowed": 27,
+        "passBreakups": 4,
+        "interceptions": 2
+      }
+    },
     "65": {
       "headline": "A substantial middle with quicker reactions to develop",
       "bio": "Shea's fictional Notre Dame season produced a 78.1% run-block win rate across 342 assignments. His 328-pound frame offers a useful base for controlling space in the middle, particularly when he can establish contact on schedule. The No. 65 projection becomes less certain when the protection speeds up: 28 pressures were allowed over 430 pass-blocking snaps. He needs cleaner foot placement against quick interior movement and more reliable transitions when helping a neighboring blocker. There is a workable reserve-center foundation, with a larger role dependent on steadier execution after the snap.",
@@ -1140,6 +1452,30 @@
         "penalties": 7
       }
     },
+    "66": {
+      "name": "Kevin Rivera",
+      "headline": "A safety prospect with room to refine his angles",
+      "bio": "Rivera can work in space and contribute in support when he identifies the play quickly. His fictional Stanford season produced 72 tackles, five breakups and two interceptions. He must respond more consistently when a route combination forces him to change his initial read. A rotational role is the starting point, with further opportunities tied to his coverage discipline.",
+      "watch": "Maintain coverage landmarks and take cleaner angles toward the ball.",
+      "portrait": "kevin-rivera-transparent.png",
+      "statistics": {
+        "position": "FS",
+        "fictional": true,
+        "games": 12,
+        "defensiveSnaps": 611,
+        "runDefenseSnaps": 253,
+        "tackles": 72,
+        "missedTackles": 9,
+        "tacklesForLoss": 4,
+        "sacks": 0,
+        "runStops": 16,
+        "forcedFumbles": 1,
+        "targets": 43,
+        "receptionsAllowed": 28,
+        "passBreakups": 5,
+        "interceptions": 2
+      }
+    },
     "67": {
       "name": "Qualeek Leonard",
       "portrait": "qualeek-leonard-transparent.png",
@@ -1156,6 +1492,30 @@
         "receivingYards": 143,
         "receivingTD": 0,
         "fictional": true
+      }
+    },
+    "68": {
+      "name": "Nick Matthews",
+      "headline": "A corner who can compete for rotational snaps",
+      "bio": "Matthews brings a coverage foundation and the willingness to challenge throws near the sideline. His fictional Virginia season produced 45 tackles, six breakups and two interceptions. He must stay connected through the receiver’s second move and avoid giving away leverage. His projection begins with depth and competition for a regular defensive role.",
+      "watch": "Stay patient against double moves and secure tackles after the catch.",
+      "portrait": "nick-matthews-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 12,
+        "defensiveSnaps": 596,
+        "runDefenseSnaps": 202,
+        "tackles": 45,
+        "missedTackles": 9,
+        "tacklesForLoss": 2,
+        "sacks": 0,
+        "runStops": 10,
+        "forcedFumbles": 0,
+        "targets": 52,
+        "receptionsAllowed": 34,
+        "passBreakups": 6,
+        "interceptions": 2
       }
     },
     "69": {
@@ -1428,6 +1788,54 @@
         "forcedFumbles": 0
       }
     },
+    "81": {
+      "name": "Isaac Almonte",
+      "headline": "A developmental corner with ball skills to build on",
+      "bio": "Almonte offers a chance to contribute in coverage if his technique becomes more consistent. His fictional Ole Miss season includes 43 tackles, six breakups and one interception. He can compete at the catch point but needs to close space earlier and tackle more securely after completions. He projects as depth with a path to situational work.",
+      "watch": "Close underneath space earlier and improve tackling through contact.",
+      "portrait": "isaac-almonte-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 570,
+        "runDefenseSnaps": 192,
+        "tackles": 43,
+        "missedTackles": 9,
+        "tacklesForLoss": 2,
+        "sacks": 0,
+        "runStops": 9,
+        "forcedFumbles": 0,
+        "targets": 50,
+        "receptionsAllowed": 33,
+        "passBreakups": 6,
+        "interceptions": 1
+      }
+    },
+    "82": {
+      "name": "Rocco Weatherly",
+      "headline": "A strong safety who can help near the line",
+      "bio": "Weatherly brings a physical approach and can work downhill into run support. His fictional Michigan season produced 78 tackles, 22 run stops and two interceptions. His biggest developmental question is maintaining coverage discipline when route combinations pull him away from his initial landmark. He can compete for rotational snaps while sharpening that part of his game.",
+      "watch": "Keep his coverage landmarks while continuing to finish in run support.",
+      "portrait": "rocco-weatherly-transparent.png",
+      "statistics": {
+        "position": "SS",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 614,
+        "runDefenseSnaps": 286,
+        "tackles": 78,
+        "missedTackles": 10,
+        "tacklesForLoss": 5,
+        "sacks": 1,
+        "runStops": 22,
+        "forcedFumbles": 1,
+        "targets": 42,
+        "receptionsAllowed": 28,
+        "passBreakups": 4,
+        "interceptions": 2
+      }
+    },
     "83": {
       "name": "Demond Henderson",
       "portrait": "demond-henderson-transparent.png",
@@ -1467,6 +1875,30 @@
         "pressuresAllowed": 3
       },
       "name": "Daronte Cook"
+    },
+    "85": {
+      "name": "Jaden Millhouse",
+      "headline": "A developmental corner with a competitive foundation",
+      "bio": "Millhouse can challenge receivers and offers a starting point for coverage development. His fictional Syracuse season included 44 tackles, five breakups and one interception, with ten missed tackles. The next step is turning that competitiveness into consistent leverage and more reliable finishes. He projects as depth with a chance to earn situational snaps.",
+      "watch": "Improve tackling consistency and hold leverage through the full route.",
+      "portrait": "jaden-millhouse-transparent.png",
+      "statistics": {
+        "position": "CB",
+        "fictional": true,
+        "games": 12,
+        "defensiveSnaps": 559,
+        "runDefenseSnaps": 190,
+        "tackles": 44,
+        "missedTackles": 10,
+        "tacklesForLoss": 2,
+        "sacks": 0,
+        "runStops": 9,
+        "forcedFumbles": 0,
+        "targets": 49,
+        "receptionsAllowed": 33,
+        "passBreakups": 5,
+        "interceptions": 1
+      }
     },
     "86": {
       "name": "Jaylon Clarke",
@@ -1548,6 +1980,54 @@
         "targets": 86,
         "routesRun": 421,
         "fictional": true
+      }
+    },
+    "90": {
+      "name": "T.J. Chausiku",
+      "headline": "A strong safety with rotational potential",
+      "bio": "Chausiku provides a downhill safety profile and can contribute against the run. His fictional South Carolina season produced 74 tackles, 20 run stops and one interception. He needs to be more consistent in space and avoid overrunning plays when he triggers downhill. He projects as a developmental defender who can compete for a specific role.",
+      "watch": "Stay under control when triggering downhill and improve open-field tackling.",
+      "portrait": "t-j-chausiku-transparent.png",
+      "statistics": {
+        "position": "SS",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 578,
+        "runDefenseSnaps": 268,
+        "tackles": 74,
+        "missedTackles": 10,
+        "tacklesForLoss": 5,
+        "sacks": 1,
+        "runStops": 20,
+        "forcedFumbles": 1,
+        "targets": 41,
+        "receptionsAllowed": 28,
+        "passBreakups": 3,
+        "interceptions": 1
+      }
+    },
+    "91": {
+      "name": "Tazwel Mason",
+      "headline": "A developmental safety with coverage work ahead",
+      "bio": "Mason brings a safety profile that can be developed in a rotational setting. His fictional Buffalo season features 69 tackles, four breakups and two interceptions. His missed tackles and completions allowed show that better angles and coverage spacing would help translate his opportunities into steadier results. He starts as depth with room to compete.",
+      "watch": "Improve tackling angles and maintain spacing against layered routes.",
+      "portrait": "tazwel-mason-transparent.png",
+      "statistics": {
+        "position": "SS",
+        "fictional": true,
+        "games": 12,
+        "defensiveSnaps": 557,
+        "runDefenseSnaps": 245,
+        "tackles": 69,
+        "missedTackles": 11,
+        "tacklesForLoss": 4,
+        "sacks": 0,
+        "runStops": 17,
+        "forcedFumbles": 0,
+        "targets": 43,
+        "receptionsAllowed": 30,
+        "passBreakups": 4,
+        "interceptions": 2
       }
     },
     "92": {
