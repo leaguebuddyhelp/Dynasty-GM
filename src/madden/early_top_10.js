@@ -1,14 +1,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
 import { loadProspects } from './prospects.js';
 
-const sourceFile = fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01 - Early Top 10.json', import.meta.url));
-const biosFile = fileURLToPath(new URL('../../bundled_data/prospects/cus_01/early-top-10-bios.json', import.meta.url));
+const classes = Object.freeze({
+  CUS01: { source: 'Madden - CUS01 - Early Top 10.json', folder: 'cus_01' },
+  CUS02: { source: 'Madden - CUS02 - Early Top 10.json', folder: 'cus_02' },
+});
+const dataRoot = fileURLToPath(new URL('../../bundled_data/', import.meta.url));
 const PAGE_COUNT = 10;
 
-export function loadEarlyTop10() {
+export function loadEarlyTop10(classId = 'CUS01') {
+  if (!Object.hasOwn(classes, classId)) throw new Error('Unknown early top ten class');
+  const { source: filename, folder } = classes[classId];
+  const sourceFile = path.join(dataRoot, 'madden', filename);
+  const biosFile = path.join(dataRoot, 'prospects', folder, 'early-top-10-bios.json');
   const source = JSON.parse(fs.readFileSync(sourceFile, 'utf8'));
   const bios = JSON.parse(fs.readFileSync(biosFile, 'utf8'));
   const ranks = new Map();
@@ -21,11 +28,11 @@ export function loadEarlyTop10() {
   return ranks;
 }
 
-export function buildEarlyTop10View(page = 0) {
+export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
   const index = Math.max(0, Math.min(PAGE_COUNT - 1, Number.isInteger(page) ? page : 0));
   const rank = index + 1;
-  const player = loadEarlyTop10().get(rank);
-  const embed = new EmbedBuilder().setColor(0x5865f2).setFooter({ text: `CUS01 · Early outlook · ${rank}/${PAGE_COUNT}` });
+  const player = loadEarlyTop10(classId).get(rank);
+  const embed = new EmbedBuilder().setColor(0x5865f2).setFooter({ text: `${classId} · Early outlook · ${rank}/${PAGE_COUNT}` });
   const files = [];
   if (player) {
     embed.setTitle(`Early Top 10 · #${rank} — ${player.name}`)
@@ -36,19 +43,31 @@ export function buildEarlyTop10View(page = 0) {
         { name: 'Build', value: `${player.height} · ${player.weight} lb`, inline: true },
       );
     // Match the player identity, not the early rank: the final board uses a different order.
-    const prospect = loadProspects().find((entry) => entry.name === player.name && entry.position === player.position && entry.school === player.school);
+    const prospect = loadProspects(classId).find((entry) => entry.name === player.name && entry.position === player.position && entry.school === player.school);
     if (prospect && fs.existsSync(prospect.portrait)) {
-      const name = `early-cus01-${prospect.id}${path.extname(prospect.portrait)}`;
+      const name = `early-${classId.toLowerCase()}-${prospect.id}${path.extname(prospect.portrait)}`;
       files.push(new AttachmentBuilder(prospect.portrait, { name }));
       embed.setThumbnail(`attachment://${name}`);
+    } else if (classId === 'CUS02') {
+      const root = path.join(dataRoot, 'prospects', 'cus_02');
+      const portraits = JSON.parse(fs.readFileSync(path.join(root, 'early-top-10-portrait-prompts.json'), 'utf8'));
+      const match = portraits.find((entry) => entry.name === player.name && entry.position === player.position && entry.school === player.school);
+      const portrait = match && path.join(root, 'portraits', path.basename(match.file));
+      if (portrait && fs.existsSync(portrait)) {
+        const name = `early-cus02-rank-${rank}.png`;
+        files.push(new AttachmentBuilder(portrait, { name }));
+        embed.setThumbnail(`attachment://${name}`);
+      }
     }
   } else {
     embed.setTitle(`Early Top 10 · #${rank}`)
       .setDescription('This spot has not been assigned yet.');
   }
+  const prefix = classId === 'CUS01' ? 'madden_earlytop10_page' : 'madden_earlytop10_cus02_page';
   const components = [new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`madden_earlytop10_page_${Math.max(0, index - 1)}`).setLabel('Previous').setStyle(ButtonStyle.Secondary).setDisabled(index === 0),
-    new ButtonBuilder().setCustomId(`madden_earlytop10_page_${Math.min(PAGE_COUNT - 1, index + 1)}`).setLabel('Next').setStyle(ButtonStyle.Primary).setDisabled(index === PAGE_COUNT - 1),
-  )];
+    new ButtonBuilder().setCustomId(`${prefix}_${Math.max(0, index - 1)}`).setLabel('Previous').setStyle(ButtonStyle.Secondary).setDisabled(index === 0),
+    new ButtonBuilder().setCustomId(`${prefix}_${Math.min(PAGE_COUNT - 1, index + 1)}`).setLabel('Next').setStyle(ButtonStyle.Primary).setDisabled(index === PAGE_COUNT - 1),
+  ), new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('madden_earlytop10_class')
+    .setPlaceholder('Choose a draft class').addOptions(Object.keys(classes).map((value) => ({ label: value === 'CUS01' ? 'Class 1 · CUS01' : 'Class 2 · CUS02', value, default: value === classId }))))];
   return { content: '', embeds: [embed], components, files, attachments: [], allowedMentions: { parse: [] } };
 }

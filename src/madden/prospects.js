@@ -140,7 +140,7 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
       .setTitle(`${player.name} · ${player.position}`).setDescription(player.bio)
       .addFields(
         { name: 'School', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
-        { name: 'Age / Build', value: `${player.age} years · ${player.height} · ${player.weight} lb`, inline: true },
+        { name: 'Age / Build', value: `${player.age == null ? 'Age not listed' : `${player.age} years`} · ${player.height} · ${player.weight} lb`, inline: true },
         { name: 'Jersey / Board', value: `${player.jersey} · #${player.rank}`, inline: true },
       ).setFooter({ text: `${classId} · Simulated college statistics` });
     const statistics = formatProspectStatistics(player.statistics);

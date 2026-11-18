@@ -28,6 +28,7 @@ for (const player of players) {
 }
 assert.equal(loadProspects()[0].name, 'J.T. Rhoads');
 assert.equal(players[0].name, 'Ameer Young');
+assert.doesNotMatch(buildProspectView({ classId: 'CUS02', position: 'HB', playerId: '19' }).embeds[0].toJSON().fields.find((field) => field.name === 'Age / Build').value, /undefined/);
 assert.equal(buildProspectView({ classId: 'CUS02', position: 'WR' }).components.length, 2);
 assert.match(buildProspectView({ classId: 'CUS02', position: 'WR' }).embeds[0].toJSON().description, /No completed profiles/);
 assert.throws(() => buildProspectView({ classId: 'CUS02', position: 'QB', playerId: '13' }), /not available/);

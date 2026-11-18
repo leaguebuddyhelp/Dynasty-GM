@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Michael Oluwafemi",
+    "position": "WR",
+    "school": "Washington",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Michael Oluwafemi, a fictional 21-year-old adult male WR football player, african american, dark skin, brown eyes, black hair in short afro faded style, light neatly groomed facial hair; african. Athletic 6'2\", 212-pound WR build; wearing a Washington jersey #81 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/michael-oluwafemi-early-transparent.png"
+  },
+  {
+    "name": "Kareem Carter",
+    "position": "WILL",
+    "school": "USC",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Kareem Carter, a fictional 21-year-old adult male WILL football player, african american, dark skin, brown eyes, black hair in long dreads designed style, medium neatly groomed facial hair; black features. Athletic 6'2\", 234-pound WILL build; wearing a USC jersey #19 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/kareem-carter-early-transparent.png"
+  },
+  {
+    "name": "Zaquan Newton",
+    "position": "DT",
+    "school": "Georgia",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Zaquan Newton, a fictional 21-year-old adult male DT football player, african american, med brown skin, brown eyes, black hair in long afro with texture style, light neatly groomed facial hair; chubby face. Athletic 6'3\", 313-pound DT build; wearing a Georgia jersey #94 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/zaquan-newton-early-transparent.png"
+  },
+  {
+    "name": "Quentin Sosa",
+    "position": "DT",
+    "school": "Ohio State",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Quentin Sosa, a fictional 22-year-old adult male DT football player, latin/black, olive/med brown, brown eyes, brown hair in short ceaser faded style, medium neatly groomed facial hair; chubby round face. Athletic 6'5\", 330-pound DT build; wearing a Ohio State jersey #51 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/quentin-sosa-early-transparent.png"
+  },
+  {
+    "name": "Jaiden Bloodworth",
+    "position": "LG",
+    "school": "Alabama",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Jaiden Bloodworth, a fictional 22-year-old adult male LG football player, african american, dark skin, brown eyes, black hair in dread designed style, light neatly groomed facial hair; black features. Athletic 6'6\", 318-pound LG build; wearing a Alabama jersey #66 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/jaiden-bloodworth-early-transparent.png"
+  },
+  {
+    "name": "Azizi Akpabio",
+    "position": "CB",
+    "school": "Arizona",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Azizi Akpabio, a fictional 22-year-old adult male CB football player, african american, dark skin, brown eyes, black hair in dread designed with fade style, clean shaven; african. Athletic 6'3\", 203-pound CB build; wearing a Arizona jersey #0 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/azizi-akpabio-early-transparent.png"
+  },
+  {
+    "name": "Will Hoggard",
+    "position": "QB",
+    "school": "Stanford",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Will Hoggard, a fictional 22-year-old adult male QB football player, white, white, brown eyes, brown hair in med length straight hair, fade style, goatee; classic white QB. Athletic 6'4\", 220-pound QB build; wearing a Stanford jersey #10 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/will-hoggard-early-transparent.png"
+  }
+]
