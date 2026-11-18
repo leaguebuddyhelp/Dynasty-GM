@@ -154,7 +154,7 @@ assert.match(formatProspectStatistics(players.find((p) => p.id === '41').statist
 assert.match(formatProspectStatistics(players.find((p) => p.id === '48').statistics), /10 TD/);
 assert.ok(buildProspectView({ position: 'CB' }).embeds[0].toJSON().description.includes('Western Kentucky'));
 const empty = buildProspectView({ position: 'FB' });
-assert.equal(empty.components.length, 1);
+assert.equal(empty.components.length, 2);
 assert.equal(empty.files.length, 0);
 assert.match(empty.embeds[0].toJSON().description, /No completed profiles/);
 assert.throws(() => buildProspectView({ position: 'FB', playerId: '1' }), /not available/);

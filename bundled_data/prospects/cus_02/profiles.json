@@ -1,0 +1,245 @@
+{
+  "classId": "CUS02",
+  "label": "Class 2",
+  "source": "bundled_data/madden/Madden - CUS02.json",
+  "profiles": {
+    "1": {
+      "name": "Ameer Young",
+      "bio": "Young knows what it takes to lead an offense into the spotlight. After starring at Missouri, the veteran transfer took over at Clemson and added another chapter to five years in college. His established tape gives teams a compelling quarterback to evaluate.",
+      "portrait": "ameer-young-transparent-v2.png",
+      "statistics": {
+        "position": "QB",
+        "fictional": true,
+        "games": 13,
+        "completions": 300,
+        "attempts": 445,
+        "passingYards": 3890,
+        "passingTD": 35,
+        "interceptions": 9,
+        "sacks": 22,
+        "sackYards": 143,
+        "rushingYards": 192,
+        "rushingTD": 3
+      }
+    },
+    "13": {
+      "name": "LaMarian Johnson",
+      "bio": "Johnson makes the first defender miss, then has the balance to keep the run alive. South Carolina’s powerful back combines vision and athleticism with elite tackle-breaking ability, creating the kind of production that can make a ground game run through him.",
+      "portrait": "lamarian-johnson-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 245,
+        "rushingYards": 1578,
+        "rushingTD": 17,
+        "receptions": 24,
+        "receivingYards": 239,
+        "receivingTD": 2,
+        "rushingYardsAfterContact": 875,
+        "missedTacklesForced": 79
+      }
+    },
+    "15": {
+      "name": "DaQuan Battles",
+      "bio": "Battles turns contact into another opportunity to gain ground. The Ohio State runner brings power and a knack for breaking tackles, keeping his legs moving through traffic and piling up yards after contact. His presence gives a backfield a forceful identity.",
+      "portrait": "daquan-battles-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 226,
+        "rushingYards": 1435,
+        "rushingTD": 16,
+        "receptions": 19,
+        "receivingYards": 179,
+        "receivingTD": 1,
+        "rushingYardsAfterContact": 824,
+        "missedTacklesForced": 72
+      }
+    },
+    "19": {
+      "name": "Dejon Stokes",
+      "bio": "Stokes gives Michigan a runner who can change the shape of a play in a hurry. His vision and soft hands make him a threat out of the backfield, while his ability to break long gains adds another dimension to an offense.",
+      "portrait": "dejon-stokes-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 186,
+        "rushingYards": 1191,
+        "rushingTD": 11,
+        "receptions": 42,
+        "receivingYards": 438,
+        "receivingTD": 3,
+        "rushingYardsAfterContact": 550,
+        "missedTacklesForced": 58
+      }
+    },
+    "25": {
+      "name": "Armani Johnson",
+      "bio": "Sharing an Ohio State backfield hasn’t kept Johnson from drawing first-round attention. The big runner has the size to handle a substantial workload and the elusiveness to make defenders miss in space, giving teams another standout option in a deep class.",
+      "portrait": "armani-johnson-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 158,
+        "rushingYards": 987,
+        "rushingTD": 10,
+        "receptions": 23,
+        "receivingYards": 225,
+        "receivingTD": 2,
+        "rushingYardsAfterContact": 478,
+        "missedTacklesForced": 51
+      }
+    },
+    "31": {
+      "name": "Maxx DiMarco",
+      "bio": "DiMarco brings a measured approach and enough mobility to stress a defense beyond the pocket. The Syracuse quarterback protected the ball while producing modest passing totals; his running threat and capable arm give teams a foundation for a professional role.",
+      "portrait": "maxx-dimarco-transparent-v2.png",
+      "statistics": {
+        "position": "QB",
+        "fictional": true,
+        "games": 13,
+        "completions": 228,
+        "attempts": 363,
+        "passingYards": 2704,
+        "passingTD": 20,
+        "interceptions": 5,
+        "sacks": 22,
+        "sackYards": 141,
+        "rushingYards": 622,
+        "rushingTD": 7
+      }
+    },
+    "38": {
+      "name": "Rontay Jenkins",
+      "bio": "The ball leaves Jenkins’ hand with rare force. The Tennessee quarterback transferred from Georgia Tech and owns arm strength that invites Josh Allen comparisons, but his projection hinges on improving the rest of his game and becoming a more complete passer.",
+      "portrait": "rontay-jenkins-transparent-v2.png",
+      "statistics": {
+        "position": "QB",
+        "fictional": true,
+        "games": 13,
+        "completions": 233,
+        "attempts": 392,
+        "passingYards": 3018,
+        "passingTD": 24,
+        "interceptions": 13,
+        "sacks": 25,
+        "sackYards": 165,
+        "rushingYards": 244,
+        "rushingTD": 3
+      }
+    },
+    "42": {
+      "name": "Zion Ellis",
+      "bio": "Ellis arrives with plenty of football still ahead of him. The young Georgia back has relatively little wear from a limited workload and brings elite talent in a smaller package, giving an offense an exciting foundation to develop in its backfield.",
+      "portrait": "zion-ellis-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 131,
+        "rushingYards": 828,
+        "rushingTD": 8,
+        "receptions": 22,
+        "receivingYards": 208,
+        "receivingTD": 1,
+        "rushingYardsAfterContact": 372,
+        "missedTacklesForced": 40
+      }
+    },
+    "61": {
+      "name": "Mohammed Ekwueme",
+      "bio": "Ekwueme brings a big frame and a punishing style to Oregon after transferring from Washington. The power back builds momentum as he carries the ball, giving a defense an increasingly difficult assignment when an offense commits to the ground game.",
+      "portrait": "mohammed-ekwueme-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 184,
+        "rushingYards": 1055,
+        "rushingTD": 10,
+        "receptions": 15,
+        "receivingYards": 126,
+        "receivingTD": 1,
+        "rushingYardsAfterContact": 568,
+        "missedTacklesForced": 48
+      }
+    },
+    "76": {
+      "name": "Terrelle McDonald",
+      "bio": "McDonald looks like a receiver and brings the hands to match. Memphis can use him out of the backfield, while his ability to slip through narrow openings gives him value as a runner. His receiving skill set offers a clear professional role.",
+      "portrait": "terrelle-mcdonald-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 138,
+        "rushingYards": 698,
+        "rushingTD": 6,
+        "receptions": 51,
+        "receivingYards": 493,
+        "receivingTD": 4,
+        "rushingYardsAfterContact": 310,
+        "missedTacklesForced": 35
+      }
+    },
+    "85": {
+      "name": "David Gonzalez",
+      "bio": "Gonzalez gives Ole Miss a back who can contribute throughout the offense. The former five-star recruit pairs soft hands with a consistent knack for creating big plays, offering the kind of versatility that can keep defenses guessing when he touches the ball.",
+      "portrait": "david-gonzalez-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 157,
+        "rushingYards": 913,
+        "rushingTD": 8,
+        "receptions": 39,
+        "receivingYards": 406,
+        "receivingTD": 3,
+        "rushingYardsAfterContact": 412,
+        "missedTacklesForced": 44
+      }
+    },
+    "91": {
+      "name": "Matt Delaney",
+      "bio": "Delaney stepped into a demanding USC assignment after transferring from UNLV, filling in capably following J.T. Rhoads’ departure. His experience operating the offense offers a professional team a potential backup or spot starter who can be ready when called upon.",
+      "portrait": "matt-delaney-transparent-v2.png",
+      "statistics": {
+        "position": "QB",
+        "fictional": true,
+        "games": 13,
+        "completions": 251,
+        "attempts": 392,
+        "passingYards": 2883,
+        "passingTD": 21,
+        "interceptions": 8,
+        "sacks": 24,
+        "sackYards": 148,
+        "rushingYards": 78,
+        "rushingTD": 1
+      }
+    },
+    "94": {
+      "name": "Zahair Blackwell",
+      "bio": "Blackwell brings track speed and creativity to the Georgia Tech backfield. The compact gadget threat can make defenders miss in the open field and turn a small crease into a long gain, making designed touches a natural way to use his ability.",
+      "portrait": "zahair-blackwell-transparent-v2.png",
+      "statistics": {
+        "position": "HB",
+        "fictional": true,
+        "games": 13,
+        "carries": 114,
+        "rushingYards": 735,
+        "rushingTD": 7,
+        "receptions": 35,
+        "receivingYards": 379,
+        "receivingTD": 3,
+        "rushingYardsAfterContact": 311,
+        "missedTacklesForced": 42
+      }
+    }
+  }
+}

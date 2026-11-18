@@ -1,6 +1,6 @@
 # CUS01 prospect cards
 
-Run `/prospects` in Discord, choose a position, then choose a player. The browser is private to the operator. There are 96 published profiles: six QBs, seven HBs, seven WRs, seven TEs, four LTs, two LGs, two centers, two RGs, six RTs, eight LEDG, eight REDG, five DTs, four SAMs, five MIKEs, three WILLs, 11 CBs, four FSs and five SSs. Positions stay separate. Other positions remain available in the menu with an unpublished notice.
+Run `/prospects` in Discord, choose a class and position, then choose a player. The browser is private to the operator. CUS01 has 96 published profiles: six QBs, seven HBs, seven WRs, seven TEs, four LTs, two LGs, two centers, two RGs, six RTs, eight LEDG, eight REDG, five DTs, four SAMs, five MIKEs, three WILLs, 11 CBs, four FSs and five SSs. Positions stay separate. Other positions remain available in the menu with an unpublished notice.
 
 `/earlytop10` opens the separate preseason list in `bundled_data/madden/Madden - CUS01 - Early Top 10.json`, one ranked slot per page. Its scouting blurbs live in `early-top-10-bios.json` and use the early list's notes rather than the later board's reports or statistics. Empty ranks are marked unassigned; an entry without an authored blurb says its report is coming soon. Portraits are matched by name, position and school to the existing CUS01 prospects, not by rank. The new command must be registered with the production command deployment script before it appears in Discord.
 

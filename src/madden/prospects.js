@@ -3,15 +3,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ActionRowBuilder, AttachmentBuilder, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
 
-const assetRoot = fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', import.meta.url));
-const sourceFile = fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01.json', import.meta.url));
+const classFiles = Object.freeze({
+  CUS01: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01.json', import.meta.url)) },
+  CUS02: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_02/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS02.json', import.meta.url)) },
+});
+export const PROSPECT_CLASSES = Object.freeze(Object.keys(classFiles));
 export const PROSPECT_POSITIONS = Object.freeze(['QB', 'HB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'FS', 'SS', 'K', 'P']);
 const appearanceKeys = ['skin', 'eye_color', 'ethnicity', 'hair', 'hair_color', 'facial_hair', 'features'];
 const offensiveLinePositions = ['LT', 'LG', 'C', 'RG', 'RT'];
 const defensiveLinePositions = ['LEDG', 'REDG', 'DT'];
 const linebackerPositions = ['SAM', 'MIKE', 'WILL'];
 const defensiveBackPositions = ['CB', 'FS', 'SS'];
-const schoolAliases = { Minneosta: 'Minnesota', Wiconsin: 'Wisconsin', 'Western Kentucy': 'Western Kentucky' };
+const schoolAliases = { Minneosta: 'Minnesota', Wiconsin: 'Wisconsin', 'Western Kentucy': 'Western Kentucky', 'Ole MIss': 'Ole Miss' };
 const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000, Missouri: 0xf1b82d, Colorado: 0xcfb87c, 'North Carolina': 0x7bafd4, Minnesota: 0x7a0019, 'Florida State': 0x782f40, Oklahoma: 0x841617, Texas: 0xbf5700, 'Iowa State': 0xc8102e, 'Boise State': 0x0033a0, Duke: 0x003087, 'South Carolina': 0x73000a, LSU: 0x461d7c, Oregon: 0x154733 };
 Object.assign(schoolColors, { Iowa: 0xffcd00, Auburn: 0x0c2340, 'Texas A&M': 0x500000, Louisville: 0xad0000, Syracuse: 0xf76900, Georgia: 0xba0c2f, Michigan: 0x00274c, Charlotte: 0x005035, 'Ole Miss': 0xce1126, Tennessee: 0xff8200, 'Texas Tech': 0xcc0000, 'NC State': 0xcc0000, Wisconsin: 0xc5050c, Clemson: 0xf56600, Utah: 0xcc0000, Stanford: 0x8c1515, UConn: 0x000e2f, Illinois: 0xe84a27 });
 const schoolEmojis = {
@@ -86,7 +89,10 @@ export function formatProspectStatistics(stats) {
 
 // Only explicitly authored profiles are published. Other board entries stay private
 // until their appearance and editorial content are ready. Never expose raw records.
-export function loadProspects() {
+export function loadProspects(classId = 'CUS01') {
+  if (!Object.hasOwn(classFiles, classId)) throw new Error('Unknown prospect class');
+  const config = classFiles[classId];
+  const { sourceFile, assetRoot } = config;
   const source = JSON.parse(fs.readFileSync(sourceFile, 'utf8'));
   const catalog = JSON.parse(fs.readFileSync(path.join(assetRoot, 'profiles.json'), 'utf8'));
   return Object.entries(catalog.profiles).flatMap(([id, profile]) => {
@@ -102,27 +108,31 @@ export function loadProspects() {
   }).sort((a, b) => a.rank - b.rank);
 }
 
-export function buildProspectView({ position = 'QB', playerId = null } = {}) {
+export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId = null } = {}) {
   if (!PROSPECT_POSITIONS.includes(position)) throw new Error('Unknown prospect position');
-  const all = loadProspects();
+  const all = loadProspects(classId);
   const players = all.filter((player) => player.position === position);
   const player = playerId === null ? null : players.find((entry) => entry.id === String(playerId));
   const availablePositions = PROSPECT_POSITIONS.filter((entry) => all.some((prospect) => prospect.position === entry));
   const availableLabel = availablePositions.join(' / ');
   if (playerId !== null && !player) throw new Error('Prospect is not available in this position');
+  const prefix = classId === 'CUS01' ? 'madden_prospects' : `madden_prospects_${classId.toLowerCase()}`;
   const positionMenu = new StringSelectMenuBuilder()
-    .setCustomId('madden_prospects_position').setPlaceholder('Choose a position')
+    .setCustomId(`${prefix}_position`).setPlaceholder('Choose a position')
     .addOptions(PROSPECT_POSITIONS.map((value) => {
       const count = all.filter((entry) => entry.position === value).length;
       return { label: value, value, description: count ? `${count} prospect profiles available` : 'Profiles not published yet', default: position === value };
     }));
   const components = [new ActionRowBuilder().addComponents(positionMenu)];
   if (players.length) components.push(new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
-    .setCustomId(`madden_prospects_player_${position}`).setPlaceholder('Open a player card')
+    .setCustomId(`${prefix}_player_${position}`).setPlaceholder('Open a player card')
     .addOptions(players.slice(0, 25).map((entry) => ({ label: entry.name, value: entry.id,
       ...(schoolEmojis[entry.school] ? { emoji: schoolEmojis[entry.school] } : {}),
       description: `${entry.school} · Board #${entry.rank}`, default: entry.id === player?.id })))));
 
+  const classMenu = new StringSelectMenuBuilder().setCustomId('madden_prospects_class').setPlaceholder('Choose a draft class')
+    .addOptions(PROSPECT_CLASSES.map((value) => ({ label: value === 'CUS01' ? 'Class 1 · CUS01' : 'Class 2 · CUS02', value, default: classId === value })));
+  components.push(new ActionRowBuilder().addComponents(classMenu));
   const embed = new EmbedBuilder().setColor(0x5865f2);
   const files = [];
   if (player) {
@@ -132,15 +142,16 @@ export function buildProspectView({ position = 'QB', playerId = null } = {}) {
         { name: 'School', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
         { name: 'Age / Build', value: `${player.age} years · ${player.height} · ${player.weight} lb`, inline: true },
         { name: 'Jersey / Board', value: `${player.jersey} · #${player.rank}`, inline: true },
-      ).setFooter({ text: 'CUS01 · Simulated college statistics' });
+      ).setFooter({ text: `${classId} · Simulated college statistics` });
     const statistics = formatProspectStatistics(player.statistics);
     if (statistics) embed.addFields({ name: 'Final college season', value: statistics });
     if (fs.existsSync(player.portrait)) {
-      files.push(new AttachmentBuilder(player.portrait, { name: `cus01-${player.id}.png` }));
-      embed.setThumbnail(`attachment://cus01-${player.id}.png`);
+      const attachment = `${classId.toLowerCase()}-${player.id}.png`;
+      files.push(new AttachmentBuilder(player.portrait, { name: attachment }));
+      embed.setThumbnail(`attachment://${attachment}`);
     }
   } else {
-    embed.setTitle(`CUS01 Draft Prospects · ${position}`)
+    embed.setTitle(`${classId} Draft Prospects · ${position}`)
       .setDescription(players.length
         ? `Choose a player below to open their portrait and scouting profile.\n\n${players.map((entry) => `**${entry.name}** · ${schoolLabel(entry.school)}`).join('\n')}`
         : `No completed profiles have been published for this position yet. Choose ${availableLabel} to view completed prospects.`)

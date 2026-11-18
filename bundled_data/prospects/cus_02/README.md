@@ -1,22 +1,7 @@
-# CUS02 selected prospect portraits
+# CUS02 prospect cards
 
-Transparent school-branded portraits for the four QBs and eight other selected players supplied in the Class 2 table. These are fictional adult athletes.
+`/prospects` offers a class selector for CUS01 and CUS02. Class 2 currently publishes the four quarterbacks and nine halfbacks with complete appearance details in `bundled_data/madden/Madden - CUS02.json`. Other positions stay unpublished until their source details and profiles are ready.
 
-The supplied roster is recorded in `portrait-roster.json`. Ages and board ranks were not provided and were not invented. Overall ratings and development traits are not included in this portrait catalog.
+`profiles.json` contains authored 35–45-word scouting bios based on each player's source `bio` notes, simulated final college-season statistics, and portrait filenames keyed by source record ID. These statistics are not imported results and do not affect progression or awards. Cards label them as simulated. The source spelling `Ole MIss` displays as Ole Miss.
 
-Images are generated with the built-in imagegen tool. Exact prompts and original generated-image paths are recorded in `portrait-prompts.json`; finished project assets are stored in `portraits/`.
-
-| Position | Player | School | Portrait |
-| --- | --- | --- | --- |
-| QB | Ameer Young | Clemson | [PNG](portraits/ameer-young-transparent.png) |
-| QB | Maxx DiMarco | Syracuse | [PNG](portraits/maxx-dimarco-transparent.png) |
-| QB | Matt Delaney | USC | [PNG](portraits/matt-delaney-transparent.png) |
-| QB | Rontay Jenkins | Tennessee | [PNG](portraits/rontay-jenkins-transparent.png) |
-| HB | LaMarian Johnson | South Carolina | [PNG](portraits/lamarian-johnson-transparent.png) |
-| HB | DaQuan Battles | Ohio State | [PNG](portraits/daquan-battles-transparent.png) |
-| HB | Dejon Stokes | Michigan | [PNG](portraits/dejon-stokes-transparent.png) |
-| WR | Michael Oluwafemi | Washington | [PNG](portraits/michael-oluwafemi-transparent.png) |
-| LG | Jaiden Bloodworth | Alabama | [PNG](portraits/jaiden-bloodworth-transparent.png) |
-| LG | Leialoha Kainoaiko | Utah | [PNG](portraits/leialoha-kainoaiko-transparent.png) |
-| REDG | Sam Mensah | BYU | [PNG](portraits/sam-mensah-transparent.png) |
-| WILL | Kareem Carter | USC | [PNG](portraits/kareem-carter-transparent.png) |
+The 13 transparent portraits were regenerated using built-in imagegen from the CUS02 source appearance details. Individual prompts are recorded in `qb-hb-portrait-prompts.json`; current assets are stored in `portraits/`. Older roster and prompt files record the earlier selected-portrait workflow and are not the class 2 card source.
