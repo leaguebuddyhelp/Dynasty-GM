@@ -135,11 +135,9 @@ export function buildProspectView({ position = 'QB', playerId = null } = {}) {
       ).setFooter({ text: 'CUS01 · Simulated college statistics' });
     const statistics = formatProspectStatistics(player.statistics);
     if (statistics) embed.addFields({ name: 'Final college season', value: statistics });
-    const schoolEmoji = schoolEmojis[player.school];
-    if (schoolEmoji) embed.setThumbnail(`https://cdn.discordapp.com/emojis/${schoolEmoji.id}.png`);
     if (fs.existsSync(player.portrait)) {
       files.push(new AttachmentBuilder(player.portrait, { name: `cus01-${player.id}.png` }));
-      embed.setImage(`attachment://cus01-${player.id}.png`);
+      embed.setThumbnail(`attachment://cus01-${player.id}.png`);
     }
   } else {
     embed.setTitle(`CUS01 Draft Prospects · ${position}`)

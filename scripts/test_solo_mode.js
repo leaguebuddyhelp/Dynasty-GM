@@ -28,7 +28,7 @@ try {
     assert.equal(commands.has(name), false, name);
     assert.ok(getSoloInteractionDenial({ userId: 'operator-1', guildId: 'guild-1', commandName: name }));
   }
-  for (const name of ['setup', 'sync', 'bigboard', 'mockdraft', 'draftexport', 'awards']) assert.equal(commands.has(name), true);
+  for (const name of ['setup', 'sync', 'bigboard', 'earlytop10', 'mockdraft', 'draftexport', 'awards']) assert.equal(commands.has(name), true);
   for (const command of commands.values()) command.data.toJSON();
   assert.deepEqual(commands.get('setup').data.toJSON().options || [], []);
   assert.deepEqual(commands.get('sync').data.toJSON().options[0].choices.map((choice) => choice.value), ['weekly', 'full-season']);

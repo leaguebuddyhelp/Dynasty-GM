@@ -119,14 +119,13 @@ for (const player of players) {
   const optionEmoji = view.components[1].toJSON().components[0].options.find((option) => option.value === player.id).emoji;
   if (emojiId) {
     assert.ok(schoolField.includes(`:${emojiId}>`));
-    assert.equal(embed.thumbnail.url, `https://cdn.discordapp.com/emojis/${emojiId}.png`);
     assert.equal(optionEmoji.id, emojiId);
   } else {
     assert.equal(schoolField, `${player.school} · ${player.year}`);
-    assert.equal(embed.thumbnail, undefined);
     assert.equal(optionEmoji, undefined);
   }
-  assert.match(embed.image.url, /^attachment:\/\/cus01-\d+\.png$/);
+  assert.match(embed.thumbnail.url, /^attachment:\/\/cus01-\d+\.png$/);
+  assert.equal(embed.image, undefined);
   assert.equal(view.files[0].name, `cus01-${player.id}.png`);
   assert.deepEqual(view.attachments, [], 'Switching cards removes the previous portrait');
   assert.doesNotMatch(JSON.stringify(embed), /overall rating|dev_trait|development trait|\bOVR\b/i);

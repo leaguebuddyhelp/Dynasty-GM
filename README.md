@@ -23,7 +23,7 @@ The bot needs channel, message, embed, attachment, thread, and role management p
 | Setup | `/setup` |
 | Connection | `/league-status`, `/disconnectleague confirm:true` |
 | Franchise data | `/sync`, `/schedule`, `/roster`, `/playersearch`, `/awards` |
-| Draft | `/bigboard`, `/mockdraft`, `/draftexport` |
+| Draft | `/earlytop10`, `/prospects`, `/bigboard`, `/mockdraft`, `/draftexport` |
 | Help | `/help`, `/ping` |
 
 Setup creates private **Franchise HQ** and **Franchise Management** channel groups for the operator and bot. It can reuse existing mapped channels and repair their permissions. Unrelated channels and roles are not deleted. Server administrators retain Discord's normal administrative access.
