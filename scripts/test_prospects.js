@@ -148,9 +148,9 @@ assert.match(formatProspectStatistics(players.find((p) => p.id === '3').statisti
 assert.match(formatProspectStatistics(players.find((p) => p.id === '39').statistics), /30\/306 run-defense snaps \(9\.8%\)/);
 assert.match(formatProspectStatistics(players.find((p) => p.id === '7').statistics), /Coverage: 28\/48 completions · 7 breakups · 4 INT/);
 assert.match(formatProspectStatistics(players.find((p) => p.id === '4').statistics), /Coverage: 30\/61 completions · 12 breakups · 5 INT/);
-assert.match(players.find((p) => p.id === '1').bio, /five-star.*first overall pick/i);
-assert.match(players.find((p) => p.id === '7').bio, /former safety.*running backs and tight ends/i);
-assert.match(players.find((p) => p.id === '47').bio, /captain.*reliable tackler/i);
+assert.match(players.find((p) => p.id === '1').bio, /five-star.*called first/i);
+assert.match(players.find((p) => p.id === '7').bio, /former safety.*running backs.*tight ends/i);
+assert.match(players.find((p) => p.id === '47').bio, /captain.*sure tackler/i);
 assert.match(formatProspectStatistics(players.find((p) => p.id === '41').statistics), /12\.5 SACK/);
 assert.match(formatProspectStatistics(players.find((p) => p.id === '48').statistics), /10 TD/);
 assert.ok(buildProspectView({ position: 'CB' }).embeds[0].toJSON().description.includes('Western Kentucky'));
