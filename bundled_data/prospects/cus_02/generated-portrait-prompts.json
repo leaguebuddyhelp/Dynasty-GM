@@ -1,0 +1,18 @@
+{
+  "mode": "built-in imagegen",
+  "shared_prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Unique fictional adult male athlete, not a real player, wearing the indicated school football jersey and number in authentic school colors with school branding. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark.",
+  "subjects": [
+    {"name":"Ameer Young","details":"QB, Clemson #9; medium brown skin, hazel eyes, medium-length brown messy afro with faded sides, light clean facial hair, visible acne and pockmarks; 6'3 230 lb"},
+    {"name":"Maxx DiMarco","details":"QB, Syracuse #12; white, brown eyes, short brown comb-over, light clean facial hair; 6'3 225 lb"},
+    {"name":"Matt Delaney","details":"QB, USC #12; white, brown eyes, medium-length straight brown hair, goatee; 6'3 220 lb"},
+    {"name":"Rontay Jenkins","details":"QB, Tennessee #3; dark skin, brown eyes, long black dreadlocks tied back, clean shaven; 6'2 240 lb"},
+    {"name":"LaMarian Johnson","details":"HB, South Carolina #28; medium brown skin, brown eyes, short tapered brown afro, light clean facial hair; 6'0 225 lb"},
+    {"name":"DaQuan Battles","details":"HB, Ohio State #22; medium brown skin, brown eyes, short brown Caesar haircut, goatee; 6'0 232 lb"},
+    {"name":"Dejon Stokes","details":"HB, Michigan #10; dark skin, brown eyes, brown dreadlocks with styled parting, clean shaven; 5'10 223 lb"},
+    {"name":"Michael Oluwafemi","details":"WR, Washington #81; dark skin, brown eyes, short black afro with faded sides, light clean facial hair; 6'2 212 lb"},
+    {"name":"Jaiden Bloodworth","details":"LG, Alabama #66; dark skin, brown eyes, black dreadlocks with styled parting, light clean facial hair; 6'6 318 lb"},
+    {"name":"Leialoha Kainoaiko","details":"LG, Utah #54; Hawaiian, olive tan skin, brown eyes, short straight brown hair with fade, goatee; 6'4 334 lb"},
+    {"name":"Sam Mensah","details":"REDG, BYU #11; dark skin, brown eyes, short black Caesar haircut, light clean facial hair; 6'2 244 lb"},
+    {"name":"Kareem Carter","details":"WILL, USC #19; dark skin, brown eyes, long black dreadlocks with styled parting, neatly groomed medium facial hair; 6'2 234 lb"}
+  ]
+}

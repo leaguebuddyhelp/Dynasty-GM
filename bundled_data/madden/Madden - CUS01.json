@@ -151,7 +151,14 @@
     "jersey": "#11",
     "round": 1,
     "pick": 7,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "dreads designed with fade",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "atheltic face/body"
   },
   "8": {
     "#": 8,
@@ -269,7 +276,14 @@
     "jersey": "#5",
     "round": 1,
     "pick": 12,
-    "class": 1
+    "class": 1,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "two thick braids going back",
+    "hair_color": "black",
+    "facial_hair": "none",
+    "features": "clean hair"
   },
   "13": {
     "#": 13,
@@ -1167,7 +1181,14 @@
     "jersey": "#1",
     "round": 2,
     "pick": 19,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "two thick braids going back",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "atheltic face/body"
   },
   "52": {
     "#": 52,
@@ -1185,7 +1206,14 @@
     "jersey": "#10",
     "round": 2,
     "pick": 20,
-    "class": 1
+    "class": 1,
+    "skin": "olive",
+    "eye_color": "brown",
+    "ethnicity": "latin",
+    "hair": "med straight hair",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "thick face"
   },
   "53": {
     "#": 53,
@@ -1203,7 +1231,14 @@
     "jersey": "#0",
     "round": 2,
     "pick": 21,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "strong face"
   },
   "54": {
     "#": 54,
@@ -1296,7 +1331,14 @@
     "jersey": "#19",
     "round": 2,
     "pick": 25,
-    "class": 1
+    "class": 1,
+    "skin": "dark skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser fade",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "big LB"
   },
   "58": {
     "#": 58,
@@ -1314,7 +1356,14 @@
     "jersey": "#32",
     "round": 2,
     "pick": 26,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "blue",
+    "ethnicity": "white",
+    "hair": "med straight hair",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "classic white LB"
   },
   "59": {
     "#": 59,
@@ -1332,7 +1381,14 @@
     "jersey": "#12",
     "round": 2,
     "pick": 27,
-    "class": 1
+    "class": 1,
+    "skin": "white/tan",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "straight short hair",
+    "hair_color": "brown",
+    "facial_hair": "med/clean",
+    "features": "spanish features"
   },
   "60": {
     "#": 60,
@@ -1554,7 +1610,14 @@
     "jersey": "#9",
     "round": 3,
     "pick": 5,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short dreads designed",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "black features"
   },
   "70": {
     "#": 70,
@@ -1772,7 +1835,14 @@
     "jersey": "#47",
     "round": 3,
     "pick": 14,
-    "class": 1
+    "class": 1,
+    "skin": "med dark",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser fade",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "pretty boy"
   },
   "79": {
     "#": 79,
@@ -1969,7 +2039,14 @@
     "jersey": "#50",
     "round": 3,
     "pick": 23,
-    "class": 1
+    "class": 1,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "med straight hair",
+    "hair_color": "blonde",
+    "facial_hair": "med/clean",
+    "features": "classic white LB"
   },
   "88": {
     "#": 88,
@@ -1987,7 +2064,14 @@
     "jersey": "#55",
     "round": 3,
     "pick": 24,
-    "class": 1
+    "class": 1,
+    "skin": "white/tan",
+    "eye_color": "hazel",
+    "ethnicity": "african american",
+    "hair": "med straight hair fade",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "spansih features"
   },
   "89": {
     "#": 89,

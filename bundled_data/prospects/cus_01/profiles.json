@@ -87,6 +87,30 @@
         "fictional": true
       }
     },
+    "7": {
+      "name": "Kevin Alexander Jr",
+      "headline": "A rangy coverage linebacker with early starting potential",
+      "bio": "Alexander projects as a versatile second-level defender whose range gives a coordinator options in space. His fictional Clemson season pairs 92 tackles with four interceptions and seven breakups, suggesting a player who can anticipate routes as well as close on the ball. He still needs to keep his eyes disciplined when play action pulls him away from his assignment. His high board position reflects the value of that coverage range and the chance to contribute early.",
+      "watch": "Maintain coverage discipline against play action and take cleaner angles through traffic.",
+      "portrait": "kevin-alexander-jr-transparent.png",
+      "statistics": {
+        "position": "WILL",
+        "fictional": true,
+        "games": 14,
+        "defensiveSnaps": 805,
+        "runDefenseSnaps": 352,
+        "tackles": 92,
+        "missedTackles": 7,
+        "tacklesForLoss": 10,
+        "sacks": 3,
+        "runStops": 34,
+        "forcedFumbles": 2,
+        "targets": 48,
+        "receptionsAllowed": 28,
+        "passBreakups": 7,
+        "interceptions": 4
+      }
+    },
     "8": {
       "headline": "Size and finish worthy of an early pick",
       "bio": "Pukahi's fictional Ohio State season includes 786 offensive snaps and an 84.8% run-block win rate. His 6-foot-8, 338-pound frame gives an offense a substantial edge to run behind, and his ability to displace a defender makes the size productive. Fourteen pressures allowed on 398 pass-blocking snaps leave a credible protection foundation alongside the rushing value. At No. 8, the projection is an immediate starting tackle with room to anchor a line for years. He still needs to keep his hips settled and avoid overcommitting when a rusher threatens inside.",
@@ -169,6 +193,30 @@
         "targets": 118,
         "routesRun": 408,
         "fictional": true
+      }
+    },
+    "12": {
+      "name": "Willie Mason Jr",
+      "headline": "An athletic second-level defender who can match in space",
+      "bio": "Mason brings a coverage-minded profile and the movement skills to work against backs and tight ends. In his fictional LSU season, he recorded 84 tackles, six breakups and three interceptions, giving him a case for an early role on passing downs. The next step is holding his ground against blockers when offenses run directly at him. At No. 12, his ability to stay on the field across situations drives the projection.",
+      "watch": "Improve block separation and keep run fits consistent without losing coverage range.",
+      "portrait": "willie-mason-jr-transparent.png",
+      "statistics": {
+        "position": "SAM",
+        "fictional": true,
+        "games": 14,
+        "defensiveSnaps": 778,
+        "runDefenseSnaps": 336,
+        "tackles": 84,
+        "missedTackles": 8,
+        "tacklesForLoss": 8,
+        "sacks": 2,
+        "runStops": 29,
+        "forcedFumbles": 1,
+        "targets": 45,
+        "receptionsAllowed": 27,
+        "passBreakups": 6,
+        "interceptions": 3
       }
     },
     "13": {
@@ -774,6 +822,78 @@
         "penalties": 6
       }
     },
+    "51": {
+      "name": "Keshawn Bell",
+      "headline": "Coverage depth with a path to a larger role",
+      "bio": "Bell offers space-defending potential and a willingness to close on short throws. His fictional Florida season includes 77 tackles and five breakups; he also missed nine tackle attempts, a reminder that arriving in position and finishing are separate skills. His second-round placement suggests a candidate for a rotational role who can compete for more once his angles and tackling become steadier.",
+      "watch": "Finish open-field tackles and react decisively when routes break underneath.",
+      "portrait": "keshawn-bell-transparent.png",
+      "statistics": {
+        "position": "WILL",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 684,
+        "runDefenseSnaps": 288,
+        "tackles": 77,
+        "missedTackles": 9,
+        "tacklesForLoss": 7,
+        "sacks": 2,
+        "runStops": 24,
+        "forcedFumbles": 1,
+        "targets": 42,
+        "receptionsAllowed": 27,
+        "passBreakups": 5,
+        "interceptions": 2
+      }
+    },
+    "52": {
+      "name": "Jonathon Aquino",
+      "headline": "An organizer with a measured approach inside",
+      "bio": "Aquino projects as an interior linebacker who can align teammates and work through the play in front of him. His fictional Duke campaign produced 101 tackles and 32 run stops, with two interceptions in coverage. He can earn a meaningful role if his processing holds up against faster motion and route combinations. His next test is getting off blocks without surrendering the gap he is responsible for.",
+      "watch": "Separate from climbing blockers while keeping his run fit and coverage landmarks intact.",
+      "portrait": "jonathon-aquino-transparent.png",
+      "statistics": {
+        "position": "MIKE",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 735,
+        "runDefenseSnaps": 338,
+        "tackles": 101,
+        "missedTackles": 9,
+        "tacklesForLoss": 9,
+        "sacks": 2,
+        "runStops": 32,
+        "forcedFumbles": 1,
+        "targets": 39,
+        "receptionsAllowed": 25,
+        "passBreakups": 3,
+        "interceptions": 2
+      }
+    },
+    "53": {
+      "name": "James Robinson",
+      "headline": "A physical interior defender built for the run",
+      "bio": "Robinson brings a downhill approach to the middle of the defense. His fictional Ohio State season included 106 tackles, 12 tackles for loss and 38 run stops, giving him a clear early-down foundation. Coverage is the part of his projection that needs the most attention: patient route recognition and smoother transitions would keep him useful beyond obvious running situations.",
+      "watch": "Improve route recognition and change of direction when backs release into space.",
+      "portrait": "james-robinson-transparent.png",
+      "statistics": {
+        "position": "MIKE",
+        "fictional": true,
+        "games": 14,
+        "defensiveSnaps": 752,
+        "runDefenseSnaps": 365,
+        "tackles": 106,
+        "missedTackles": 8,
+        "tacklesForLoss": 12,
+        "sacks": 3,
+        "runStops": 38,
+        "forcedFumbles": 2,
+        "targets": 40,
+        "receptionsAllowed": 29,
+        "passBreakups": 3,
+        "interceptions": 1
+      }
+    },
     "54": {
       "headline": "Contact value with more consistency still to find",
       "bio": "Bailey's fictional Georgia season features 32 pressures on 284 rushes and six sacks. There are useful moments of disruption when he lands his initial contact and keeps the blocker reacting, but the 11.3% pressure rate supports a rotational projection at No. 54. Eighteen run stops and eight missed tackles leave additional work before a larger role becomes dependable. He needs to keep his feet active through the collision and avoid turning a promising position into an unfinished tackle. More consistent technique would help the useful flashes survive less favorable matchups.",
@@ -841,6 +961,78 @@
         "sacks": 27,
         "sackYards": 176,
         "fictional": true
+      }
+    },
+    "57": {
+      "name": "Taylor Smith-Foster",
+      "headline": "A long interior linebacker with downhill presence",
+      "bio": "Smith-Foster uses his size to work toward the line and challenge interior blockers. His fictional Texas Tech season produced 94 tackles and 34 run stops, but ten missed tackles show that his finish needs to catch up with his reach. At No. 57, he has a plausible path to an early-down rotation; more controlled footwork in coverage would broaden it.",
+      "watch": "Stay balanced through contact and develop cleaner transitions on passing downs.",
+      "portrait": "taylor-smith-foster-transparent.png",
+      "statistics": {
+        "position": "MIKE",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 706,
+        "runDefenseSnaps": 341,
+        "tackles": 94,
+        "missedTackles": 10,
+        "tacklesForLoss": 10,
+        "sacks": 3,
+        "runStops": 34,
+        "forcedFumbles": 1,
+        "targets": 38,
+        "receptionsAllowed": 28,
+        "passBreakups": 2,
+        "interceptions": 1
+      }
+    },
+    "58": {
+      "name": "Jack Wilson",
+      "headline": "A run-focused linebacker with a steady pursuit profile",
+      "bio": "Wilson offers a direct, physical approach against the run and can track plays toward the boundary. His fictional NC State season features 89 tackles and 33 run stops. His route awareness and ability to recover after a false step will shape whether he earns passing-down work as well. He projects as competitive linebacker depth with a path to a regular role.",
+      "watch": "Read backfield action without overcommitting and improve recovery against routes.",
+      "portrait": "jack-wilson-transparent.png",
+      "statistics": {
+        "position": "WILL",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 691,
+        "runDefenseSnaps": 331,
+        "tackles": 89,
+        "missedTackles": 8,
+        "tacklesForLoss": 8,
+        "sacks": 2,
+        "runStops": 33,
+        "forcedFumbles": 1,
+        "targets": 37,
+        "receptionsAllowed": 26,
+        "passBreakups": 3,
+        "interceptions": 1
+      }
+    },
+    "59": {
+      "name": "C.J. Paredes",
+      "headline": "A sturdy edge-of-the-box defender",
+      "bio": "Paredes brings size and a run-oriented profile to the outside linebacker group. His fictional Miami season includes 81 tackles, nine tackles for loss and 30 run stops. He can set a useful edge when his hands arrive on time; delayed reactions in space are the area to challenge during evaluation. His board position points toward a rotational contributor who can earn more responsibility.",
+      "watch": "Use his hands earlier against blocks and react quicker to releases into the flat.",
+      "portrait": "c-j-paredes-transparent.png",
+      "statistics": {
+        "position": "SAM",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 668,
+        "runDefenseSnaps": 317,
+        "tackles": 81,
+        "missedTackles": 9,
+        "tacklesForLoss": 9,
+        "sacks": 3,
+        "runStops": 30,
+        "forcedFumbles": 2,
+        "targets": 36,
+        "receptionsAllowed": 26,
+        "passBreakups": 3,
+        "interceptions": 1
       }
     },
     "60": {
@@ -964,6 +1156,30 @@
         "receivingYards": 143,
         "receivingTD": 0,
         "fictional": true
+      }
+    },
+    "69": {
+      "name": "Terrell Fairbanks",
+      "headline": "A physical rotational prospect with room to grow",
+      "bio": "Fairbanks brings a willingness to attack downhill and compete through contact. His fictional Missouri season produced 76 tackles and 28 run stops, with three pass breakups when asked to work in coverage. He has the ingredients for a useful rotational role, but must identify blocking schemes faster to avoid being washed out of his assigned gap.",
+      "watch": "Recognize blocking schemes earlier and maintain leverage when crossing traffic.",
+      "portrait": "terrell-fairbanks-transparent.png",
+      "statistics": {
+        "position": "SAM",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 641,
+        "runDefenseSnaps": 306,
+        "tackles": 76,
+        "missedTackles": 10,
+        "tacklesForLoss": 8,
+        "sacks": 2,
+        "runStops": 28,
+        "forcedFumbles": 1,
+        "targets": 35,
+        "receptionsAllowed": 25,
+        "passBreakups": 3,
+        "interceptions": 1
       }
     },
     "70": {
@@ -1142,6 +1358,30 @@
         "penalties": 7
       }
     },
+    "78": {
+      "name": "Brantley Smith",
+      "headline": "A developmental inside linebacker with useful size",
+      "bio": "Smith brings the frame to compete between the tackles and contributed 82 tackles in his fictional Kentucky season. His 27 run stops show a foundation for early-down work, while eleven missed tackles point to a need for more reliable finishing. A third-round projection places him in the mix for rotational snaps if he sharpens his angles and plays with consistent leverage.",
+      "watch": "Reduce missed tackles and maintain leverage when pursuing across the formation.",
+      "portrait": "brantley-smith-transparent.png",
+      "statistics": {
+        "position": "MIKE",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 624,
+        "runDefenseSnaps": 301,
+        "tackles": 82,
+        "missedTackles": 11,
+        "tacklesForLoss": 7,
+        "sacks": 2,
+        "runStops": 27,
+        "forcedFumbles": 1,
+        "targets": 34,
+        "receptionsAllowed": 25,
+        "passBreakups": 2,
+        "interceptions": 0
+      }
+    },
     "79": {
       "headline": "Movement potential with a dependable floor still to build",
       "bio": "Fisher's fictional Tennessee season produced 715 offensive snaps and a 71.1% run-block win rate. His movement gives him opportunities on plays that change the blocking angle, but 39 pressures allowed across 431 pass-blocking assignments show how much consistency remains to develop. At No. 79, he is better viewed as competitive tackle depth than a ready-made starting answer. He must improve the accuracy of his first strike, avoid crossing his feet during recovery and sustain blocks after reaching the right spot. Getting into position is useful only if he can stay effective there.",
@@ -1243,6 +1483,54 @@
         "targets": 76,
         "routesRun": 334,
         "fictional": true
+      }
+    },
+    "87": {
+      "name": "Mike Scheidegger",
+      "headline": "A depth candidate who can organize the front",
+      "bio": "Scheidegger offers an interior linebacker profile built around reading the offense and getting teammates lined up. His fictional South Dakota season produced 91 tackles, 29 run stops and two interceptions. The move to faster competition will test how quickly he can sort through traffic and respond when his first read is wrong. He projects as depth with a chance to earn a larger role.",
+      "watch": "Speed up his first read and work free from blockers without losing gap integrity.",
+      "portrait": "mike-scheidegger-transparent.png",
+      "statistics": {
+        "position": "MIKE",
+        "fictional": true,
+        "games": 12,
+        "defensiveSnaps": 621,
+        "runDefenseSnaps": 297,
+        "tackles": 91,
+        "missedTackles": 10,
+        "tacklesForLoss": 7,
+        "sacks": 1,
+        "runStops": 29,
+        "forcedFumbles": 1,
+        "targets": 33,
+        "receptionsAllowed": 23,
+        "passBreakups": 2,
+        "interceptions": 2
+      }
+    },
+    "88": {
+      "name": "Sammie Bonilla",
+      "headline": "A compact linebacker competing for rotational work",
+      "bio": "Bonilla plays with a run-first profile and has the size to work near the line. His fictional Utah State season included 79 tackles and 26 run stops, balanced against ten missed tackles. At No. 88, he projects as depth who can compete for situational work. Cleaner tackling and a more patient approach in coverage would make his role less dependent on down and distance.",
+      "watch": "Finish tackles more consistently and stay patient when receivers cross his zone.",
+      "portrait": "sammie-bonilla-transparent.png",
+      "statistics": {
+        "position": "SAM",
+        "fictional": true,
+        "games": 12,
+        "defensiveSnaps": 606,
+        "runDefenseSnaps": 290,
+        "tackles": 79,
+        "missedTackles": 10,
+        "tacklesForLoss": 7,
+        "sacks": 2,
+        "runStops": 26,
+        "forcedFumbles": 1,
+        "targets": 34,
+        "receptionsAllowed": 25,
+        "passBreakups": 2,
+        "interceptions": 0
       }
     },
     "89": {

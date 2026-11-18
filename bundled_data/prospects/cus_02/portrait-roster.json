@@ -1,0 +1,258 @@
+{
+  "classId": "cus_02",
+  "source": "User-provided Class 2 table",
+  "players": [
+    {
+      "id": "ameer-young",
+      "name": "Ameer Young",
+      "position": "QB",
+      "school": "Clemson",
+      "class": 2,
+      "height": "6'3\"",
+      "weight": 230,
+      "jersey": "#9",
+      "age": null,
+      "portrait": "portraits/ameer-young-transparent.png",
+      "appearance": {
+        "skin": "medium brown",
+        "eye_color": "hazel",
+        "ethnicity": "African American",
+        "hair": "medium-length faded messy afro",
+        "hair_color": "brown",
+        "facial_hair": "light neatly groomed facial hair",
+        "features": "visible natural acne and pockmark scarring on the face"
+      }
+    },
+    {
+      "id": "maxx-dimarco",
+      "name": "Maxx DiMarco",
+      "position": "QB",
+      "school": "Syracuse",
+      "class": 2,
+      "height": "6'3\"",
+      "weight": 225,
+      "jersey": "#12",
+      "age": null,
+      "portrait": "portraits/maxx-dimarco-transparent.png",
+      "appearance": {
+        "skin": "fair light",
+        "eye_color": "brown",
+        "ethnicity": "white",
+        "hair": "short comb-over",
+        "hair_color": "brown",
+        "facial_hair": "light neatly groomed facial hair",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "matt-delaney",
+      "name": "Matt Delaney",
+      "position": "QB",
+      "school": "USC",
+      "class": 2,
+      "height": "6'3\"",
+      "weight": 220,
+      "jersey": "#12",
+      "age": null,
+      "portrait": "portraits/matt-delaney-transparent.png",
+      "appearance": {
+        "skin": "fair light",
+        "eye_color": "brown",
+        "ethnicity": "white",
+        "hair": "medium-length straight hair",
+        "hair_color": "brown",
+        "facial_hair": "neatly trimmed goatee",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "rontay-jenkins",
+      "name": "Rontay Jenkins",
+      "position": "QB",
+      "school": "Tennessee",
+      "class": 2,
+      "height": "6'2\"",
+      "weight": 240,
+      "jersey": "#3",
+      "age": null,
+      "portrait": "portraits/rontay-jenkins-transparent.png",
+      "appearance": {
+        "skin": "dark brown",
+        "eye_color": "brown",
+        "ethnicity": "African American",
+        "hair": "long dreadlocks tied back",
+        "hair_color": "black",
+        "facial_hair": "clean-shaven",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "lamarian-johnson",
+      "name": "LaMarian Johnson",
+      "position": "HB",
+      "school": "South Carolina",
+      "class": 2,
+      "height": "6'0\"",
+      "weight": 225,
+      "jersey": "#28",
+      "age": null,
+      "portrait": "portraits/lamarian-johnson-transparent.png",
+      "appearance": {
+        "skin": "medium brown",
+        "eye_color": "brown",
+        "ethnicity": "African American",
+        "hair": "short tapered afro",
+        "hair_color": "brown",
+        "facial_hair": "light neatly groomed facial hair",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "daquan-battles",
+      "name": "DaQuan Battles",
+      "position": "HB",
+      "school": "Ohio State",
+      "class": 2,
+      "height": "6'0\"",
+      "weight": 232,
+      "jersey": "#22",
+      "age": null,
+      "portrait": "portraits/daquan-battles-transparent.png",
+      "appearance": {
+        "skin": "medium brown",
+        "eye_color": "brown",
+        "ethnicity": "African American",
+        "hair": "Caesar haircut",
+        "hair_color": "brown",
+        "facial_hair": "neatly trimmed goatee",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "dejon-stokes",
+      "name": "Dejon Stokes",
+      "position": "HB",
+      "school": "Michigan",
+      "class": 2,
+      "height": "5'10\"",
+      "weight": 223,
+      "jersey": "#10",
+      "age": null,
+      "portrait": "portraits/dejon-stokes-transparent.png",
+      "appearance": {
+        "skin": "dark brown",
+        "eye_color": "brown",
+        "ethnicity": "African American",
+        "hair": "dreadlocks with designed parting",
+        "hair_color": "brown",
+        "facial_hair": "clean-shaven",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "michael-oluwafemi",
+      "name": "Michael Oluwafemi",
+      "position": "WR",
+      "school": "Washington",
+      "class": 2,
+      "height": "6'2\"",
+      "weight": 212,
+      "jersey": "#81",
+      "age": null,
+      "portrait": "portraits/michael-oluwafemi-transparent.png",
+      "appearance": {
+        "skin": "dark brown",
+        "eye_color": "brown",
+        "ethnicity": "African American",
+        "hair": "short afro with faded sides",
+        "hair_color": "black",
+        "facial_hair": "light neatly groomed facial hair",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "jaiden-bloodworth",
+      "name": "Jaiden Bloodworth",
+      "position": "LG",
+      "school": "Alabama",
+      "class": 2,
+      "height": "6'6\"",
+      "weight": 318,
+      "jersey": "#66",
+      "age": null,
+      "portrait": "portraits/jaiden-bloodworth-transparent.png",
+      "appearance": {
+        "skin": "dark brown",
+        "eye_color": "brown",
+        "ethnicity": "African American",
+        "hair": "dreadlocks with designed parting",
+        "hair_color": "black",
+        "facial_hair": "light neatly groomed facial hair",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "leialoha-kainoaiko",
+      "name": "Leialoha Kainoaiko",
+      "position": "LG",
+      "school": "Utah",
+      "class": 2,
+      "height": "6'4\"",
+      "weight": 334,
+      "jersey": "#54",
+      "age": null,
+      "portrait": "portraits/leialoha-kainoaiko-transparent.png",
+      "appearance": {
+        "skin": "olive tan",
+        "eye_color": "brown",
+        "ethnicity": "Hawaiian",
+        "hair": "short straight hair with a fade",
+        "hair_color": "brown",
+        "facial_hair": "neatly trimmed goatee",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "sam-mensah",
+      "name": "Sam Mensah",
+      "position": "REDG",
+      "school": "BYU",
+      "class": 2,
+      "height": "6'2\"",
+      "weight": 244,
+      "jersey": "#11",
+      "age": null,
+      "portrait": "portraits/sam-mensah-transparent.png",
+      "appearance": {
+        "skin": "dark brown",
+        "eye_color": "brown",
+        "ethnicity": "African American",
+        "hair": "short Caesar haircut",
+        "hair_color": "black",
+        "facial_hair": "light neatly groomed facial hair",
+        "features": "natural facial proportions"
+      }
+    },
+    {
+      "id": "kareem-carter",
+      "name": "Kareem Carter",
+      "position": "WILL",
+      "school": "USC",
+      "class": 2,
+      "height": "6'2\"",
+      "weight": 234,
+      "jersey": "#19",
+      "age": null,
+      "portrait": "portraits/kareem-carter-transparent.png",
+      "appearance": {
+        "skin": "dark brown",
+        "eye_color": "brown",
+        "ethnicity": "African American",
+        "hair": "long dreadlocks with designed parting",
+        "hair_color": "black",
+        "facial_hair": "medium neatly groomed facial hair",
+        "features": "natural facial proportions"
+      }
+    }
+  ]
+}

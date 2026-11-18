@@ -7,11 +7,12 @@ import { execute as menuExecute, customId } from '../src/interactions/madden_pro
 import { loadSoloCommands, loadSoloInteractionHandlers } from '../src/leaguebuddy/solo_mode.js';
 
 const players = loadProspects();
-assert.equal(players.length, 64);
+assert.equal(players.length, 76);
 assert.equal(PROSPECT_POSITIONS.length, 21);
 const olIds = ['8', '10', '15', '19', '20', '28', '37', '49', '60', '65', '71', '73', '76', '77', '79', '93'];
 const dlIds = ['3', '9', '25', '27', '31', '35', '36', '38', '39', '41', '45', '46', '54', '55', '62', '70', '72', '75', '80', '95', '96'];
-assert.deepEqual(players.map((p) => p.id), [...olIds, ...dlIds, '1', '2', '6', '11', '13', '14', '17', '18', '21', '24', '26', '30', '33', '43', '44', '48', '56', '61', '63', '67', '74', '83', '84', '86', '89', '92', '94'].sort((a, b) => Number(a) - Number(b)));
+const lbIds = ['7', '12', '51', '52', '53', '57', '58', '59', '69', '78', '87', '88'];
+assert.deepEqual(players.map((p) => p.id), [...olIds, ...dlIds, ...lbIds, '1', '2', '6', '11', '13', '14', '17', '18', '21', '24', '26', '30', '33', '43', '44', '48', '56', '61', '63', '67', '74', '83', '84', '86', '89', '92', '94'].sort((a, b) => Number(a) - Number(b)));
 assert.doesNotMatch(JSON.stringify(players), /"overall"|"dev_trait"|"archetype"/);
 const home = buildProspectView();
 assert.equal(home.components[0].toJSON().components[0].options.length, 21);
@@ -19,13 +20,13 @@ assert.equal(home.components[1].toJSON().components[0].options.length, 6);
 assert.equal(home.files.length, 0);
 const hbHome = buildProspectView({ position: 'HB' });
 assert.equal(hbHome.components[1].toJSON().components[0].options.length, 7);
-assert.match(hbHome.embeds[0].toJSON().footer.text, /64 profiles available.*QB \/ HB \/ WR \/ TE \/ LT \/ LG \/ C \/ RG \/ RT \/ LEDG \/ REDG \/ DT/);
+assert.match(hbHome.embeds[0].toJSON().footer.text, /76 profiles available.*QB \/ HB \/ WR \/ TE \/ LT \/ LG \/ C \/ RG \/ RT \/ LEDG \/ REDG \/ DT \/ SAM \/ MIKE \/ WILL/);
 const wrHome = buildProspectView({ position: 'WR' });
 assert.equal(wrHome.components[1].toJSON().components[0].options.length, 7);
 assert.ok(wrHome.embeds[0].toJSON().description.includes('Minnesota'));
 const teHome = buildProspectView({ position: 'TE' });
 assert.equal(teHome.components[1].toJSON().components[0].options.length, 7);
-for (const [position, count] of Object.entries({ LT: 4, LG: 2, C: 2, RG: 2, RT: 6, LEDG: 8, REDG: 8, DT: 5 })) {
+for (const [position, count] of Object.entries({ LT: 4, LG: 2, C: 2, RG: 2, RT: 6, LEDG: 8, REDG: 8, DT: 5, SAM: 4, MIKE: 5, WILL: 3 })) {
   const view = buildProspectView({ position });
   const options = view.components[1].toJSON().components[0].options;
   assert.equal(options.length, count);
@@ -52,6 +53,8 @@ const expectedSchoolEmojis = {
   '25': '1572347587690766508', '35': '1572347586486993047', '36': '1572332486804119643',
   '39': '1572347586486993047', '41': '1572339527538843729', '46': '1572347589741772811',
   '75': '1572347588676423750', '80': '1572332490356555836',
+  '12': '1572347587690766508', '52': '1572347589741772811', '53': '1572332486804119643',
+  '59': '1572332485675847862', '69': '1572339527538843729',
 };
 for (const player of players) {
   assert.ok(fs.existsSync(player.portrait), `Missing portrait: ${player.name}`);
@@ -96,6 +99,11 @@ for (const player of players) {
     assert.ok(stats.pressures <= stats.passRushSnaps && stats.runStops <= stats.runDefenseSnaps);
     assert.ok(stats.runStops <= stats.tackles && stats.tacklesForLoss <= stats.tackles);
   }
+  if (lbIds.includes(player.id)) {
+    assert.ok(stats.runDefenseSnaps <= stats.defensiveSnaps && stats.runStops <= stats.runDefenseSnaps);
+    assert.ok(stats.runStops <= stats.tackles && stats.tacklesForLoss <= stats.tackles);
+    assert.ok(stats.receptionsAllowed + stats.passBreakups + stats.interceptions <= stats.targets);
+  }
   const statsField = embed.fields.find((field) => field.name === 'Fictional final college season');
   assert.equal(statsField.value, formatProspectStatistics(stats));
   assert.ok(statsField.value.length < 1024);
@@ -136,6 +144,7 @@ assert.match(formatProspectStatistics(players.find((p) => p.id === '3').statisti
 assert.match(formatProspectStatistics(players.find((p) => p.id === '3').statistics), /15 sack plays · 12 hits · 34 hurries/);
 assert.match(formatProspectStatistics(players.find((p) => p.id === '39').statistics), /30\/306 run-defense snaps \(9\.8%\)/);
 assert.match(formatProspectStatistics(players.find((p) => p.id === '46').statistics), /3 · 5\.0% missed-tackle rate/);
+assert.match(formatProspectStatistics(players.find((p) => p.id === '7').statistics), /Coverage: 28\/48 completions · 7 breakups · 4 INT/);
 const empty = buildProspectView({ position: 'CB' });
 assert.equal(empty.components.length, 1);
 assert.equal(empty.files.length, 0);
@@ -182,6 +191,12 @@ for (const [id, value, expected] of [
   ['madden_prospects_player_REDG', '96', 'Jerrick McKinley · REDG'],
   ['madden_prospects_position', 'DT', 'CUS01 Draft Prospects · DT'],
   ['madden_prospects_player_DT', '39', 'Johnathan Francisco · DT'],
+  ['madden_prospects_position', 'SAM', 'CUS01 Draft Prospects · SAM'],
+  ['madden_prospects_player_SAM', '12', 'Willie Mason Jr · SAM'],
+  ['madden_prospects_position', 'MIKE', 'CUS01 Draft Prospects · MIKE'],
+  ['madden_prospects_player_MIKE', '52', 'Jonathon Aquino · MIKE'],
+  ['madden_prospects_position', 'WILL', 'CUS01 Draft Prospects · WILL'],
+  ['madden_prospects_player_WILL', '7', 'Kevin Alexander Jr · WILL'],
   ['madden_prospects_position', 'CB', 'CUS01 Draft Prospects · CB'],
 ]) {
   let deferred = false;
@@ -196,4 +211,4 @@ const commands = await loadSoloCommands();
 assert.ok(commands.has('prospects'));
 const handlers = await loadSoloInteractionHandlers();
 assert.ok(handlers.some((h) => h.customId.test?.('madden_prospects_player_QB')));
-console.log('PASS 64 transparent prospect portraits, 12 position groups, hidden ratings/archetypes, half-sack credits and consistent fictional receiving/blocking/defensive efficiency');
+console.log('PASS 76 transparent prospect portraits, 15 position groups and consistent fictional statistics');
