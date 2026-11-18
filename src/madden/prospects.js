@@ -50,43 +50,36 @@ export function formatProspectStatistics(stats) {
   const lines = [];
   if (stats.position === 'QB') {
     lines.push(`${stats.games} G · ${stats.completions}/${stats.attempts} (${rate(stats.completions * 100, stats.attempts, 1)}%)`);
-    lines.push(`${number(stats.passingYards)} pass YD · ${stats.passingTD} TD / ${stats.interceptions} INT`);
+    lines.push(`${number(stats.passingYards)} passing yards · ${stats.passingTD} TD · ${stats.interceptions} INT`);
     const adjustedNetYards = stats.passingYards + 20 * stats.passingTD - 45 * stats.interceptions - stats.sackYards;
-    lines.push(`${rate(stats.passingYards, stats.attempts)} YD/ATT · ${rate(adjustedNetYards, stats.attempts + stats.sacks)} adjusted net yards/attempt (ANY/A)`);
+    lines.push(`${rate(stats.passingYards, stats.attempts)} yards/attempt · ${rate(adjustedNetYards, stats.attempts + stats.sacks)} ANY/A`);
     if (stats.rushingYards !== undefined) lines.push(`${number(stats.rushingYards)} rush YD · ${stats.rushingTD} rush TD`);
   } else if (stats.position === 'HB') {
     lines.push(`${stats.games} G · ${stats.carries} CAR · ${number(stats.rushingYards)} rush YD · ${stats.rushingTD} rush TD`);
     lines.push(`${rate(stats.rushingYards, stats.carries)} YD/CAR · ${stats.receptions} REC · ${number(stats.receivingYards)} rec YD · ${stats.receivingTD} rec TD`);
     if (stats.rushingYardsAfterContact !== undefined) lines.push(`After contact: ${rate(stats.rushingYardsAfterContact, stats.carries)} rushing yards/carry`);
     if (stats.missedTacklesForced !== undefined) lines.push(`Forced missed tackles: ${stats.missedTacklesForced}`);
-    if (stats.fumbles !== undefined) lines.push(`Fumbles: ${stats.fumbles}`);
   } else if (stats.position === 'WR' || stats.position === 'TE') {
     lines.push(`${stats.games} G · ${stats.receptions} REC / ${stats.targets} TGT · ${number(stats.receivingYards)} YD · ${stats.receivingTD} TD`);
     lines.push(`${rate(stats.receivingYards, stats.receptions)} YD/REC · ${rate(stats.receptions * 100, stats.targets, 1)}% catch rate`);
     lines.push(`${rate(stats.receivingYards, stats.routesRun)} yards/route run (${stats.routesRun} routes)`);
     if (stats.yardsAfterCatch !== undefined) lines.push(`After catch: ${number(stats.yardsAfterCatch)} YD · ${rate(stats.yardsAfterCatch, stats.receptions)} YD/REC`);
-    if (stats.contestedTargets !== undefined) lines.push(`Contested catches: ${stats.contestedCatches}/${stats.contestedTargets} (${rate(stats.contestedCatches * 100, stats.contestedTargets, 1)}%)`);
     if (stats.runBlockSnaps !== undefined) lines.push(`Run-block wins: ${stats.runBlockWins}/${stats.runBlockSnaps} (${rate(stats.runBlockWins * 100, stats.runBlockSnaps, 1)}%)`);
     if (stats.passBlockSnaps !== undefined) lines.push(`Pressures allowed: ${stats.pressuresAllowed} on ${stats.passBlockSnaps} pass-block snaps (${rate(stats.pressuresAllowed * 100, stats.passBlockSnaps, 1)}%)`);
   } else if (offensiveLinePositions.includes(stats.position)) {
     lines.push(`${stats.games} G · ${number(stats.offensiveSnaps)} offensive snaps`);
     lines.push(`Pressures allowed: ${stats.pressuresAllowed}/${stats.passBlockSnaps} pass-block snaps (${rate(stats.pressuresAllowed * 100, stats.passBlockSnaps, 1)}%)`);
-    lines.push(`Allowed: ${stats.sacksAllowed} sacks · ${stats.hitsAllowed} hits · ${stats.hurriesAllowed} hurries`);
     lines.push(`Run-block wins: ${stats.runBlockWins}/${stats.runBlockSnaps} (${rate(stats.runBlockWins * 100, stats.runBlockSnaps, 1)}%)`);
-    lines.push(`Penalties: ${stats.penalties}`);
   } else if (linebackerPositions.includes(stats.position) || defensiveBackPositions.includes(stats.position)) {
     lines.push(`${stats.games} G · ${number(stats.defensiveSnaps)} defensive snaps`);
     lines.push(`${stats.tackles} TKL · ${stats.tacklesForLoss} TFL · ${stats.sacks} SACK · ${stats.forcedFumbles} FF`);
     lines.push(`Run stops: ${stats.runStops}/${stats.runDefenseSnaps} run-defense snaps (${rate(stats.runStops * 100, stats.runDefenseSnaps, 1)}%)`);
     lines.push(`Coverage: ${stats.receptionsAllowed}/${stats.targets} completions · ${stats.passBreakups} breakups · ${stats.interceptions} INT`);
-    lines.push(`Missed tackles: ${stats.missedTackles} · ${rate(stats.missedTackles * 100, stats.tackles + stats.missedTackles, 1)}% missed-tackle rate`);
   } else if (defensiveLinePositions.includes(stats.position)) {
     lines.push(`${stats.games} G · ${number(stats.defensiveSnaps)} defensive snaps`);
     lines.push(`${stats.tackles} TKL · ${number(stats.sacks)} SACK · ${stats.tacklesForLoss} TFL · ${stats.forcedFumbles} FF`);
     lines.push(`Pressures: ${stats.pressures}/${stats.passRushSnaps} rushes (${rate(stats.pressures * 100, stats.passRushSnaps, 1)}%)`);
-    lines.push(`Pressure breakdown: ${stats.sackPressures} sack plays · ${stats.hits} hits · ${stats.hurries} hurries`);
     lines.push(`Run stops: ${stats.runStops}/${stats.runDefenseSnaps} run-defense snaps (${rate(stats.runStops * 100, stats.runDefenseSnaps, 1)}%)`);
-    lines.push(`Missed tackles: ${stats.missedTackles} · ${rate(stats.missedTackles * 100, stats.tackles + stats.missedTackles, 1)}% missed-tackle rate`);
   }
   return lines.length ? lines.join('\n') : null;
 }
@@ -134,15 +127,14 @@ export function buildProspectView({ position = 'QB', playerId = null } = {}) {
   const files = [];
   if (player) {
     embed.setColor(schoolColors[player.school] || 0x5865f2)
-      .setTitle(`${player.name} · ${player.position}`).setDescription(`**${player.headline}**\n\n${player.bio}`)
+      .setTitle(`${player.name} · ${player.position}`).setDescription(player.bio)
       .addFields(
         { name: 'School', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
         { name: 'Age / Build', value: `${player.age} years · ${player.height} · ${player.weight} lb`, inline: true },
-        { name: 'Player profile', value: `${player.jersey} · Board #${player.rank}`, inline: true },
-        { name: 'What to watch', value: player.watch },
-      ).setFooter({ text: 'CUS01 · Fictional scouting profiles and college stats · AI-generated portrait' });
+        { name: 'Jersey / Board', value: `${player.jersey} · #${player.rank}`, inline: true },
+      ).setFooter({ text: 'CUS01 · Simulated college statistics' });
     const statistics = formatProspectStatistics(player.statistics);
-    if (statistics) embed.addFields({ name: 'Fictional final college season', value: statistics });
+    if (statistics) embed.addFields({ name: 'Final college season', value: statistics });
     const schoolEmoji = schoolEmojis[player.school];
     if (schoolEmoji) embed.setThumbnail(`https://cdn.discordapp.com/emojis/${schoolEmoji.id}.png`);
     if (fs.existsSync(player.portrait)) {

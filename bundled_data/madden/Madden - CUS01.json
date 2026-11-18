@@ -22,7 +22,8 @@
     "hair": "short dreads",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "young"
+    "features": "young",
+    "bio": "franchis QB, projected #1 pick, 5 star who excels in quick throws and deep throws, especially on the move"
   },
   "2": {
     "#": 2,
@@ -47,7 +48,8 @@
     "hair": "short brown hair",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "strong narrow face"
+    "features": "strong narrow face",
+    "bio": "toolsy late bloomer, former 4 star, elite late season surge as a passer, was a good rusher all season"
   },
   "3": {
     "#": 3,
@@ -72,7 +74,8 @@
     "hair": "med afro tapered",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "achne"
+    "features": "achne",
+    "bio": "generational talent, elite power rusher with elite atheltic traits to excell as a speed rusher"
   },
   "4": {
     "#": 4,
@@ -97,7 +100,8 @@
     "hair": "high top fade",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "black features"
+    "features": "black features",
+    "bio": "fstest player in the draft regardless of positioin, never gets beat deep with elite coverage skills"
   },
   "5": {
     "#": 5,
@@ -122,7 +126,8 @@
     "hair": "med texture on top faded",
     "hair_color": "brown",
     "facial_hair": "med/clean",
-    "features": "strong face"
+    "features": "strong face",
+    "bio": "crown jewel of the class, elite coverage, 5 star, big hitter and can play the slot, true chess piece of defense"
   },
   "6": {
     "#": 6,
@@ -147,7 +152,8 @@
     "hair": "medium curly/straight",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "spansih features"
+    "features": "spansih features",
+    "bio": "rocket arm, good mobility, franchise qb size and traits, tape is up and down"
   },
   "7": {
     "#": 7,
@@ -172,7 +178,8 @@
     "hair": "dreads designed with fade",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "atheltic face/body"
+    "features": "atheltic face/body",
+    "bio": "elite LB who was a former safety, easily covers rb's and has the size/speed/skill to cover all types of TE's"
   },
   "8": {
     "#": 8,
@@ -197,7 +204,8 @@
     "hair": "med straight hair",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "hawiann face"
+    "features": "hawiann face",
+    "bio": "top 10 pick lock and ohio state oline anchor, hawia native"
   },
   "9": {
     "#": 9,
@@ -222,7 +230,8 @@
     "hair": "short fade",
     "hair_color": "black",
     "facial_hair": "none",
-    "features": "chubby face"
+    "features": "chubby face",
+    "bio": "big body defense end who protects the edge consistently, excells as a rusher too"
   },
   "10": {
     "#": 10,
@@ -247,7 +256,8 @@
     "hair": "short",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "white OT"
+    "features": "white OT",
+    "bio": "best pass blocker in the class, can acnhor a line for 8/10 years"
   },
   "11": {
     "#": 11,
@@ -272,7 +282,8 @@
     "hair": "short afro",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "black features"
+    "features": "black features",
+    "bio": "speedster, great long speed and ability to force missed tackles"
   },
   "12": {
     "#": 12,
@@ -297,7 +308,8 @@
     "hair": "two thick braids going back",
     "hair_color": "black",
     "facial_hair": "none",
-    "features": "clean hair"
+    "features": "clean hair",
+    "bio": "toolsy rangy elite pass coverage lb who has the speed to a be a matchup night mare, 5 star"
   },
   "13": {
     "#": 13,
@@ -322,7 +334,8 @@
     "hair": "long straight hair in ponytail",
     "hair_color": "blonde",
     "facial_hair": "med/clean",
-    "features": "european"
+    "features": "european",
+    "bio": "elite stats, contributes in all phases of offense"
   },
   "14": {
     "#": 14,
@@ -347,7 +360,8 @@
     "hair": "long straight hair, past neck",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "classic QB"
+    "features": "classic QB",
+    "bio": "cerebral with underated rushing ability, average arm but consistently hits all three levels of the field"
   },
   "15": {
     "#": 15,
@@ -372,7 +386,8 @@
     "hair": "med straight hair",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "classic OLINE"
+    "features": "classic OLINE",
+    "bio": "elite RT, could play LT int he nfl, high floor low ceiling"
   },
   "16": {
     "#": 16,
@@ -397,7 +412,8 @@
     "hair": "short ceaser fade",
     "hair_color": "black",
     "facial_hair": "none",
-    "features": "african"
+    "features": "african",
+    "bio": "strong compact db who tackles well, can cover WR's/RB's"
   },
   "17": {
     "#": 17,
@@ -422,7 +438,8 @@
     "hair": "braids designed",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "atheltic face"
+    "features": "atheltic face",
+    "bio": "true playmaker, elite after catch"
   },
   "18": {
     "#": 18,
@@ -447,7 +464,8 @@
     "hair": "short ceaser",
     "hair_color": "light brown",
     "facial_hair": "light/clean",
-    "features": "light skin pretty boy"
+    "features": "light skin pretty boy",
+    "bio": "great balance and power, 5 star"
   },
   "19": {
     "#": 19,
@@ -472,7 +490,8 @@
     "hair": "ceaser",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "mixxed race"
+    "features": "mixxed race",
+    "bio": "run blocking RT who was a 5 star, needs to play with better leverage"
   },
   "20": {
     "#": 20,
@@ -497,7 +516,8 @@
     "hair": "ceaser",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "african"
+    "features": "african",
+    "bio": "only two years of playing, started in 2nd season, best RT in the country"
   },
   "21": {
     "#": 21,
@@ -522,7 +542,8 @@
     "hair": "short ceaser",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "african"
+    "features": "african",
+    "bio": "deebo comps, powerful WR who can contribute in run game"
   },
   "22": {
     "#": 22,
@@ -547,7 +568,8 @@
     "hair": "short dreads designed",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "strong face"
+    "features": "strong face",
+    "bio": "half of ohio states elite safety tandem, small and another classic elite ohio state db"
   },
   "23": {
     "#": 23,
@@ -572,7 +594,8 @@
     "hair": "straight curly afro",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "light skin pretty boy"
+    "features": "light skin pretty boy",
+    "bio": "super undersized at only 5'9\" but has the atheltic traits to cover up, one of CFB best corners all season"
   },
   "24": {
     "#": 24,
@@ -597,7 +620,8 @@
     "hair": "short dreads",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "dreads have patterns"
+    "features": "dreads have patterns",
+    "bio": "top 10 recruit who started at maryland"
   },
   "25": {
     "#": 25,
@@ -622,7 +646,8 @@
     "hair": "afro tapered",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "african"
+    "features": "african",
+    "bio": "5 star who greatly produced in a limited role, great athletic traits"
   },
   "26": {
     "#": 26,
@@ -647,7 +672,8 @@
     "hair": "med dreads designed",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "older TE"
+    "features": "older TE",
+    "bio": "fast TE, rare speed, higih potential"
   },
   "27": {
     "#": 27,
@@ -672,7 +698,8 @@
     "hair": "short afro tapered",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "black features"
+    "features": "black features",
+    "bio": "big end who has the size and frame to dominate but need to improve consistency"
   },
   "28": {
     "#": 28,
@@ -697,7 +724,8 @@
     "hair": "short ceaser",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "strong face"
+    "features": "strong face",
+    "bio": "toolys atheltic power block, real class riser"
   },
   "29": {
     "#": 29,
@@ -722,7 +750,8 @@
     "hair": "high top fade",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "african"
+    "features": "african",
+    "bio": "big corner who is great at the catch point, can jump with the best of them"
   },
   "30": {
     "#": 30,
@@ -747,7 +776,8 @@
     "hair": "short high top",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "strong face"
+    "features": "strong face",
+    "bio": "has to most combined rushing yds past two season"
   },
   "31": {
     "#": 31,
@@ -772,7 +802,8 @@
     "hair": "short ceaser",
     "hair_color": "light brown",
     "facial_hair": "none",
-    "features": "mixxed race"
+    "features": "mixxed race",
+    "bio": "4 year player, never had large sack #'s but consistently gets to the QB"
   },
   "32": {
     "#": 32,
@@ -797,7 +828,8 @@
     "hair": "short afro faded",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "african"
+    "features": "african",
+    "bio": "good safety who rarely misses tackles, big hitter who is known to cause fumbles on the reg"
   },
   "33": {
     "#": 33,
@@ -822,7 +854,8 @@
     "hair": "short afro fade",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "slight face"
+    "features": "slight face",
+    "bio": "big deep threat, route tree limited"
   },
   "34": {
     "#": 34,
@@ -847,7 +880,8 @@
     "hair": "short dreads",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "black features"
+    "features": "black features",
+    "bio": "speedy cb who struggles against bigger players but has great coverage skills"
   },
   "35": {
     "#": 35,
@@ -872,7 +906,8 @@
     "hair": "cornrows",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "black features"
+    "features": "black features",
+    "bio": "undersized rusher who has a set package of moves, needs to add weight"
   },
   "36": {
     "#": 36,
@@ -897,7 +932,8 @@
     "hair": "long straight ponytail",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "spansih features"
+    "features": "spansih features",
+    "bio": "3 star who really rose over the yars, great set of pass rush moves"
   },
   "37": {
     "#": 37,
@@ -922,7 +958,8 @@
     "hair": "med afro",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "chubby face"
+    "features": "chubby face",
+    "bio": "undersized tackle, great leverage and often gets the job done"
   },
   "38": {
     "#": 38,
@@ -947,7 +984,8 @@
     "hair": "short dreads",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "black features"
+    "features": "black features",
+    "bio": "5 star who could really rise, elite athletic profile with good #'s"
   },
   "39": {
     "#": 39,
@@ -972,7 +1010,8 @@
     "hair": "short straight hair",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "spanish"
+    "features": "spanish",
+    "bio": "classic interior dline, good at stopping the run"
   },
   "40": {
     "#": 40,
@@ -997,7 +1036,8 @@
     "hair": "short ceaser fade",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "black features"
+    "features": "black features",
+    "bio": "special teams ace, can return punts/kicks, servciable db, better as cb2/3"
   },
   "41": {
     "#": 41,
@@ -1022,7 +1062,8 @@
     "hair": "dreads designed",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "black features"
+    "features": "black features",
+    "bio": "top 5 in sacks and combined pressures in CFB, limited athlete"
   },
   "42": {
     "#": 42,
@@ -1047,7 +1088,8 @@
     "hair": "afro faded",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "african strong face"
+    "features": "african strong face",
+    "bio": "elite athelitc tools and older player in a small school, alot of tape of him playing well over the years"
   },
   "43": {
     "#": 43,
@@ -1072,7 +1114,8 @@
     "hair": "short ceaser fade",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "round face"
+    "features": "round face",
+    "bio": "strong back who runs over defenders"
   },
   "44": {
     "#": 44,
@@ -1097,7 +1140,8 @@
     "hair": "med straight hair",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "classic white TE"
+    "features": "classic white TE",
+    "bio": "older TE, elite catching, best hands of TE"
   },
   "45": {
     "#": 45,
@@ -1122,7 +1166,8 @@
     "hair": "afro tapered",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "black features"
+    "features": "black features",
+    "bio": "good run stopper with a set of go to pass rush moves that often win"
   },
   "46": {
     "#": 46,
@@ -1147,7 +1192,8 @@
     "hair": "short straight",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "white features"
+    "features": "white features",
+    "bio": "good gap plugger, needs to improve as a pass rusher to fully be servicable"
   },
   "47": {
     "#": 47,
@@ -1172,7 +1218,8 @@
     "hair": "med afro tapered",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "narrow jaw"
+    "features": "narrow jaw",
+    "bio": "captian of an alabama defense, plays close to the line and is a sure tackler"
   },
   "48": {
     "#": 48,
@@ -1197,7 +1244,8 @@
     "hair": "med straight hair",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "classic white TE"
+    "features": "classic white TE",
+    "bio": "filled in gaps in alabama offense, high TD #'s"
   },
   "49": {
     "#": 49,
@@ -1222,7 +1270,8 @@
     "hair": "short tapered afro",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "lightskin"
+    "features": "lightskin",
+    "bio": "big powerful run blocker who obilitirates LB/DB's, weak againts speed"
   },
   "50": {
     "#": 50,
@@ -1247,7 +1296,8 @@
     "hair": "afro tapered",
     "hair_color": "brown",
     "facial_hair": "med/clean",
-    "features": "med complexion"
+    "features": "med complexion",
+    "bio": "missouri's top db in a good room, needs to improve in zone"
   },
   "51": {
     "#": 51,
@@ -1272,7 +1322,8 @@
     "hair": "two thick braids going back",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "atheltic face/body"
+    "features": "atheltic face/body",
+    "bio": "small lb who is a hybrid pass rush specialist and coverage specialist"
   },
   "52": {
     "#": 52,
@@ -1297,7 +1348,8 @@
     "hair": "med straight hair",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "thick face"
+    "features": "thick face",
+    "bio": "smartest player in the draft, plays chess while others play checkers"
   },
   "53": {
     "#": 53,
@@ -1322,7 +1374,8 @@
     "hair": "short ceaser",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "strong face"
+    "features": "strong face",
+    "bio": "5 star who had a late rise, once he played he shined bright"
   },
   "54": {
     "#": 54,
@@ -1347,7 +1400,8 @@
     "hair": "dreads designed",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "black features"
+    "features": "black features",
+    "bio": "5 star who was buried on depth chart, limited playing time, prototype d end"
   },
   "55": {
     "#": 55,
@@ -1372,7 +1426,8 @@
     "hair": "designed dreads",
     "hair_color": "black",
     "facial_hair": "none",
-    "features": "black features"
+    "features": "black features",
+    "bio": "late riser, wild play style who if he reigns it in could be a star"
   },
   "56": {
     "#": 56,
@@ -1397,7 +1452,8 @@
     "hair": "medium curly/straight afro",
     "hair_color": "light brown",
     "facial_hair": "goatee",
-    "features": "spansih features"
+    "features": "spansih features",
+    "bio": "transfer from arkansas, former 5 star who had a streaky career before stablizing it on a deep miami team"
   },
   "57": {
     "#": 57,
@@ -1422,7 +1478,8 @@
     "hair": "short ceaser fade",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "big LB"
+    "features": "big LB",
+    "bio": "big LB with the size and range to excel in the middle of a defense"
   },
   "58": {
     "#": 58,
@@ -1447,7 +1504,8 @@
     "hair": "med straight hair",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "classic white LB"
+    "features": "classic white LB",
+    "bio": "elite instincts, willed a NC state defense to a top ranking"
   },
   "59": {
     "#": 59,
@@ -1472,7 +1530,8 @@
     "hair": "straight short hair",
     "hair_color": "brown",
     "facial_hair": "med/clean",
-    "features": "spanish features"
+    "features": "spanish features",
+    "bio": "older LB who was the captian of a strong miami defense"
   },
   "60": {
     "#": 60,
@@ -1497,7 +1556,8 @@
     "hair": "long dreads",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "chubby face"
+    "features": "chubby face",
+    "bio": "best in a zone scheme, moves big body effortlessley"
   },
   "61": {
     "#": 61,
@@ -1522,7 +1582,8 @@
     "hair": "curly afro",
     "hair_color": "light brown",
     "facial_hair": "none",
-    "features": "big body"
+    "features": "big body",
+    "bio": "big body, subar stats, drafted based on size and potential"
   },
   "62": {
     "#": 62,
@@ -1547,7 +1608,8 @@
     "hair": "short afro",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "chubby face"
+    "features": "chubby face",
+    "bio": "big body end who excells in filing gaps, can play on the interior"
   },
   "63": {
     "#": 63,
@@ -1572,7 +1634,8 @@
     "hair": "short hair",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "white features"
+    "features": "white features",
+    "bio": "transfer from pittsburgh who won the starting job, average stats but has the look of a franchise QB"
   },
   "64": {
     "#": 64,
@@ -1597,7 +1660,8 @@
     "hair": "med straight hair",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "classic white DB"
+    "features": "classic white DB",
+    "bio": "elite zone coverage but undersized and can get attacked in the run game"
   },
   "65": {
     "#": 65,
@@ -1622,7 +1686,8 @@
     "hair": "short",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "chubby face"
+    "features": "chubby face",
+    "bio": "redshirt senior who was the best center in the country"
   },
   "66": {
     "#": 66,
@@ -1647,7 +1712,8 @@
     "hair": "short ceaser",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "spanish features"
+    "features": "spanish features",
+    "bio": "smart player who covers the highest point of the field with ease"
   },
   "67": {
     "#": 67,
@@ -1672,7 +1738,8 @@
     "hair": "long dreads",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "narrow chin"
+    "features": "narrow chin",
+    "bio": "5 star who with 1 year of good prod"
   },
   "68": {
     "#": 68,
@@ -1697,7 +1764,8 @@
     "hair": "short ceaser",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "med complexion"
+    "features": "med complexion",
+    "bio": "great tackler who gets the job done in coverage, can get beat over the top"
   },
   "69": {
     "#": 69,
@@ -1722,7 +1790,8 @@
     "hair": "short dreads designed",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "black features"
+    "features": "black features",
+    "bio": "lb who can get to QB and stop the run"
   },
   "70": {
     "#": 70,
@@ -1747,7 +1816,8 @@
     "hair": "short afro tapered",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "african"
+    "features": "african",
+    "bio": "elite atheltic tools, didn't see much play time over the years but traits are elite"
   },
   "71": {
     "#": 71,
@@ -1772,7 +1842,8 @@
     "hair": "short",
     "hair_color": "brown",
     "facial_hair": "med/clean",
-    "features": "classic OLINE"
+    "features": "classic OLINE",
+    "bio": "pass protecting center who need to improve run blocking"
   },
   "72": {
     "#": 72,
@@ -1797,7 +1868,8 @@
     "hair": "short ceaser",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "clean face"
+    "features": "clean face",
+    "bio": "5 star who popped as a freshman but declined over the years, great tools"
   },
   "73": {
     "#": 73,
@@ -1822,7 +1894,8 @@
     "hair": "afro faded",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "long face"
+    "features": "long face",
+    "bio": "small school stand out with traits and skill to play in nfl"
   },
   "74": {
     "#": 74,
@@ -1847,7 +1920,8 @@
     "hair": "short ceaser",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "large forhead"
+    "features": "large forhead",
+    "bio": "one of two lsu te's, vertical threat with soft hands"
   },
   "75": {
     "#": 75,
@@ -1872,7 +1946,8 @@
     "hair": "dreads designed with fade",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "african"
+    "features": "african",
+    "bio": "small but lightning fast d end, former LB who plays well on the d line"
   },
   "76": {
     "#": 76,
@@ -1897,7 +1972,8 @@
     "hair": "cornrows",
     "hair_color": "black",
     "facial_hair": "light/clean",
-    "features": "chubby face"
+    "features": "chubby face",
+    "bio": "3 year starter who saw his best year his 2nd year"
   },
   "77": {
     "#": 77,
@@ -1922,7 +1998,8 @@
     "hair": "short tapered afro",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "narrow face"
+    "features": "narrow face",
+    "bio": "4 star who had a late bloom, colorado transfer"
   },
   "78": {
     "#": 78,
@@ -1947,7 +2024,8 @@
     "hair": "short ceaser fade",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "pretty boy"
+    "features": "pretty boy",
+    "bio": "big middle backer who isn't the best athelte but plays with high IQ"
   },
   "79": {
     "#": 79,
@@ -1972,7 +2050,8 @@
     "hair": "straight",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "classic OLINE"
+    "features": "classic OLINE",
+    "bio": "run blocker who excells in getting up field for lead blocks"
   },
   "80": {
     "#": 80,
@@ -1997,7 +2076,8 @@
     "hair": "med straight hair fade",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "classic white DLINE"
+    "features": "classic white DLINE",
+    "bio": "good run stopper on a weak usc defense, lone bright star"
   },
   "81": {
     "#": 81,
@@ -2022,7 +2102,8 @@
     "hair": "short ceaser faded",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "spanish features"
+    "features": "spanish features",
+    "bio": "another small but yet effective cb, good tools and good athlete"
   },
   "82": {
     "#": 82,
@@ -2047,7 +2128,8 @@
     "hair": "long dreads",
     "hair_color": "black",
     "facial_hair": "goatee",
-    "features": "african"
+    "features": "african",
+    "bio": "big body safety who has the traits to dominate, tape is very inconsistent"
   },
   "83": {
     "#": 83,
@@ -2072,7 +2154,8 @@
     "hair": "short afro",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "strong face"
+    "features": "strong face",
+    "bio": "not elite stats but elite traits"
   },
   "84": {
     "#": 84,
@@ -2097,7 +2180,8 @@
     "hair": "short afro",
     "hair_color": "black",
     "facial_hair": "none",
-    "features": "big round face"
+    "features": "big round face",
+    "bio": "blocking te, with good posseion skills, 13 personnel speciliast"
   },
   "85": {
     "#": 85,
@@ -2122,7 +2206,8 @@
     "hair": "dreads designed",
     "hair_color": "black",
     "facial_hair": "none",
-    "features": "black features"
+    "features": "black features",
+    "bio": "thin and tall cb who can cover well, need to play with more physicality in the run game"
   },
   "86": {
     "#": 86,
@@ -2147,7 +2232,8 @@
     "hair": "long dreads",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "oval head"
+    "features": "oval head",
+    "bio": "former 5 star who trasnferred from michigan, jump ball specialist"
   },
   "87": {
     "#": 87,
@@ -2172,7 +2258,8 @@
     "hair": "med straight hair",
     "hair_color": "blonde",
     "facial_hair": "med/clean",
-    "features": "classic white LB"
+    "features": "classic white LB",
+    "bio": "late round small school stand out, middling athlete but a sure tackler"
   },
   "88": {
     "#": 88,
@@ -2197,7 +2284,8 @@
     "hair": "med straight hair fade",
     "hair_color": "brown",
     "facial_hair": "goatee",
-    "features": "spansih features"
+    "features": "spansih features",
+    "bio": "small run thumper who will make big hits"
   },
   "89": {
     "#": 89,
@@ -2222,7 +2310,8 @@
     "hair": "short straight hair",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "classic white TE"
+    "features": "classic white TE",
+    "bio": "great stats, weak atheltic profile"
   },
   "90": {
     "#": 90,
@@ -2247,7 +2336,8 @@
     "hair": "dreads deisgned faded",
     "hair_color": "black",
     "facial_hair": "none",
-    "features": "black features"
+    "features": "black features",
+    "bio": "elite size at 6'4\" but on the thinner side for a safety, great ball skills, potential 3 rd steal"
   },
   "91": {
     "#": 91,
@@ -2272,7 +2362,8 @@
     "hair": "straight curly afro",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "light skin pretty boy"
+    "features": "light skin pretty boy",
+    "bio": "small school sfety who put up #'s that compete with the top DB's in the class"
   },
   "92": {
     "#": 92,
@@ -2297,7 +2388,8 @@
     "hair": "short afro",
     "hair_color": "brown",
     "facial_hair": "med/clean",
-    "features": "chubby face"
+    "features": "chubby face",
+    "bio": "good reciever, former WR recruit"
   },
   "93": {
     "#": 93,
@@ -2322,7 +2414,8 @@
     "hair": "med curly afro",
     "hair_color": "black",
     "facial_hair": "med/clean",
-    "features": "spanish"
+    "features": "spanish",
+    "bio": "undersized guard, excells in pass pro and is atheltic for his size"
   },
   "94": {
     "#": 94,
@@ -2347,7 +2440,8 @@
     "hair": "short straight",
     "hair_color": "brown",
     "facial_hair": "med/clean",
-    "features": "classic white TE"
+    "features": "classic white TE",
+    "bio": "trasnfered from minnesota, good yds, low TD's"
   },
   "95": {
     "#": 95,
@@ -2372,7 +2466,8 @@
     "hair": "long straight",
     "hair_color": "brown",
     "facial_hair": "light/clean",
-    "features": "classic white DLINE"
+    "features": "classic white DLINE",
+    "bio": "former walk on who became a captian of a talented michigan team, not very toolsy"
   },
   "96": {
     "#": 96,
@@ -2397,6 +2492,7 @@
     "hair": "short dreads",
     "hair_color": "brown",
     "facial_hair": "none",
-    "features": "light skin pretty boy"
+    "features": "light skin pretty boy",
+    "bio": "put up #'s on a subpar illinois defense, team captian"
   }
 }
