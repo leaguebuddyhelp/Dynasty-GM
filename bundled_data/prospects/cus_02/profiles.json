@@ -145,6 +145,22 @@
         "rushingTD": 7
       }
     },
+    "33": {
+      "name": "Brayan Williams",
+      "bio": "Williams gives Alabama a tight end who can make the middle of the field uncomfortable. His athleticism and ability to attack the seam create opportunities beyond the underneath routes, giving a quarterback a receiving threat who can challenge coverage vertically.",
+      "portrait": "brayan-williams-transparent.png",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 61,
+        "targets": 84,
+        "receivingYards": 853,
+        "receivingTD": 8,
+        "routesRun": 335,
+        "yardsAfterCatch": 294
+      }
+    },
     "34": {
       "name": "Dillan Jones",
       "bio": "The ball rarely escapes Jones once it reaches his hands. The Illinois transfer brings the best hands in the class to Oregon, along with good speed and underrated playmaking ability. His blend of reliability and movement gives a passing game room to get creative.",
@@ -230,6 +246,54 @@
         "missedTacklesForced": 40
       }
     },
+    "44": {
+      "name": "J.C. Reiter",
+      "bio": "Reiter has a way of making a difficult throw look safe. Cincinnati’s tight end brings exceptionally soft hands and the athleticism to slip behind linebackers, giving his quarterback a dependable target with more downfield potential than his reputation might suggest.",
+      "portrait": "j-c-reiter-transparent.png",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 58,
+        "targets": 76,
+        "receivingYards": 725,
+        "receivingTD": 6,
+        "routesRun": 325,
+        "yardsAfterCatch": 239
+      }
+    },
+    "45": {
+      "name": "Jay Maxwell",
+      "bio": "Maxwell makes himself an easy choice when a quarterback needs an answer. Stanford’s athletic tight end produced strong numbers and substantial yardage per catch, using his movement to make plays downfield despite a smaller frame than many players at the position.",
+      "portrait": "jay-maxwell-transparent.png",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 58,
+        "targets": 80,
+        "receivingYards": 934,
+        "receivingTD": 7,
+        "routesRun": 342,
+        "yardsAfterCatch": 346
+      }
+    },
+    "50": {
+      "name": "Brian Soto",
+      "bio": "Soto found his rhythm at Penn State and kept it throughout his final season. The tight end developed into a consistent receiving option from start to finish, offering his quarterback a dependable presence and giving evaluators a full season of established production.",
+      "portrait": "brian-soto-transparent.png",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 54,
+        "targets": 75,
+        "receivingYards": 648,
+        "receivingTD": 6,
+        "routesRun": 320,
+        "yardsAfterCatch": 221
+      }
+    },
     "52": {
       "name": "Isaiah Abraham-Jenkins",
       "bio": "Inside the red zone, Abraham-Jenkins gives his quarterback a target who can rise above the crowd. Michigan’s big receiver turned limited yardage into touchdown production and occasional chunk plays. His size and downfield ability give an offense a clear scoring weapon.",
@@ -264,6 +328,22 @@
         "missedTacklesForced": 48
       }
     },
+    "64": {
+      "name": "Tre Miles",
+      "bio": "Miles brings a receiver’s background and rare movement skills to Georgia’s tight end group. The former wideout is the most athletic player at the position in this class, giving an offense a vertical threat who can stretch coverage and create matchup problems.",
+      "portrait": "tre-miles-transparent.png",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 48,
+        "targets": 71,
+        "receivingYards": 754,
+        "receivingTD": 7,
+        "routesRun": 317,
+        "yardsAfterCatch": 300
+      }
+    },
     "76": {
       "name": "Terrelle McDonald",
       "bio": "McDonald looks like a receiver and brings the hands to match. Memphis can use him out of the backfield, while his ability to slip through narrow openings gives him value as a runner. His receiving skill set offers a clear professional role.",
@@ -280,6 +360,42 @@
         "receivingTD": 4,
         "rushingYardsAfterContact": 310,
         "missedTacklesForced": 35
+      }
+    },
+    "80": {
+      "name": "Noah Lorenz",
+      "bio": "Lorenz has a habit of finding open grass when his quarterback needs it. North Dakota State’s older tight end became the offense’s top option despite a modest athletic profile, using his understanding of space to consistently present a clean throwing window.",
+      "portrait": "noah-lorenz-transparent.png",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 12,
+        "receptions": 59,
+        "targets": 80,
+        "receivingYards": 721,
+        "receivingTD": 6,
+        "routesRun": 315,
+        "yardsAfterCatch": 202
+      }
+    },
+    "82": {
+      "name": "Mike Keeney",
+      "bio": "Keeney gives Michigan an inline tight end built for a physical offense. His blocking fits a run-heavy scheme, while reliable hands, size and a large catch radius give his quarterback an inviting target when the offense turns to the passing game.",
+      "portrait": "mike-keeney-transparent.png",
+      "statistics": {
+        "position": "TE",
+        "fictional": true,
+        "games": 13,
+        "receptions": 38,
+        "targets": 55,
+        "receivingYards": 441,
+        "receivingTD": 4,
+        "routesRun": 242,
+        "yardsAfterCatch": 131,
+        "runBlockWins": 190,
+        "runBlockSnaps": 245,
+        "passBlockSnaps": 65,
+        "pressuresAllowed": 4
       }
     },
     "85": {
