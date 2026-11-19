@@ -1,0 +1,957 @@
+{
+  "1": {
+    "#": 1,
+    "position": "QB",
+    "name": "Nick Boyle",
+    "school": "Michigan",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 1,
+    "overall": 71,
+    "dev_trait": 0,
+    "archetype": "Field General",
+    "height": "6'1\"",
+    "weight": 208,
+    "jersey": "#10",
+    "class": 3,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short fade",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "classic white qb"
+  },
+  "2": {
+    "#": 2,
+    "position": "QB",
+    "name": "Dannie Montano",
+    "school": "North Dakota State",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 1,
+    "overall": 68,
+    "dev_trait": 0,
+    "archetype": "Scrambler",
+    "height": "6'2\"",
+    "weight": 220,
+    "jersey": "#10",
+    "class": 3,
+    "skin": "olive/white",
+    "eye_color": "brown",
+    "ethnicity": "latin/black",
+    "hair": "med short hair",
+    "hair_color": "brown",
+    "facial_hair": "med/clean",
+    "features": "spansih/black"
+  },
+  "3": {
+    "#": 3,
+    "position": "QB",
+    "name": "Dashaud Smith",
+    "school": "Georgia",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 1,
+    "overall": 74,
+    "dev_trait": 2,
+    "archetype": "Strong Arm",
+    "height": "6'5\"",
+    "weight": 258,
+    "jersey": "#14",
+    "class": 3,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med messy afro faded",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "chubby round face"
+  },
+  "4": {
+    "#": 4,
+    "position": "QB",
+    "name": "Josiah Freeman",
+    "school": "UCF",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 1,
+    "overall": 65,
+    "dev_trait": 0,
+    "archetype": "Strong Arm",
+    "height": "6'5\"",
+    "weight": 230,
+    "jersey": "#5",
+    "class": 3,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "high top fade",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "light skin"
+  },
+  "5": {
+    "#": 5,
+    "position": "QB",
+    "name": "Tucker Wilson",
+    "school": "Memphis",
+    "age": 23,
+    "year": "SR(RS)",
+    "pos_num": 1,
+    "overall": 64,
+    "dev_trait": 0,
+    "archetype": "Field General",
+    "height": "6'1\"",
+    "weight": 207,
+    "jersey": "#1",
+    "class": 3,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short/med straight hair",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "classic white qb"
+  },
+  "6": {
+    "#": 6,
+    "position": "HB",
+    "name": "Khalil Stokes",
+    "school": "Texas",
+    "pos_num": 2,
+    "overall": 74
+  },
+  "7": {
+    "#": 7,
+    "position": "HB",
+    "name": "Darius Cooper-Jones",
+    "school": "North Carolina",
+    "pos_num": 2,
+    "overall": 76
+  },
+  "8": {
+    "#": 8,
+    "position": "HB",
+    "name": "Milo Howard",
+    "school": "Duke",
+    "pos_num": 2,
+    "overall": 75
+  },
+  "9": {
+    "#": 9,
+    "position": "HB",
+    "name": "Jaiden Staples-Harris",
+    "school": "Tennessee",
+    "pos_num": 2,
+    "overall": 74
+  },
+  "10": {
+    "#": 10,
+    "position": "HB",
+    "name": "Devon Jones II",
+    "school": "Texas",
+    "pos_num": 2,
+    "overall": 74
+  },
+  "11": {
+    "#": 11,
+    "position": "WR",
+    "name": "Jaylen Scruggs",
+    "school": "Alabama",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 3,
+    "overall": 77,
+    "archetype": "Playmaker",
+    "height": "5'11\"",
+    "weight": 193,
+    "jersey": "#10",
+    "class": 3,
+    "skin": "light skin black",
+    "eye_color": "hazel",
+    "ethnicity": "african american",
+    "hair": "med dread designed",
+    "hair_color": "brown",
+    "facial_hair": "med/clean",
+    "features": "light skin"
+  },
+  "12": {
+    "#": 12,
+    "position": "WR",
+    "name": "Tyler Smit",
+    "school": "Indiana",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 3,
+    "overall": 76,
+    "archetype": "Deep Threat",
+    "height": "6'4\"",
+    "weight": 199,
+    "jersey": "#84",
+    "class": 3,
+    "skin": "white",
+    "eye_color": "blue",
+    "ethnicity": "white",
+    "hair": "med curly hair",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "classic white WR"
+  },
+  "13": {
+    "#": 13,
+    "position": "WR",
+    "name": "Amani Okonkwo",
+    "school": "Ole Miss",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 3,
+    "overall": 75,
+    "archetype": "Deep Threat",
+    "height": "5'11\"",
+    "weight": 220,
+    "jersey": "#1",
+    "class": 3,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "high top fade",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "african features"
+  },
+  "14": {
+    "#": 14,
+    "position": "WR",
+    "name": "Michael May",
+    "school": "North Carolina",
+    "pos_num": 3,
+    "overall": 77
+  },
+  "15": {
+    "#": 15,
+    "position": "WR",
+    "name": "Kentrell Williams",
+    "school": "Arkansas",
+    "pos_num": 3,
+    "overall": 74
+  },
+  "16": {
+    "#": 16,
+    "position": "WR",
+    "name": "Trey Dubose",
+    "school": "Oregon",
+    "pos_num": 3,
+    "overall": 74
+  },
+  "17": {
+    "#": 17,
+    "position": "WR",
+    "name": "Dushane Butler",
+    "school": "UConn",
+    "pos_num": 3,
+    "overall": 73
+  },
+  "18": {
+    "#": 18,
+    "position": "WR",
+    "name": "Ron Hopkins",
+    "school": "Ohio State",
+    "pos_num": 3,
+    "overall": 73
+  },
+  "19": {
+    "#": 19,
+    "position": "WR",
+    "name": "Mosi Sidi",
+    "school": "Miami",
+    "pos_num": 3,
+    "overall": 72
+  },
+  "20": {
+    "#": 20,
+    "position": "WR",
+    "name": "Jamariyah Johnson",
+    "school": "Ohio State",
+    "pos_num": 3,
+    "overall": 71
+  },
+  "21": {
+    "#": 21,
+    "position": "WR",
+    "name": "Isiah Valerio",
+    "school": "Arizona",
+    "pos_num": 3,
+    "overall": 71
+  },
+  "22": {
+    "#": 22,
+    "position": "WR",
+    "name": "Dailyn Ellis Jr.",
+    "school": "Washington",
+    "pos_num": 3,
+    "overall": 71
+  },
+  "23": {
+    "#": 23,
+    "position": "TE",
+    "name": "Jake Rosario",
+    "school": "Michigan",
+    "pos_num": 4,
+    "overall": 76
+  },
+  "24": {
+    "#": 24,
+    "position": "TE",
+    "name": "Dae'Montrell Tate",
+    "school": "Southern Mississppi",
+    "pos_num": 4,
+    "overall": 73
+  },
+  "25": {
+    "#": 25,
+    "position": "TE",
+    "name": "Trenton Whyte",
+    "school": "Iowa",
+    "pos_num": 4,
+    "overall": 71
+  },
+  "26": {
+    "#": 26,
+    "position": "TE",
+    "name": "Jordyn Honeycutt",
+    "school": "Iowa State",
+    "pos_num": 4,
+    "overall": 70
+  },
+  "27": {
+    "#": 27,
+    "position": "TE",
+    "name": "Eric Fahey",
+    "school": "Michigan",
+    "pos_num": 4,
+    "overall": 70
+  },
+  "28": {
+    "#": 28,
+    "position": "LT",
+    "name": "Lonnie Howard",
+    "school": "Toledo",
+    "pos_num": 5,
+    "overall": 74
+  },
+  "29": {
+    "#": 29,
+    "position": "LT",
+    "name": "Kiaan Jackson",
+    "school": "Washington",
+    "pos_num": 5,
+    "overall": 73
+  },
+  "30": {
+    "#": 30,
+    "position": "LT",
+    "name": "Bryan Romero",
+    "school": "Kentucky",
+    "pos_num": 5,
+    "overall": 71
+  },
+  "31": {
+    "#": 31,
+    "position": "LG",
+    "name": "Blake Kensington",
+    "school": "Iowa",
+    "pos_num": 6,
+    "overall": 74
+  },
+  "32": {
+    "#": 32,
+    "position": "LG",
+    "name": "Zac Radford",
+    "school": "Oklahoma",
+    "pos_num": 6,
+    "overall": 74
+  },
+  "33": {
+    "#": 33,
+    "position": "LG",
+    "name": "Danny Bryan",
+    "school": "Wisconsin",
+    "pos_num": 6,
+    "overall": 72
+  },
+  "34": {
+    "#": 34,
+    "position": "LG",
+    "name": "Dylan Skaggs",
+    "school": "North Dakota State",
+    "pos_num": 6,
+    "overall": 72
+  },
+  "35": {
+    "#": 35,
+    "position": "LG",
+    "name": "Hank Baum",
+    "school": "Eastern Illinois",
+    "pos_num": 6,
+    "overall": 70
+  },
+  "36": {
+    "#": 36,
+    "position": "C",
+    "name": "Lorenz Schwarz",
+    "school": "Washington State",
+    "pos_num": 7,
+    "overall": 71
+  },
+  "37": {
+    "#": 37,
+    "position": "RG",
+    "name": "Trey Sternberg",
+    "school": "Iowa",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 8,
+    "overall": 79,
+    "archetype": "Pass Blocker",
+    "height": "6'5\"",
+    "weight": 318,
+    "jersey": "#79",
+    "class": 3,
+    "skin": "white",
+    "eye_color": "blue",
+    "ethnicity": "white",
+    "hair": "short/med straight hair",
+    "hair_color": "blonde",
+    "facial_hair": "goatee",
+    "features": "classic white oline"
+  },
+  "38": {
+    "#": 38,
+    "position": "RG",
+    "name": "Jarellius Smith",
+    "school": "Wake Forest",
+    "pos_num": 8,
+    "overall": 76
+  },
+  "39": {
+    "#": 39,
+    "position": "RG",
+    "name": "Judah Dickinson",
+    "school": "Florida",
+    "pos_num": 8,
+    "overall": 76
+  },
+  "40": {
+    "#": 40,
+    "position": "RG",
+    "name": "Khyree Evans",
+    "school": "Oregon",
+    "pos_num": 8,
+    "overall": 75
+  },
+  "41": {
+    "#": 41,
+    "position": "RG",
+    "name": "Tykeim Brown",
+    "school": "Syracuse",
+    "pos_num": 8,
+    "overall": 70
+  },
+  "42": {
+    "#": 42,
+    "position": "RT",
+    "name": "Milan Peeters",
+    "school": "TCU",
+    "pos_num": 9,
+    "overall": 75
+  },
+  "43": {
+    "#": 43,
+    "position": "RT",
+    "name": "Lacy Tyrell",
+    "school": "LSU",
+    "pos_num": 9,
+    "overall": 72
+  },
+  "44": {
+    "#": 44,
+    "position": "RT",
+    "name": "Jack Foote",
+    "school": "Wyoming",
+    "pos_num": 9,
+    "overall": 71
+  },
+  "45": {
+    "#": 45,
+    "position": "RT",
+    "name": "Matt Ziegler",
+    "school": "Washington",
+    "pos_num": 9,
+    "overall": 71
+  },
+  "46": {
+    "#": 46,
+    "position": "LEDG",
+    "name": "Dylan Smith",
+    "school": "Georgia",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 10,
+    "overall": 78,
+    "archetype": "Power Rusher",
+    "height": "6'5\"",
+    "weight": 280,
+    "jersey": "#5",
+    "class": 3,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med afro faded",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "black features"
+  },
+  "47": {
+    "#": 47,
+    "position": "REDG",
+    "name": "Ramello Williams",
+    "school": "Texas",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 10,
+    "overall": 76,
+    "archetype": "Speed Rusher",
+    "height": "6'3\"",
+    "weight": 253,
+    "jersey": "#99",
+    "class": 3,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "long afro faded",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "black features"
+  },
+  "48": {
+    "#": 48,
+    "position": "REDG",
+    "name": "Funmilade Oyinkansola",
+    "school": "Syracuse",
+    "pos_num": 10,
+    "overall": 76
+  },
+  "49": {
+    "#": 49,
+    "position": "LEDG",
+    "name": "Arvydas Miliauskas",
+    "school": "Purdue",
+    "pos_num": 10,
+    "overall": 75
+  },
+  "50": {
+    "#": 50,
+    "position": "LEDG",
+    "name": "Khassim Hayes",
+    "school": "Clemson",
+    "pos_num": 10,
+    "overall": 75
+  },
+  "51": {
+    "#": 51,
+    "position": "REDG",
+    "name": "Mike Lawrence",
+    "school": "Arizona",
+    "pos_num": 10,
+    "overall": 75
+  },
+  "52": {
+    "#": 52,
+    "position": "REDG",
+    "name": "Terrence Kelley",
+    "school": "Missouri",
+    "pos_num": 10,
+    "overall": 74
+  },
+  "53": {
+    "#": 53,
+    "position": "REDG",
+    "name": "Davion Lee",
+    "school": "Utah",
+    "pos_num": 10,
+    "overall": 73
+  },
+  "54": {
+    "#": 54,
+    "position": "LEDG",
+    "name": "Kamari Kendrick",
+    "school": "Georgia",
+    "pos_num": 10,
+    "overall": 72
+  },
+  "55": {
+    "#": 55,
+    "position": "LEDG",
+    "name": "Devon Swan",
+    "school": "Texas",
+    "pos_num": 10,
+    "overall": 72
+  },
+  "56": {
+    "#": 56,
+    "position": "REDG",
+    "name": "Dominique Ellis",
+    "school": "Oklahoma State",
+    "pos_num": 10,
+    "overall": 72
+  },
+  "57": {
+    "#": 57,
+    "position": "LEDG",
+    "name": "Desmond Silvers",
+    "school": "Kentucky",
+    "pos_num": 10,
+    "overall": 70
+  },
+  "58": {
+    "#": 58,
+    "position": "DT",
+    "name": "Maxton Smith",
+    "school": "Virginia Tech",
+    "pos_num": 12,
+    "overall": 73
+  },
+  "59": {
+    "#": 59,
+    "position": "DT",
+    "name": "Xander Haynes",
+    "school": "Iowa",
+    "pos_num": 12,
+    "overall": 73
+  },
+  "60": {
+    "#": 60,
+    "position": "DT",
+    "name": "Saka Joseph",
+    "school": "Missouri",
+    "pos_num": 12,
+    "overall": 72
+  },
+  "61": {
+    "#": 61,
+    "position": "DT",
+    "name": "Dareion Jackson",
+    "school": "South Carolina",
+    "pos_num": 12,
+    "overall": 72
+  },
+  "62": {
+    "#": 62,
+    "position": "DT",
+    "name": "Desharious Scott",
+    "school": "UAB",
+    "pos_num": 12,
+    "overall": 71
+  },
+  "63": {
+    "#": 63,
+    "position": "DT",
+    "name": "Matt Osborne",
+    "school": "Wisconsin",
+    "pos_num": 12,
+    "overall": 70
+  },
+  "64": {
+    "#": 64,
+    "position": "SAM",
+    "name": "Hakazi Mung'a",
+    "school": "Texas A&M",
+    "pos_num": 13,
+    "overall": 73
+  },
+  "65": {
+    "#": 65,
+    "position": "SAM",
+    "name": "Doran Kelley",
+    "school": "San Diego State",
+    "pos_num": 13,
+    "overall": 72
+  },
+  "66": {
+    "#": 66,
+    "position": "SAM",
+    "name": "Jack Farmer",
+    "school": "Wisonsin",
+    "pos_num": 13,
+    "overall": 71
+  },
+  "67": {
+    "#": 67,
+    "position": "SAM",
+    "name": "Kanakanui Keli'i",
+    "school": "USC",
+    "pos_num": 13,
+    "overall": 71
+  },
+  "68": {
+    "#": 68,
+    "position": "MIKE",
+    "name": "Malik Smith",
+    "school": "LSU",
+    "pos_num": 14,
+    "overall": 79
+  },
+  "69": {
+    "#": 69,
+    "position": "MIKE",
+    "name": "Brandon Montanez",
+    "school": "Stanford",
+    "pos_num": 14,
+    "overall": 75
+  },
+  "70": {
+    "#": 70,
+    "position": "MIKE",
+    "name": "Aston Brooks",
+    "school": "Penn State",
+    "pos_num": 14,
+    "overall": 73
+  },
+  "71": {
+    "#": 71,
+    "position": "MIKE",
+    "name": "Akudizimo Odhiru",
+    "school": "Michigan",
+    "pos_num": 14,
+    "overall": 70
+  },
+  "72": {
+    "#": 72,
+    "position": "MIKE",
+    "name": "Mahlik Edwards",
+    "school": "Colorado",
+    "pos_num": 14,
+    "overall": 70
+  },
+  "73": {
+    "#": 73,
+    "position": "WILL",
+    "name": "Eric Barrera",
+    "school": "Wisconsin",
+    "pos_num": 15,
+    "overall": 71
+  },
+  "74": {
+    "#": 74,
+    "position": "WILL",
+    "name": "Zaire Rollins",
+    "school": "Washington",
+    "pos_num": 15,
+    "overall": 70
+  },
+  "75": {
+    "#": 75,
+    "position": "CB",
+    "name": "Micah Howard",
+    "school": "Stanford",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 16,
+    "overall": 77,
+    "archetype": "Man to Man",
+    "height": "6'2\"",
+    "weight": 199,
+    "jersey": "#12",
+    "class": 3,
+    "skin": "light skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short fade afro",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "light skin"
+  },
+  "76": {
+    "#": 76,
+    "position": "CB",
+    "name": "Tremon Henderson II",
+    "school": "Clemson",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 16,
+    "overall": 72,
+    "archetype": "Man to Man",
+    "height": "6'2\"",
+    "weight": 203,
+    "jersey": "#2",
+    "class": 3,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med texture tapered",
+    "hair_color": "black",
+    "facial_hair": "none",
+    "features": "black features"
+  },
+  "77": {
+    "#": 77,
+    "position": "CB",
+    "name": "Jean-Luc Toussaint",
+    "school": "Oregon",
+    "pos_num": 16,
+    "overall": 78
+  },
+  "78": {
+    "#": 78,
+    "position": "CB",
+    "name": "Ja'Kylan Edwards",
+    "school": "Georgia",
+    "pos_num": 16,
+    "overall": 76
+  },
+  "79": {
+    "#": 79,
+    "position": "CB",
+    "name": "Brayan Myles",
+    "school": "Michigan",
+    "pos_num": 16,
+    "overall": 76
+  },
+  "80": {
+    "#": 80,
+    "position": "CB",
+    "name": "Mikey Yegwambugi",
+    "school": "Rutgers",
+    "pos_num": 16,
+    "overall": 75
+  },
+  "81": {
+    "#": 81,
+    "position": "CB",
+    "name": "Tavell Jackson",
+    "school": "Florida",
+    "pos_num": 16,
+    "overall": 75
+  },
+  "82": {
+    "#": 82,
+    "position": "CB",
+    "name": "Bentram Thompson",
+    "school": "Virginia Tech",
+    "pos_num": 16,
+    "overall": 74
+  },
+  "83": {
+    "#": 83,
+    "position": "CB",
+    "name": "Jason Serrano",
+    "school": "New Mexico State",
+    "pos_num": 16,
+    "overall": 73
+  },
+  "84": {
+    "#": 84,
+    "position": "CB",
+    "name": "Eli Ruiz",
+    "school": "Michigan",
+    "pos_num": 16,
+    "overall": 73
+  },
+  "85": {
+    "#": 85,
+    "position": "CB",
+    "name": "Jaylen Bryant",
+    "school": "Indianna",
+    "pos_num": 16,
+    "overall": 73
+  },
+  "86": {
+    "#": 86,
+    "position": "CB",
+    "name": "Nick Miller",
+    "school": "LSU",
+    "pos_num": 16,
+    "overall": 72
+  },
+  "87": {
+    "#": 87,
+    "position": "CB",
+    "name": "Brad Williams",
+    "school": "Iowa State",
+    "pos_num": 16,
+    "overall": 72
+  },
+  "88": {
+    "#": 88,
+    "position": "CB",
+    "name": "Devontae Jackson",
+    "school": "Texas Tech",
+    "pos_num": 16,
+    "overall": 70
+  },
+  "89": {
+    "#": 89,
+    "position": "CB",
+    "name": "Jeylani Brisco",
+    "school": "California",
+    "pos_num": 16,
+    "overall": 70
+  },
+  "90": {
+    "#": 90,
+    "position": "CB",
+    "name": "Tevin Beaumont",
+    "school": "Temple",
+    "pos_num": 16,
+    "overall": 70
+  },
+  "91": {
+    "#": 91,
+    "position": "FS",
+    "name": "Jurdel Mills",
+    "school": "Missouri",
+    "pos_num": 17,
+    "overall": 71
+  },
+  "92": {
+    "#": 92,
+    "position": "FS",
+    "name": "Hunter Munson",
+    "school": "Virginia Tech",
+    "pos_num": 17,
+    "overall": 70
+  },
+  "93": {
+    "#": 93,
+    "position": "SS",
+    "name": "Dillion Rojas",
+    "school": "USF",
+    "pos_num": 18,
+    "overall": 73
+  },
+  "94": {
+    "#": 94,
+    "position": "SS",
+    "name": "Miles Quezada",
+    "school": "Florida State",
+    "pos_num": 18,
+    "overall": 71
+  },
+  "95": {
+    "#": 95,
+    "position": "SS",
+    "name": "Kijaaraji Njiruki",
+    "school": "Arizona State",
+    "pos_num": 18,
+    "overall": 70
+  },
+  "96": {
+    "#": 96,
+    "position": "SS",
+    "name": "Nick Hackett",
+    "school": "Rutgers",
+    "pos_num": 18,
+    "overall": 70
+  }
+}

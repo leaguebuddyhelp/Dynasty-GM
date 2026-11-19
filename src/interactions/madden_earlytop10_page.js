@@ -1,6 +1,6 @@
 import { buildEarlyTop10View } from '../madden/early_top_10.js';
 
-export const customId = /^madden_earlytop10_(?:class|(?:(cus02)_)?page_([0-9]+))$/;
+export const customId = /^madden_earlytop10_(?:class|(?:(cus02|cus03)_)?page_([0-9]+))$/;
 
 export async function execute(interaction) {
   const match = customId.exec(interaction.customId);
@@ -9,7 +9,7 @@ export async function execute(interaction) {
   if (classSelection ? !interaction.isStringSelectMenu() : !interaction.isButton()) return;
   await interaction.deferUpdate();
   try {
-    const classId = classSelection ? interaction.values[0] : match[1] === 'cus02' ? 'CUS02' : 'CUS01';
+    const classId = classSelection ? interaction.values[0] : match[1] ? match[1].toUpperCase() : 'CUS01';
     await interaction.editReply(buildEarlyTop10View(classSelection ? 0 : Number(match[2]), classId));
   } catch (error) {
     console.warn('[earlytop10] Unable to open page:', error.message);

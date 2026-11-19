@@ -1,0 +1,123 @@
+[
+  {
+    "id": "1",
+    "name": "Nick Boyle",
+    "position": "QB",
+    "school": "Michigan",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Nick Boyle, a fictional 22-year-old adult male QB football player, white, white, brown eyes, brown hair in short fade style, light neatly groomed facial hair. Athletic 6'1\", 208-pound QB build; wearing a Michigan jersey #10 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/nick-boyle-class03-v2.png"
+  },
+  {
+    "id": "2",
+    "name": "Dannie Montano",
+    "position": "QB",
+    "school": "North Dakota State",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Dannie Montano, a fictional 22-year-old adult male QB football player, latin/black, olive/white, brown eyes, brown hair in med short hair style, neatly groomed medium facial hair. Athletic 6'2\", 220-pound QB build; wearing a North Dakota State jersey #10 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/dannie-montano-class03-v2.png"
+  },
+  {
+    "id": "3",
+    "name": "Dashaud Smith",
+    "position": "QB",
+    "school": "Georgia",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Dashaud Smith, a fictional 22-year-old adult male QB football player, african american, dark skin, brown eyes, black hair in med messy afro faded style, neatly groomed medium facial hair, softly rounded chubby face, athletic quarterback build with proportional shoulders rather than a lineman physique. Athletic 6'5\", 258-pound QB build; wearing a Georgia jersey #14 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/dashaud-smith-class03-v3.png",
+    "initialFile": "portraits/dashaud-smith-class03-v2.png",
+    "editPrompt": "Edit the initial portrait to give Dashaud a visibly leaner athletic quarterback silhouette: noticeably narrower shoulders, slimmer upper arms and neck, smaller quarterback-style shoulder pads, and a proportionate tall strong quarterback build, not the massive bulk of an offensive or defensive lineman. Preserve his recognizable face with softly rounded cheeks, dark skin, brown eyes, black medium messy faded afro, neatly groomed medium facial hair, red Georgia jersey with clearly visible white number 14, centered photo style and genuinely transparent background. No text or watermark."
+  },
+  {
+    "id": "4",
+    "name": "Josiah Freeman",
+    "position": "QB",
+    "school": "UCF",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Josiah Freeman, a fictional 22-year-old adult male QB football player, african american, med brown skin, brown eyes, brown hair in high top fade style, clean shaven. Athletic 6'5\", 230-pound QB build; wearing a UCF jersey #5 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/josiah-freeman-class03-v2.png"
+  },
+  {
+    "id": "5",
+    "name": "Tucker Wilson",
+    "position": "QB",
+    "school": "Memphis",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Tucker Wilson, a fictional 23-year-old adult male QB football player, white, white, brown eyes, brown hair in short/med straight hair style, light neatly groomed facial hair. Athletic 6'1\", 207-pound QB build; wearing a Memphis jersey #1 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/tucker-wilson-class03-v2.png"
+  },
+  {
+    "id": "11",
+    "name": "Jaylen Scruggs",
+    "position": "WR",
+    "school": "Alabama",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Jaylen Scruggs, a fictional 21-year-old adult male WR football player, african american, light skin black, hazel eyes, brown hair in med dread designed style, neatly groomed medium facial hair. Athletic 5'11\", 193-pound WR build; wearing a Alabama jersey #10 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/jaylen-scruggs-class03-v2.png"
+  },
+  {
+    "id": "12",
+    "name": "Tyler Smit",
+    "position": "WR",
+    "school": "Indiana",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Tyler Smit, a fictional 22-year-old adult male WR football player, white, white, blue eyes, brown hair in med curly hair style, light neatly groomed facial hair. Athletic 6'4\", 199-pound WR build; wearing a Indiana jersey #84 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/tyler-smit-class03-v2.png"
+  },
+  {
+    "id": "13",
+    "name": "Amani Okonkwo",
+    "position": "WR",
+    "school": "Ole Miss",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Amani Okonkwo, a fictional 21-year-old adult male WR football player, african american, dark skin, brown eyes, black hair in high top fade style, goatee. Athletic 5'11\", 220-pound WR build; wearing a Ole Miss jersey #1 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/amani-okonkwo-class03-v2.png"
+  },
+  {
+    "id": "37",
+    "name": "Trey Sternberg",
+    "position": "RG",
+    "school": "Iowa",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Trey Sternberg, a fictional 22-year-old adult male RG football player, white, white, blue eyes, blonde hair in short/med straight hair style, goatee. Athletic 6'5\", 318-pound RG build; wearing a Iowa jersey #79 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/trey-sternberg-class03-v2.png"
+  },
+  {
+    "id": "46",
+    "name": "Dylan Smith",
+    "position": "LEDG",
+    "school": "Georgia",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Dylan Smith, a fictional 21-year-old adult male LEDG football player, african american, med brown skin, brown eyes, brown hair in med afro faded style, light neatly groomed facial hair. Athletic 6'5\", 280-pound LEDG build; wearing a Georgia jersey #5 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/dylan-smith-class03-v2.png"
+  },
+  {
+    "id": "47",
+    "name": "Ramello Williams",
+    "position": "REDG",
+    "school": "Texas",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Ramello Williams, a fictional 21-year-old adult male REDG football player, african american, med brown skin, brown eyes, black hair in long afro faded style, neatly groomed medium facial hair. Athletic 6'3\", 253-pound REDG build; wearing a Texas jersey #99 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/ramello-williams-class03-v3.png",
+    "initialFile": "portraits/ramello-williams-class03-v2.png",
+    "editPrompt": "Correct his jersey numbers so the front and both shoulders all display exactly 99, two numeral nines. Preserve his face, hairstyle, body, Texas uniform colors and branding, pose, framing, lighting, and genuinely transparent background. Do not alter anything else. No captions or watermark."
+  },
+  {
+    "id": "75",
+    "name": "Micah Howard",
+    "position": "CB",
+    "school": "Stanford",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Micah Howard, a fictional 21-year-old adult male CB football player, african american, light skin, brown eyes, brown hair in short fade afro style, goatee. Athletic 6'2\", 199-pound CB build; wearing a Stanford jersey #12 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/micah-howard-class03-v2.png"
+  },
+  {
+    "id": "76",
+    "name": "Tremon Henderson II",
+    "position": "CB",
+    "school": "Clemson",
+    "mode": "built-in imagegen",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Tremon Henderson II, a fictional 21-year-old adult male CB football player, african american, med brown skin, brown eyes, black hair in med texture tapered style, clean shaven. Athletic 6'2\", 203-pound CB build; wearing a Clemson jersey #2 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark.",
+    "file": "portraits/tremon-henderson-ii-class03-v2.png"
+  }
+]
