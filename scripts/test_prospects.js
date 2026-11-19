@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import sharp from 'sharp';
-import { buildProspectView, formatProspectStatistics, loadProspects, PROSPECT_POSITIONS } from '../src/madden/prospects.js';
+import { buildProspectView, formatProspectStatistics, loadProspects, PROSPECT_POSITIONS, schoolLabel } from '../src/madden/prospects.js';
 import { execute as commandExecute } from '../src/madden/coach/prospects.js';
 import { execute as menuExecute, customId } from '../src/interactions/madden_prospects.js';
 import { loadSoloCommands, loadSoloInteractionHandlers } from '../src/leaguebuddy/solo_mode.js';
@@ -60,6 +60,13 @@ const expectedSchoolEmojis = {
   '29': '1572342759443144734', '47': '1572332488435572916', '50': '1572339527538843729',
   '90': '1572347588676423750',
 };
+const newlyAddedSchoolEmojis = {
+  Clemson: '1573014169631072276', Tennessee: '1573014167361945683', Syracuse: '1573014165646479561',
+  Michigan: '1573014722348056636', Georgia: '1573014721156743210', Memphis: '1573014719563038780',
+  'Ole Miss': '1573014717755166851', 'Georgia Tech': '1573014716639608954', Washington: '1573014914828869642',
+};
+for (const [school, id] of Object.entries(newlyAddedSchoolEmojis)) assert.ok(schoolLabel(school).includes(`:${id}>`));
+assert.equal(schoolLabel('Ole MIss'), '<:olemiss:1573014717755166851> Ole Miss');
 for (const player of players) {
   assert.ok(fs.existsSync(player.portrait), `Missing portrait: ${player.name}`);
   const portrait = sharp(player.portrait);
@@ -114,7 +121,7 @@ for (const player of players) {
   assert.ok(statsField.value.length < 1024);
   assert.match(embed.footer.text, /Simulated college statistics/);
   assert.doesNotMatch(JSON.stringify(embed), /fictional/i);
-  const emojiId = expectedSchoolEmojis[player.id];
+  const emojiId = expectedSchoolEmojis[player.id] || newlyAddedSchoolEmojis[player.school];
   const schoolField = embed.fields.find((field) => field.name === 'School').value;
   const optionEmoji = view.components[1].toJSON().components[0].options.find((option) => option.value === player.id).emoji;
   if (emojiId) {

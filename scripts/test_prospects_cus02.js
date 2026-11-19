@@ -34,6 +34,8 @@ for (const player of players) {
 }
 assert.equal(loadProspects()[0].name, 'J.T. Rhoads');
 assert.equal(players[0].name, 'Ameer Young');
+assert.match(buildProspectView({ classId: 'CUS02', position: 'QB', playerId: '1' }).embeds[0].toJSON().fields.find((field) => field.name === 'School').value, /<:clemson:1573014169631072276>/);
+assert.equal(buildProspectView({ classId: 'CUS02', position: 'QB', playerId: '31' }).components[1].toJSON().components[0].options.find((option) => option.value === '31').emoji.id, '1573014165646479561');
 assert.doesNotMatch(buildProspectView({ classId: 'CUS02', position: 'HB', playerId: '19' }).embeds[0].toJSON().fields.find((field) => field.name === 'Age / Build').value, /undefined/);
 assert.equal(buildProspectView({ classId: 'CUS02', position: 'WR' }).components[1].toJSON().components[0].options.length, 7);
 assert.equal(buildProspectView({ classId: 'CUS02', position: 'FB' }).components.length, 2);

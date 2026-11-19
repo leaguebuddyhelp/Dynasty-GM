@@ -6,6 +6,7 @@ import { customId, execute } from '../src/interactions/madden_earlytop10_page.js
 
 const board = loadEarlyTop10('CUS02');
 assert.equal(board.size, 10);
+assert.match(buildEarlyTop10View(0, 'CUS02').embeds[0].toJSON().fields.find((field) => field.name === 'School / Year').value, /<:washington:1573014914828869642>/);
 assert.throws(() => loadEarlyTop10('__proto__'), /Unknown early top ten class/);
 for (let page = 0; page < 10; page++) {
   const player = board.get(page + 1);

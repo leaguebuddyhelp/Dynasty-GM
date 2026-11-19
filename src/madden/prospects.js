@@ -37,10 +37,20 @@ const schoolEmojis = {
   'South Carolina': { name: 'southcarolina', id: '1572347588676423750' },
   LSU: { name: 'lsu', id: '1572347587690766508' },
   Oregon: { name: 'oregon', id: '1572347586486993047' },
+  Clemson: { name: 'clemson', id: '1573014169631072276' },
+  Tennessee: { name: 'tennessee', id: '1573014167361945683' },
+  Syracuse: { name: 'syracuse', id: '1573014165646479561' },
+  Michigan: { name: 'michigan', id: '1573014722348056636' },
+  Georgia: { name: 'georgia', id: '1573014721156743210' },
+  Memphis: { name: 'memphis', id: '1573014719563038780' },
+  'Ole Miss': { name: 'olemiss', id: '1573014717755166851' },
+  'Georgia Tech': { name: 'georgiatech', id: '1573014716639608954' },
+  Washington: { name: 'washington', id: '1573014914828869642' },
 };
-function schoolLabel(school) {
-  const emoji = schoolEmojis[school];
-  return emoji ? `<:${emoji.name}:${emoji.id}> ${school}` : school;
+export function schoolLabel(school) {
+  const display = schoolAliases[school] || school;
+  const emoji = schoolEmojis[display];
+  return emoji ? `<:${emoji.name}:${emoji.id}> ${display}` : display;
 }
 
 const number = (value) => Number(value).toLocaleString('en-US');

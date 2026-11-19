@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
-import { loadProspects } from './prospects.js';
+import { loadProspects, schoolLabel } from './prospects.js';
 
 const classes = Object.freeze({
   CUS01: { source: 'Madden - CUS01 - Early Top 10.json', folder: 'cus_01' },
@@ -40,7 +40,7 @@ export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
       .setDescription(player.scoutingBio || 'Scouting report coming soon.')
       .addFields(
         { name: 'Position', value: player.position, inline: true },
-        { name: 'School / Year', value: `${player.school} · ${player.year}`, inline: true },
+        { name: 'School / Year', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
         { name: 'Build', value: `${player.height} · ${player.weight} lb`, inline: true },
       );
     // Match the player identity, not the early rank: the final board uses a different order.
