@@ -22,6 +22,22 @@
         "rushingTD": 3
       }
     },
+    "2": {
+      "name": "Michael Oluwafemi",
+      "bio": "Oluwafemi makes the extraordinary look like part of the weekly routine. Washington’s generational receiver turned his final college season into a showcase, overwhelming defenses with production and playmaking. His complete skill set has evaluators projecting a top-tier NFL receiver from day one.",
+      "portrait": "michael-oluwafemi-early-transparent.png",
+      "statistics": {
+        "position": "WR",
+        "fictional": true,
+        "games": 13,
+        "receptions": 112,
+        "targets": 153,
+        "receivingYards": 1812,
+        "receivingTD": 19,
+        "routesRun": 423,
+        "yardsAfterCatch": 602
+      }
+    },
     "13": {
       "name": "LaMarian Johnson",
       "bio": "Johnson makes the first defender miss, then has the balance to keep the run alive. South Carolina’s powerful back combines vision and athleticism with elite tackle-breaking ability, creating the kind of production that can make a ground game run through him.",
@@ -94,6 +110,22 @@
         "missedTacklesForced": 51
       }
     },
+    "28": {
+      "name": "Jordan Ruiz",
+      "bio": "Ruiz can make a crowded middle of the field feel wide open. Penn State’s polished slot receiver pairs elite route running with soft hands, giving his quarterback a reliable target and an offense a prospect capable of growing into a dangerous second option.",
+      "portrait": "jordan-ruiz-transparent.png",
+      "statistics": {
+        "position": "WR",
+        "fictional": true,
+        "games": 13,
+        "receptions": 83,
+        "targets": 111,
+        "receivingYards": 1087,
+        "receivingTD": 8,
+        "routesRun": 401,
+        "yardsAfterCatch": 411
+      }
+    },
     "31": {
       "name": "Maxx DiMarco",
       "bio": "DiMarco brings a measured approach and enough mobility to stress a defense beyond the pocket. The Syracuse quarterback protected the ball while producing modest passing totals; his running threat and capable arm give teams a foundation for a professional role.",
@@ -111,6 +143,38 @@
         "sackYards": 141,
         "rushingYards": 622,
         "rushingTD": 7
+      }
+    },
+    "34": {
+      "name": "Dillan Jones",
+      "bio": "The ball rarely escapes Jones once it reaches his hands. The Illinois transfer brings the best hands in the class to Oregon, along with good speed and underrated playmaking ability. His blend of reliability and movement gives a passing game room to get creative.",
+      "portrait": "dillan-jones-transparent.png",
+      "statistics": {
+        "position": "WR",
+        "fictional": true,
+        "games": 13,
+        "receptions": 76,
+        "targets": 99,
+        "receivingYards": 1011,
+        "receivingTD": 8,
+        "routesRun": 393,
+        "yardsAfterCatch": 368
+      }
+    },
+    "37": {
+      "name": "Johnathan Ragland",
+      "bio": "Ragland has the athletic ability to make his college production look like only part of the story. The highly recruited Miami receiver offers a lean frame and promising movement skills; his projection rests on converting that talent into more consistent professional production.",
+      "portrait": "johnathan-ragland-transparent.png",
+      "statistics": {
+        "position": "WR",
+        "fictional": true,
+        "games": 13,
+        "receptions": 43,
+        "targets": 75,
+        "receivingYards": 591,
+        "receivingTD": 4,
+        "routesRun": 342,
+        "yardsAfterCatch": 199
       }
     },
     "38": {
@@ -132,6 +196,22 @@
         "rushingTD": 3
       }
     },
+    "40": {
+      "name": "Marquavious Keys",
+      "bio": "Keys needs only a sliver of space to make a defender miss. Oklahoma’s compact receiver combines elite speed with a devastating juke, turning touches into open-field threats. His smaller catch radius makes accurate placement important, but the payoff arrives once the ball is secured.",
+      "portrait": "marquavious-keys-transparent.png",
+      "statistics": {
+        "position": "WR",
+        "fictional": true,
+        "games": 13,
+        "receptions": 59,
+        "targets": 85,
+        "receivingYards": 872,
+        "receivingTD": 7,
+        "routesRun": 350,
+        "yardsAfterCatch": 464
+      }
+    },
     "42": {
       "name": "Zion Ellis",
       "bio": "Ellis arrives with plenty of football still ahead of him. The young Georgia back has relatively little wear from a limited workload and brings elite talent in a smaller package, giving an offense an exciting foundation to develop in its backfield.",
@@ -148,6 +228,22 @@
         "receivingTD": 1,
         "rushingYardsAfterContact": 372,
         "missedTacklesForced": 40
+      }
+    },
+    "52": {
+      "name": "Isaiah Abraham-Jenkins",
+      "bio": "Inside the red zone, Abraham-Jenkins gives his quarterback a target who can rise above the crowd. Michigan’s big receiver turned limited yardage into touchdown production and occasional chunk plays. His size and downfield ability give an offense a clear scoring weapon.",
+      "portrait": "isaiah-abraham-jenkins-transparent.png",
+      "statistics": {
+        "position": "WR",
+        "fictional": true,
+        "games": 13,
+        "receptions": 39,
+        "targets": 67,
+        "receivingYards": 644,
+        "receivingTD": 10,
+        "routesRun": 320,
+        "yardsAfterCatch": 168
       }
     },
     "61": {
@@ -221,6 +317,22 @@
         "sackYards": 148,
         "rushingYards": 78,
         "rushingTD": 1
+      }
+    },
+    "92": {
+      "name": "Talon Winston IV",
+      "bio": "Winston brings the kind of speed that forces a defense to account for him before the snap. The slight Florida State receiver pairs soft hands with elite agility and can take touches from the backfield, giving an offense several ways to manufacture space.",
+      "portrait": "talon-winston-iv-transparent.png",
+      "statistics": {
+        "position": "WR",
+        "fictional": true,
+        "games": 13,
+        "receptions": 47,
+        "targets": 72,
+        "receivingYards": 608,
+        "receivingTD": 5,
+        "routesRun": 321,
+        "yardsAfterCatch": 303
       }
     },
     "94": {
