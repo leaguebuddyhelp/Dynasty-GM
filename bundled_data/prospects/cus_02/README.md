@@ -4,6 +4,8 @@
 
 `profiles.json` contains authored 35–45-word scouting bios based on each player's source `bio` notes, simulated final college-season statistics, and portrait filenames keyed by source record ID. These statistics are not imported results and do not affect progression or awards. Cards label them as simulated. The source spelling `Ole MIss` displays as Ole Miss.
 
+Simulated totals vary by player and games played. A Heisman mention in the source bio adds the Heisman emoji to a prospect card; the early board only uses its own early notes for that indicator. Stable profile IDs are matched to source records by name and position so source reordering does not reassign portraits.
+
 The 13 transparent portraits were regenerated using built-in imagegen from the CUS02 source appearance details. Individual prompts are recorded in `qb-hb-portrait-prompts.json`; current assets are stored in `portraits/`. Older roster and prompt files record the earlier selected-portrait workflow and are not the class 2 card source.
 
 The receivers include Michael Oluwafemi's existing early-board portrait and six new transparent portraits generated using the prompts in `wr-portrait-prompts.json`.

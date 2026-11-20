@@ -9,7 +9,7 @@
     "pos_num": 1,
     "overall": 73,
     "dev_trait": 2,
-    "archetype": "strong arm",
+    "archetype": "Strong Arm",
     "height": "6'3\"",
     "weight": 230,
     "jersey": "#9",
@@ -23,7 +23,7 @@
     "hair_color": "brown",
     "facial_hair": "light/clean",
     "features": "pock marks/heavy achne",
-    "bio": "transfered after starring at missouri, took over a clemson teams, 5 years in college, great tape"
+    "bio": "(heisman) transfered after starring at missouri, took over a clemson teams, 5 years in college, great tape"
   },
   "2": {
     "#": 2,
@@ -669,7 +669,7 @@
     "pos_num": 1,
     "overall": 70,
     "dev_trait": 0,
-    "archetype": "scrambler",
+    "archetype": "Scrambler",
     "height": "6'3\"",
     "weight": 225,
     "jersey": "#12",
@@ -1706,7 +1706,7 @@
     "pos_num": 1,
     "overall": 69,
     "dev_trait": 0,
-    "archetype": "field general",
+    "archetype": "Field General",
     "height": "6'3\"",
     "weight": 220,
     "jersey": "#12",

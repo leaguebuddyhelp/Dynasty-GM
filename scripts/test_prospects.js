@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import sharp from 'sharp';
-import { buildProspectView, formatProspectStatistics, loadProspects, PROSPECT_POSITIONS, schoolLabel } from '../src/madden/prospects.js';
+import { buildProspectView, formatProspectStatistics, heismanBadge, loadProspects, PROSPECT_POSITIONS, schoolLabel } from '../src/madden/prospects.js';
 import { execute as commandExecute } from '../src/madden/coach/prospects.js';
 import { execute as menuExecute, customId } from '../src/interactions/madden_prospects.js';
 import { loadSoloCommands, loadSoloInteractionHandlers } from '../src/leaguebuddy/solo_mode.js';
 
 const players = loadProspects();
 assert.equal(players.length, 96);
+assert.equal(new Set(players.map((p) => p.statistics.games)).size >= 4, true);
 assert.equal(PROSPECT_POSITIONS.length, 21);
 const olIds = ['8', '10', '15', '19', '20', '28', '37', '49', '60', '65', '71', '73', '76', '77', '79', '93'];
 const dlIds = ['3', '9', '25', '27', '31', '35', '36', '38', '39', '41', '45', '46', '54', '55', '62', '70', '72', '75', '80', '95', '96'];
@@ -36,6 +37,12 @@ for (const [position, count] of Object.entries({ LT: 4, LG: 2, C: 2, RG: 2, RT: 
 assert.ok(buildProspectView({ position: 'REDG' }).embeds[0].toJSON().description.includes('Wisconsin'));
 assert.equal(formatProspectStatistics(null), null);
 assert.equal(formatProspectStatistics({ fictional: false }), null);
+assert.equal(heismanBadge('(Heisman finalist)'), '<:heisman:1573390983457022102>');
+assert.equal(heismanBadge('No award note'), '');
+for (const [position, key] of [['QB', 'passingYards'], ['HB', 'rushingYards'], ['WR', 'receivingYards'], ['TE', 'receivingYards']]) {
+  const values = players.filter((player) => player.position === position).map((player) => player.statistics[key]);
+  assert.ok(values.some((value, index) => index > 0 && value > values[index - 1]), `${position} totals should not simply descend by board rank`);
+}
 const expectedSchoolEmojis = {
   '1': '1572332490356555836', '2': '1572332488435572916', '6': '1572332489186480169',
   '14': '1572332487613354036', '56': '1572332485675847862', '63': '1572332486804119643',
@@ -89,7 +96,10 @@ for (const player of players) {
     const fractionalSack = dlIds.includes(player.id) && key === 'sacks';
     assert.ok(Number.isInteger(fractionalSack ? value * 2 : value) && value >= 0);
   }
-  if (stats.position === 'QB') assert.ok(stats.completions <= stats.attempts && stats.passingTD + stats.interceptions <= stats.attempts);
+  if (stats.position === 'QB') {
+    assert.ok(stats.completions <= stats.attempts && stats.passingTD + stats.interceptions <= stats.attempts);
+    assert.ok(stats.attempts / stats.games >= 12 && stats.attempts / stats.games <= 55);
+  }
   if (stats.position === 'WR' || stats.position === 'TE') {
     assert.ok(stats.receptions <= stats.targets && stats.targets <= stats.routesRun);
     if (stats.yardsAfterCatch !== undefined) assert.ok(stats.yardsAfterCatch <= stats.receivingYards);
@@ -98,6 +108,7 @@ for (const player of players) {
     if (stats.pressuresAllowed !== undefined) assert.ok(stats.pressuresAllowed <= stats.passBlockSnaps);
   }
   if (stats.rushingYardsAfterContact !== undefined) assert.ok(stats.rushingYardsAfterContact <= stats.rushingYards);
+  if (stats.position === 'HB') assert.ok(stats.carries / stats.games <= 28);
   if (olIds.includes(player.id)) {
     assert.equal(stats.offensiveSnaps, stats.passBlockSnaps + stats.runBlockSnaps);
     assert.equal(stats.pressuresAllowed, stats.sacksAllowed + stats.hitsAllowed + stats.hurriesAllowed);
@@ -139,26 +150,19 @@ for (const player of players) {
   assert.doesNotMatch(JSON.stringify(embed), /archetype/i);
   assert.equal(view.components[1].toJSON().components[0].options.filter((p) => p.default).length, 1);
 }
-assert.match(formatProspectStatistics(players.find((p) => p.id === '1').statistics), /69\.5%.*\n.*\n9\.42 yards\/attempt · 9\.86 ANY\/A/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '11').statistics), /3\.23 yards\/route run \(408 routes\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '18').statistics), /3\.45 rushing yards\/carry/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '17').statistics), /662 YD · 7\.52 YD\/REC/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '13').statistics), /3\.02 yards\/route run \(326 routes\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '84').statistics), /154\/196 \(78\.6%\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '84').statistics), /3 on 58 pass-block snaps \(5\.2%\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '8').statistics), /14\/398 pass-block snaps \(3\.5%\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '8').statistics), /329\/388 \(84\.8%\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '93').statistics), /43\/411 pass-block snaps \(10\.5%\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '3').statistics), /14\.5 SACK/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '3').statistics), /61\/342 rushes \(17\.8%\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '39').statistics), /30\/306 run-defense snaps \(9\.8%\)/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '7').statistics), /Coverage: 28\/48 completions · 7 breakups · 4 INT/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '4').statistics), /Coverage: 30\/61 completions · 12 breakups · 5 INT/);
+const qbFixture = { position: 'QB', fictional: true, games: 10, completions: 200, attempts: 300, passingYards: 2400, passingTD: 20, interceptions: 5, sacks: 10, sackYards: 60 };
+assert.match(formatProspectStatistics(qbFixture), /10 G · 200\/300 \(66\.7%\).*\n.*\n8\.00 yards\/attempt · 8\.11 ANY\/A/);
+const wrFixture = { position: 'WR', fictional: true, games: 10, receptions: 50, targets: 100, receivingYards: 800, receivingTD: 6, routesRun: 400 };
+assert.match(formatProspectStatistics(wrFixture), /2\.00 yards\/route run \(400 routes\)/);
+const hbFixture = { position: 'HB', fictional: true, games: 10, carries: 100, rushingYards: 600, rushingTD: 6, receptions: 20, receivingYards: 200, receivingTD: 2, rushingYardsAfterContact: 300 };
+assert.match(formatProspectStatistics(hbFixture), /3\.00 rushing yards\/carry/);
 assert.match(players.find((p) => p.id === '1').bio, /five-star.*called first/i);
 assert.match(players.find((p) => p.id === '7').bio, /former safety.*running backs.*tight ends/i);
 assert.match(players.find((p) => p.id === '47').bio, /captain.*sure tackler/i);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '41').statistics), /12\.5 SACK/);
-assert.match(formatProspectStatistics(players.find((p) => p.id === '48').statistics), /10 TD/);
+assert.match(buildProspectView({ position: 'QB', playerId: '1' }).embeds[0].toJSON().title, /<:heisman:1573390983457022102>/);
+assert.doesNotMatch(buildProspectView({ position: 'QB', playerId: '2' }).embeds[0].toJSON().title, /:heisman:/);
+assert.equal(players.find((p) => p.id === '3').name, 'Cardarion Williams');
+assert.equal(players.find((p) => p.id === '3').rank, 3);
 assert.ok(buildProspectView({ position: 'CB' }).embeds[0].toJSON().description.includes('Western Kentucky'));
 const empty = buildProspectView({ position: 'FB' });
 assert.equal(empty.components.length, 2);
@@ -225,7 +229,7 @@ for (const [id, value, expected] of [
   await menuExecute({ customId: id, values: [value], isStringSelectMenu: () => true,
     deferUpdate: async () => { deferred = true; }, editReply: async (x) => { payload = x; } });
   assert.equal(deferred, true);
-  assert.equal(payload.embeds[0].toJSON().title, expected);
+  assert.equal(payload.embeds[0].toJSON().title, expected === 'J.T. Rhoads · QB' ? `${expected} <:heisman:1573390983457022102>` : expected);
 }
 const commands = await loadSoloCommands();
 assert.ok(commands.has('prospects'));

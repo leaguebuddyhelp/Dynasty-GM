@@ -10,15 +10,15 @@
       "statistics": {
         "position": "QB",
         "fictional": true,
-        "games": 13,
-        "completions": 300,
-        "attempts": 445,
-        "passingYards": 3890,
-        "passingTD": 35,
+        "games": 14,
+        "completions": 320,
+        "attempts": 474,
+        "passingYards": 4102,
+        "passingTD": 36,
         "interceptions": 9,
-        "sacks": 22,
-        "sackYards": 143,
-        "rushingYards": 192,
+        "sacks": 23,
+        "sackYards": 150,
+        "rushingYards": 203,
         "rushingTD": 3
       }
     },
@@ -29,13 +29,13 @@
       "statistics": {
         "position": "WR",
         "fictional": true,
-        "games": 13,
-        "receptions": 112,
-        "targets": 153,
-        "receivingYards": 1812,
-        "receivingTD": 19,
-        "routesRun": 423,
-        "yardsAfterCatch": 602
+        "games": 14,
+        "receptions": 104,
+        "targets": 140,
+        "receivingYards": 1598,
+        "receivingTD": 17,
+        "routesRun": 424,
+        "yardsAfterCatch": 531
       }
     },
     "13": {
@@ -45,15 +45,15 @@
       "statistics": {
         "position": "HB",
         "fictional": true,
-        "games": 13,
-        "carries": 245,
-        "rushingYards": 1578,
-        "rushingTD": 17,
-        "receptions": 24,
-        "receivingYards": 239,
-        "receivingTD": 2,
-        "rushingYardsAfterContact": 875,
-        "missedTacklesForced": 79
+        "games": 11,
+        "carries": 174,
+        "rushingYards": 1076,
+        "rushingTD": 12,
+        "receptions": 20,
+        "receivingYards": 203,
+        "receivingTD": 1,
+        "rushingYardsAfterContact": 597,
+        "missedTacklesForced": 56
       }
     },
     "15": {
@@ -64,14 +64,14 @@
         "position": "HB",
         "fictional": true,
         "games": 13,
-        "carries": 226,
-        "rushingYards": 1435,
-        "rushingTD": 16,
-        "receptions": 19,
-        "receivingYards": 179,
+        "carries": 235,
+        "rushingYards": 1477,
+        "rushingTD": 17,
+        "receptions": 17,
+        "receivingYards": 162,
         "receivingTD": 1,
-        "rushingYardsAfterContact": 824,
-        "missedTacklesForced": 72
+        "rushingYardsAfterContact": 848,
+        "missedTacklesForced": 75
       }
     },
     "19": {
@@ -82,14 +82,14 @@
         "position": "HB",
         "fictional": true,
         "games": 13,
-        "carries": 186,
-        "rushingYards": 1191,
-        "rushingTD": 11,
-        "receptions": 42,
-        "receivingYards": 438,
+        "carries": 188,
+        "rushingYards": 1156,
+        "rushingTD": 10,
+        "receptions": 41,
+        "receivingYards": 432,
         "receivingTD": 3,
-        "rushingYardsAfterContact": 550,
-        "missedTacklesForced": 58
+        "rushingYardsAfterContact": 534,
+        "missedTacklesForced": 59
       }
     },
     "25": {
@@ -99,15 +99,15 @@
       "statistics": {
         "position": "HB",
         "fictional": true,
-        "games": 13,
-        "carries": 158,
-        "rushingYards": 987,
-        "rushingTD": 10,
-        "receptions": 23,
-        "receivingYards": 225,
+        "games": 10,
+        "carries": 122,
+        "rushingYards": 762,
+        "rushingTD": 8,
+        "receptions": 18,
+        "receivingYards": 178,
         "receivingTD": 2,
-        "rushingYardsAfterContact": 478,
-        "missedTacklesForced": 51
+        "rushingYardsAfterContact": 369,
+        "missedTacklesForced": 39
       }
     },
     "28": {
@@ -117,13 +117,13 @@
       "statistics": {
         "position": "WR",
         "fictional": true,
-        "games": 13,
-        "receptions": 83,
-        "targets": 111,
-        "receivingYards": 1087,
+        "games": 12,
+        "receptions": 94,
+        "targets": 123,
+        "receivingYards": 1317,
         "receivingTD": 8,
-        "routesRun": 401,
-        "yardsAfterCatch": 411
+        "routesRun": 348,
+        "yardsAfterCatch": 498
       }
     },
     "31": {
@@ -133,15 +133,15 @@
       "statistics": {
         "position": "QB",
         "fictional": true,
-        "games": 13,
-        "completions": 228,
-        "attempts": 363,
-        "passingYards": 2704,
-        "passingTD": 20,
+        "games": 11,
+        "completions": 208,
+        "attempts": 338,
+        "passingYards": 2543,
+        "passingTD": 17,
         "interceptions": 5,
-        "sacks": 22,
-        "sackYards": 141,
-        "rushingYards": 622,
+        "sacks": 20,
+        "sackYards": 128,
+        "rushingYards": 585,
         "rushingTD": 7
       }
     },
@@ -152,13 +152,13 @@
       "statistics": {
         "position": "TE",
         "fictional": true,
-        "games": 13,
-        "receptions": 61,
-        "targets": 84,
-        "receivingYards": 853,
-        "receivingTD": 8,
-        "routesRun": 335,
-        "yardsAfterCatch": 294
+        "games": 15,
+        "receptions": 64,
+        "targets": 89,
+        "receivingYards": 922,
+        "receivingTD": 9,
+        "routesRun": 383,
+        "yardsAfterCatch": 318
       }
     },
     "34": {
@@ -168,13 +168,13 @@
       "statistics": {
         "position": "WR",
         "fictional": true,
-        "games": 13,
-        "receptions": 76,
-        "targets": 99,
-        "receivingYards": 1011,
-        "receivingTD": 8,
-        "routesRun": 393,
-        "yardsAfterCatch": 368
+        "games": 14,
+        "receptions": 96,
+        "targets": 123,
+        "receivingYards": 1226,
+        "receivingTD": 9,
+        "routesRun": 440,
+        "yardsAfterCatch": 446
       }
     },
     "37": {
@@ -185,12 +185,12 @@
         "position": "WR",
         "fictional": true,
         "games": 13,
-        "receptions": 43,
-        "targets": 75,
-        "receivingYards": 591,
+        "receptions": 42,
+        "targets": 74,
+        "receivingYards": 537,
         "receivingTD": 4,
-        "routesRun": 342,
-        "yardsAfterCatch": 199
+        "routesRun": 318,
+        "yardsAfterCatch": 181
       }
     },
     "38": {
@@ -200,16 +200,16 @@
       "statistics": {
         "position": "QB",
         "fictional": true,
-        "games": 13,
-        "completions": 233,
-        "attempts": 392,
-        "passingYards": 3018,
-        "passingTD": 24,
-        "interceptions": 13,
-        "sacks": 25,
-        "sackYards": 165,
-        "rushingYards": 244,
-        "rushingTD": 3
+        "games": 14,
+        "completions": 292,
+        "attempts": 481,
+        "passingYards": 3888,
+        "passingTD": 32,
+        "interceptions": 14,
+        "sacks": 31,
+        "sackYards": 205,
+        "rushingYards": 315,
+        "rushingTD": 4
       }
     },
     "40": {
@@ -220,12 +220,12 @@
         "position": "WR",
         "fictional": true,
         "games": 13,
-        "receptions": 59,
-        "targets": 85,
-        "receivingYards": 872,
-        "receivingTD": 7,
-        "routesRun": 350,
-        "yardsAfterCatch": 464
+        "receptions": 70,
+        "targets": 102,
+        "receivingYards": 1097,
+        "receivingTD": 8,
+        "routesRun": 354,
+        "yardsAfterCatch": 584
       }
     },
     "42": {
@@ -235,15 +235,15 @@
       "statistics": {
         "position": "HB",
         "fictional": true,
-        "games": 13,
-        "carries": 131,
-        "rushingYards": 828,
-        "rushingTD": 8,
-        "receptions": 22,
-        "receivingYards": 208,
+        "games": 10,
+        "carries": 104,
+        "rushingYards": 697,
+        "rushingTD": 6,
+        "receptions": 18,
+        "receivingYards": 170,
         "receivingTD": 1,
-        "rushingYardsAfterContact": 372,
-        "missedTacklesForced": 40
+        "rushingYardsAfterContact": 313,
+        "missedTacklesForced": 32
       }
     },
     "44": {
@@ -253,13 +253,13 @@
       "statistics": {
         "position": "TE",
         "fictional": true,
-        "games": 13,
-        "receptions": 58,
-        "targets": 76,
-        "receivingYards": 725,
-        "receivingTD": 6,
-        "routesRun": 325,
-        "yardsAfterCatch": 239
+        "games": 9,
+        "receptions": 33,
+        "targets": 45,
+        "receivingYards": 396,
+        "receivingTD": 4,
+        "routesRun": 230,
+        "yardsAfterCatch": 131
       }
     },
     "45": {
@@ -269,13 +269,13 @@
       "statistics": {
         "position": "TE",
         "fictional": true,
-        "games": 13,
-        "receptions": 58,
-        "targets": 80,
-        "receivingYards": 934,
-        "receivingTD": 7,
-        "routesRun": 342,
-        "yardsAfterCatch": 346
+        "games": 14,
+        "receptions": 55,
+        "targets": 74,
+        "receivingYards": 939,
+        "receivingTD": 6,
+        "routesRun": 361,
+        "yardsAfterCatch": 348
       }
     },
     "50": {
@@ -285,13 +285,13 @@
       "statistics": {
         "position": "TE",
         "fictional": true,
-        "games": 13,
-        "receptions": 54,
-        "targets": 75,
-        "receivingYards": 648,
-        "receivingTD": 6,
-        "routesRun": 320,
-        "yardsAfterCatch": 221
+        "games": 10,
+        "receptions": 36,
+        "targets": 50,
+        "receivingYards": 458,
+        "receivingTD": 4,
+        "routesRun": 251,
+        "yardsAfterCatch": 156
       }
     },
     "52": {
@@ -301,13 +301,13 @@
       "statistics": {
         "position": "WR",
         "fictional": true,
-        "games": 13,
-        "receptions": 39,
-        "targets": 67,
-        "receivingYards": 644,
-        "receivingTD": 10,
-        "routesRun": 320,
-        "yardsAfterCatch": 168
+        "games": 12,
+        "receptions": 32,
+        "targets": 55,
+        "receivingYards": 539,
+        "receivingTD": 7,
+        "routesRun": 269,
+        "yardsAfterCatch": 141
       }
     },
     "61": {
@@ -318,14 +318,14 @@
         "position": "HB",
         "fictional": true,
         "games": 13,
-        "carries": 184,
-        "rushingYards": 1055,
+        "carries": 199,
+        "rushingYards": 1130,
         "rushingTD": 10,
-        "receptions": 15,
-        "receivingYards": 126,
+        "receptions": 14,
+        "receivingYards": 113,
         "receivingTD": 1,
-        "rushingYardsAfterContact": 568,
-        "missedTacklesForced": 48
+        "rushingYardsAfterContact": 608,
+        "missedTacklesForced": 52
       }
     },
     "64": {
@@ -335,13 +335,13 @@
       "statistics": {
         "position": "TE",
         "fictional": true,
-        "games": 13,
-        "receptions": 48,
-        "targets": 71,
-        "receivingYards": 754,
-        "receivingTD": 7,
-        "routesRun": 317,
-        "yardsAfterCatch": 300
+        "games": 12,
+        "receptions": 47,
+        "targets": 70,
+        "receivingYards": 687,
+        "receivingTD": 8,
+        "routesRun": 316,
+        "yardsAfterCatch": 273
       }
     },
     "76": {
@@ -351,15 +351,15 @@
       "statistics": {
         "position": "HB",
         "fictional": true,
-        "games": 13,
-        "carries": 138,
-        "rushingYards": 698,
+        "games": 15,
+        "carries": 148,
+        "rushingYards": 741,
         "rushingTD": 6,
-        "receptions": 51,
-        "receivingYards": 493,
+        "receptions": 64,
+        "receivingYards": 606,
         "receivingTD": 4,
-        "rushingYardsAfterContact": 310,
-        "missedTacklesForced": 35
+        "rushingYardsAfterContact": 329,
+        "missedTacklesForced": 38
       }
     },
     "80": {
@@ -369,13 +369,13 @@
       "statistics": {
         "position": "TE",
         "fictional": true,
-        "games": 12,
-        "receptions": 59,
-        "targets": 80,
-        "receivingYards": 721,
-        "receivingTD": 6,
-        "routesRun": 315,
-        "yardsAfterCatch": 202
+        "games": 14,
+        "receptions": 69,
+        "targets": 97,
+        "receivingYards": 868,
+        "receivingTD": 7,
+        "routesRun": 345,
+        "yardsAfterCatch": 243
       }
     },
     "82": {
@@ -385,16 +385,16 @@
       "statistics": {
         "position": "TE",
         "fictional": true,
-        "games": 13,
-        "receptions": 38,
-        "targets": 55,
-        "receivingYards": 441,
+        "games": 12,
+        "receptions": 39,
+        "targets": 58,
+        "receivingYards": 466,
         "receivingTD": 4,
-        "routesRun": 242,
-        "yardsAfterCatch": 131,
-        "runBlockWins": 190,
-        "runBlockSnaps": 245,
-        "passBlockSnaps": 65,
+        "routesRun": 241,
+        "yardsAfterCatch": 138,
+        "runBlockWins": 175,
+        "runBlockSnaps": 226,
+        "passBlockSnaps": 60,
         "pressuresAllowed": 4
       }
     },
@@ -406,14 +406,14 @@
         "position": "HB",
         "fictional": true,
         "games": 13,
-        "carries": 157,
-        "rushingYards": 913,
-        "rushingTD": 8,
-        "receptions": 39,
-        "receivingYards": 406,
-        "receivingTD": 3,
-        "rushingYardsAfterContact": 412,
-        "missedTacklesForced": 44
+        "carries": 190,
+        "rushingYards": 1149,
+        "rushingTD": 9,
+        "receptions": 40,
+        "receivingYards": 408,
+        "receivingTD": 4,
+        "rushingYardsAfterContact": 518,
+        "missedTacklesForced": 53
       }
     },
     "91": {
@@ -423,15 +423,15 @@
       "statistics": {
         "position": "QB",
         "fictional": true,
-        "games": 13,
-        "completions": 251,
-        "attempts": 392,
-        "passingYards": 2883,
-        "passingTD": 21,
-        "interceptions": 8,
-        "sacks": 24,
-        "sackYards": 148,
-        "rushingYards": 78,
+        "games": 12,
+        "completions": 248,
+        "attempts": 384,
+        "passingYards": 2739,
+        "passingTD": 20,
+        "interceptions": 9,
+        "sacks": 23,
+        "sackYards": 142,
+        "rushingYards": 74,
         "rushingTD": 1
       }
     },
@@ -444,11 +444,11 @@
         "fictional": true,
         "games": 13,
         "receptions": 47,
-        "targets": 72,
-        "receivingYards": 608,
-        "receivingTD": 5,
-        "routesRun": 321,
-        "yardsAfterCatch": 303
+        "targets": 74,
+        "receivingYards": 590,
+        "receivingTD": 6,
+        "routesRun": 334,
+        "yardsAfterCatch": 294
       }
     },
     "94": {
@@ -458,15 +458,15 @@
       "statistics": {
         "position": "HB",
         "fictional": true,
-        "games": 13,
-        "carries": 114,
-        "rushingYards": 735,
+        "games": 15,
+        "carries": 133,
+        "rushingYards": 909,
         "rushingTD": 7,
-        "receptions": 35,
-        "receivingYards": 379,
+        "receptions": 39,
+        "receivingYards": 435,
         "receivingTD": 3,
-        "rushingYardsAfterContact": 311,
-        "missedTacklesForced": 42
+        "rushingYardsAfterContact": 385,
+        "missedTacklesForced": 49
       }
     },
     "98": {
@@ -476,18 +476,18 @@
       "statistics": {
         "position": "FS",
         "fictional": true,
-        "games": 13,
-        "defensiveSnaps": 632,
-        "runDefenseSnaps": 269,
-        "tackles": 68,
-        "missedTackles": 8,
+        "games": 15,
+        "defensiveSnaps": 693,
+        "runDefenseSnaps": 329,
+        "tackles": 67,
+        "missedTackles": 9,
         "tacklesForLoss": 4,
         "sacks": 0,
         "runStops": 16,
         "forcedFumbles": 1,
-        "targets": 41,
-        "receptionsAllowed": 27,
-        "passBreakups": 4,
+        "targets": 54,
+        "receptionsAllowed": 36,
+        "passBreakups": 5,
         "interceptions": 2
       }
     },
@@ -498,19 +498,19 @@
       "statistics": {
         "position": "REDG",
         "fictional": true,
-        "games": 13,
-        "defensiveSnaps": 504,
-        "passRushSnaps": 273,
-        "runDefenseSnaps": 231,
-        "tackles": 42,
+        "games": 12,
+        "defensiveSnaps": 477,
+        "passRushSnaps": 262,
+        "runDefenseSnaps": 215,
+        "tackles": 35,
         "missedTackles": 6,
-        "sacks": 5,
-        "sackPressures": 5,
-        "hits": 5,
-        "hurries": 15,
-        "pressures": 25,
-        "tacklesForLoss": 8,
-        "runStops": 17,
+        "sacks": 4,
+        "sackPressures": 4,
+        "hits": 4,
+        "hurries": 12,
+        "pressures": 20,
+        "tacklesForLoss": 7,
+        "runStops": 14,
         "forcedFumbles": 1
       }
     },
@@ -521,13 +521,13 @@
       "statistics": {
         "position": "WR",
         "fictional": true,
-        "games": 13,
-        "receptions": 48,
-        "targets": 76,
-        "receivingYards": 698,
+        "games": 12,
+        "receptions": 45,
+        "targets": 73,
+        "receivingYards": 654,
         "receivingTD": 6,
-        "routesRun": 335,
-        "yardsAfterCatch": 201
+        "routesRun": 294,
+        "yardsAfterCatch": 188
       }
     },
     "101": {
@@ -537,15 +537,15 @@
       "statistics": {
         "position": "QB",
         "fictional": true,
-        "games": 13,
-        "completions": 225,
-        "attempts": 360,
-        "passingYards": 2675,
-        "passingTD": 20,
-        "interceptions": 10,
-        "sacks": 24,
-        "sackYards": 158,
-        "rushingYards": 115,
+        "games": 14,
+        "completions": 220,
+        "attempts": 341,
+        "passingYards": 2610,
+        "passingTD": 19,
+        "interceptions": 9,
+        "sacks": 23,
+        "sackYards": 151,
+        "rushingYards": 112,
         "rushingTD": 2
       }
     }

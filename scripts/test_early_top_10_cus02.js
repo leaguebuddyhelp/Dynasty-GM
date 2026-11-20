@@ -32,6 +32,7 @@ for (let page = 0; page < 32; page++) {
 assert.match(buildEarlyTop10View(2, 'CUS02').embeds[0].toJSON().thumbnail.url, /early-cus02-15\.png/);
 assert.match(buildEarlyTop10View(7, 'CUS02').embeds[0].toJSON().title, /Will Hoggard/);
 assert.match(buildEarlyTop10View(10, 'CUS02').embeds[0].toJSON().title, /Cameron Johnston/);
+assert.doesNotMatch(buildEarlyTop10View(12, 'CUS02').embeds[0].toJSON().title, /:heisman:/, 'Later awards must not leak into an earlier board');
 assert.equal(buildEarlyTop10View(9, 'CUS02').components[0].toJSON().components[1].disabled, false);
 assert.match(buildEarlyTop10View(31, 'CUS02').embeds[0].toJSON().title, /Evan Brown/);
 let payload;

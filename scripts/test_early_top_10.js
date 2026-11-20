@@ -36,6 +36,7 @@ assert.match(buildEarlyTop10View(0).embeds[0].toJSON().thumbnail.url, /early-cus
 assert.match(buildEarlyTop10View(1).embeds[0].toJSON().thumbnail.url, /early-cus01-5\.png/);
 assert.match(buildEarlyTop10View(3).embeds[0].toJSON().thumbnail.url, /early-cus01-16\.png/);
 assert.match(buildEarlyTop10View(4).embeds[0].toJSON().thumbnail.url, /early-cus01-1\.png/);
+assert.doesNotMatch(buildEarlyTop10View(4).embeds[0].toJSON().title, /:heisman:/, 'Later awards must not leak into an earlier board');
 assert.match(buildEarlyTop10View(999).embeds[0].toJSON().footer.text, /32\/32/);
 assert.match(buildEarlyTop10View(18).embeds[0].toJSON().thumbnail.url, /early-cus01-31\.png/);
 assert.match(buildEarlyTop10View(16).embeds[0].toJSON().thumbnail.url, /early-cus01-rank-17\.png/);

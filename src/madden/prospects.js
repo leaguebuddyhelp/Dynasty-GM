@@ -56,6 +56,9 @@ export function schoolLabel(school) {
 const number = (value) => Number(value).toLocaleString('en-US');
 const rate = (numerator, denominator, digits = 2) => denominator > 0 ? (numerator / denominator).toFixed(digits) : '—';
 const hasRank = (value) => Number.isInteger(value) && value > 0;
+export const heismanBadge = (bio) => /\bheisman\b/i.test(String(bio || '')) ? '<:heisman:1573390983457022102>' : '';
+const boardRank = (row) => Number.isInteger(row.round) && row.round > 0 && Number.isInteger(row.pick) && row.pick > 0 && row.pick <= 32
+  ? (row.round - 1) * 32 + row.pick : row['#'];
 
 // Authored fictional college data lives only in prospect profiles. It never feeds
 // EA imports, awards or progression. Compute efficiency from the authored totals.
@@ -106,13 +109,17 @@ export function loadProspects(classId = 'CUS01') {
   const { sourceFile, assetRoot } = config;
   const source = JSON.parse(fs.readFileSync(sourceFile, 'utf8'));
   const catalog = JSON.parse(fs.readFileSync(path.join(assetRoot, 'profiles.json'), 'utf8'));
+  const sourceRows = Object.values(source);
   return Object.entries(catalog.profiles).flatMap(([id, profile]) => {
-    const row = source[id];
-    if (!row || row.name !== profile.name || !appearanceKeys.every((key) => String(row[key] || '').trim())) return [];
+    // Source records may be reordered; saved profile IDs remain stable for buttons and portraits.
+    const matches = sourceRows.filter((row) => row.name === profile.name && row.position === profile.statistics?.position);
+    const row = matches.length === 1 ? matches[0] : null;
+    if (!row || !appearanceKeys.every((key) => String(row[key] || '').trim())) return [];
     if (!PROSPECT_POSITIONS.includes(row.position)) return [];
     return [{ id, name: row.name, position: row.position, school: schoolAliases[row.school] || row.school,
       age: row.age, year: row.year, height: row.height, weight: row.weight,
-      jersey: row.jersey, rank: row['#'],
+      jersey: row.jersey, rank: boardRank(row),
+      heisman: !!heismanBadge(`${row.bio || ''} ${profile.bio || ''}`),
       headline: profile.headline, bio: profile.bio, watch: profile.watch,
       statistics: profile.statistics,
       portrait: path.join(assetRoot, 'portraits', path.basename(profile.portrait)) }];
@@ -148,7 +155,7 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
   const files = [];
   if (player) {
     embed.setColor(schoolColors[player.school] || 0x5865f2)
-      .setTitle(`${player.name} · ${player.position}`).setDescription(player.bio)
+      .setTitle(`${player.name} · ${player.position}${player.heisman ? ` ${heismanBadge('heisman')}` : ''}`).setDescription(player.bio)
       .addFields(
         { name: 'School', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
         { name: 'Age / Build', value: `${player.age == null ? 'Age not listed' : `${player.age} years`} · ${player.height} · ${player.weight} lb`, inline: true },
