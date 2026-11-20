@@ -45,5 +45,5 @@ for (const [id, values, expected] of [
   assert.ok(payload.embeds[0].toJSON().title.includes(expected));
   assert.deepEqual(payload.attachments, []);
 }
-assert.ok(fs.existsSync('bundled_data/madden/Madden - CUS02 - Early Top 10.json'));
+assert.ok(fs.existsSync('bundled_data/madden/Madden - CUS02 - Early Big Board.json'));
 console.log('PASS CUS02 early top ten, preseason bios, class navigation and identity-matched portraits');

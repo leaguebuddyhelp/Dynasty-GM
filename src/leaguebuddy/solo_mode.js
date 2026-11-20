@@ -12,7 +12,7 @@ export const SOLO_COMMAND_MODULES = Object.freeze([
   ['playersearch', '../madden/coach/playersearch.js'],
   ['schedule', '../madden/coach/schedule.js'],
   ['bigboard', '../madden/coach/bigboard.js'],
-  ['earlytop10', '../madden/coach/earlytop10.js'],
+  ['earlybigboard', '../madden/coach/earlytop10.js'],
   ['prospects', '../madden/coach/prospects.js'],
   ['mockdraft', '../madden/coach/mockdraft.js'],
   ['draftexport', '../madden/staff/draftexport.js'],

@@ -1,0 +1,54 @@
+[
+  {
+    "name": "Decovon Thompson",
+    "position": "SS",
+    "school": "Virginia Tech",
+    "age": 22,
+    "height": "6'3\"",
+    "weight": 213,
+    "jersey": "#41",
+    "details": "African American, medium brown skin, brown eyes, black dreadlocks with designed parting, clean shaven, strong face",
+    "mode": "built-in imagegen",
+    "file": "portraits/decovon-thompson-early-transparent.png",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Decovon Thompson, a fictional 22-year-old adult male SS football player, African American, medium brown skin, brown eyes, black dreadlocks with designed parting, clean shaven, strong face. Athletic 6'3\", 213-pound SS build; wearing a Virginia Tech football jersey #41 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark."
+  },
+  {
+    "name": "Troy Nunez",
+    "position": "CB",
+    "school": "Notre Dame",
+    "age": 22,
+    "height": "6'2\"",
+    "weight": 197,
+    "jersey": "#0",
+    "details": "Spanish and Black, medium light brown skin, brown eyes, short brown Caesar fade, goatee",
+    "mode": "built-in imagegen",
+    "file": "portraits/troy-nunez-early-transparent.png",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Troy Nunez, a fictional 22-year-old adult male CB football player, Spanish and Black, medium light brown skin, brown eyes, short brown Caesar fade, goatee. Athletic 6'2\", 197-pound CB build; wearing a Notre Dame football jersey #0 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark."
+  },
+  {
+    "name": "Jerald Simms-Morrison",
+    "position": "WR",
+    "school": "Mississippi State",
+    "age": 22,
+    "height": "6'2\"",
+    "weight": 206,
+    "jersey": "#10",
+    "details": "African American, medium brown skin, brown eyes, black classic cornrows, goatee, slender face",
+    "mode": "built-in imagegen",
+    "file": "portraits/jerald-simms-morrison-early-transparent.png",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Jerald Simms-Morrison, a fictional 22-year-old adult male WR football player, African American, medium brown skin, brown eyes, black classic cornrows, goatee, slender face. Athletic 6'2\", 206-pound WR build; wearing a Mississippi State football jersey #10 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark."
+  },
+  {
+    "name": "ChaCha Oakim",
+    "position": "WR",
+    "school": "Tennessee",
+    "age": 21,
+    "height": "6'4\"",
+    "weight": 190,
+    "jersey": "#5",
+    "details": "African American, dark skin, brown eyes, large tapered black afro, clean shaven",
+    "mode": "built-in imagegen",
+    "file": "portraits/chacha-oakim-early-transparent.png",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: ChaCha Oakim, a fictional 21-year-old adult male WR football player, African American, dark skin, brown eyes, large tapered black afro, clean shaven. Athletic 6'4\", 190-pound WR build; wearing a Tennessee football jersey #5 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark."
+  }
+]

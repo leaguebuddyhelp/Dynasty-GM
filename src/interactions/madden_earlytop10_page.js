@@ -13,7 +13,7 @@ export async function execute(interaction) {
     await interaction.editReply(buildEarlyTop10View(classSelection ? 0 : Number(match[2]), classId));
   } catch (error) {
     console.warn('[earlytop10] Unable to open page:', error.message);
-    await interaction.followUp({ content: 'The early top ten is unavailable. Run `/earlytop10` to try again.', flags: 64 });
+    await interaction.followUp({ content: 'The early big board is unavailable. Run `/earlybigboard` to try again.', flags: 64 });
   }
 }
 
