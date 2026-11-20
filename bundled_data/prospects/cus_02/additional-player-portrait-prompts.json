@@ -1,0 +1,54 @@
+[
+  {
+    "name": "Imanif Ali",
+    "position": "FS",
+    "school": "Arizona State",
+    "age": 21,
+    "height": "6'2\"",
+    "weight": 206,
+    "jersey": "#13",
+    "details": "African American, dark skin, brown eyes, medium-length black dreadlocks, medium neatly groomed facial hair",
+    "mode": "built-in imagegen",
+    "file": "portraits/imanif-ali-transparent.png",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Imanif Ali, a fictional 21-year-old adult male FS football player, African American, dark skin, brown eyes, medium-length black dreadlocks, medium neatly groomed facial hair. Athletic 6'2\", 206-pound FS build; wearing a Arizona State jersey #13 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark."
+  },
+  {
+    "name": "Evan Brown",
+    "position": "REDG",
+    "school": "Texas",
+    "age": 22,
+    "height": "6'3\"",
+    "weight": 263,
+    "jersey": "#8",
+    "details": "African American, dark skin, brown eyes, short black Caesar haircut, medium neatly groomed facial hair",
+    "mode": "built-in imagegen",
+    "file": "portraits/evan-brown-transparent.png",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Evan Brown, a fictional 22-year-old adult male REDG football player, African American, dark skin, brown eyes, short black Caesar haircut, medium neatly groomed facial hair. Athletic 6'3\", 263-pound REDG build; wearing a Texas jersey #8 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark."
+  },
+  {
+    "name": "Derick Soliz",
+    "position": "WR",
+    "school": "Washington",
+    "age": 22,
+    "height": "6'5\"",
+    "weight": 225,
+    "jersey": "#2",
+    "details": "Black and Latino, medium-light brown skin, brown eyes, short black Caesar haircut, light neatly groomed facial hair",
+    "mode": "built-in imagegen",
+    "file": "portraits/derick-soliz-transparent.png",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Derick Soliz, a fictional 22-year-old adult male WR football player, Black and Latino, medium-light brown skin, brown eyes, short black Caesar haircut, light neatly groomed facial hair. Athletic 6'5\", 225-pound WR build; wearing a Washington jersey #2 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark."
+  },
+  {
+    "name": "Jake Fulton",
+    "position": "QB",
+    "school": "Oklahoma State",
+    "age": 22,
+    "height": "6'4\"",
+    "weight": 227,
+    "jersey": "#2",
+    "details": "white, fair skin, brown eyes, short straight brown hair with faded sides, goatee, square face",
+    "mode": "built-in imagegen",
+    "file": "portraits/jake-fulton-transparent.png",
+    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect for a Discord card. Subject: Jake Fulton, a fictional 22-year-old adult male QB football player, white, fair skin, brown eyes, short straight brown hair with faded sides, goatee, square face. Athletic 6'4\", 227-pound QB build; wearing a Oklahoma State jersey #2 in school colors with school branding. Unique fictional adult athlete, not a real player. Square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural expression, realistic skin texture, professional lighting. Show school logo and jersey numeral. One person; genuinely transparent alpha, no backdrop, fill, checkerboard or shadow. No captions or watermark."
+  }
+]

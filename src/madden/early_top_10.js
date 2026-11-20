@@ -6,7 +6,7 @@ import { loadProspects, schoolLabel } from './prospects.js';
 
 const classes = Object.freeze({
   CUS01: { source: 'Madden - CUS01 - Early Big Board.json', folder: 'cus_01', pageCount: 32 },
-  CUS02: { source: 'Madden - CUS02 - Early Big Board.json', folder: 'cus_02', pageCount: 10 },
+  CUS02: { source: 'Madden - CUS02 - Early Big Board.json', folder: 'cus_02', pageCount: 32 },
   CUS03: { source: 'Madden - CUS03 - Early Big Board.json', folder: 'cus_03', pageCount: 10 },
 });
 const dataRoot = fileURLToPath(new URL('../../bundled_data/', import.meta.url));
@@ -52,9 +52,12 @@ export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
       embed.setThumbnail(`attachment://${name}`);
     } else {
       const root = path.join(dataRoot, 'prospects', classes[classId].folder);
-      const manifest = classId === 'CUS01' ? 'early-top-32-portrait-prompts.json' : classId === 'CUS02' ? 'early-top-10-portrait-prompts.json' : 'class03-portrait-prompts.json';
-      const portraits = JSON.parse(fs.readFileSync(path.join(root, manifest), 'utf8'));
-      const match = portraits.find((entry) => entry.name === player.name && entry.position === player.position && entry.school === player.school);
+      const manifests = classId === 'CUS01' ? ['early-top-32-portrait-prompts.json'] : classId === 'CUS02' ? ['early-top-10-portrait-prompts.json', 'future-player-portrait-prompts.json'] : ['class03-portrait-prompts.json'];
+      const portraits = manifests.flatMap((manifest) => {
+        const file = path.join(root, manifest);
+        return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
+      });
+      const match = portraits.find((entry) => entry.name === player.name && entry.position === player.position && schoolLabel(entry.school) === schoolLabel(player.school));
       const portrait = match && path.join(root, 'portraits', path.basename(match.file));
       if (portrait && fs.existsSync(portrait)) {
         const name = `early-${classId.toLowerCase()}-rank-${rank}.png`;

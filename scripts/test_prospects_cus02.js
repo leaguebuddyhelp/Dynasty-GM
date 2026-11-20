@@ -5,14 +5,16 @@ import { buildProspectView, loadProspects } from '../src/madden/prospects.js';
 import { customId, execute } from '../src/interactions/madden_prospects.js';
 
 const players = loadProspects('CUS02');
-assert.equal(players.length, 27);
-assert.equal(players.filter((p) => p.position === 'QB').length, 4);
+assert.equal(players.length, 31);
+assert.equal(players.filter((p) => p.position === 'QB').length, 5);
 assert.equal(players.filter((p) => p.position === 'HB').length, 9);
-assert.equal(players.filter((p) => p.position === 'WR').length, 7);
+assert.equal(players.filter((p) => p.position === 'WR').length, 8);
 assert.equal(players.filter((p) => p.position === 'TE').length, 7);
+assert.equal(players.filter((p) => p.position === 'FS').length, 1);
+assert.equal(players.filter((p) => p.position === 'REDG').length, 1);
 assert.throws(() => loadProspects('__proto__'), /Unknown prospect class/);
 for (const player of players) {
-  assert.ok(['QB', 'HB', 'WR', 'TE'].includes(player.position));
+  assert.ok(['QB', 'HB', 'WR', 'TE', 'FS', 'REDG'].includes(player.position));
   assert.ok(player.bio.split(/\s+/).length >= 35 && player.bio.split(/\s+/).length <= 45);
   assert.equal(player.statistics.fictional, true);
   if (player.position === 'WR' || player.position === 'TE') {
@@ -40,11 +42,16 @@ assert.equal(players[0].name, 'Ameer Young');
 assert.match(buildProspectView({ classId: 'CUS02', position: 'QB', playerId: '1' }).embeds[0].toJSON().fields.find((field) => field.name === 'School').value, /<:clemson:1573014169631072276>/);
 assert.equal(buildProspectView({ classId: 'CUS02', position: 'QB', playerId: '31' }).components[1].toJSON().components[0].options.find((option) => option.value === '31').emoji.id, '1573014165646479561');
 assert.doesNotMatch(buildProspectView({ classId: 'CUS02', position: 'HB', playerId: '19' }).embeds[0].toJSON().fields.find((field) => field.name === 'Age / Build').value, /undefined/);
-assert.equal(buildProspectView({ classId: 'CUS02', position: 'WR' }).components[1].toJSON().components[0].options.length, 7);
+assert.equal(buildProspectView({ classId: 'CUS02', position: 'WR' }).components[1].toJSON().components[0].options.length, 8);
 assert.equal(buildProspectView({ classId: 'CUS02', position: 'TE' }).components[1].toJSON().components[0].options.length, 7);
 assert.equal(buildProspectView({ classId: 'CUS02', position: 'FB' }).components.length, 2);
 assert.match(buildProspectView({ classId: 'CUS02', position: 'FB' }).embeds[0].toJSON().description, /No completed profiles/);
 assert.throws(() => buildProspectView({ classId: 'CUS02', position: 'QB', playerId: '13' }), /not available/);
+for (const [id, position] of [['98', 'FS'], ['99', 'REDG'], ['100', 'WR'], ['101', 'QB']]) {
+  const view = buildProspectView({ classId: 'CUS02', position, playerId: id });
+  assert.match(view.embeds[0].toJSON().fields.find((f) => f.name === 'Jersey / Board').value, /Unranked/);
+  assert.match(view.components[1].toJSON().components[0].options.find((o) => o.value === id).description, /Unranked/);
+}
 for (const [id, value, expected] of [
   ['madden_prospects_class', 'CUS02', 'CUS02 Draft Prospects · QB'],
   ['madden_prospects_cus02_position', 'HB', 'CUS02 Draft Prospects · HB'],
@@ -64,4 +71,4 @@ for (const [id, value, expected] of [
   assert.equal(payload.embeds[0].toJSON().title, expected);
   assert.deepEqual(payload.attachments, []);
 }
-console.log('PASS class selection, 27 CUS02 QB/HB/WR/TE profiles, transparent portraits and class-safe navigation');
+console.log('PASS 31 CUS02 profiles, unranked player cards, transparent portraits and class-safe navigation');

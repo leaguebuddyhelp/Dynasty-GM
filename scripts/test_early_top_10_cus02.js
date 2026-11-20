@@ -5,10 +5,10 @@ import { buildEarlyTop10View, loadEarlyTop10 } from '../src/madden/early_top_10.
 import { customId, execute } from '../src/interactions/madden_earlytop10_page.js';
 
 const board = loadEarlyTop10('CUS02');
-assert.equal(board.size, 10);
+assert.equal(board.size, 32);
 assert.match(buildEarlyTop10View(0, 'CUS02').embeds[0].toJSON().fields.find((field) => field.name === 'School / Year').value, /<:washington:1573014914828869642>/);
 assert.throws(() => loadEarlyTop10('__proto__'), /Unknown early top ten class/);
-for (let page = 0; page < 10; page++) {
+for (let page = 0; page < 32; page++) {
   const player = board.get(page + 1);
   const view = buildEarlyTop10View(page, 'CUS02');
   const embed = view.embeds[0].toJSON();
@@ -17,9 +17,9 @@ for (let page = 0; page < 10; page++) {
   assert.equal(embed.description, player.scoutingBio);
   assert.ok(player.scoutingBio.split(/\s+/).length >= 35 && player.scoutingBio.split(/\s+/).length <= 45);
   assert.doesNotMatch(JSON.stringify(embed), /fictional|simulated|overall rating|dev_trait|archetype|final college season/i);
-  assert.match(embed.footer.text, new RegExp(`CUS02 · Early outlook · ${page + 1}/10`));
+  assert.match(embed.footer.text, new RegExp(`CUS02 · Early outlook · ${page + 1}/32`));
   assert.equal(buttons[0].disabled, page === 0);
-  assert.equal(buttons[1].disabled, page === 9);
+  assert.equal(buttons[1].disabled, page === 31);
   assert.equal(view.files.length, 1, `Missing portrait for ${player.name}`);
   assert.match(embed.thumbnail.url, /^attachment:\/\/early-cus02-/);
   assert.deepEqual(view.attachments, []);
@@ -30,10 +30,15 @@ for (let page = 0; page < 10; page++) {
 }
 assert.match(buildEarlyTop10View(2, 'CUS02').embeds[0].toJSON().thumbnail.url, /early-cus02-15\.png/);
 assert.match(buildEarlyTop10View(7, 'CUS02').embeds[0].toJSON().title, /Will Hoggard/);
+assert.match(buildEarlyTop10View(10, 'CUS02').embeds[0].toJSON().title, /Cameron Johnston/);
+assert.equal(buildEarlyTop10View(9, 'CUS02').components[0].toJSON().components[1].disabled, false);
+assert.match(buildEarlyTop10View(31, 'CUS02').embeds[0].toJSON().title, /Evan Brown/);
 let payload;
 for (const [id, values, expected] of [
   ['madden_earlytop10_class', ['CUS02'], 'Michael Oluwafemi'],
   ['madden_earlytop10_cus02_page_1', undefined, 'Kareem Carter'],
+  ['madden_earlytop10_cus02_page_10', undefined, 'Cameron Johnston'],
+  ['madden_earlytop10_cus02_page_31', undefined, 'Evan Brown'],
   ['madden_earlytop10_class', ['CUS01'], 'Cardarion Williams'],
   ['madden_earlytop10_page_1', undefined, 'Malachi Robinson'],
 ]) {
@@ -46,4 +51,4 @@ for (const [id, values, expected] of [
   assert.deepEqual(payload.attachments, []);
 }
 assert.ok(fs.existsSync('bundled_data/madden/Madden - CUS02 - Early Big Board.json'));
-console.log('PASS CUS02 early top ten, preseason bios, class navigation and identity-matched portraits');
+console.log('PASS CUS02 early top 32, preseason bios, class navigation and identity-matched portraits');

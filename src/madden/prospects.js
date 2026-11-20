@@ -55,6 +55,7 @@ export function schoolLabel(school) {
 
 const number = (value) => Number(value).toLocaleString('en-US');
 const rate = (numerator, denominator, digits = 2) => denominator > 0 ? (numerator / denominator).toFixed(digits) : '—';
+const hasRank = (value) => Number.isInteger(value) && value > 0;
 
 // Authored fictional college data lives only in prospect profiles. It never feeds
 // EA imports, awards or progression. Compute efficiency from the authored totals.
@@ -115,7 +116,7 @@ export function loadProspects(classId = 'CUS01') {
       headline: profile.headline, bio: profile.bio, watch: profile.watch,
       statistics: profile.statistics,
       portrait: path.join(assetRoot, 'portraits', path.basename(profile.portrait)) }];
-  }).sort((a, b) => a.rank - b.rank);
+  }).sort((a, b) => (hasRank(a.rank) ? a.rank : Infinity) - (hasRank(b.rank) ? b.rank : Infinity));
 }
 
 export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId = null } = {}) {
@@ -138,7 +139,7 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
     .setCustomId(`${prefix}_player_${position}`).setPlaceholder('Open a player card')
     .addOptions(players.slice(0, 25).map((entry) => ({ label: entry.name, value: entry.id,
       ...(schoolEmojis[entry.school] ? { emoji: schoolEmojis[entry.school] } : {}),
-      description: `${entry.school} · Board #${entry.rank}`, default: entry.id === player?.id })))));
+      description: `${entry.school} · ${hasRank(entry.rank) ? `Board #${entry.rank}` : 'Unranked'}`, default: entry.id === player?.id })))));
 
   const classMenu = new StringSelectMenuBuilder().setCustomId('madden_prospects_class').setPlaceholder('Choose a draft class')
     .addOptions(PROSPECT_CLASSES.map((value) => ({ label: value === 'CUS01' ? 'Class 1 · CUS01' : 'Class 2 · CUS02', value, default: classId === value })));
@@ -151,7 +152,7 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
       .addFields(
         { name: 'School', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
         { name: 'Age / Build', value: `${player.age == null ? 'Age not listed' : `${player.age} years`} · ${player.height} · ${player.weight} lb`, inline: true },
-        { name: 'Jersey / Board', value: `${player.jersey} · #${player.rank}`, inline: true },
+        { name: 'Jersey / Board', value: `${player.jersey} · ${hasRank(player.rank) ? `#${player.rank}` : 'Unranked'}`, inline: true },
       ).setFooter({ text: `${classId} · Simulated college statistics` });
     const statistics = formatProspectStatistics(player.statistics);
     if (statistics) embed.addFields({ name: 'Final college season', value: statistics });

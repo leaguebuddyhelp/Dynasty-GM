@@ -468,6 +468,86 @@
         "rushingYardsAfterContact": 311,
         "missedTacklesForced": 42
       }
+    },
+    "98": {
+      "name": "Imanif Ali",
+      "bio": "Arizona State’s Ali enters the class as a 6-foot-2 safety with a versatile defensive role. His profile gives evaluators a chance to consider how his frame can fit across the back end, from deep assignments to responsibilities closer to the line.",
+      "portrait": "imanif-ali-transparent.png",
+      "statistics": {
+        "position": "FS",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 632,
+        "runDefenseSnaps": 269,
+        "tackles": 68,
+        "missedTackles": 8,
+        "tacklesForLoss": 4,
+        "sacks": 0,
+        "runStops": 16,
+        "forcedFumbles": 1,
+        "targets": 41,
+        "receptionsAllowed": 27,
+        "passBreakups": 4,
+        "interceptions": 2
+      }
+    },
+    "99": {
+      "name": "Evan Brown",
+      "bio": "Brown gives Texas a 6-foot-3 edge defender for scouts to evaluate along the right side of the front. His pass-rush role puts him in the conversation for teams looking at how an outside defender fits their defensive approach.",
+      "portrait": "evan-brown-transparent.png",
+      "statistics": {
+        "position": "REDG",
+        "fictional": true,
+        "games": 13,
+        "defensiveSnaps": 504,
+        "passRushSnaps": 273,
+        "runDefenseSnaps": 231,
+        "tackles": 42,
+        "missedTackles": 6,
+        "sacks": 5,
+        "sackPressures": 5,
+        "hits": 5,
+        "hurries": 15,
+        "pressures": 25,
+        "tacklesForLoss": 8,
+        "runStops": 17,
+        "forcedFumbles": 1
+      }
+    },
+    "100": {
+      "name": "Derick Soliz",
+      "bio": "Washington can put a 6-foot-5 target on the field in Soliz. The senior’s size gives scouts a clear physical starting point as they consider his fit in a receiving room and the types of matchups an offense might create outside.",
+      "portrait": "derick-soliz-transparent.png",
+      "statistics": {
+        "position": "WR",
+        "fictional": true,
+        "games": 13,
+        "receptions": 48,
+        "targets": 76,
+        "receivingYards": 698,
+        "receivingTD": 6,
+        "routesRun": 335,
+        "yardsAfterCatch": 201
+      }
+    },
+    "101": {
+      "name": "Jake Fulton",
+      "bio": "Fulton brings a 6-foot-4 frame to the Oklahoma State quarterback group. The senior gives evaluators another passer to consider as they assess how his build and throwing profile might fit a professional offense and the responsibilities of its quarterback room.",
+      "portrait": "jake-fulton-transparent.png",
+      "statistics": {
+        "position": "QB",
+        "fictional": true,
+        "games": 13,
+        "completions": 225,
+        "attempts": 360,
+        "passingYards": 2675,
+        "passingTD": 20,
+        "interceptions": 10,
+        "sacks": 24,
+        "sackYards": 158,
+        "rushingYards": 115,
+        "rushingTD": 2
+      }
     }
   }
 }
