@@ -14,6 +14,7 @@ for (let page = 0; page < 32; page++) {
   const embed = view.embeds[0].toJSON();
   const buttons = view.components[0].toJSON().components;
   assert.ok(embed.title.includes(player.name));
+  assert.ok(embed.title.includes(`${player.position} ${player.name}`));
   assert.equal(embed.description, player.scoutingBio);
   assert.ok(player.scoutingBio.split(/\s+/).length >= 35 && player.scoutingBio.split(/\s+/).length <= 45);
   assert.doesNotMatch(JSON.stringify(embed), /fictional|simulated|overall rating|dev_trait|archetype|final college season/i);

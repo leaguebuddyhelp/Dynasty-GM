@@ -37,7 +37,7 @@ export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
   const embed = new EmbedBuilder().setColor(0x5865f2).setFooter({ text: `${classId} · Early outlook · ${rank}/${pageCount}` });
   const files = [];
   if (player) {
-    embed.setTitle(`Early Big Board · #${rank} — ${player.name}`)
+    embed.setTitle(`Early Big Board · #${rank} — ${player.position} ${player.name}`)
       .setDescription(player.scoutingBio || 'Scouting report coming soon.')
       .addFields(
         { name: 'Position', value: player.position, inline: true },
