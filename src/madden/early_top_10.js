@@ -7,9 +7,10 @@ import { heismanBadge, loadProspects, schoolLabel } from './prospects.js';
 const classes = Object.freeze({
   CUS01: { source: 'Madden - CUS01 - Early Big Board.json', folder: 'cus_01', pageCount: 32 },
   CUS02: { source: 'Madden - CUS02 - Early Big Board.json', folder: 'cus_02', pageCount: 32 },
-  CUS03: { source: 'Madden - CUS03 - Early Big Board.json', folder: 'cus_03', pageCount: 10 },
+  CUS03: { source: 'Madden - CUS03 - Early Big Board.json', folder: 'cus_03', pageCount: 32 },
 });
 const dataRoot = fileURLToPath(new URL('../../bundled_data/', import.meta.url));
+const edgePositions = new Set(['LEDG', 'REDG']);
 
 export function loadEarlyTop10(classId = 'CUS01') {
   if (!Object.hasOwn(classes, classId)) throw new Error('Unknown early top ten class');
@@ -58,7 +59,10 @@ export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
         const file = path.join(root, manifest);
         return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
       });
-      const match = portraits.find((entry) => entry.name === player.name && entry.position === player.position && schoolLabel(entry.school) === schoolLabel(player.school));
+      const candidates = portraits.filter((entry) => entry.name === player.name && schoolLabel(entry.school) === schoolLabel(player.school));
+      const match = candidates.find((entry) => entry.position === player.position)
+        // An edge rusher can be listed on opposite sides across the two boards.
+        ?? (edgePositions.has(player.position) ? candidates.find((entry) => edgePositions.has(entry.position)) : undefined);
       const portrait = match && path.join(root, 'portraits', path.basename(match.file));
       if (portrait && fs.existsSync(portrait)) {
         const name = `early-${classId.toLowerCase()}-rank-${rank}.png`;
