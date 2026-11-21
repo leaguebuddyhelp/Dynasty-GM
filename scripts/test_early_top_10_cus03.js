@@ -27,7 +27,7 @@ for (let page = 0; page < 32; page++) {
   const buttons = view.components[0].toJSON().components;
   assert.ok(embed.title.includes(`${player.position} ${player.name}`));
   assert.equal(embed.description, player.scoutingBio);
-  assert.ok(player.scoutingBio.split(/\s+/).length >= 35 && player.scoutingBio.split(/\s+/).length <= 45);
+  assert.ok(player.scoutingBio.split(/\s+/).length >= 40 && player.scoutingBio.split(/\s+/).length <= 50);
   assert.doesNotMatch(JSON.stringify(embed), /fictional|simulated|overall rating|dev_trait|archetype|final college season/i);
   assert.equal(embed.footer.text, `CUS03 · Early outlook · ${page + 1}/32`);
   assert.equal(buttons[0].disabled, page === 0);

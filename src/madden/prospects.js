@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { ActionRowBuilder, AttachmentBuilder, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
 
 const classFiles = Object.freeze({
-  CUS01: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01.json', import.meta.url)) },
+  CUS01: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01.json', import.meta.url)), boardFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01 - Big Board.json', import.meta.url)) },
   CUS02: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_02/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS02.json', import.meta.url)) },
 });
 export const PROSPECT_CLASSES = Object.freeze(Object.keys(classFiles));
@@ -46,6 +46,9 @@ const schoolEmojis = {
   'Ole Miss': { name: 'olemiss', id: '1573014717755166851' },
   'Georgia Tech': { name: 'georgiatech', id: '1573014716639608954' },
   Washington: { name: 'washington', id: '1573014914828869642' },
+  Purdue: { name: 'purdue', id: '1573736474514563155' },
+  'Boston College': { name: 'bostoncollege', id: '1573736473629302895' },
+  'Washington State': { name: 'washingtonstate', id: '1573736472060760216' },
 };
 export function schoolLabel(school) {
   const display = schoolAliases[school] || school;
@@ -58,7 +61,10 @@ const rate = (numerator, denominator, digits = 2) => denominator > 0 ? (numerato
 const hasRank = (value) => Number.isInteger(value) && value > 0;
 export const heismanBadge = (bio) => /\bheisman\b/i.test(String(bio || '')) ? '<:heisman:1573390983457022102>' : '';
 const boardRank = (row) => Number.isInteger(row.round) && row.round > 0 && Number.isInteger(row.pick) && row.pick > 0 && row.pick <= 32
-  ? (row.round - 1) * 32 + row.pick : row['#'];
+  ? (row.round - 1) * 32 + row.pick : null;
+const hasAppearance = (row) => appearanceKeys.every((key) => String(row[key] || '').trim());
+// The position-by-position board includes creator notes such as (94S) after some names.
+const prospectKey = (name, position) => `${position}:${name.replace(/\s+\(\d+[A-Z]+\)$/, '').trim()}`;
 
 // Authored fictional college data lives only in prospect profiles. It never feeds
 // EA imports, awards or progression. Compute efficiency from the authored totals.
@@ -106,19 +112,23 @@ export function formatProspectStatistics(stats) {
 export function loadProspects(classId = 'CUS01') {
   if (!Object.hasOwn(classFiles, classId)) throw new Error('Unknown prospect class');
   const config = classFiles[classId];
-  const { sourceFile, assetRoot } = config;
+  const { sourceFile, boardFile, assetRoot } = config;
   const source = JSON.parse(fs.readFileSync(sourceFile, 'utf8'));
   const catalog = JSON.parse(fs.readFileSync(path.join(assetRoot, 'profiles.json'), 'utf8'));
-  const sourceRows = Object.values(source);
+  const board = boardFile ? JSON.parse(fs.readFileSync(boardFile, 'utf8')) : {};
+  const boardRows = Object.values(board).filter((row) => row.name && row.position && hasAppearance(row));
+  const sourceRows = Object.values(source).filter((row) => row.name && row.position);
   return Object.entries(catalog.profiles).flatMap(([id, profile]) => {
     // Source records may be reordered; saved profile IDs remain stable for buttons and portraits.
-    const matches = sourceRows.filter((row) => row.name === profile.name && row.position === profile.statistics?.position);
+    const key = prospectKey(profile.name, profile.position ?? profile.statistics?.position);
+    const boardMatches = boardRows.filter((row) => prospectKey(row.name, row.position) === key);
+    const matches = boardMatches.length ? boardMatches : sourceRows.filter((row) => prospectKey(row.name, row.position) === key);
     const row = matches.length === 1 ? matches[0] : null;
-    if (!row || !appearanceKeys.every((key) => String(row[key] || '').trim())) return [];
+    if (!row || !hasAppearance(row)) return [];
     if (!PROSPECT_POSITIONS.includes(row.position)) return [];
-    return [{ id, name: row.name, position: row.position, school: schoolAliases[row.school] || row.school,
+    return [{ id, name: profile.name, position: row.position, school: schoolAliases[row.school] || row.school,
       age: row.age, year: row.year, height: row.height, weight: row.weight,
-      jersey: row.jersey, rank: boardRank(row),
+      jersey: row.jersey, rank: boardRank(row) ?? (boardMatches.length ? null : row['#']),
       heisman: !!heismanBadge(`${row.bio || ''} ${profile.bio || ''}`),
       headline: profile.headline, bio: profile.bio, watch: profile.watch,
       statistics: profile.statistics,
@@ -126,7 +136,7 @@ export function loadProspects(classId = 'CUS01') {
   }).sort((a, b) => (hasRank(a.rank) ? a.rank : Infinity) - (hasRank(b.rank) ? b.rank : Infinity));
 }
 
-export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId = null } = {}) {
+export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId = null, page = 0 } = {}) {
   if (!PROSPECT_POSITIONS.includes(position)) throw new Error('Unknown prospect position');
   const all = loadProspects(classId);
   const players = all.filter((player) => player.position === position);
@@ -134,6 +144,10 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
   const availablePositions = PROSPECT_POSITIONS.filter((entry) => all.some((prospect) => prospect.position === entry));
   const availableLabel = availablePositions.join(' / ');
   if (playerId !== null && !player) throw new Error('Prospect is not available in this position');
+  const pageSize = 25;
+  const pageCount = Math.ceil(players.length / pageSize);
+  const index = player ? Math.floor(players.indexOf(player) / pageSize) : Math.max(0, Math.min(pageCount - 1, Number.isInteger(page) ? page : 0));
+  const pagePlayers = players.slice(index * pageSize, (index + 1) * pageSize);
   const prefix = classId === 'CUS01' ? 'madden_prospects' : `madden_prospects_${classId.toLowerCase()}`;
   const positionMenu = new StringSelectMenuBuilder()
     .setCustomId(`${prefix}_position`).setPlaceholder('Choose a position')
@@ -144,9 +158,14 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
   const components = [new ActionRowBuilder().addComponents(positionMenu)];
   if (players.length) components.push(new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
     .setCustomId(`${prefix}_player_${position}`).setPlaceholder('Open a player card')
-    .addOptions(players.slice(0, 25).map((entry) => ({ label: entry.name, value: entry.id,
+    .addOptions(pagePlayers.map((entry) => ({ label: entry.name, value: entry.id,
       ...(schoolEmojis[entry.school] ? { emoji: schoolEmojis[entry.school] } : {}),
       description: `${entry.school} · ${hasRank(entry.rank) ? `Board #${entry.rank}` : 'Unranked'}`, default: entry.id === player?.id })))));
+  if (pageCount > 1) components.push(new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
+    .setCustomId(`${prefix}_page_${position}`).setPlaceholder('Choose a page')
+    .addOptions(Array.from({ length: pageCount }, (_, pageIndex) => ({
+      label: `Page ${pageIndex + 1} of ${pageCount}`, value: String(pageIndex), default: pageIndex === index,
+    })))));
 
   const classMenu = new StringSelectMenuBuilder().setCustomId('madden_prospects_class').setPlaceholder('Choose a draft class')
     .addOptions(PROSPECT_CLASSES.map((value) => ({ label: value === 'CUS01' ? 'Class 1 · CUS01' : 'Class 2 · CUS02', value, default: classId === value })));
@@ -160,9 +179,10 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
         { name: 'School', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
         { name: 'Age / Build', value: `${player.age == null ? 'Age not listed' : `${player.age} years`} · ${player.height} · ${player.weight} lb`, inline: true },
         { name: 'Jersey / Board', value: `${player.jersey} · ${hasRank(player.rank) ? `#${player.rank}` : 'Unranked'}`, inline: true },
-      ).setFooter({ text: `${classId} · Simulated college statistics` });
+      );
     const statistics = formatProspectStatistics(player.statistics);
     if (statistics) embed.addFields({ name: 'Final college season', value: statistics });
+    embed.setFooter({ text: statistics ? `${classId} · Simulated college statistics` : `${classId} · Scouting profile` });
     if (fs.existsSync(player.portrait)) {
       const attachment = `${classId.toLowerCase()}-${player.id}.png`;
       files.push(new AttachmentBuilder(player.portrait, { name: attachment }));
@@ -171,7 +191,7 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
   } else {
     embed.setTitle(`${classId} Draft Prospects · ${position}`)
       .setDescription(players.length
-        ? `Choose a player below to open their portrait and scouting profile.\n\n${players.map((entry) => `**${entry.name}** · ${schoolLabel(entry.school)}`).join('\n')}`
+        ? `Choose a player below to open their portrait and scouting profile.\n\n${pagePlayers.map((entry) => `**${entry.name}** · ${schoolLabel(entry.school)}`).join('\n')}`
         : `No completed profiles have been published for this position yet. Choose ${availableLabel} to view completed prospects.`)
       .setFooter({ text: `${all.length} profiles available · ${availableLabel} · More positions as the board is completed` });
   }

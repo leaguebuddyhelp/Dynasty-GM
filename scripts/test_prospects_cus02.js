@@ -16,7 +16,7 @@ assert.equal(players.filter((p) => p.position === 'REDG').length, 1);
 assert.throws(() => loadProspects('__proto__'), /Unknown prospect class/);
 for (const player of players) {
   assert.ok(['QB', 'HB', 'WR', 'TE', 'FS', 'REDG'].includes(player.position));
-  assert.ok(player.bio.split(/\s+/).length >= 35 && player.bio.split(/\s+/).length <= 45);
+  assert.ok(player.bio.split(/\s+/).length >= 40 && player.bio.split(/\s+/).length <= 50);
   assert.equal(player.statistics.fictional, true);
   if (player.position === 'QB') {
     const s = player.statistics;

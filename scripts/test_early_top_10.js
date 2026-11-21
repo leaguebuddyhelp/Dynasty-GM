@@ -25,7 +25,7 @@ for (let index = 0; index < 32; index++) {
     assert.match(embed.description, /not been assigned/);
     assert.equal(view.files.length, 0);
   } else if (row.scoutingBio) {
-    assert.ok(row.scoutingBio.split(/\s+/).length >= 35 && row.scoutingBio.split(/\s+/).length <= 45);
+    assert.ok(row.scoutingBio.split(/\s+/).length >= 40 && row.scoutingBio.split(/\s+/).length <= 50);
     assert.equal(embed.description, row.scoutingBio);
     assert.equal(view.files.length, 1, `Missing portrait for ${row.name}`);
     assert.match(embed.thumbnail.url, /^attachment:\/\/early-cus01-(?:rank-)?\d+\.png$/);

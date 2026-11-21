@@ -1,6 +1,6 @@
 import { buildEarlyTop10View } from '../madden/early_top_10.js';
 
-export const customId = /^madden_earlytop10_(?:class|(?:(cus02|cus03)_)?page_([0-9]+))$/;
+export const customId = /^madden_earlytop10_(?:class|(?:(cus02|cus03|cus04)_)?page_([0-9]+))$/;
 
 export async function execute(interaction) {
   const match = customId.exec(interaction.customId);

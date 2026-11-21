@@ -1,0 +1,258 @@
+{
+  "1": {
+    "#": 1,
+    "position": "LT",
+    "name": "Conor Williams",
+    "school": "Texas",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 5,
+    "overall": 76,
+    "dev_trait": 1,
+    "archetype": "Pass Blocker",
+    "height": "6'5\"",
+    "weight": 323,
+    "jersey": "#75",
+    "round": 1,
+    "pick": 1,
+    "class": 4,
+    "bio": "franchise LT capable of manning the left side for 10/12 years, elite physical profile and recruiting pedigree to match with A+ tape"
+  },
+  "2": {
+    "#": 2,
+    "position": "SAM",
+    "name": "James Rodriquez",
+    "school": "Ohio State",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 13,
+    "overall": 80,
+    "dev_trait": 3,
+    "archetype": "Run Stopper",
+    "height": "6'5\"",
+    "weight": 247,
+    "jersey": "#41",
+    "round": 1,
+    "pick": 2,
+    "class": 4,
+    "bio": "big body lb with elite instincts, 5 star, can hold up in zone coverage, has elite atheltic traits and has prod every year at ohio state"
+  },
+  "3": {
+    "#": 3,
+    "position": "CB",
+    "name": "Mikael Thomas",
+    "school": "Clemson",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 16,
+    "overall": 78,
+    "dev_trait": 1,
+    "archetype": "Zone",
+    "height": "6'1\"",
+    "weight": 191,
+    "jersey": "#21",
+    "round": 1,
+    "pick": 3,
+    "class": 4,
+    "bio": "rangy zone corner who has elite ball skills, knack for coming down with the ball and making big plays in the defensive passing game"
+  },
+  "4": {
+    "#": 4,
+    "position": "LT",
+    "name": "Jordan Nunez",
+    "school": "Notre Dame",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 5,
+    "overall": 76,
+    "dev_trait": 1,
+    "archetype": "Power",
+    "height": "6'8\"",
+    "weight": 320,
+    "jersey": "#74",
+    "round": 1,
+    "pick": 4,
+    "class": 4,
+    "bio": "large mountain of a man, franchise caliber book end blocker capable of playing both sides of the oline, strengh for days"
+  },
+  "5": {
+    "#": 5,
+    "position": "FS",
+    "name": "Neville Gibson",
+    "school": "Ohio State",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 17,
+    "overall": 76,
+    "dev_trait": 1,
+    "archetype": "Run Support",
+    "height": "6'0\"",
+    "weight": 213,
+    "jersey": "#5",
+    "round": 1,
+    "pick": 5,
+    "class": 4,
+    "bio": "big hitter with great ball skills and hands for interceptions, 5 star who is the captain of a once again loaded ohio state defense"
+  },
+  "6": {
+    "#": 6,
+    "position": "WR",
+    "name": "Ryan Hodges III",
+    "school": "Ohio State",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 3,
+    "overall": 79,
+    "dev_trait": 2,
+    "archetype": "Playmaker",
+    "height": "5'10\"",
+    "weight": 190,
+    "jersey": "#3",
+    "round": 1,
+    "pick": 6,
+    "class": 4,
+    "bio": "returned to school to boost stock, rangy wr capable of making insane catches look normal, pillow hands who has a large radius despite size"
+  },
+  "7": {
+    "#": 7,
+    "position": "WR",
+    "name": "Taylen Ingram",
+    "school": "Florida",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 3,
+    "overall": 74,
+    "dev_trait": 1,
+    "archetype": "Playmaker",
+    "height": "5'7\"",
+    "weight": 178,
+    "jersey": "#10",
+    "round": 1,
+    "pick": 7,
+    "class": 4,
+    "bio": "elite playmaker with the ball in his hands, deep threat with vertical speed to compete with anyone, slight frame but good contact balance"
+  },
+  "8": {
+    "#": 8,
+    "position": "MIKE",
+    "name": "Brennan Coombs",
+    "school": "Texas A&M",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 14,
+    "overall": 74,
+    "dev_trait": 0,
+    "archetype": "Field General",
+    "height": "6'5\"",
+    "weight": 247,
+    "jersey": "#51",
+    "round": 1,
+    "pick": 8,
+    "class": 4,
+    "bio": "the nations top linebacker and smartest player in the nation, cerebal qb approach to the defense, captian from day one on any franchise"
+  },
+  "9": {
+    "#": 9,
+    "position": "QB",
+    "name": "C.J. Nielsen",
+    "school": "Ole Miss",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 1,
+    "overall": 70,
+    "dev_trait": 0,
+    "archetype": "Field General",
+    "height": "6'4\"",
+    "weight": 220,
+    "jersey": "#12",
+    "round": 1,
+    "pick": 9,
+    "class": 4,
+    "bio": "weak qb class, best of bunch, pocket passer who throws with good anticipation, size at 6'4\" to be a pro starter for a qb needy franchise"
+  },
+  "10": {
+    "#": 10,
+    "position": "TE",
+    "name": "Alex Martinez",
+    "school": "Ohio State",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 4,
+    "overall": 75,
+    "dev_trait": 1,
+    "archetype": "Vertical Threat",
+    "height": "6'5\"",
+    "weight": 249,
+    "jersey": "#85",
+    "round": 1,
+    "pick": 10,
+    "class": 4,
+    "bio": "good athelte and 5 star recruiting pedigree, top ohi state target and lead his team in td catches last year in 1st year starting"
+  },
+  "11": {
+    "#": 11
+  },
+  "12": {
+    "#": 12
+  },
+  "13": {
+    "#": 13
+  },
+  "14": {
+    "#": 14
+  },
+  "15": {
+    "#": 15
+  },
+  "16": {
+    "#": 16
+  },
+  "17": {
+    "#": 17
+  },
+  "18": {
+    "#": 18
+  },
+  "19": {
+    "#": 19
+  },
+  "20": {
+    "#": 20
+  },
+  "21": {
+    "#": 21
+  },
+  "22": {
+    "#": 22
+  },
+  "23": {
+    "#": 23
+  },
+  "24": {
+    "#": 24
+  },
+  "25": {
+    "#": 25
+  },
+  "26": {
+    "#": 26
+  },
+  "27": {
+    "#": 27
+  },
+  "28": {
+    "#": 28
+  },
+  "29": {
+    "#": 29
+  },
+  "30": {
+    "#": 30
+  },
+  "31": {
+    "#": 31
+  },
+  "32": {
+    "#": 32
+  }
+}

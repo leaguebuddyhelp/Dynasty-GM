@@ -7,7 +7,7 @@
       "name": "J.T. Rhoads",
       "portrait": "jt-rhoads-transparent.png",
       "headline": "A franchise-caliber passing foundation",
-      "bio": "The ball comes out quickly, and the field never feels too big for Rhoads. USC’s former five-star can attack underneath or push the ball deep on the move, giving a franchise a potential offensive centerpiece and the favorite to hear his name called first.",
+      "bio": "Rhoads processes quickly and can make throws at all three levels, even when he has to move off his spot. The Heisman winner has the tools to build an offense around. The next evaluation is whether he stays on schedule when interior pressure closes early.",
       "watch": "Keep his base settled against interior pressure and maintain timing when the first window closes.",
       "statistics": {
         "position": "QB",
@@ -26,7 +26,7 @@
       "name": "Jaquon Hall",
       "portrait": "jaquon-hall-transparent.png",
       "headline": "A quarterback who changes the math for a defense",
-      "bio": "Hall’s playmaking gives Alabama an answer when the pocket breaks down. The former four-star recruit supplied a steady rushing threat all season, then found another gear as a passer down the stretch, turning a late breakout into serious first-round quarterback conversation.",
+      "bio": "Hall was a steady rushing threat for Alabama before his passing took a major step late in the season. The former four-star recruit has the tools to extend plays, and scouts will want to see him sustain that late improvement over a longer stretch.",
       "watch": "Stay ahead of pressure with the ball, preserve throwing rhythm and reduce unnecessary hits.",
       "statistics": {
         "position": "QB",
@@ -120,7 +120,7 @@
       "name": "Aaron Archuelta",
       "portrait": "aaron-archuelta-transparent.png",
       "headline": "An early pick with a legitimate vertical ceiling",
-      "bio": "A flick of Archuelta’s wrist can change the geometry of a defense. The Penn State quarterback brings a rocket arm, franchise-caliber size and enough mobility to extend the play, offering the kind of physical package that makes scouts imagine a high-ceiling passing attack.",
+      "bio": "Archuelta pairs a powerful arm with the 6-foot-5 frame and mobility to give a passing game real upside. Penn State’s quarterback can make throws few prospects can reach. His tape varies from game to game, making consistency the biggest question in his evaluation.",
       "watch": "Layer intermediate throws, vary ball speed and take the underneath answer when the deep window disappears.",
       "statistics": {
         "position": "QB",
@@ -161,7 +161,7 @@
     },
     "8": {
       "headline": "Size and finish worthy of an early pick",
-      "bio": "Everything up front starts with Pukahi. The Hawaii native anchored Ohio State’s offensive line, bringing the size and presence teams covet on the quarterback’s blind side. He projects to hear his name called inside the first ten picks.",
+      "bio": "Everything up front starts with Pukahi. The Hawaii native anchored Ohio State’s offensive line, bringing the size and presence teams covet on the quarterback’s blind side. He projects to hear his name called inside the first ten picks as a potential long-term left tackle.",
       "watch": "Stay balanced against inside counters and keep his recovery steps compact when the first punch misses.",
       "name": "Nakana'ela Pukahi",
       "portrait": "nakanaela-pukahi-transparent.png",
@@ -290,7 +290,7 @@
       "name": "Nick Gardiner",
       "portrait": "nick-gardiner-transparent.png",
       "headline": "A polished distributor with a starter's pathway",
-      "bio": "Gardiner wins with the way he sees the field. The cerebral quarterback consistently attacks all three levels, and his underrated legs give an offense another option when a play opens up. His decision-making and movement make him more than a conventional pocket passer.",
+      "bio": "Gardiner sees the field well and consistently finds throws at all three levels despite average arm strength. Notre Dame’s quarterback also brings more rushing value than his pocket game suggests. Tight windows on deep or far-side throws are a useful test for him.",
       "watch": "Maintain accuracy on a disrupted platform and create practical answers outside the initial structure.",
       "statistics": {
         "position": "QB",
@@ -389,7 +389,7 @@
     },
     "19": {
       "headline": "A strong edge for an offense that wants to run",
-      "bio": "Ellis brings a physical edge to the right side of the line. The former five-star recruit does some of his best work as a run blocker, giving an offense an imposing presence when it runs behind him.",
+      "bio": "Ellis brings a physical edge to the right side of the line. The former five-star recruit does some of his best work as a run blocker, giving an offense an imposing presence when it runs behind him and needs movement at the point of attack.",
       "watch": "Keep his feet active after contact and improve the timing of his hands against changing rush angles.",
       "name": "Cody Ellis",
       "portrait": "cody-ellis-transparent.png",
@@ -499,7 +499,7 @@
       "name": "Jaylan Matthews Jr.",
       "portrait": "jaylan-matthews-jr-transparent.png",
       "headline": "A first-round creator who can manufacture extra yards",
-      "bio": "Matthews has carried high expectations since arriving as a top-ten recruit. The former Maryland starter brings that pedigree and starting experience to the backfield, giving teams a runner who has already shouldered meaningful responsibilities in a major college offense.",
+      "bio": "Matthews has carried high expectations since arriving as a top-ten recruit. The former Maryland starter brings that pedigree and starting experience to the backfield, giving teams a runner who has already shouldered meaningful responsibilities in a major college offense across a starting workload.",
       "watch": "Trust the first useful lane and improve consistency picking up pressure from the edge.",
       "statistics": {
         "position": "HB",
@@ -1236,7 +1236,7 @@
       "name": "Nick Barrientos",
       "portrait": "nick-barrientos-transparent.png",
       "headline": "The throwing tools are ahead of the consistency",
-      "bio": "Barrientos has already experienced both sides of a quarterback career. A former five-star recruit who transferred from Arkansas, he endured streaky stretches before finding stability on a deep Miami team. That progression gives scouts a fuller picture of his development and resilience.",
+      "bio": "Barrientos transferred from Pittsburgh and won the starting job at Miami. His frame and passing profile give evaluators reason to consider his upside as a starter, though his college production was ordinary. The next step is turning those tools into more consistent results.",
       "watch": "Improve short-area touch, repeat his footwork and separate an aggressive opportunity from a forced throw.",
       "statistics": {
         "position": "QB",
@@ -1392,7 +1392,7 @@
       "name": "Zac Williams",
       "portrait": "zac-williams-transparent.png",
       "headline": "A developmental passer with a narrower margin for error",
-      "bio": "Williams won the starting job after transferring from Pittsburgh and brings the look teams associate with a franchise quarterback. His college statistics were more ordinary, leaving evaluators to weigh his physical profile against the production he has already put on tape.",
+      "bio": "Williams arrived from Arkansas with five-star pedigree and a streaky track record, then found steadier footing with a deeper supporting cast. The improvement gives evaluators something to build on. The question is whether he can keep that rhythm when the offense asks more of him.",
       "watch": "Clean up routine accuracy, accelerate covered-read decisions and avoid holding the ball into sacks.",
       "statistics": {
         "position": "QB",
@@ -2135,6 +2135,24 @@
         "runStops": 19,
         "forcedFumbles": 1
       }
+    },
+    "97": {
+      "name": "Danny Franklin",
+      "position": "QB",
+      "portrait": "danny-franklin-transparent.png",
+      "bio": "Franklin processes quickly and gives Purdue a dependable passer in the short game. His accuracy carries into the middle of the field when he can throw on time, although limited arm strength makes late throws outside the numbers a tougher part of his projection."
+    },
+    "98": {
+      "name": "Jack Greene",
+      "position": "QB",
+      "portrait": "jack-greene-transparent.png",
+      "bio": "Greene brings a strong arm and former five-star pedigree after starting at Ohio State. The Boston College quarterback has the tools to attack farther downfield. His accuracy needs to become more reliable, particularly when pressure disrupts his platform and forces him to throw early."
+    },
+    "99": {
+      "name": "Terrance May",
+      "position": "QB",
+      "portrait": "terrance-may-transparent.png",
+      "bio": "May carries a tight end’s frame into the pocket and has enough speed to make designed runs a real threat. Washington State’s quarterback can stress a defense with his size. Sharper reads and more consistent decisions will determine how much of that upside translates."
     }
   }
 }

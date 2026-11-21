@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Danny Franklin",
+    "position": "QB",
+    "school": "Purdue",
+    "file": "portraits/danny-franklin-transparent.png",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Photorealistic sports media-day portrait of Danny Franklin, a fictional 24-year-old adult male college quarterback, 6-foot-1, 203 pounds, white with fair skin, brown eyes, long straight brown hair, and a neatly trimmed medium beard and mustache. Wear a black Purdue Boilermakers football jersey with old-gold trim and number 12; show the correct jersey digits on both shoulder panels and upper chest. Use image 1 only for the tight centered head-and-shoulders crop, even lighting, and cutout treatment. Use the new subject’s own face, hairstyle and team uniform. Match the 1254 × 1254 square framing with a sliver of clearance above the full hairstyle, eyes a quarter of the way down, shoulders filling the lower frame, and the very bottom passing through the front jersey number. One athlete looking directly at camera, no helmet. Genuine alpha transparency around the full silhouette, clean natural edges, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "name": "Jack Greene",
+    "position": "QB",
+    "school": "Boston College",
+    "file": "portraits/jack-greene-transparent.png",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Photorealistic sports media-day portrait of Jack Greene, a fictional 23-year-old adult male college quarterback, 6-foot-7, 230 pounds, white with fair skin, blue eyes, short straight brown hair with faded sides, light groomed stubble, and natural visible acne. Wear a maroon Boston College Eagles football jersey with gold trim and number 7; show the correct jersey digits on both shoulder panels and upper chest. Use image 1 only for the tight centered head-and-shoulders crop, even lighting, and cutout treatment. Use the new subject’s own face, hairstyle and team uniform. Match the 1254 × 1254 square framing with a sliver of clearance above the full hairstyle, eyes a quarter of the way down, shoulders filling the lower frame, and the very bottom passing through the front jersey number. One athlete looking directly at camera, no helmet. Genuine alpha transparency around the full silhouette, clean natural edges, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "name": "Terrance May",
+    "position": "QB",
+    "school": "Washington State",
+    "file": "portraits/terrance-may-transparent.png",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Photorealistic sports media-day portrait of Terrance May, a fictional 22-year-old adult male college quarterback, 6-foot-6, 240 pounds, African American with medium-dark brown skin, brown eyes, short brown afro with faded sides, a neatly groomed medium beard and mustache, and a sturdy tight end-like frame. Wear a crimson Washington State Cougars football jersey with white number 7 and the WSU Cougar logo; show the correct jersey digits on both shoulder panels and upper chest. Use image 1 only for the tight centered head-and-shoulders crop, even lighting, and cutout treatment. Use the new subject’s own face, hairstyle and team uniform. Match the 1254 × 1254 square framing with a sliver of clearance above the full hairstyle, eyes a quarter of the way down, shoulders filling the lower frame, and the very bottom passing through the front jersey number. One athlete looking directly at camera, no helmet. Genuine alpha transparency around the full silhouette, clean natural edges, no backdrop, checkerboard, shadow, captions or watermark."
+  }
+]

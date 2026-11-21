@@ -1,50 +1,142 @@
 [
   {
-    "name": "James Rodriquez",
-    "file": "portraits/james-rodriquez-transparent.png",
-    "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: James Rodriquez, a fictional adult male SAM athlete, African American, with Spanish heritage, olive skin, brown eyes, black short curly fade, medium neatly groomed facial hair; 6'5\" and 247-pound athletic SAM build; wearing a Ohio State football jersey #41 in authentic school colors with school branding. Unique fictional athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark."
-  },
-  {
-    "name": "Ryan Hodges III",
-    "file": "portraits/ryan-hodges-iii-transparent.png",
-    "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: Ryan Hodges III, a fictional adult male WR athlete, African American, light skin, hazel eyes, brown short Caesar haircut, clean shaven; 5'10\" and 190-pound athletic WR build; wearing a Ohio State football jersey #3 in authentic school colors with school branding. Unique fictional athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark."
-  },
-  {
-    "name": "Mikael Thomas",
-    "file": "portraits/mikael-thomas-transparent.png",
-    "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: Mikael Thomas, a fictional adult male CB athlete, African American, medium brown skin, brown eyes, black short Caesar haircut, medium neatly groomed facial hair; 6'1\" and 191-pound athletic CB build; wearing a Clemson football jersey #21 in authentic school colors with school branding. Unique fictional athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark."
-  },
-  {
-    "name": "Dylan Fredericks",
-    "file": "portraits/dylan-fredericks-transparent.png",
-    "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: Dylan Fredericks, a fictional adult male HB athlete, white, white skin, blue eyes, blonde long straight hair, light neatly groomed facial hair; 5'9\" and 210-pound athletic HB build; wearing a BYU football jersey #11 in authentic school colors with school branding. Unique fictional athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark."
-  },
-  {
-    "name": "DeMarcus Anthony",
-    "file": "portraits/demarcus-anthony-transparent.png",
-    "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: DeMarcus Anthony, a fictional adult male WR athlete, African American, dark skin, brown eyes, black classic cornrows, medium neatly groomed facial hair; 6'1\" and 190-pound athletic WR build; wearing a Texas A&M football jersey #10 in authentic school colors with school branding. Unique fictional athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark."
-  },
-  {
+    "id": "1",
     "name": "C.J. Nielsen",
-    "file": "portraits/cj-nielsen-transparent.png",
+    "position": "QB",
+    "school": "Ole Miss",
     "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: C.J. Nielsen, a fictional adult male QB athlete, white, white skin, blue eyes, brown medium-long straight hair, goatee; 6'4\" and 220-pound athletic QB build; wearing a Ole Miss football jersey #12 in authentic school colors with school branding. Unique fictional athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark."
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of C.J. Nielsen, a fictional adult male QB college football prospect, white athlete with fair skin, blue eyes, medium-to-long straight brown hair and a goatee. Build and shoulder proportions suit his 6'4\", 220-pound position. He wears a navy Ole Miss Rebels jersey with white digits; the only jersey numeral is 12. Show 12 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/cj-nielsen-transparent.png"
   },
   {
+    "id": "2",
     "name": "Johnny Peña",
-    "file": "portraits/johnny-pena-transparent.png",
+    "position": "QB",
+    "school": "Tulsa",
     "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: Johnny Peña, a fictional adult male QB athlete, Latino, white skin, brown eyes, brown short Caesar fade, medium neatly groomed facial hair; 6'6\" and 218-pound athletic QB build; wearing a Tulsa football jersey #1 in authentic school colors with school branding. Unique fictional athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark."
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Johnny Peña, a fictional adult male QB college football prospect, Latino athlete with fair skin, brown eyes, a short brown Caesar fade and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'6\", 218-pound position. He wears a royal blue Tulsa Golden Hurricane jersey with white digits and gold details; the only jersey numeral is 1. Show 1 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/johnny-pena-transparent.png"
   },
   {
+    "id": "3",
     "name": "Dareon Willis",
-    "file": "portraits/dareon-willis-transparent.png",
+    "position": "QB",
+    "school": "Alabama",
     "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: Dareon Willis, a fictional adult male QB athlete, African American, dark skin, brown eyes, black short afro fade, clean shaven; 6'2\" and 225-pound athletic QB build; wearing a Alabama football jersey #8 in authentic school colors with school branding. Unique fictional athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark."
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Dareon Willis, a fictional adult male QB college football prospect, African American athlete with dark brown skin, brown eyes, a short black afro fade and a clean-shaven face. Build and shoulder proportions suit his 6'2\", 225-pound position. He wears a crimson Alabama Crimson Tide jersey with white digits; the only jersey numeral is 8. Show 8 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/dareon-willis-transparent.png"
+  },
+  {
+    "id": "4",
+    "name": "Dylan Fredericks",
+    "position": "HB",
+    "school": "BYU",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Dylan Fredericks, a fictional adult male HB college football prospect, white athlete with fair skin, blue eyes, long straight blond hair and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 5'9\", 210-pound position. He wears a royal blue BYU Cougars jersey with white digits and BYU details; the only jersey numeral is 11. Show 11 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/dylan-fredericks-transparent.png"
+  },
+  {
+    "id": "9",
+    "name": "Ryan Hodges III",
+    "position": "WR",
+    "school": "Ohio State",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Ryan Hodges III, a fictional adult male WR college football prospect, African American athlete with light brown skin, hazel eyes, a short brown Caesar cut and a clean-shaven face. Build and shoulder proportions suit his 5'10\", 190-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 3. Show 3 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/ryan-hodges-iii-transparent.png"
+  },
+  {
+    "id": "10",
+    "name": "DeMarcus Anthony",
+    "position": "WR",
+    "school": "Texas A&M",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of DeMarcus Anthony, a fictional adult male WR college football prospect, African American athlete with dark brown skin, brown eyes, black straight-back cornrows and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'1\", 190-pound position. He wears a maroon Texas A&M Aggies jersey with white digits; the only jersey numeral is 10. Show 10 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/demarcus-anthony-transparent.png"
+  },
+  {
+    "id": "11",
+    "name": "Taylen Ingram",
+    "position": "WR",
+    "school": "Florida",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Taylen Ingram, a fictional adult male WR college football prospect, African American athlete with medium brown skin, brown eyes, black patterned tight braids, a neat goatee and a narrow jaw. Build and shoulder proportions suit his 5'7\", 178-pound position. He wears a royal blue Florida Gators jersey with white digits outlined in orange; the only jersey numeral is 10. Show 10 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/taylen-ingram-transparent.png"
+  },
+  {
+    "id": "14",
+    "name": "Alex Martinez",
+    "position": "TE",
+    "school": "Ohio State",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Alex Martinez, a fictional adult male TE college football prospect, Latino athlete with olive tan skin, brown eyes, a short brown Caesar fade and light neatly groomed facial hair. Build and shoulder proportions suit his 6'5\", 249-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 85. Show 85 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/alex-martinez-transparent.png"
+  },
+  {
+    "id": "18",
+    "name": "Conor Williams",
+    "position": "LT",
+    "school": "Texas",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Conor Williams, a fictional adult male LT college football prospect, fair-skinned white athlete with blue eyes, medium-length wavy blond hair and a goatee. Build and shoulder proportions suit his 6'5\", 323-pound position. He wears a burnt orange Texas Longhorns jersey with white digits; the only jersey numeral is 75. Show 75 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/conor-williams-transparent.png"
+  },
+  {
+    "id": "19",
+    "name": "Jordan Nunez",
+    "position": "LT",
+    "school": "Notre Dame",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Jordan Nunez, a fictional adult male LT college football prospect, Latino athlete with fair tan skin and mixed-race features, brown eyes, a short brown Caesar cut and light neatly groomed facial hair. Build and shoulder proportions suit his 6'8\", 320-pound position. He wears a navy Notre Dame Fighting Irish jersey with cream digits outlined in gold; the only jersey numeral is 74. Show 74 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/jordan-nunez-transparent.png"
+  },
+  {
+    "id": "23",
+    "name": "James Rodriquez",
+    "position": "SAM",
+    "school": "Ohio State",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of James Rodriquez, a fictional adult male SAM college football prospect, African American athlete with an olive complexion and mixed-race features, brown eyes, a short curly black fade and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'5\", 247-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 41. Show 41 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/james-rodriquez-transparent.png"
+  },
+  {
+    "id": "24",
+    "name": "Brennan Coombs",
+    "position": "MIKE",
+    "school": "Texas A&M",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Brennan Coombs, a fictional adult male MIKE college football prospect, white athlete with fair skin, brown eyes, short straight brown hair with faded sides, a round face and a clean-shaven jaw. Build and shoulder proportions suit his 6'5\", 247-pound position. He wears a maroon Texas A&M Aggies jersey with white digits; the only jersey numeral is 51. Show 51 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/brennan-coombs-transparent.png"
+  },
+  {
+    "id": "25",
+    "name": "Mikael Thomas",
+    "position": "CB",
+    "school": "Clemson",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Mikael Thomas, a fictional adult male CB college football prospect, African American athlete with medium brown skin, brown eyes, a short black Caesar cut and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'1\", 191-pound position. He wears a orange Clemson Tigers jersey with white digits and a Clemson paw mark; the only jersey numeral is 21. Show 21 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/mikael-thomas-transparent.png"
+  },
+  {
+    "id": "29",
+    "name": "Neville Gibson",
+    "position": "FS",
+    "school": "Ohio State",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Neville Gibson, a fictional adult male FS college football prospect, African American athlete with medium brown skin, brown eyes, short brown freeform dreadlocks and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'0\", 213-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 5. Show 5 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/neville-gibson-transparent.png"
   }
 ]
