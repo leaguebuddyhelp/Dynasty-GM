@@ -52,6 +52,7 @@ const schoolEmojis = {
   'Utah State': { name: 'utahstate', id: '1573748015515173067' },
   'Oklahoma State': { name: 'oklahomastate', id: '1573748014009286756' },
   'Western Kentucky': { name: 'westernkentucky', id: '1573748012226973828' },
+  Stanford: { name: 'stanford', id: '1573750048502710364' },
 };
 export function schoolLabel(school) {
   const display = schoolAliases[school] || school;

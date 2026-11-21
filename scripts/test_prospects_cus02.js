@@ -93,7 +93,7 @@ for (const [id, position] of [['98', 'FS'], ['99', 'REDG'], ['100', 'WR'], ['101
   assert.match(view.components[1].toJSON().components[0].options.find((o) => o.value === id).description, /Unranked/);
 }
 const qbOptions = buildProspectView({ classId: 'CUS02' }).components[1].toJSON().components[0].options;
-for (const [id, emoji] of [['101', '1573748014009286756'], ['104', '1573748012226973828'], ['106', '1573748015515173067']]) {
+for (const [id, emoji] of [['101', '1573748014009286756'], ['102', '1573750048502710364'], ['104', '1573748012226973828'], ['106', '1573748015515173067']]) {
   assert.equal(qbOptions.find((option) => option.value === id).emoji.id, emoji);
   const view = buildProspectView({ classId: 'CUS02', playerId: id });
   assert.ok(view.embeds[0].toJSON().fields.find(({ name }) => name === 'School').value.includes(emoji));
