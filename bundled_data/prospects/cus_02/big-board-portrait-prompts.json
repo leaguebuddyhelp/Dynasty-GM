@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Dan Rudnick",
+    "position": "QB",
+    "school": "Duke",
+    "file": "portraits/dan-rudnick-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Dan Rudnick, a fictional adult quarterback. Subject: 22-year-old white male athlete, 6-foot-4 and 230 pounds, fair skin, brown eyes, short straight brown hair faded at the sides, strong angular face and medium-length neatly trimmed brown beard. Wear a royal blue Duke Blue Devils jersey with white number 2, Duke block D. Put the specified number clearly on both upper shoulders and on the chest, with the chest number partly cropped by the bottom of the frame. Tight head-and-shoulders cutout on a 1254 × 1254 square canvas with a sliver of clearance above the full hairstyle. Center the face and look straight at camera. Eyes about one-quarter down, chin just under halfway down, upper shoulder pads fill the width across the bottom. Show a distinct natural face, neutral expression, realistic skin and fabric texture, soft even lighting and appropriate quarterback shoulder pads. One athlete, no helmet. Actual alpha transparency outside the clean silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "name": "Jackson Beckett",
+    "position": "QB",
+    "school": "Western Kentucky",
+    "file": "portraits/jackson-beckett-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Jackson Beckett, a fictional adult quarterback. Subject: 24-year-old white male athlete, 6-foot-2 and 210 pounds, fair skin, brown eyes, medium-length wavy brown hair and clean-shaven face. Wear a red Western Kentucky Hilltoppers jersey with white number 17 and a WKU collar mark. Put the specified number clearly on both upper shoulders and on the chest, with the chest number partly cropped by the bottom of the frame. Tight head-and-shoulders cutout on a 1254 × 1254 square canvas with a sliver of clearance above the full hairstyle. Center the face and look straight at camera. Eyes about one-quarter down, chin just under halfway down, upper shoulder pads fill the width across the bottom. Show a distinct natural face, neutral expression, realistic skin and fabric texture, soft even lighting and appropriate quarterback shoulder pads. One athlete, no helmet. Actual alpha transparency outside the clean silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "name": "Jordy Willis",
+    "position": "QB",
+    "school": "Georgia Tech",
+    "file": "portraits/jordy-willis-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Jordy Willis, a fictional adult quarterback. Subject: 23-year-old African American male athlete, 6-foot, 212 pounds, compact stocky build, dark brown skin, brown eyes, medium textured black Afro with tightly coiled hair and a neatly groomed medium beard. Wear a navy blue Georgia Tech Yellow Jackets jersey with white number 2, gold accents and a GT mark. Put the specified number clearly on both upper shoulders and on the chest, with the chest number partly cropped by the bottom of the frame. Tight head-and-shoulders cutout on a 1254 × 1254 square canvas with a sliver of clearance above the full hairstyle. Center the face and look straight at camera. Eyes about one-quarter down, chin just under halfway down, upper shoulder pads fill the width across the bottom. Show a distinct natural face, neutral expression, realistic skin and fabric texture, soft even lighting and appropriate quarterback shoulder pads. One athlete, no helmet. Actual alpha transparency outside the clean silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "name": "Tyler Costa",
+    "position": "QB",
+    "school": "Utah State",
+    "file": "portraits/tyler-costa-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Tyler Costa, a fictional adult quarterback. Subject: 22-year-old Latino and Black male athlete, 6-foot-5 and 225 pounds, mixed heritage, olive tan skin, brown eyes, short straight brown hair, and a medium-length neatly groomed brown beard. Wear a navy Utah State Aggies jersey with white number 11, white accents and Utah State block U mark. Put the specified number clearly on both upper shoulders and on the chest, with the chest number partly cropped by the bottom of the frame. Tight head-and-shoulders cutout on a 1254 × 1254 square canvas with a sliver of clearance above the full hairstyle. Center the face and look straight at camera. Eyes about one-quarter down, chin just under halfway down, upper shoulder pads fill the width across the bottom. Show a distinct natural face, neutral expression, realistic skin and fabric texture, soft even lighting and appropriate quarterback shoulder pads. One athlete, no helmet. Actual alpha transparency outside the clean silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  }
+]

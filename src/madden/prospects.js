@@ -5,7 +5,7 @@ import { ActionRowBuilder, AttachmentBuilder, EmbedBuilder, StringSelectMenuBuil
 
 const classFiles = Object.freeze({
   CUS01: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01.json', import.meta.url)), boardFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01 - Big Board.json', import.meta.url)) },
-  CUS02: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_02/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS02.json', import.meta.url)) },
+  CUS02: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_02/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS02.json', import.meta.url)), boardFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS02 - Big Board.json', import.meta.url)) },
 });
 export const PROSPECT_CLASSES = Object.freeze(Object.keys(classFiles));
 export const PROSPECT_POSITIONS = Object.freeze(['QB', 'HB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'FS', 'SS', 'K', 'P']);
@@ -49,6 +49,9 @@ const schoolEmojis = {
   Purdue: { name: 'purdue', id: '1573736474514563155' },
   'Boston College': { name: 'bostoncollege', id: '1573736473629302895' },
   'Washington State': { name: 'washingtonstate', id: '1573736472060760216' },
+  'Utah State': { name: 'utahstate', id: '1573748015515173067' },
+  'Oklahoma State': { name: 'oklahomastate', id: '1573748014009286756' },
+  'Western Kentucky': { name: 'westernkentucky', id: '1573748012226973828' },
 };
 export function schoolLabel(school) {
   const display = schoolAliases[school] || school;

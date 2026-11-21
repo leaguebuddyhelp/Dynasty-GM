@@ -5,7 +5,7 @@
   "profiles": {
     "1": {
       "name": "Ameer Young",
-      "bio": "Young knows what it takes to lead an offense into the spotlight. After starring at Missouri, the veteran transfer took over at Clemson and added another chapter to five years in college. His established tape gives teams a compelling quarterback to evaluate.",
+      "bio": "Young starred at Missouri before taking over at Clemson, where his fifth college season gave scouts more high-level tape. The Heisman winner brings experience leading two offenses. The next question is how quickly he can carry that command into another system against faster defenses.",
       "portrait": "ameer-young-transparent-v2.png",
       "statistics": {
         "position": "QB",
@@ -128,7 +128,7 @@
     },
     "31": {
       "name": "Maxx DiMarco",
-      "bio": "DiMarco brings a measured approach and enough mobility to stress a defense beyond the pocket. The Syracuse quarterback protected the ball while producing modest passing totals; his running threat and capable arm give teams a foundation for a professional role.",
+      "bio": "DiMarco kept interceptions low for Syracuse and gave the offense a credible rushing threat. His passing production was modest, though he has enough arm talent to keep a professional role in play. Evaluators will want to see more impact through the air without sacrificing ball security.",
       "portrait": "maxx-dimarco-transparent-v2.png",
       "statistics": {
         "position": "QB",
@@ -195,7 +195,7 @@
     },
     "38": {
       "name": "Rontay Jenkins",
-      "bio": "The ball leaves Jenkins’ hand with rare force. The Tennessee quarterback transferred from Georgia Tech and owns arm strength that invites Josh Allen comparisons, but his projection hinges on improving the rest of his game and becoming a more complete passer.",
+      "bio": "Jenkins transferred from Georgia Tech to Tennessee and brings rare arm strength that invites comparisons to Josh Allen. He can make throws most prospects cannot attempt. The rest of his game needs polish, and his projection depends on becoming a more dependable passer from snap to snap.",
       "portrait": "rontay-jenkins-transparent-v2.png",
       "statistics": {
         "position": "QB",
@@ -418,7 +418,7 @@
     },
     "91": {
       "name": "Matt Delaney",
-      "bio": "Delaney stepped into a demanding USC assignment after transferring from UNLV, filling in capably following J.T. Rhoads’ departure. His experience operating the offense offers a professional team a potential backup or spot starter who can be ready when called upon.",
+      "bio": "Delaney transferred from UNLV and capably filled the USC job after J.T. Rhoads departed. His time running that offense supports a projection as a backup who can make spot starts. The question is whether he can build on that steady play over a longer assignment.",
       "portrait": "matt-delaney-transparent-v2.png",
       "statistics": {
         "position": "QB",
@@ -532,7 +532,7 @@
     },
     "101": {
       "name": "Jake Fulton",
-      "bio": "Fulton brings a 6-foot-4 frame to the Oklahoma State quarterback group. The senior gives evaluators another passer to consider as they assess how his build and throwing profile might fit a professional offense and the responsibilities of its quarterback room.",
+      "bio": "Fulton has the build and arm profile to develop as a backup with a chance to grow into a starting role. The Oklahoma State senior needs to produce more high-impact throws. That improvement would give evaluators more evidence that his tools can carry a larger workload.",
       "portrait": "jake-fulton-transparent.png",
       "statistics": {
         "position": "QB",
@@ -548,6 +548,36 @@
         "rushingYards": 112,
         "rushingTD": 2
       }
+    },
+    "102": {
+      "name": "Will Hoggard",
+      "position": "QB",
+      "portrait": "will-hoggard-early-transparent.png",
+      "bio": "Hoggard showed flashes at Stanford, but there were more difficult stretches than strong ones across the season. Too many plays put the ball in danger. His clearest path forward is to reduce those decisions and give an offense more dependable play between the occasional highs."
+    },
+    "103": {
+      "name": "Dan Rudnick",
+      "position": "QB",
+      "portrait": "dan-rudnick-transparent.png",
+      "bio": "Rudnick has the size teams look for in a quarterback, and he puts it to use as a runner. The Duke senior can break tackles and extend rushing plays through contact. His passing traits are more ordinary, so that running value is central to his projection."
+    },
+    "104": {
+      "name": "Jackson Beckett",
+      "position": "QB",
+      "portrait": "jackson-beckett-transparent.png",
+      "bio": "Beckett put together productive passing numbers at Western Kentucky by getting the ball out quickly. That timing helps him make the most of an arm with below-average strength. His game projects best when he can make the read early and deliver before the throwing window narrows."
+    },
+    "105": {
+      "name": "Jordy Willis",
+      "position": "QB",
+      "portrait": "jordy-willis-transparent.png",
+      "bio": "Willis brings a good arm and real speed in a compact frame, giving Georgia Tech a quarterback who can change the pace of a game. The next step is translating those tools into steadier quarterback play, especially when the offense needs him to sustain a drive."
+    },
+    "106": {
+      "name": "Tyler Costa",
+      "position": "QB",
+      "portrait": "tyler-costa-transparent.png",
+      "bio": "Costa fits the physical profile at 6-foot-5 and has a good arm to work with. The Utah State quarterback completed fewer than 58 percent of his passes, which puts accuracy at the center of his evaluation. More reliable ball placement could make those tools play up."
     }
   }
 }

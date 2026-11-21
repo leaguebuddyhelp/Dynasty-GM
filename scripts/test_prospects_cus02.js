@@ -5,20 +5,36 @@ import { buildProspectView, loadProspects } from '../src/madden/prospects.js';
 import { customId, execute } from '../src/interactions/madden_prospects.js';
 
 const players = loadProspects('CUS02');
-assert.equal(players.length, 31);
-assert.equal(new Set(players.map((p) => p.statistics.games)).size >= 4, true);
-assert.equal(players.filter((p) => p.position === 'QB').length, 5);
+assert.equal(players.length, 36);
+assert.equal(new Set(players.flatMap((p) => p.statistics ? [p.statistics.games] : [])).size >= 4, true);
+assert.equal(players.filter((p) => p.position === 'QB').length, 10);
 assert.equal(players.filter((p) => p.position === 'HB').length, 9);
 assert.equal(players.filter((p) => p.position === 'WR').length, 8);
 assert.equal(players.filter((p) => p.position === 'TE').length, 7);
 assert.equal(players.filter((p) => p.position === 'FS').length, 1);
 assert.equal(players.filter((p) => p.position === 'REDG').length, 1);
 assert.throws(() => loadProspects('__proto__'), /Unknown prospect class/);
+const scoutingQbs = {
+  '102': ['Will Hoggard', 'will-hoggard-early-transparent.png'],
+  '103': ['Dan Rudnick', 'dan-rudnick-transparent.png'],
+  '104': ['Jackson Beckett', 'jackson-beckett-transparent.png'],
+  '105': ['Jordy Willis', 'jordy-willis-transparent.png'],
+  '106': ['Tyler Costa', 'tyler-costa-transparent.png'],
+};
 for (const player of players) {
   assert.ok(['QB', 'HB', 'WR', 'TE', 'FS', 'REDG'].includes(player.position));
   assert.ok(player.bio.split(/\s+/).length >= 40 && player.bio.split(/\s+/).length <= 50);
-  assert.equal(player.statistics.fictional, true);
-  if (player.position === 'QB') {
+  const scouting = scoutingQbs[player.id];
+  if (scouting) {
+    assert.equal(player.position, 'QB');
+    assert.equal(player.name, scouting[0]);
+    assert.ok(player.portrait.endsWith(`/${scouting[1]}`));
+    assert.equal(player.rank, null);
+    assert.equal(player.statistics, undefined);
+  } else {
+    assert.equal(player.statistics.fictional, true);
+  }
+  if (player.position === 'QB' && !scouting) {
     const s = player.statistics;
     assert.ok(s.completions <= s.attempts && s.passingTD + s.interceptions <= s.attempts);
     assert.ok(s.attempts / s.games >= 12 && s.attempts / s.games <= 55);
@@ -50,7 +66,8 @@ for (const player of players) {
   const embed = view.embeds[0].toJSON();
   assert.equal(embed.title, `${player.name} · ${player.position}${player.heisman ? ' <:heisman:1573390983457022102>' : ''}`);
   assert.equal(embed.thumbnail.url, `attachment://cus02-${player.id}.png`);
-  assert.match(embed.footer.text, /CUS02 · Simulated college statistics/);
+  assert.equal(embed.footer.text, scouting ? 'CUS02 · Scouting profile' : 'CUS02 · Simulated college statistics');
+  if (scouting) assert.equal(embed.fields.some(({ name }) => name === 'Final college season'), false);
   assert.doesNotMatch(JSON.stringify(embed), /fictional|dev_trait|overall rating/i);
   assert.deepEqual(view.attachments, []);
 }
@@ -59,7 +76,7 @@ assert.doesNotMatch(buildProspectView({ classId: 'CUS02', position: 'QB', player
 assert.equal(loadProspects()[0].name, 'J.T. Rhoads');
 assert.equal(players[0].name, 'Ameer Young');
 for (const [position, key] of [['QB', 'passingYards'], ['HB', 'rushingYards'], ['WR', 'receivingYards'], ['TE', 'receivingYards']]) {
-  const values = players.filter((player) => player.position === position).map((player) => player.statistics[key]);
+  const values = players.filter((player) => player.position === position && player.statistics).map((player) => player.statistics[key]);
   assert.ok(values.some((value, index) => index > 0 && value > values[index - 1]), `${position} totals should not simply descend by board rank`);
 }
 assert.match(buildProspectView({ classId: 'CUS02', position: 'QB', playerId: '1' }).embeds[0].toJSON().fields.find((field) => field.name === 'School').value, /<:clemson:1573014169631072276>/);
@@ -70,10 +87,16 @@ assert.equal(buildProspectView({ classId: 'CUS02', position: 'TE' }).components[
 assert.equal(buildProspectView({ classId: 'CUS02', position: 'FB' }).components.length, 2);
 assert.match(buildProspectView({ classId: 'CUS02', position: 'FB' }).embeds[0].toJSON().description, /No completed profiles/);
 assert.throws(() => buildProspectView({ classId: 'CUS02', position: 'QB', playerId: '13' }), /not available/);
-for (const [id, position] of [['98', 'FS'], ['99', 'REDG'], ['100', 'WR'], ['101', 'QB']]) {
+for (const [id, position] of [['98', 'FS'], ['99', 'REDG'], ['100', 'WR'], ['101', 'QB'], ...Object.keys(scoutingQbs).map((id) => [id, 'QB'])]) {
   const view = buildProspectView({ classId: 'CUS02', position, playerId: id });
   assert.match(view.embeds[0].toJSON().fields.find((f) => f.name === 'Jersey / Board').value, /Unranked/);
   assert.match(view.components[1].toJSON().components[0].options.find((o) => o.value === id).description, /Unranked/);
+}
+const qbOptions = buildProspectView({ classId: 'CUS02' }).components[1].toJSON().components[0].options;
+for (const [id, emoji] of [['101', '1573748014009286756'], ['104', '1573748012226973828'], ['106', '1573748015515173067']]) {
+  assert.equal(qbOptions.find((option) => option.value === id).emoji.id, emoji);
+  const view = buildProspectView({ classId: 'CUS02', playerId: id });
+  assert.ok(view.embeds[0].toJSON().fields.find(({ name }) => name === 'School').value.includes(emoji));
 }
 for (const [id, value, expected] of [
   ['madden_prospects_class', 'CUS02', 'CUS02 Draft Prospects · QB'],
@@ -83,6 +106,8 @@ for (const [id, value, expected] of [
   ['madden_prospects_cus02_player_WR', '2', 'Michael Oluwafemi · WR'],
   ['madden_prospects_cus02_position', 'TE', 'CUS02 Draft Prospects · TE'],
   ['madden_prospects_cus02_player_TE', '33', 'Brayan Williams · TE'],
+  ['madden_prospects_cus02_player_QB', '102', 'Will Hoggard · QB'],
+  ['madden_prospects_cus02_player_QB', '106', 'Tyler Costa · QB'],
   ['madden_prospects_class', 'CUS01', 'CUS01 Draft Prospects · QB'],
   ['madden_prospects_player_QB', '1', 'J.T. Rhoads · QB'],
 ]) {
@@ -94,4 +119,4 @@ for (const [id, value, expected] of [
   assert.equal(payload.embeds[0].toJSON().title, expected === 'J.T. Rhoads · QB' ? `${expected} <:heisman:1573390983457022102>` : expected);
   assert.deepEqual(payload.attachments, []);
 }
-console.log('PASS 31 CUS02 profiles, unranked player cards, transparent portraits and class-safe navigation');
+console.log('PASS 36 CUS02 profiles, unranked player cards, transparent portraits and class-safe navigation');
