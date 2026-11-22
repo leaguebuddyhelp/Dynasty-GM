@@ -67,6 +67,10 @@ const schoolEmojis = {
   'Fresno State': { name: 'fresnostate', id: '1574087657892487310' },
   Liberty: { name: 'liberty', id: '1574087656315297892' },
   Nebraska: { name: 'nebraska', id: '1574087654990025065' },
+  'Michigan State': { name: 'michiganstate', id: '1574094872737087579' },
+  Utah: { name: 'utah', id: '1574094869985493123' },
+  'East Carolina': { name: 'eastcarolina', id: '1574094868450639952' },
+  UAB: { name: 'uab', id: '1574094866181259374' },
 };
 export function schoolLabel(school) {
   const display = schoolAliases[school] || school;
