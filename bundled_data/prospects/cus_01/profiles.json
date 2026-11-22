@@ -230,7 +230,7 @@
       "name": "Narquise Jones",
       "portrait": "narquise-jones-transparent.png",
       "headline": "A first-round receiver who can tilt the coverage",
-      "bio": "Give Jones a crease and the pursuit angle can disappear in a hurry. His long speed stretches coverage downfield, while his ability to make defenders miss adds another explosive dimension after the catch. He can change the math for a defense with one touch.",
+      "bio": "Jones accelerates quickly into his vertical routes and tracks the ball well once it is in the air. Minnesota can use him to stretch coverage even when the throw goes elsewhere. His deep game is established, with his work on shorter timing routes still to evaluate.",
       "watch": "Defeat patient press coverage and preserve route timing when the release gets crowded.",
       "statistics": {
         "position": "WR",
@@ -354,7 +354,7 @@
       "name": "Nick Monk",
       "portrait": "nick-monk-transparent.png",
       "headline": "Get him the ball and let the yards follow",
-      "bio": "Monk’s real work begins once the ball is in his hands. The receiver is a natural playmaker with elite ability after the catch, capable of turning a short completion into a much bigger problem. Designed touches can unlock his value in a hurry.",
+      "bio": "Monk creates space with quick feet and sharp breaks, then finds ways to make the first defender miss after the catch. The Florida State receiver can turn a routine completion into a bigger gain. How he handles physical coverage is the next question for scouts.",
       "watch": "Strengthen catch-point consistency through contact and develop more outside-release counters.",
       "statistics": {
         "position": "WR",
@@ -433,7 +433,7 @@
       "name": "Chandu Chukwumerejie",
       "portrait": "chandu-chukwumerejie-transparent.png",
       "headline": "A sturdy target with first-round offensive utility",
-      "bio": "Chukwumerejie can make a defense account for him in more than the passing game. The powerful receiver draws Deebo Samuel comparisons for his ability to contribute as a runner, bringing a physical, versatile dimension to an offense looking to manufacture touches.",
+      "bio": "Chukwumerejie gives Oklahoma a powerful target who adjusts to the ball with good body control and secures it with reliable hands. He can create extra yards once he turns upfield. Scouts can start with that versatility and look at which routes best translate against tighter coverage.",
       "watch": "Add deception to route stems and create cleaner separation before contact becomes necessary.",
       "statistics": {
         "position": "WR",
@@ -701,7 +701,7 @@
       "name": "Kerry Williams Jr.",
       "portrait": "kerry-williams-jr-transparent.png",
       "headline": "A vertical weapon with a larger route tree to build",
-      "bio": "Williams gives his quarterback a big target who can threaten defenses downfield. His size and vertical ability make him a natural option on deeper throws, though expanding a limited route tree will be essential to creating more opportunities throughout the passing game.",
+      "bio": "Williams eats up ground with long strides and gives Texas a large catch radius when throws go vertical. At 6-foot-4, he can reach passes beyond a defender’s leverage. His route precision varies, and sharper breaks would help him create space when the defense takes away the deep ball.",
       "watch": "Build strength against press coverage, improve release variety and broaden his route inventory.",
       "statistics": {
         "position": "WR",
@@ -1348,7 +1348,7 @@
       "name": "Johnny Newman",
       "portrait": "johnny-newman-transparent.png",
       "headline": "A large receiving target with separation work ahead",
-      "bio": "Newman looks like a receiver an offense can build around, even if his college numbers lag behind the frame. His modest production makes this a projection on size and potential. Developing the details of his game will determine whether those traits translate.",
+      "bio": "Newman gives Notre Dame a 6-foot-6 possession target with strong hands and the ability to finish catches through coverage. His size makes throws into tight windows more viable. He lacks the quickness to separate consistently, so winning at the catch point is central to his projection.",
       "watch": "Sink into breaks more efficiently and create earlier separation against tight man coverage.",
       "statistics": {
         "position": "WR",
@@ -1904,7 +1904,7 @@
       "name": "Jaylon Clarke",
       "portrait": "jaylon-clarke-transparent.png",
       "headline": "Downfield size that still needs a dependable floor",
-      "bio": "Clarke can turn a contested throw into an invitation rather than a risk. The former five-star recruit and Michigan transfer specializes in jump balls, giving his quarterback a receiver who can challenge defenders above the rim and make use of his opportunities downfield.",
+      "bio": "Clarke uses long strides and straight-line speed to make Iowa State dangerous downfield when he gets a clean release. Physical press coverage can delay him before that speed takes over. Improving his answers at the line would help him threaten vertically against more kinds of coverage.",
       "watch": "Improve ball tracking, tighten release timing and become useful on nonvertical routes.",
       "statistics": {
         "position": "WR",
@@ -1969,7 +1969,7 @@
       "name": "Joseph Lomeli",
       "portrait": "joseph-lomeli-transparent.png",
       "headline": "An underneath contributor with a limited initial projection",
-      "bio": "Lomeli’s production makes a compelling opening argument. The receiver put up strong college numbers despite a less impressive athletic profile, leaving teams to decide how much weight to place on what he has already accomplished versus the physical ceiling they project.",
+      "bio": "Lomeli gives Boise State a dependable inside target who reads space well and finishes with strong hands. He can get to the right spot on time, but he lacks explosive acceleration to pull away late in a route. His best work comes on throws that reward timing and awareness.",
       "watch": "Generate separation against man coverage and add more value after short receptions.",
       "statistics": {
         "position": "WR",
@@ -2231,6 +2231,108 @@
       "position": "HB",
       "portrait": "tanner-melendez-transparent.png",
       "bio": "Melendez builds momentum with long strides and has the strength to finish a run when Iowa clears a downhill path. His stiff hips limit how quickly he can change direction, making him less effective when the lane shifts and he has to cut across the formation."
+    },
+    "113": {
+      "name": "Isiah Burton",
+      "position": "WR",
+      "portrait": "isiah-burton-transparent.png",
+      "bio": "Burton has the length and acceleration to threaten vertical coverage for Texas. He can get downfield quickly, but his tracking varies when the ball is in the air. Finding it sooner and adjusting his path more consistently would help him finish the opportunities his speed creates."
+    },
+    "114": {
+      "name": "Jerald Simms-Morrison",
+      "position": "WR",
+      "portrait": "jerald-simms-morrison-early-transparent.png",
+      "bio": "Simms-Morrison gives Mississippi State a bigger slot target with reliable hands. His frame helps on throws into traffic, but he lacks suddenness in his breaks and has trouble separating underneath. He is most convincing when the route gives him room to use his size."
+    },
+    "115": {
+      "name": "Azrael Lee",
+      "position": "WR",
+      "portrait": "azrael-lee-transparent.png",
+      "bio": "Lee gives USC a physical threat after the catch. His balance and creativity let him work through contact and find space once the ball is in his hands. His routes can lose their shape, and more disciplined breaks would help him become a steadier target before the catch."
+    },
+    "116": {
+      "name": "ChaCha Oakim",
+      "position": "WR",
+      "portrait": "chacha-oakim-early-transparent.png",
+      "bio": "Oakim gives Tennessee a tall vertical target with the speed to get behind coverage and the reach to play above defenders. His routes are still raw, and his hands can be inconsistent. Cleaner breaks and more reliable finishes would help him turn those physical advantages into production."
+    },
+    "117": {
+      "name": "Ahmad Moss",
+      "position": "WR",
+      "portrait": "ahmad-moss-transparent.png",
+      "bio": "Moss has the short-area burst and elusiveness to create room quickly for Georgia. He can change direction before a defender settles, but physical defensive backs can disrupt his rhythm. His best early work is likely to come when the formation gives him a cleaner release."
+    },
+    "118": {
+      "name": "Jonah Valdez",
+      "position": "WR",
+      "portrait": "jonah-valdez-transparent.png",
+      "bio": "Valdez gives LSU a physical boundary target who knows how to compete when a defender stays attached. His contested-catch instincts help him finish in tight windows. Limited burst makes it harder to create early separation, so his ability to win through coverage carries much of his projection."
+    },
+    "119": {
+      "name": "Kaden Robinson",
+      "position": "WR",
+      "portrait": "kaden-robinson-transparent.png",
+      "bio": "Robinson gives Pittsburgh an agile target with quick feet and smooth cuts. His slender frame lets him change direction easily, though he struggles to play through contact when defenders close. His movement shows up most clearly on routes that let him work away from physical coverage."
+    },
+    "120": {
+      "name": "Josh Booth Jr",
+      "position": "WR",
+      "portrait": "josh-booth-jr-transparent.png",
+      "bio": "Booth brings length and athletic versatility to Colorado’s receiving group. His build gives him options in different alignments, but his hands can be inconsistent and his routes need cleaner breaks. Improving those details would make it easier to turn his physical tools into dependable targets."
+    },
+    "121": {
+      "name": "Jovanny Brown",
+      "position": "WR",
+      "portrait": "jovanny-brown-transparent.png",
+      "bio": "Brown uses lateral quickness to change direction and create room in tight spaces for North Carolina. His compact frame suits that style, though his catch radius and strength limit his options through contact. He is most effective when he can win with movement before the ball arrives."
+    },
+    "122": {
+      "name": "Aaron Brooks",
+      "position": "WR",
+      "portrait": "aaron-brooks-transparent.png",
+      "bio": "Brooks can threaten Georgia’s opponents vertically with promising burst, especially when he gets a clean start. His releases are inconsistent, and he does not always track the deep ball cleanly. Both areas need improvement if he is going to make his speed a dependable part of the offense."
+    },
+    "123": {
+      "name": "Nicholas Varela",
+      "position": "WR",
+      "portrait": "nicholas-varela-transparent.png",
+      "bio": "Varela gives Oklahoma State a strong possession receiver who can use his size to work through physical coverage. He has less quickness when routes ask him to shake a defender underneath. His best fit is on throws where body positioning can matter as much as separation."
+    },
+    "124": {
+      "name": "Isaiah Rodriquez",
+      "position": "WR",
+      "portrait": "isaiah-rodriquez-transparent.png",
+      "bio": "Rodriquez gives Michigan a tall, physical target who will battle for a catch with a defender nearby. His frame helps him compete through contact, but limited speed and flexibility narrow the ways he can separate. His strongest work comes when the throw lets him use his size."
+    },
+    "125": {
+      "name": "Jamir Cherry",
+      "position": "WR",
+      "portrait": "jamir-cherry-transparent.png",
+      "bio": "Cherry gives Maryland an agile receiver who can change direction and find space once the play opens up. His lighter frame makes it harder to work through press coverage at the line. A cleaner release gives him a better chance to show his open-field movement."
+    },
+    "126": {
+      "name": "Jesse Prater",
+      "position": "WR",
+      "portrait": "jesse-prater-transparent.png",
+      "bio": "Prater gives Fresno State an experienced slot receiver who runs dependable short routes. His value is clearest when the quarterback needs a target in the right place on time. Limited athleticism and explosive playmaking make it harder for him to create bigger gains from those catches."
+    },
+    "127": {
+      "name": "Tre'Marion Givens",
+      "position": "WR",
+      "portrait": "tremarion-givens-transparent.png",
+      "bio": "Givens has the balance and quick cuts to make a defender adjust in tight space. The Liberty receiver does not always accelerate away after the move, and his hands can be inconsistent. More reliable catches would give him more chances to use the movement skills he brings."
+    },
+    "128": {
+      "name": "Jordon Holcomb",
+      "position": "WR",
+      "portrait": "jordon-holcomb-transparent.png",
+      "bio": "Holcomb has enough straight-line speed to threaten vertically for Nebraska when he can build momentum. Stiff routes make it harder for him to change direction and create separation when coverage stays close. His clearest role is on routes that let him run through open space."
+    },
+    "129": {
+      "name": "Reed Richardson",
+      "position": "WR",
+      "portrait": "reed-richardson-transparent.png",
+      "bio": "Richardson gives USC a taller slot option who shows solid awareness of where to settle inside. His limited burst makes it harder to open a window quickly, and he does not consistently finish contested catches. His best opportunities come when he can read the coverage and arrive on time."
     }
   }
 }

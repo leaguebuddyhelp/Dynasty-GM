@@ -53,6 +53,20 @@ const schoolEmojis = {
   'Oklahoma State': { name: 'oklahomastate', id: '1573748014009286756' },
   'Western Kentucky': { name: 'westernkentucky', id: '1573748012226973828' },
   Stanford: { name: 'stanford', id: '1573750048502710364' },
+  'Wake Forest': { name: 'wakeforest', id: '1574086719156916306' },
+  Illinois: { name: 'illinois', id: '1574086716904710196' },
+  Arizona: { name: 'arizona', id: '1574086715704999956' },
+  'Oregon State': { name: 'oregonstate', id: '1574086714669006998' },
+  Fordham: { name: 'fordham', id: '1574086713427492925' },
+  Rice: { name: 'rice', id: '1574086712324390983' },
+  TCU: { name: 'tcu', id: '1574086711070302259' },
+  Iowa: { name: 'iowa', id: '1574086710143484078' },
+  'Mississippi State': { name: 'mississippisate', id: '1574087662527320216' },
+  Pittsburgh: { name: 'pittsburgh', id: '1574087661357105162' },
+  Maryland: { name: 'maryland', id: '1574087659691712603' },
+  'Fresno State': { name: 'fresnostate', id: '1574087657892487310' },
+  Liberty: { name: 'liberty', id: '1574087656315297892' },
+  Nebraska: { name: 'nebraska', id: '1574087654990025065' },
 };
 export function schoolLabel(school) {
   const display = schoolAliases[school] || school;

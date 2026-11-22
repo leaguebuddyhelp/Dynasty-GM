@@ -39,9 +39,9 @@ assert.match(buildEarlyTop10View(4).embeds[0].toJSON().thumbnail.url, /early-cus
 assert.doesNotMatch(buildEarlyTop10View(4).embeds[0].toJSON().title, /:heisman:/, 'Later awards must not leak into an earlier board');
 assert.match(buildEarlyTop10View(999).embeds[0].toJSON().footer.text, /32\/32/);
 assert.match(buildEarlyTop10View(18).embeds[0].toJSON().thumbnail.url, /early-cus01-31\.png/);
-assert.match(buildEarlyTop10View(16).embeds[0].toJSON().thumbnail.url, /early-cus01-rank-17\.png/);
+assert.match(buildEarlyTop10View(16).files[0].attachment, /chacha-oakim-early-transparent\.png$/);
 assert.match(buildEarlyTop10View(21).embeds[0].toJSON().thumbnail.url, /early-cus01-rank-22\.png/);
-assert.match(buildEarlyTop10View(25).embeds[0].toJSON().thumbnail.url, /early-cus01-rank-26\.png/);
+assert.match(buildEarlyTop10View(25).files[0].attachment, /jerald-simms-morrison-early-transparent\.png$/);
 assert.match(buildEarlyTop10View(26).embeds[0].toJSON().thumbnail.url, /early-cus01-rank-27\.png/);
 assert.equal(buildEarlyTop10View(9).components[0].toJSON().components[1].disabled, false);
 let commandReply;
