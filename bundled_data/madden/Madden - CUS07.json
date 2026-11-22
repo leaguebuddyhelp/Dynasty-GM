@@ -1,0 +1,630 @@
+{
+  "1": {
+    "#": 1,
+    "position": "QB",
+    "name": "Keahi Kawaha",
+    "school": "Alabama",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 1,
+    "overall": 74,
+    "dev_trait": 1,
+    "archetype": "Field General",
+    "height": "6'0\"",
+    "weight": 213,
+    "jersey": "#2",
+    "round": 1,
+    "pick": 1,
+    "class": 7,
+    "skin": "brown/tan",
+    "eye_color": "brown",
+    "ethnicity": "hawiian",
+    "hair": "short ceaser fade",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "hawiian features"
+  },
+  "2": {
+    "#": 2,
+    "position": "QB",
+    "name": "Tyrice Matthews",
+    "school": "Washington",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 1,
+    "overall": 76,
+    "dev_trait": 2,
+    "archetype": "Strong Arm",
+    "height": "6'2\"",
+    "weight": 218,
+    "jersey": "#9",
+    "round": 1,
+    "pick": 2,
+    "class": 7,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro faded",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "black features"
+  },
+  "3": {
+    "#": 3,
+    "position": "RT",
+    "name": "Darnell Jacobs",
+    "school": "Georgia",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 9,
+    "overall": 78,
+    "dev_trait": 0,
+    "archetype": "Power",
+    "height": "6'6\"",
+    "weight": 317,
+    "jersey": "#78",
+    "round": 1,
+    "pick": 3,
+    "class": 7,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "high top fade",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "black features"
+  },
+  "4": {
+    "#": 4,
+    "position": "FS",
+    "name": "Kevin Matthews Jr",
+    "school": "Colorado",
+    "age": 21,
+    "year": "SR",
+    "pos_num": 17,
+    "overall": 76,
+    "dev_trait": 1,
+    "archetype": "Zone",
+    "height": "6'1\"",
+    "weight": 197,
+    "jersey": "#23",
+    "round": 1,
+    "pick": 4,
+    "class": 7,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med dreads designed",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "narrow face"
+  },
+  "5": {
+    "#": 5,
+    "position": "WR",
+    "name": "Kofi Chiamaka",
+    "school": "Ohio State",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 3,
+    "overall": 79,
+    "dev_trait": 0,
+    "archetype": "Deep Threat",
+    "height": "6'4\"",
+    "weight": 196,
+    "jersey": "#10",
+    "round": 1,
+    "pick": 5,
+    "class": 7,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short dreads designed",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "african features"
+  },
+  "6": {
+    "#": 6,
+    "position": "CB",
+    "name": "Tre'Darius Bryant",
+    "school": "Alabama",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 16,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Man to Man",
+    "height": "6'2\"",
+    "weight": 198,
+    "jersey": "#12",
+    "round": 1,
+    "pick": 6,
+    "class": 7,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short dreads faded",
+    "hair_color": "black",
+    "facial_hair": "none",
+    "features": "light skin features"
+  },
+  "7": {
+    "#": 7,
+    "position": "WR",
+    "name": "Isaiah Roach",
+    "school": "Texas",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 3,
+    "overall": 77,
+    "dev_trait": 0,
+    "archetype": "Deep Threat",
+    "height": "5'10\"",
+    "weight": 181,
+    "jersey": "#10",
+    "round": 1,
+    "pick": 7,
+    "class": 7,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "long dreads",
+    "hair_color": "black",
+    "facial_hair": "none",
+    "features": "narrow face"
+  },
+  "8": {
+    "#": 8,
+    "position": "MIKE",
+    "name": "Jahlil Jones-Mosley",
+    "school": "Alabama",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 14,
+    "overall": 73,
+    "dev_trait": 0,
+    "archetype": "Field General",
+    "height": "6'2\"",
+    "weight": 234,
+    "jersey": "#45",
+    "round": 1,
+    "pick": 8,
+    "class": 7,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "two thick dreads going back",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "round face"
+  },
+  "9": {
+    "#": 9,
+    "position": "WR",
+    "name": "Dameon Smith",
+    "school": "Missouri",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 3,
+    "overall": 76,
+    "dev_trait": 1,
+    "archetype": "Playmaker",
+    "height": "6'0\"",
+    "weight": 206,
+    "jersey": "#10",
+    "round": 1,
+    "pick": 9,
+    "class": 7,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "high top fade",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "stocky face"
+  },
+  "10": {
+    "#": 10,
+    "position": "WR",
+    "name": "Antez Robertson",
+    "school": "Miami",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 3,
+    "overall": 74,
+    "dev_trait": 0,
+    "archetype": "Deep Threat",
+    "height": "5'11\"",
+    "weight": 178,
+    "jersey": "#1",
+    "round": 1,
+    "pick": 10,
+    "class": 7,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "long dreads",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "narrow jaw"
+  },
+  "11": {
+    "#": 11,
+    "position": "QB",
+    "name": "Jaylen Kelly",
+    "school": "USC",
+    "pos_num": 1,
+    "overall": 71,
+    "dev_trait": 1,
+    "class": 7
+  },
+  "12": {
+    "#": 12,
+    "position": "QB",
+    "name": "Dylan Sepulveda",
+    "school": "Tennessee",
+    "pos_num": 1,
+    "overall": 66,
+    "dev_trait": 0,
+    "class": 7
+  },
+  "13": {
+    "#": 13,
+    "position": "DT",
+    "name": "Damani Thulani",
+    "school": "Penn State",
+    "pos_num": 12,
+    "overall": 78,
+    "class": 7
+  },
+  "14": {
+    "#": 14,
+    "position": "HB",
+    "name": "Jaylen Diggs",
+    "school": "Florida",
+    "pos_num": 2,
+    "overall": 77,
+    "class": 7
+  },
+  "15": {
+    "#": 15,
+    "position": "CB",
+    "name": "Farrell Patterson",
+    "school": "Utah",
+    "overall": 76,
+    "class": 7
+  },
+  "16": {
+    "#": 16,
+    "position": "SS",
+    "name": "Emmanuel Nojeem",
+    "school": "Oregon",
+    "overall": 74,
+    "class": 7
+  },
+  "17": {
+    "#": 17,
+    "position": "WR",
+    "name": "Evan Starks",
+    "school": "Oregon",
+    "overall": 74,
+    "class": 7
+  },
+  "18": {
+    "#": 18,
+    "class": 7
+  },
+  "19": {
+    "#": 19,
+    "class": 7
+  },
+  "20": {
+    "#": 20,
+    "class": 7
+  },
+  "21": {
+    "#": 21,
+    "class": 7
+  },
+  "22": {
+    "#": 22,
+    "class": 7
+  },
+  "23": {
+    "#": 23,
+    "class": 7
+  },
+  "24": {
+    "#": 24,
+    "class": 7
+  },
+  "25": {
+    "#": 25,
+    "class": 7
+  },
+  "26": {
+    "#": 26,
+    "class": 7
+  },
+  "27": {
+    "#": 27,
+    "class": 7
+  },
+  "28": {
+    "#": 28,
+    "class": 7
+  },
+  "29": {
+    "#": 29,
+    "class": 7
+  },
+  "30": {
+    "#": 30,
+    "class": 7
+  },
+  "31": {
+    "#": 31,
+    "class": 7
+  },
+  "32": {
+    "#": 32,
+    "class": 7
+  },
+  "33": {
+    "#": 33,
+    "class": 7
+  },
+  "34": {
+    "#": 34,
+    "class": 7
+  },
+  "35": {
+    "#": 35,
+    "class": 7
+  },
+  "36": {
+    "#": 36,
+    "class": 7
+  },
+  "37": {
+    "#": 37,
+    "class": 7
+  },
+  "38": {
+    "#": 38,
+    "class": 7
+  },
+  "39": {
+    "#": 39,
+    "class": 7
+  },
+  "40": {
+    "#": 40,
+    "class": 7
+  },
+  "41": {
+    "#": 41,
+    "class": 7
+  },
+  "42": {
+    "#": 42,
+    "class": 7
+  },
+  "43": {
+    "#": 43,
+    "class": 7
+  },
+  "44": {
+    "#": 44,
+    "class": 7
+  },
+  "45": {
+    "#": 45,
+    "class": 7
+  },
+  "46": {
+    "#": 46,
+    "class": 7
+  },
+  "47": {
+    "#": 47,
+    "class": 7
+  },
+  "48": {
+    "#": 48,
+    "class": 7
+  },
+  "49": {
+    "#": 49,
+    "class": 7
+  },
+  "50": {
+    "#": 50,
+    "class": 7
+  },
+  "51": {
+    "#": 51,
+    "class": 7
+  },
+  "52": {
+    "#": 52,
+    "class": 7
+  },
+  "53": {
+    "#": 53,
+    "class": 7
+  },
+  "54": {
+    "#": 54,
+    "class": 7
+  },
+  "55": {
+    "#": 55,
+    "class": 7
+  },
+  "56": {
+    "#": 56,
+    "class": 7
+  },
+  "57": {
+    "#": 57,
+    "class": 7
+  },
+  "58": {
+    "#": 58,
+    "class": 7
+  },
+  "59": {
+    "#": 59,
+    "class": 7
+  },
+  "60": {
+    "#": 60,
+    "class": 7
+  },
+  "61": {
+    "#": 61,
+    "class": 7
+  },
+  "62": {
+    "#": 62,
+    "class": 7
+  },
+  "63": {
+    "#": 63,
+    "class": 7
+  },
+  "64": {
+    "#": 64,
+    "class": 7
+  },
+  "65": {
+    "#": 65,
+    "class": 7
+  },
+  "66": {
+    "#": 66,
+    "class": 7
+  },
+  "67": {
+    "#": 67,
+    "class": 7
+  },
+  "68": {
+    "#": 68,
+    "class": 7
+  },
+  "69": {
+    "#": 69,
+    "class": 7
+  },
+  "70": {
+    "#": 70,
+    "class": 7
+  },
+  "71": {
+    "#": 71,
+    "class": 7
+  },
+  "72": {
+    "#": 72,
+    "class": 7
+  },
+  "73": {
+    "#": 73,
+    "class": 7
+  },
+  "74": {
+    "#": 74,
+    "class": 7
+  },
+  "75": {
+    "#": 75,
+    "class": 7
+  },
+  "76": {
+    "#": 76,
+    "class": 7
+  },
+  "77": {
+    "#": 77,
+    "class": 7
+  },
+  "78": {
+    "#": 78,
+    "class": 7
+  },
+  "79": {
+    "#": 79,
+    "class": 7
+  },
+  "80": {
+    "#": 80,
+    "class": 7
+  },
+  "81": {
+    "#": 81,
+    "class": 7
+  },
+  "82": {
+    "#": 82,
+    "class": 7
+  },
+  "83": {
+    "#": 83,
+    "class": 7
+  },
+  "84": {
+    "#": 84,
+    "class": 7
+  },
+  "85": {
+    "#": 85,
+    "class": 7
+  },
+  "86": {
+    "#": 86,
+    "class": 7
+  },
+  "87": {
+    "#": 87,
+    "class": 7
+  },
+  "88": {
+    "#": 88,
+    "class": 7
+  },
+  "89": {
+    "#": 89,
+    "class": 7
+  },
+  "90": {
+    "#": 90,
+    "class": 7
+  },
+  "91": {
+    "#": 91,
+    "class": 7
+  },
+  "92": {
+    "#": 92,
+    "class": 7
+  },
+  "93": {
+    "#": 93,
+    "class": 7
+  },
+  "94": {
+    "#": 94,
+    "class": 7
+  },
+  "95": {
+    "#": 95,
+    "class": 7
+  },
+  "96": {
+    "#": 96,
+    "class": 7
+  }
+}

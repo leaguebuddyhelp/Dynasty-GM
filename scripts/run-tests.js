@@ -12,6 +12,7 @@ const scripts = [
   'test_early_top_10_cus04.js',
   'test_early_top_10_cus05.js',
   'test_early_top_10_cus06.js',
+  'test_early_top_10_cus07.js',
   'test_season_impact.js',
   'test_defensive_line_proxy.js',
   'test_balanced_movement.js',
