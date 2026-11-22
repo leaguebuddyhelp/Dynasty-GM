@@ -1,0 +1,633 @@
+{
+  "1": {
+    "#": 1,
+    "position": "HB",
+    "name": "Ross Evans",
+    "school": "Michigan",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 2,
+    "overall": 84,
+    "dev_trait": 3,
+    "archetype": "Elusive Back",
+    "height": "5'11\"",
+    "weight": 215,
+    "jersey": "#3",
+    "round": 1,
+    "pick": 1,
+    "class": 6,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short conrows classic",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "oval face"
+  },
+  "2": {
+    "#": 2,
+    "position": "QB",
+    "name": "Raheem Moore",
+    "school": "Oregon",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 1,
+    "overall": 72,
+    "dev_trait": 1,
+    "archetype": "Scrambler",
+    "height": "6'3\"",
+    "weight": 223,
+    "jersey": "#1",
+    "round": 1,
+    "pick": 2,
+    "class": 6,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser fade",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "black features"
+  },
+  "3": {
+    "#": 3,
+    "position": "QB",
+    "name": "Sam Armstrong",
+    "school": "Ohio State",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 1,
+    "overall": 72,
+    "dev_trait": 1,
+    "archetype": "Strong Arm",
+    "height": "6'4\"",
+    "weight": 240,
+    "jersey": "#4",
+    "round": 1,
+    "pick": 3,
+    "class": 6,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro faded",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "light skin features"
+  },
+  "4": {
+    "#": 4,
+    "position": "TE",
+    "name": "Ben Umi",
+    "school": "UCLA",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 4,
+    "overall": 77,
+    "dev_trait": 0,
+    "archetype": "Vertical Threat",
+    "height": "6'8\"",
+    "weight": 259,
+    "jersey": "#19",
+    "round": 1,
+    "pick": 4,
+    "class": 6,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "large messy afro tapered",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "african features"
+  },
+  "5": {
+    "#": 5,
+    "position": "CB",
+    "name": "D.J. Quincey",
+    "school": "LSU",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 16,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Zone",
+    "height": "6'0\"",
+    "weight": 199,
+    "jersey": "#2",
+    "round": 1,
+    "pick": 5,
+    "class": 6,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "dreads designed faded",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "black features"
+  },
+  "6": {
+    "#": 6,
+    "position": "DT",
+    "name": "Ha'upu Makaha",
+    "school": "Oregon",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 12,
+    "overall": 79,
+    "dev_trait": 0,
+    "archetype": "Nose Tackle",
+    "height": "6'5\"",
+    "weight": 345,
+    "jersey": "#50",
+    "round": 1,
+    "pick": 6,
+    "class": 6,
+    "skin": "tan/olive",
+    "eye_color": "brown",
+    "ethnicity": "hawiian",
+    "hair": "short straight faded",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "hawiian features"
+  },
+  "7": {
+    "#": 7,
+    "position": "SAM",
+    "name": "Trae Howell",
+    "school": "Georgia",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 13,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Run Stopper",
+    "height": "6'0\"",
+    "weight": 229,
+    "jersey": "#32",
+    "round": 1,
+    "pick": 7,
+    "class": 6,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med messy afro",
+    "hair_color": "black",
+    "facial_hair": "goatee",
+    "features": "black features"
+  },
+  "8": {
+    "#": 8,
+    "position": "DT",
+    "name": "A'Marion Washington",
+    "school": "Oregon",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 12,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Speed Rusher",
+    "height": "6'5\"",
+    "weight": 318,
+    "jersey": "#11",
+    "round": 1,
+    "pick": 8,
+    "class": 6,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short ceaser fade",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "chubby face"
+  },
+  "9": {
+    "#": 9,
+    "position": "QB",
+    "name": "Julian Radford",
+    "school": "Kentucky",
+    "age": 23,
+    "year": "SR(RS)",
+    "pos_num": 1,
+    "overall": 70,
+    "dev_trait": 0,
+    "archetype": "Scrambler",
+    "height": "6'1\"",
+    "weight": 206,
+    "jersey": "#12",
+    "round": 1,
+    "pick": 9,
+    "class": 6,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "med straight wavy hair",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "classic white QB"
+  },
+  "10": {
+    "#": 10,
+    "position": "REDG",
+    "name": "Jalen Wainwright",
+    "school": "Arizona",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 10,
+    "overall": 74,
+    "dev_trait": 0,
+    "archetype": "Speed Rusher",
+    "height": "6'5\"",
+    "weight": 258,
+    "jersey": "#95",
+    "round": 1,
+    "pick": 10,
+    "class": 6,
+    "skin": "light skin black",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "short afro faded",
+    "hair_color": "brown",
+    "facial_hair": "med/clean",
+    "features": "light skin features"
+  },
+  "11": {
+    "#": 11,
+    "position": "LT",
+    "name": "Jayden Rosa",
+    "school": "Utah",
+    "pos_num": 5,
+    "overall": 78,
+    "class": 6
+  },
+  "12": {
+    "#": 12,
+    "position": "LG",
+    "name": "DelVonte Jones",
+    "school": "Georgia",
+    "pos_num": 6,
+    "overall": 78,
+    "class": 6
+  },
+  "13": {
+    "#": 13,
+    "position": "C",
+    "name": "Ezra Williams",
+    "school": "Ohio State",
+    "pos_num": 7,
+    "overall": 77,
+    "class": 6
+  },
+  "14": {
+    "#": 14,
+    "position": "CB",
+    "name": "JaMichael Jordan",
+    "school": "Oregon",
+    "pos_num": 16,
+    "overall": 77,
+    "class": 6
+  },
+  "15": {
+    "#": 15,
+    "position": "QB",
+    "name": "Da'rion Collier",
+    "school": "Ole Miss",
+    "pos_num": 1,
+    "overall": 73,
+    "dev_trait": 1,
+    "class": 6
+  },
+  "16": {
+    "#": 16,
+    "position": "QB",
+    "name": "Davis Marcotte",
+    "school": "LSU",
+    "pos_num": 1,
+    "overall": 70,
+    "dev_trait": 0,
+    "class": 6
+  },
+  "17": {
+    "#": 17,
+    "position": "LT",
+    "name": "Axel Johnson",
+    "school": "Michigan",
+    "pos_num": 5,
+    "overall": 76,
+    "class": 6
+  },
+  "18": {
+    "#": 18,
+    "class": 6
+  },
+  "19": {
+    "#": 19,
+    "class": 6
+  },
+  "20": {
+    "#": 20,
+    "class": 6
+  },
+  "21": {
+    "#": 21,
+    "class": 6
+  },
+  "22": {
+    "#": 22,
+    "class": 6
+  },
+  "23": {
+    "#": 23,
+    "class": 6
+  },
+  "24": {
+    "#": 24,
+    "class": 6
+  },
+  "25": {
+    "#": 25,
+    "class": 6
+  },
+  "26": {
+    "#": 26,
+    "class": 6
+  },
+  "27": {
+    "#": 27,
+    "class": 6
+  },
+  "28": {
+    "#": 28,
+    "class": 6
+  },
+  "29": {
+    "#": 29,
+    "class": 6
+  },
+  "30": {
+    "#": 30,
+    "class": 6
+  },
+  "31": {
+    "#": 31,
+    "class": 6
+  },
+  "32": {
+    "#": 32,
+    "class": 6
+  },
+  "33": {
+    "#": 33,
+    "class": 6
+  },
+  "34": {
+    "#": 34,
+    "class": 6
+  },
+  "35": {
+    "#": 35,
+    "class": 6
+  },
+  "36": {
+    "#": 36,
+    "class": 6
+  },
+  "37": {
+    "#": 37,
+    "class": 6
+  },
+  "38": {
+    "#": 38,
+    "class": 6
+  },
+  "39": {
+    "#": 39,
+    "class": 6
+  },
+  "40": {
+    "#": 40,
+    "class": 6
+  },
+  "41": {
+    "#": 41,
+    "class": 6
+  },
+  "42": {
+    "#": 42,
+    "class": 6
+  },
+  "43": {
+    "#": 43,
+    "class": 6
+  },
+  "44": {
+    "#": 44,
+    "class": 6
+  },
+  "45": {
+    "#": 45,
+    "class": 6
+  },
+  "46": {
+    "#": 46,
+    "class": 6
+  },
+  "47": {
+    "#": 47,
+    "class": 6
+  },
+  "48": {
+    "#": 48,
+    "class": 6
+  },
+  "49": {
+    "#": 49,
+    "class": 6
+  },
+  "50": {
+    "#": 50,
+    "class": 6
+  },
+  "51": {
+    "#": 51,
+    "class": 6
+  },
+  "52": {
+    "#": 52,
+    "class": 6
+  },
+  "53": {
+    "#": 53,
+    "class": 6
+  },
+  "54": {
+    "#": 54,
+    "class": 6
+  },
+  "55": {
+    "#": 55,
+    "class": 6
+  },
+  "56": {
+    "#": 56,
+    "class": 6
+  },
+  "57": {
+    "#": 57,
+    "class": 6
+  },
+  "58": {
+    "#": 58,
+    "class": 6
+  },
+  "59": {
+    "#": 59,
+    "class": 6
+  },
+  "60": {
+    "#": 60,
+    "class": 6
+  },
+  "61": {
+    "#": 61,
+    "class": 6
+  },
+  "62": {
+    "#": 62,
+    "class": 6
+  },
+  "63": {
+    "#": 63,
+    "class": 6
+  },
+  "64": {
+    "#": 64,
+    "class": 6
+  },
+  "65": {
+    "#": 65,
+    "class": 6
+  },
+  "66": {
+    "#": 66,
+    "class": 6
+  },
+  "67": {
+    "#": 67,
+    "class": 6
+  },
+  "68": {
+    "#": 68,
+    "class": 6
+  },
+  "69": {
+    "#": 69,
+    "class": 6
+  },
+  "70": {
+    "#": 70,
+    "class": 6
+  },
+  "71": {
+    "#": 71,
+    "class": 6
+  },
+  "72": {
+    "#": 72,
+    "class": 6
+  },
+  "73": {
+    "#": 73,
+    "class": 6
+  },
+  "74": {
+    "#": 74,
+    "class": 6
+  },
+  "75": {
+    "#": 75,
+    "class": 6
+  },
+  "76": {
+    "#": 76,
+    "class": 6
+  },
+  "77": {
+    "#": 77,
+    "class": 6
+  },
+  "78": {
+    "#": 78,
+    "class": 6
+  },
+  "79": {
+    "#": 79,
+    "class": 6
+  },
+  "80": {
+    "#": 80,
+    "class": 6
+  },
+  "81": {
+    "#": 81,
+    "class": 6
+  },
+  "82": {
+    "#": 82,
+    "class": 6
+  },
+  "83": {
+    "#": 83,
+    "class": 6
+  },
+  "84": {
+    "#": 84,
+    "class": 6
+  },
+  "85": {
+    "#": 85,
+    "class": 6
+  },
+  "86": {
+    "#": 86,
+    "class": 6
+  },
+  "87": {
+    "#": 87,
+    "class": 6
+  },
+  "88": {
+    "#": 88,
+    "class": 6
+  },
+  "89": {
+    "#": 89,
+    "class": 6
+  },
+  "90": {
+    "#": 90,
+    "class": 6
+  },
+  "91": {
+    "#": 91,
+    "class": 6
+  },
+  "92": {
+    "#": 92,
+    "class": 6
+  },
+  "93": {
+    "#": 93,
+    "class": 6
+  },
+  "94": {
+    "#": 94,
+    "class": 6
+  },
+  "95": {
+    "#": 95,
+    "class": 6
+  },
+  "96": {
+    "#": 96,
+    "class": 6
+  }
+}

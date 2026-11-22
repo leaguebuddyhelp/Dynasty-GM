@@ -1,0 +1,258 @@
+{
+  "1": {
+    "#": 1,
+    "position": "HB",
+    "name": "Ross Evans",
+    "school": "Michigan",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 2,
+    "overall": 84,
+    "dev_trait": 3,
+    "archetype": "Elusive Back",
+    "height": "5'11\"",
+    "weight": 215,
+    "jersey": "#3",
+    "round": 1,
+    "pick": 1,
+    "class": 6,
+    "bio": "Generational rushing prospect with extraordinary vision, elite elusiveness, and game-breaking open-field explosiveness."
+  },
+  "2": {
+    "#": 2,
+    "position": "QB",
+    "name": "Raheem Moore",
+    "school": "Oregon",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 1,
+    "overall": 72,
+    "dev_trait": 1,
+    "archetype": "Scrambler",
+    "height": "6'3\"",
+    "weight": 223,
+    "jersey": "#1",
+    "round": 1,
+    "pick": 2,
+    "class": 6,
+    "bio": "Dynamic left-handed dual-threat quarterback with exceptional mobility, creative instincts, and franchise-changing upside."
+  },
+  "3": {
+    "#": 3,
+    "position": "QB",
+    "name": "Sam Armstrong",
+    "school": "Ohio State",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 1,
+    "overall": 72,
+    "dev_trait": 1,
+    "archetype": "Strong Arm",
+    "height": "6'4\"",
+    "weight": 240,
+    "jersey": "#4",
+    "round": 1,
+    "pick": 3,
+    "class": 6,
+    "bio": "Physically imposing gunslinger with tremendous arm talent, effortless velocity, and elite passing potential."
+  },
+  "4": {
+    "#": 4,
+    "position": "TE",
+    "name": "Ben Umi",
+    "school": "UCLA",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 4,
+    "overall": 77,
+    "dev_trait": 0,
+    "archetype": "Vertical Threat",
+    "height": "6'8\"",
+    "weight": 259,
+    "jersey": "#19",
+    "round": 1,
+    "pick": 4,
+    "class": 6,
+    "bio": "Towering receiving mismatch with rare athleticism, massive catch radius, and dominant red-zone potential."
+  },
+  "5": {
+    "#": 5,
+    "position": "CB",
+    "name": "D.J. Quincey",
+    "school": "LSU",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 16,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Zone",
+    "height": "6'0\"",
+    "weight": 199,
+    "jersey": "#2",
+    "round": 1,
+    "pick": 5,
+    "class": 6,
+    "bio": "Instinctive zone corner with outstanding anticipation, fluid movement, and elite ball-hawking potential."
+  },
+  "6": {
+    "#": 6,
+    "position": "DT",
+    "name": "Ha'upu Makaha",
+    "school": "Oregon",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 12,
+    "overall": 79,
+    "dev_trait": 0,
+    "archetype": "Nose Tackle",
+    "height": "6'5\"",
+    "weight": 345,
+    "jersey": "#50",
+    "round": 1,
+    "pick": 6,
+    "class": 6,
+    "bio": "Mammoth interior defender with overwhelming strength, exceptional leverage, and dominant run-stuffing ability."
+  },
+  "7": {
+    "#": 7,
+    "position": "SAM",
+    "name": "Trae Howell",
+    "school": "Georgia",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 13,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Run Stopper",
+    "height": "6'0\"",
+    "weight": 229,
+    "jersey": "#32",
+    "round": 1,
+    "pick": 7,
+    "class": 6,
+    "bio": "Explosive run defender with outstanding instincts, violent tackling, and impressive sideline-to-sideline pursuit ability."
+  },
+  "8": {
+    "#": 8,
+    "position": "DT",
+    "name": "A'Marion Washington",
+    "school": "Oregon",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 12,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Speed Rusher",
+    "height": "6'5\"",
+    "weight": 318,
+    "jersey": "#11",
+    "round": 1,
+    "pick": 8,
+    "class": 6,
+    "bio": "Rare interior athlete with explosive first-step quickness, powerful hands, and disruptive pass-rushing upside."
+  },
+  "9": {
+    "#": 9,
+    "position": "QB",
+    "name": "Julian Radford",
+    "school": "Kentucky",
+    "age": 23,
+    "year": "SR(RS)",
+    "pos_num": 1,
+    "overall": 70,
+    "dev_trait": 0,
+    "archetype": "Scrambler",
+    "height": "6'1\"",
+    "weight": 206,
+    "jersey": "#12",
+    "round": 1,
+    "pick": 9,
+    "class": 6,
+    "bio": "Elusive dual-threat quarterback with impressive acceleration, natural improvisation, and dangerous open-field playmaking ability."
+  },
+  "10": {
+    "#": 10,
+    "position": "REDG",
+    "name": "Jalen Wainwright",
+    "school": "Arizona",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 10,
+    "overall": 74,
+    "dev_trait": 0,
+    "archetype": "Speed Rusher",
+    "height": "6'5\"",
+    "weight": 258,
+    "jersey": "#95",
+    "round": 1,
+    "pick": 10,
+    "class": 6,
+    "bio": "Long, explosive edge rusher with impressive bend, relentless pursuit, and premier pass-rushing potential."
+  },
+  "11": {
+    "#": 11
+  },
+  "12": {
+    "#": 12
+  },
+  "13": {
+    "#": 13
+  },
+  "14": {
+    "#": 14
+  },
+  "15": {
+    "#": 15
+  },
+  "16": {
+    "#": 16
+  },
+  "17": {
+    "#": 17
+  },
+  "18": {
+    "#": 18
+  },
+  "19": {
+    "#": 19
+  },
+  "20": {
+    "#": 20
+  },
+  "21": {
+    "#": 21
+  },
+  "22": {
+    "#": 22
+  },
+  "23": {
+    "#": 23
+  },
+  "24": {
+    "#": 24
+  },
+  "25": {
+    "#": 25
+  },
+  "26": {
+    "#": 26
+  },
+  "27": {
+    "#": 27
+  },
+  "28": {
+    "#": 28
+  },
+  "29": {
+    "#": 29
+  },
+  "30": {
+    "#": 30
+  },
+  "31": {
+    "#": 31
+  },
+  "32": {
+    "#": 32
+  }
+}

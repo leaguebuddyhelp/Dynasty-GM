@@ -1,0 +1,92 @@
+[
+  {
+    "id": "1",
+    "name": "Ross Evans",
+    "position": "HB",
+    "school": "Michigan",
+    "file": "portraits/ross-evans-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of Ross Evans, a fictional adult college football player. Subject: 21-year-old Black man with light brown skin, brown eyes, short black straight-back cornrows, a medium neatly trimmed beard and an oval face. Compact athletic 5-foot-11, 215-pound build. Wear a navy Michigan Wolverines jersey with maize numbers and block M. Jersey number exactly \"3\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "2",
+    "name": "Raheem Moore",
+    "position": "QB",
+    "school": "Oregon",
+    "file": "portraits/raheem-moore-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of Raheem Moore, a fictional adult college football player. Subject: 21-year-old Black man with dark brown skin, brown eyes, a short black Caesar fade and a shaped goatee. Athletic 6-foot-3, 223-pound build. Wear a green Oregon Ducks jersey with yellow digits and an Oregon O. Jersey number exactly \"1\" (a single digit one) on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "3",
+    "name": "Sam Armstrong",
+    "position": "QB",
+    "school": "Ohio State",
+    "file": "portraits/sam-armstrong-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of Sam Armstrong, a fictional adult college football player. Subject: 21-year-old Black man with light brown skin, brown eyes, a short black afro faded at the sides and light groomed stubble. Strong 6-foot-4, 240-pound quarterback build. Wear a scarlet Ohio State jersey with white digits and gray, white and black sleeve stripes. Jersey number exactly \"4\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "4",
+    "name": "Ben Umi",
+    "position": "TE",
+    "school": "UCLA",
+    "file": "portraits/ben-umi-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of Ben Umi, a fictional adult college football player. Subject: 21-year-old Black man with dark brown skin, brown eyes, a large messy tapered black afro and a neat goatee. Tall 6-foot-8, 259-pound tight end build. Wear a light blue UCLA Bruins jersey with white digits, gold trim and small UCLA script. Jersey number exactly \"19\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "5",
+    "name": "D.J. Quincey",
+    "position": "CB",
+    "school": "LSU",
+    "file": "portraits/dj-quincey-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of D.J. Quincey, a fictional adult college football player. Subject: 21-year-old Black man with medium brown skin, brown eyes, styled black locs and faded sides, and a medium neatly groomed beard. Lean athletic 6-foot, 199-pound build. Wear a white LSU Tigers jersey with purple digits and purple-and-gold shoulder stripes. Jersey number exactly \"2\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "6",
+    "name": "Ha'upu Makaha",
+    "position": "DT",
+    "school": "Oregon",
+    "file": "portraits/haupu-makaha-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of Ha'upu Makaha, a fictional adult college football player. Subject: 22-year-old Native Hawaiian man with tan olive skin, brown eyes, short straight brown hair with faded sides and light groomed stubble. Broad powerful 6-foot-5, 345-pound nose tackle build. Wear a green Oregon Ducks jersey with yellow digits and an Oregon O. Jersey number exactly \"50\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "7",
+    "name": "Trae Howell",
+    "position": "SAM",
+    "school": "Georgia",
+    "file": "portraits/trae-howell-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of Trae Howell, a fictional adult college football player. Subject: 21-year-old Black man with medium brown skin, brown eyes, a medium-length messy black afro and a tidy goatee. Strong athletic 6-foot, 229-pound linebacker build. Wear a red Georgia Bulldogs jersey with white numbers and Georgia G. Jersey number exactly \"32\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "8",
+    "name": "A'Marion Washington",
+    "position": "DT",
+    "school": "Oregon",
+    "file": "portraits/amarion-washington-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of A'Marion Washington, a fictional adult college football player. Subject: 21-year-old Black man with medium brown skin, brown eyes, a short black Caesar fade, light groomed stubble and a full round face. Broad athletic 6-foot-5, 318-pound interior defender build. Wear a green Oregon Ducks jersey with yellow digits and an Oregon O. Jersey number exactly \"11\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "9",
+    "name": "Julian Radford",
+    "position": "QB",
+    "school": "Kentucky",
+    "file": "portraits/julian-radford-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of Julian Radford, a fictional adult college football player. Subject: 23-year-old white man with fair skin, brown eyes, medium-length brown hair with a slight wave and a clean-shaven face. Athletic 6-foot-1, 206-pound quarterback build. Wear a royal blue Kentucky Wildcats jersey with white digits and an interlocking UK mark. Jersey number exactly \"12\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "id": "10",
+    "name": "Jalen Wainwright",
+    "position": "REDG",
+    "school": "Arizona",
+    "file": "portraits/jalen-wainwright-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic sports media-day portrait of Jalen Wainwright, a fictional adult college football player. Subject: 22-year-old Black man with light brown skin, brown eyes, a short brown afro with faded sides and a medium neatly groomed beard. Long athletic 6-foot-5, 258-pound edge rusher build. Wear a navy Arizona Wildcats jersey with white digits and red detailing and an Arizona A. Jersey number exactly \"95\" on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout. Straight-on centered face with full hair and a sliver of clearance at the top, eyes around one-quarter down, shoulder pads filling the lower width, bottom edge through the front chest numeral. One unhelmeted athlete, distinct natural face, realistic skin and fabric texture, soft even studio lighting. Genuine alpha transparency outside the silhouette, no backdrop, checkerboard, shadow, captions or watermark."
+  }
+]
