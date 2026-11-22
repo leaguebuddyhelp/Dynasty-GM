@@ -270,7 +270,7 @@
     "13": {
       "portrait": "aleks-zakrzewski-transparent.png",
       "headline": "A first-round matchup problem through the middle",
-      "bio": "Zakrzewski offers more than a target running down the seam. His standout production reflects a tight end who contributes across the offense, giving a play-caller flexibility in how he lines up and attacks. His ability to help in multiple phases expands the possibilities.",
+      "bio": "Zakrzewski accelerates quickly up the seam and catches the ball cleanly in stride, giving Penn State a tight end who can stretch the middle of the field. His blocking technique varies from snap to snap, so his clearest early value is as a receiver.",
       "watch": "Improve hand placement and sustain leverage as an inline run blocker without losing his receiving flexibility.",
       "statistics": {
         "position": "TE",
@@ -542,7 +542,7 @@
     "26": {
       "portrait": "nasir-james-jr-transparent.png",
       "headline": "A passing-game weapon worth moving around",
-      "bio": "Safeties have to respect James before he ever makes his break. The tight end possesses rare speed for the position, giving an offense a chance to stretch coverage vertically and create matchups that look very different from those of a traditional inline target.",
+      "bio": "James brings sharp routes and enough burst to separate quickly, giving Duke a tight end who can threaten defenders before they settle into coverage. He has less strength when asked to move defenders at the line. His route work gives him the clearer early role.",
       "watch": "Build a more dependable blocking base and preserve route timing when defenders disrupt his release.",
       "statistics": {
         "position": "TE",
@@ -954,7 +954,7 @@
     "44": {
       "portrait": "tyler-morgan-stewart-transparent.png",
       "headline": "Useful early snaps, with a more defined ceiling",
-      "bio": "Throw it near Morgan-Stewart and there’s a good chance it sticks. The older tight end has the best hands in the group, pairing elite catching ability with a reliable presence for a quarterback who needs someone to finish a difficult throw.",
+      "bio": "Morgan-Stewart gives South Carolina a 6-foot-5 possession target with reliable hands and the body control to adjust when throws arrive off target. He lacks the burst to threaten vertically as often, but his ability to finish catches in tight windows gives him a dependable role.",
       "watch": "Tighten transitions out of breaks and create separation before contested catches become the only answer.",
       "statistics": {
         "position": "TE",
@@ -1049,7 +1049,7 @@
     "48": {
       "portrait": "nik-mcfarland-transparent.png",
       "headline": "A workable receiving role with separation still to develop",
-      "bio": "McFarland made himself useful wherever Alabama needed an answer. The tight end filled gaps across the offense and found the end zone frequently, giving his quarterback a reliable scoring option and his coordinator flexibility when responsibilities changed from week to week.",
+      "bio": "McFarland runs polished routes and catches the ball reliably, giving Alabama a dependable option when it needs to move the chains. His impact tends to come before and at the catch, since he has limited ability to create extra yardage once a defender closes.",
       "watch": "Vary his releases, finish route breaks with conviction and sustain blocks through the end of the play.",
       "statistics": {
         "position": "TE",
@@ -1637,7 +1637,7 @@
     "74": {
       "portrait": "theodore-jackson-jr-transparent.png",
       "headline": "Downfield options to develop, routine details to fix",
-      "bio": "Jackson gives LSU’s tight end group a vertical dimension. One of two Tigers at the position in this class, he combines the ability to threaten downfield with soft hands, providing a quarterback a target who can stretch a defense and finish the catch.",
+      "bio": "Jackson gives LSU a long, athletic tight end who can reach throws that would be out of reach for smaller targets. His catch radius is especially useful downfield. His routes can lose precision, making sharper breaks and more consistent spacing important to his development.",
       "watch": "Improve ball tracking and release timing, then broaden the routes he can execute reliably.",
       "statistics": {
         "position": "TE",
@@ -1858,7 +1858,7 @@
     "84": {
       "portrait": "daronte-cook-transparent.png",
       "headline": "A blocking role to earn before the target count grows",
-      "bio": "Cook gives an offense a reason to stay big without giving away the play. A blocking tight end with dependable possession skills, he’s especially useful in three-tight-end personnel, where his ability to handle physical assignments and contribute as a target adds flexibility.",
+      "bio": "Cook wins in the run game with leverage and strength, giving LSU a tight end who can move defenders at the point of attack. His receiving game offers limited variety, so his clearest role comes in formations that let him block from the line of scrimmage.",
       "watch": "Develop cleaner releases and reliable short catches while maintaining his blocking contribution.",
       "statistics": {
         "position": "TE",
@@ -2072,7 +2072,7 @@
     "94": {
       "portrait": "brendan-whitney-transparent.png",
       "headline": "A developmental receiving option with trust to build",
-      "bio": "Whitney’s receiving production came with an unusual split: solid yardage without many touchdowns. The Minnesota transfer gives evaluators evidence that he can move the ball, while his next offense can consider how to create more scoring opportunities for the tight end.",
+      "bio": "Whitney pairs a powerful frame with deceptive straight-line speed, making him a threat up the seam for Oregon. His stiff hips show up when a route requires him to break away from coverage. He is most effective when he can build speed on a direct path.",
       "watch": "Improve catch-point adjustments, sharpen route pacing and become dependable on routine underneath throws.",
       "statistics": {
         "position": "TE",
@@ -2333,6 +2333,48 @@
       "position": "WR",
       "portrait": "reed-richardson-transparent.png",
       "bio": "Richardson gives USC a taller slot option who shows solid awareness of where to settle inside. His limited burst makes it harder to open a window quickly, and he does not consistently finish contested catches. His best opportunities come when he can read the coverage and arrive on time."
+    },
+    "130": {
+      "name": "Elijah Bryan",
+      "position": "TE",
+      "portrait": "elijah-bryan-transparent.png",
+      "bio": "Bryan gets into routes smoothly and accelerates quickly enough to threaten space before coverage settles. Notre Dame can use that movement to give him clean releases. Physical defenders can knock him off his path, and finishing through contact is an area he needs to improve."
+    },
+    "131": {
+      "name": "Parelle Graham",
+      "position": "TE",
+      "portrait": "parelle-graham-transparent.png",
+      "bio": "Graham gives Ohio State a large possession target with strong hands and the frame to present a clear window for the quarterback. His slow acceleration limits how often he pulls away from coverage. His best work comes when he can use size and positioning to finish."
+    },
+    "132": {
+      "name": "Darius Kimble",
+      "position": "TE",
+      "portrait": "darius-kimble-transparent.png",
+      "bio": "Kimble moves fluidly on vertical routes and shows the athleticism to threaten the seam for Utah. His hands are inconsistent, which limits how often that movement turns into completed passes. His blocking technique also needs work before he can handle a broader role at tight end."
+    },
+    "133": {
+      "name": "Jeremiah Kelly",
+      "position": "TE",
+      "portrait": "jeremiah-kelly-transparent.png",
+      "bio": "Kelly brings enough burst to get into routes quickly and gives USC an athletic option in the passing game. His hands can let him down, and he has limited physicality against contact. More consistent finishes would help him turn his movement skills into a reliable role."
+    },
+    "134": {
+      "name": "Hans Lehmann",
+      "position": "TE",
+      "portrait": "hans-lehmann-transparent.png",
+      "bio": "Lehmann gives East Carolina a sturdy in-line tight end with sound blocking fundamentals. He can hold up at the point of attack when the assignment stays in front of him. Limited mobility and receiving upside make his clearest role one that leans on his blocking."
+    },
+    "135": {
+      "name": "Robert Royster",
+      "position": "TE",
+      "portrait": "robert-royster-transparent.png",
+      "bio": "Royster has enough straight-line speed to give UAB a tight end who can run through the seam. His routes vary in precision, and his hands are unreliable when the ball finds him. Improving both would help him turn a vertical threat into more dependable production."
+    },
+    "136": {
+      "name": "Ehsando Mwangu",
+      "position": "TE",
+      "portrait": "ehsando-mwangu-transparent.png",
+      "bio": "Mwangu gives Miami a physical tight end who can use solid strength to contribute in the blocking game. Limited mobility narrows the assignments that play to his strengths, and he offers little as a receiver. His clearest role is near the line of scrimmage."
     }
   }
 }
