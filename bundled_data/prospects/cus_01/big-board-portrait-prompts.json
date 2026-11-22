@@ -25,5 +25,109 @@
     "mode": "built-in imagegen",
     "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
     "prompt": "Photorealistic sports media-day portrait of Terrance May, a fictional 22-year-old adult male college quarterback, 6-foot-6, 240 pounds, African American with medium-dark brown skin, brown eyes, short brown afro with faded sides, a neatly groomed medium beard and mustache, and a sturdy tight end-like frame. Wear a crimson Washington State Cougars football jersey with white number 7 and the WSU Cougar logo; show the correct jersey digits on both shoulder panels and upper chest. Use image 1 only for the tight centered head-and-shoulders crop, even lighting, and cutout treatment. Use the new subject’s own face, hairstyle and team uniform. Match the 1254 × 1254 square framing with a sliver of clearance above the full hairstyle, eyes a quarter of the way down, shoulders filling the lower frame, and the very bottom passing through the front jersey number. One athlete looking directly at camera, no helmet. Genuine alpha transparency around the full silhouette, clean natural edges, no backdrop, checkerboard, shadow, captions or watermark."
+  },
+  {
+    "name": "Dannie Chow",
+    "position": "HB",
+    "school": "Washington",
+    "file": "portraits/dannie-chow-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Dannie Chow, a fictional adult running back. Subject: 22-year-old Black man with dark skin, brown eyes, long black dreadlocks, medium neatly groomed facial hair, and a stout 5-foot-9, 225-pound build. Wear a purple Washington Huskies jersey with gold and white accents. The jersey number is exactly \"30\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Jamel Fenton",
+    "position": "HB",
+    "school": "Wake Forest",
+    "file": "portraits/jamel-fenton-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Jamel Fenton, a fictional adult running back. Subject: 23-year-old Black man with medium brown skin, brown eyes, short black dreadlocks in a deliberate pattern, medium neatly groomed facial hair, and a wide face, 6 feet and 218 pounds. Wear a black Wake Forest Demon Deacons jersey with old-gold details. The jersey number is exactly \"2\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Jordan Dupree",
+    "position": "HB",
+    "school": "Alabama",
+    "file": "portraits/jordan-dupree-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Jordan Dupree, a fictional adult running back. Subject: 22-year-old Black man with medium brown skin, brown eyes, short brown afro with a fade, clean-shaven strong face, and a tall, powerful 6-foot-3, 238-pound build. Wear a crimson Alabama jersey with white digits. The jersey number is exactly \"24\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Anderius Jenkins",
+    "position": "HB",
+    "school": "Illinois",
+    "file": "portraits/anderius-jenkins-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Anderius Jenkins, a fictional adult running back. Subject: 22-year-old Black man with light brown skin, brown eyes, a short brown Caesar fade, a neatly trimmed goatee, and a strong 6-foot, 234-pound build. Wear a navy Illinois Fighting Illini jersey with orange trim and white digits. The jersey number is exactly \"0\" (one zero, never 00) across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Sakeem Thomas",
+    "position": "HB",
+    "school": "Oregon",
+    "file": "portraits/sakeem-thomas-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Sakeem Thomas, a fictional adult running back. Subject: 22-year-old Black man with dark brown skin, brown eyes, short black Caesar fade, neat goatee and a strong, angular face, 6 feet and 230 pounds. Wear a green Oregon Ducks jersey with bright yellow digits and accents. The jersey number is exactly \"2\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Deandre Booker",
+    "position": "HB",
+    "school": "Arizona",
+    "file": "portraits/deandre-booker-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Deandre Booker, a fictional adult running back. Subject: 22-year-old Black man with medium brown skin, brown eyes, black locs styled in a defined pattern, a full round clean-shaven face, and a sturdy 6-foot-2, 226-pound build. Wear a navy Arizona Wildcats jersey with red and white accents. The jersey number is exactly \"13\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Devin Guillory",
+    "position": "HB",
+    "school": "Oregon State",
+    "file": "portraits/devin-guillory-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Devin Guillory, a fictional adult running back. Subject: 22-year-old Black man with light brown skin, green eyes, medium messy brown afro, a round face and medium neatly groomed facial hair, with a muscular 6-foot, 225-pound build. Wear a black Oregon State Beavers jersey with orange and white accents. The jersey number is exactly \"0\" (one zero, never 00) across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Dacquan James",
+    "position": "HB",
+    "school": "Arizona State",
+    "file": "portraits/dacquan-james-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Dacquan James, a fictional adult running back. Subject: 21-year-old Black man with medium brown skin, brown eyes, distinct styled black dreadlocks, a narrow face and light groomed facial hair, lean athletic 6-foot-1, 203-pound build. Wear a maroon Arizona State Sun Devils jersey with gold accents. The jersey number is exactly \"34\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Tristin Vanmeeter",
+    "position": "HB",
+    "school": "Fordham",
+    "file": "portraits/tristin-vanmeeter-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Tristin Vanmeeter, a fictional adult running back. Subject: 23-year-old white man with fair skin, brown eyes, short straight brown hair faded at the sides and a clean-shaven face, athletic 5-foot-11, 213-pound build. Wear a deep maroon Fordham Rams jersey with white digits and Fordham branding. The jersey number is exactly \"34\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Jamie McCollum",
+    "position": "HB",
+    "school": "Rice",
+    "file": "portraits/jamie-mccollum-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Jamie McCollum, a fictional adult running back. Subject: 22-year-old Black man with dark skin, brown eyes, a short black afro fade and a neat goatee, compact 5-foot-11, 220-pound build. Wear a navy blue Rice Owls jersey with white digits and Rice insignia. The jersey number is exactly \"32\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Nick Apodaca",
+    "position": "HB",
+    "school": "TCU",
+    "file": "portraits/nick-apodaca-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Nick Apodaca, a fictional adult running back. Subject: 22-year-old Latino and Black man with olive tan skin, brown eyes, short curly brown hair and a neatly trimmed goatee, compact 5-foot-8, 194-pound build. Wear a purple TCU Horned Frogs jersey with white digits and TCU branding. The jersey number is exactly \"24\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Xander Knox",
+    "position": "HB",
+    "school": "Michigan State",
+    "file": "portraits/xander-knox-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Xander Knox, a fictional adult running back. Subject: 22-year-old Black man with medium brown skin, brown eyes and short brown Caesar fade, full round clean-shaven face, powerful compact 5-foot-10, 231-pound build. Wear a deep green Michigan State Spartans jersey with white digits and Spartan insignia. The jersey number is exactly \"31\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
+  },
+  {
+    "name": "Tanner Melendez",
+    "position": "HB",
+    "school": "Iowa",
+    "file": "portraits/tanner-melendez-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day studio portrait of Tanner Melendez, a fictional adult running back. Subject: 23-year-old Black man with olive tan skin, brown eyes, medium-length straight-to-wavy brown hair, medium neatly groomed facial hair and a tall 6-foot-3, 228-pound build. Wear a black Iowa Hawkeyes jersey with gold digits and gold details. The jersey number is exactly \"25\" across the chest and on both shoulders. Square 1254 × 1254 transparent cutout, tight head-and-shoulders crop, entire hairstyle visible with a sliver of top clearance, eyes about a quarter of the way down, shoulder pads fill lower width, crop through the chest numeral at the bottom. Center the face straight forward at camera. One unhelmeted athlete, composed expression, even front studio lighting, realistic skin and fabric texture. Clean genuine alpha transparency outside the silhouette. No background, checkerboard, shadow, extra people, captions or watermark."
   }
 ]

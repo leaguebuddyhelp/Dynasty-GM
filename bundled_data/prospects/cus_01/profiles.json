@@ -372,7 +372,7 @@
       "name": "Francis Smith",
       "portrait": "francis-smith-transparent.png",
       "headline": "An early-down engine with first-round substance",
-      "bio": "Contact doesn’t have to end the play when Smith is carrying it. The former five-star back blends power with excellent balance, giving him the ability to stay upright and keep a run alive. That combination makes every tackle a more demanding assignment.",
+      "bio": "Smith gets downhill quickly and carries that speed through contact. The Ohio State back stays balanced when defenders hit him off center, and he has the strength to finish through them. The open question is how much he adds when the run has to bounce outside.",
       "watch": "Sharpen protection assignments and stay patient when the first interior lane is crowded.",
       "statistics": {
         "position": "HB",
@@ -499,7 +499,7 @@
       "name": "Jaylan Matthews Jr.",
       "portrait": "jaylan-matthews-jr-transparent.png",
       "headline": "A first-round creator who can manufacture extra yards",
-      "bio": "Matthews has carried high expectations since arriving as a top-ten recruit. The former Maryland starter brings that pedigree and starting experience to the backfield, giving teams a runner who has already shouldered meaningful responsibilities in a major college offense across a starting workload.",
+      "bio": "Matthews changes direction sharply and accelerates out of his cuts, making him especially dangerous when he gets a defender alone in space. The Alabama back has the speed to turn one missed tackle into a long gain. Scouts should watch how he handles crowded interior lanes.",
       "watch": "Trust the first useful lane and improve consistency picking up pressure from the edge.",
       "statistics": {
         "position": "HB",
@@ -633,7 +633,7 @@
       "name": "Tye Miller",
       "portrait": "tye-miller-transparent.png",
       "headline": "A productive runner with room to broaden his role",
-      "bio": "Miller has given defenses a steady diet of carries and production. His combined rushing yardage over the past two seasons leads the group, offering teams a sustained track record rather than a single hot stretch. He knows what it takes to shoulder a backfield workload.",
+      "bio": "Miller sees openings develop between the tackles and has the burst to take advantage before they close. The Missouri back can redirect smoothly when the initial lane disappears. His inside work is the clearest strength, with his effectiveness on perimeter runs still to be evaluated.",
       "watch": "Expand his route detail and keep his feet disciplined when the intended lane closes.",
       "statistics": {
         "position": "HB",
@@ -936,7 +936,7 @@
       "name": "De'Quan Coleman",
       "portrait": "dequan-coleman-transparent.png",
       "headline": "A physical rotation back with a clear early role",
-      "bio": "Coleman’s running style gives defenders a straightforward choice: absorb the contact or get run over. The strong back attacks through would-be tacklers, providing a physical option for an offense that wants to finish runs and make opponents pay for meeting him downhill.",
+      "bio": "Coleman gives Colorado a powerful downhill runner who keeps his feet through contact and can finish through a defender. His strength makes him a natural fit for direct runs. Asking him to improvise in space takes him away from the part of his game that stands out.",
       "watch": "Improve receiving transitions and lateral resets without losing forward momentum.",
       "statistics": {
         "position": "HB",
@@ -1480,7 +1480,7 @@
       "name": "Qualeek Leonard",
       "portrait": "qualeek-leonard-transparent.png",
       "headline": "Useful size and movement, with a workload to earn",
-      "bio": "Leonard arrives with the recruiting credentials to attract attention and a productive season to support them. The former five-star back has one strong year on his résumé, giving teams a promising peak to evaluate alongside a relatively short track record of consistent production.",
+      "bio": "Leonard couples a powerful frame with surprising agility and enough burst to punish a clean opening. The Notre Dame back can get to the second level quickly, though his patience and reads vary. Seeing the lane develop before he commits would make his tools more reliable.",
       "watch": "Make quicker interior decisions and improve protection reliability before expanding his workload.",
       "statistics": {
         "position": "HB",
@@ -1840,7 +1840,7 @@
       "name": "Demond Henderson",
       "portrait": "demond-henderson-transparent.png",
       "headline": "A rotational option who needs cleaner possessions",
-      "bio": "Henderson’s college statistics don’t fully capture why scouts will keep watching. The back possesses elite physical traits, making his projection a question of whether those tools can produce more than his numbers have shown so far. His upside remains an intriguing bet.",
+      "bio": "Henderson cuts sharply and stays balanced through contact, giving North Carolina a compact runner who can make the first defender miss. He can keep a play alive in tight space, though he lacks the breakaway speed to turn as many of those escapes into long gains.",
       "watch": "Protect the ball through contact, eliminate hesitation and earn trust on passing downs.",
       "statistics": {
         "position": "HB",
@@ -2034,7 +2034,7 @@
       "name": "Kiaan Brown",
       "portrait": "kiaan-brown-transparent.png",
       "headline": "Receiving value in a role that still needs definition",
-      "bio": "Brown brings a receiver’s background to the backfield. Originally recruited at wideout, he offers natural receiving ability as a running back, giving an offense another way to involve him without relying exclusively on handoffs. That experience can make personnel groupings more flexible.",
+      "bio": "Brown gives USC a back who can catch cleanly and find space on routes out of the backfield. Those receiving instincts give him a clear role in the passing game. His interior rushing is less effective, leaving the most convincing part of his projection on passing downs.",
       "watch": "Improve protection, win routes beyond easy outlets and build evidence for a larger rushing role.",
       "statistics": {
         "position": "HB",
@@ -2153,6 +2153,84 @@
       "position": "QB",
       "portrait": "terrance-may-transparent.png",
       "bio": "May carries a tight end’s frame into the pocket and has enough speed to make designed runs a real threat. Washington State’s quarterback can stress a defense with his size. Sharper reads and more consistent decisions will determine how much of that upside translates."
+    },
+    "100": {
+      "name": "Dannie Chow",
+      "position": "HB",
+      "portrait": "dannie-chow-transparent.png",
+      "bio": "Chow runs downhill with enough force and balance to keep moving after first contact. The Washington back does his best work when he can hit a lane directly. Limited lateral quickness and breakaway speed make him less effective when a play calls for a sharp redirect."
+    },
+    "101": {
+      "name": "Jamel Fenton",
+      "position": "HB",
+      "portrait": "jamel-fenton-transparent.png",
+      "bio": "Fenton has enough vision to spot a lane and the shiftiness to slip past the first defender. The Wake Forest back does not always accelerate cleanly away from his cuts, and contact can end the run when he cannot make the next defender miss."
+    },
+    "102": {
+      "name": "Jordan Dupree",
+      "position": "HB",
+      "portrait": "jordan-dupree-transparent.png",
+      "bio": "Dupree brings a large frame and physical finish to Alabama’s backfield. He carries momentum well once he gets downhill and makes defenders work to stop him. His upright style and limited agility leave him with fewer answers when the run asks him to change direction quickly."
+    },
+    "103": {
+      "name": "Anderius Jenkins",
+      "position": "HB",
+      "portrait": "anderius-jenkins-transparent.png",
+      "bio": "Jenkins has the strength to work through contact on interior runs for Illinois. He is most effective when the blocking gives him a direct path to attack. Limited explosiveness and inconsistent reads make it harder for him to recover when the first opening closes."
+    },
+    "104": {
+      "name": "Sakeem Thomas",
+      "position": "HB",
+      "portrait": "sakeem-thomas-transparent.png",
+      "bio": "Thomas has the agility to make quick cuts and change the angle on a defender. The Oregon back can use that footwork to find extra room, but he does not always choose the right lane and lacks the top-end speed to erase a late decision."
+    },
+    "105": {
+      "name": "Deandre Booker",
+      "position": "HB",
+      "portrait": "deandre-booker-transparent.png",
+      "bio": "Booker embraces contact and has the build to finish runs when Arizona gives him a downhill path. He has a harder time finding openings on his own, and changing direction costs him momentum. His strongest work comes on plays that let him commit and run straight ahead."
+    },
+    "106": {
+      "name": "Devin Guillory",
+      "position": "HB",
+      "portrait": "devin-guillory-transparent.png",
+      "bio": "Guillory gives his blockers time to work and uses sound footwork to adjust as the lane develops. The Oregon State back has limited burst once he commits, which lets quicker defenders close the gap before he can separate. His patience plays best when the blocking holds up."
+    },
+    "107": {
+      "name": "Dacquan James",
+      "position": "HB",
+      "portrait": "dacquan-james-transparent.png",
+      "bio": "James has quick feet and enough creativity to change direction in the open field. The Arizona State back can make a defender miss in space, though limited strength makes contact harder to survive. More dependable ball security is important if he is going to earn steady touches."
+    },
+    "108": {
+      "name": "Tristin Vanmeeter",
+      "position": "HB",
+      "portrait": "tristin-vanmeeter-transparent.png",
+      "bio": "Vanmeeter gives Fordham a reliable outlet with soft hands out of the backfield. That receiving skill gives him a clearer role than his work between the tackles, where he struggles to find room. Limited explosiveness also makes it harder for him to create extra yards after the catch."
+    },
+    "109": {
+      "name": "Jamie McCollum",
+      "position": "HB",
+      "portrait": "jamie-mccollum-transparent.png",
+      "bio": "McCollum is a tough interior runner who uses solid power to finish carries for Rice. He can get what is available through contact when the lane is defined. He shows limited creativity when the blocking breaks down and rarely turns those chances into explosive gains."
+    },
+    "110": {
+      "name": "Nick Apodaca",
+      "position": "HB",
+      "portrait": "nick-apodaca-transparent.png",
+      "bio": "Apodaca has the agility and reliable hands to contribute as a receiver out of TCU’s backfield. He is most effective when he gets the ball in space. His smaller build and lack of effectiveness through contact make it harder for him to create yardage inside."
+    },
+    "111": {
+      "name": "Xander Knox",
+      "position": "HB",
+      "portrait": "xander-knox-transparent.png",
+      "bio": "Knox uses a compact frame and good strength to absorb contact for Michigan State. He is most effective when he can build momentum on a direct path. Limited acceleration makes tight openings harder to exploit, and he offers less when the play puts him in space."
+    },
+    "112": {
+      "name": "Tanner Melendez",
+      "position": "HB",
+      "portrait": "tanner-melendez-transparent.png",
+      "bio": "Melendez builds momentum with long strides and has the strength to finish a run when Iowa clears a downhill path. His stiff hips limit how quickly he can change direction, making him less effective when the lane shifts and he has to cut across the formation."
     }
   }
 }

@@ -14,7 +14,7 @@ const offensiveLinePositions = ['LT', 'LG', 'C', 'RG', 'RT'];
 const defensiveLinePositions = ['LEDG', 'REDG', 'DT'];
 const linebackerPositions = ['SAM', 'MIKE', 'WILL'];
 const defensiveBackPositions = ['CB', 'FS', 'SS'];
-const schoolAliases = { Minneosta: 'Minnesota', Wiconsin: 'Wisconsin', 'Western Kentucy': 'Western Kentucky', 'Ole MIss': 'Ole Miss' };
+const schoolAliases = { Minneosta: 'Minnesota', Wiconsin: 'Wisconsin', 'Western Kentucy': 'Western Kentucky', 'Ole MIss': 'Ole Miss', 'Michgan State': 'Michigan State' };
 const schoolColors = { USC: 0x990000, Alabama: 0x9e1b32, 'Penn State': 0x041e42, 'Notre Dame': 0xc99700, Miami: 0x005030, 'Ohio State': 0xbb0000, Missouri: 0xf1b82d, Colorado: 0xcfb87c, 'North Carolina': 0x7bafd4, Minnesota: 0x7a0019, 'Florida State': 0x782f40, Oklahoma: 0x841617, Texas: 0xbf5700, 'Iowa State': 0xc8102e, 'Boise State': 0x0033a0, Duke: 0x003087, 'South Carolina': 0x73000a, LSU: 0x461d7c, Oregon: 0x154733 };
 Object.assign(schoolColors, { Iowa: 0xffcd00, Auburn: 0x0c2340, 'Texas A&M': 0x500000, Louisville: 0xad0000, Syracuse: 0xf76900, Georgia: 0xba0c2f, Michigan: 0x00274c, Charlotte: 0x005035, 'Ole Miss': 0xce1126, Tennessee: 0xff8200, 'Texas Tech': 0xcc0000, 'NC State': 0xcc0000, Wisconsin: 0xc5050c, Clemson: 0xf56600, Utah: 0xcc0000, Stanford: 0x8c1515, UConn: 0x000e2f, Illinois: 0xe84a27 });
 const schoolEmojis = {
