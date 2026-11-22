@@ -201,7 +201,7 @@ const wrFixture = { position: 'WR', fictional: true, games: 10, receptions: 50, 
 assert.match(formatProspectStatistics(wrFixture), /2\.00 yards\/route run \(400 routes\)/);
 const hbFixture = { position: 'HB', fictional: true, games: 10, carries: 100, rushingYards: 600, rushingTD: 6, receptions: 20, receivingYards: 200, receivingTD: 2, rushingYardsAfterContact: 300 };
 assert.match(formatProspectStatistics(hbFixture), /3\.00 rushing yards\/carry/);
-assert.match(players.find((p) => p.id === '1').bio, /all three levels.*interior pressure/i);
+assert.match(players.find((p) => p.id === '1').bio, /elite anticipation.*all three levels.*offensive centerpiece/i);
 assert.equal(players.find((p) => p.id === '2').name, 'Jaquon Hall');
 assert.equal(players.find((p) => p.id === '6').name, 'Aaron Archuelta');
 assert.equal(players.find((p) => p.id === '56').weight, 225);

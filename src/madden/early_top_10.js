@@ -9,6 +9,7 @@ const classes = Object.freeze({
   CUS02: { source: 'Madden - CUS02 - Early Big Board.json', folder: 'cus_02', pageCount: 32, manifests: ['early-top-10-portrait-prompts.json', 'future-player-portrait-prompts.json'] },
   CUS03: { source: 'Madden - CUS03 - Early Big Board.json', folder: 'cus_03', pageCount: 32, manifests: ['class03-portrait-prompts.json'] },
   CUS04: { source: 'Madden - CUS04 - Early Big Board.json', folder: 'cus_04', pageCount: 32, manifests: ['portrait-prompts.json'] },
+  CUS05: { source: 'Madden - CUS05 - Early Big Board.json', folder: 'cus_05', pageCount: 32, manifests: ['portrait-prompts.json'] },
 });
 const dataRoot = fileURLToPath(new URL('../../bundled_data/', import.meta.url));
 const edgePositions = new Set(['LEDG', 'REDG']);
