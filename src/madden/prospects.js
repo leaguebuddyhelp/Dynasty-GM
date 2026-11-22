@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ActionRowBuilder, AttachmentBuilder, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder } from 'discord.js';
 
 const classFiles = Object.freeze({
   CUS01: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01.json', import.meta.url)), boardFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01 - Big Board.json', import.meta.url)) },
@@ -158,18 +158,22 @@ export function loadProspects(classId = 'CUS01') {
   }).sort((a, b) => (hasRank(a.rank) ? a.rank : Infinity) - (hasRank(b.rank) ? b.rank : Infinity));
 }
 
-export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId = null, page = 0 } = {}) {
+export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId = null, page = null } = {}) {
   if (!PROSPECT_POSITIONS.includes(position)) throw new Error('Unknown prospect position');
   const all = loadProspects(classId);
   const players = all.filter((player) => player.position === position);
-  const player = playerId === null ? null : players.find((entry) => entry.id === String(playerId));
   const availablePositions = PROSPECT_POSITIONS.filter((entry) => all.some((prospect) => prospect.position === entry));
   const availableLabel = availablePositions.join(' / ');
-  if (playerId !== null && !player) throw new Error('Prospect is not available in this position');
   const pageSize = 25;
   const pageCount = Math.ceil(players.length / pageSize);
-  const index = player ? Math.floor(players.indexOf(player) / pageSize) : Math.max(0, Math.min(pageCount - 1, Number.isInteger(page) ? page : 0));
-  const pagePlayers = players.slice(index * pageSize, (index + 1) * pageSize);
+  const requestedPage = Math.max(0, Math.min(pageCount - 1, Number.isInteger(page) ? page : 0));
+  const playerIndex = playerId === null
+    ? (page === null ? -1 : requestedPage * pageSize)
+    : players.findIndex((entry) => entry.id === String(playerId));
+  const player = players[playerIndex];
+  if (playerId !== null && !player) throw new Error('Prospect is not available in this position');
+  const menuPage = player ? Math.floor(playerIndex / pageSize) : requestedPage;
+  const pagePlayers = players.slice(menuPage * pageSize, (menuPage + 1) * pageSize);
   const prefix = classId === 'CUS01' ? 'madden_prospects' : `madden_prospects_${classId.toLowerCase()}`;
   const positionMenu = new StringSelectMenuBuilder()
     .setCustomId(`${prefix}_position`).setPlaceholder('Choose a position')
@@ -184,9 +188,10 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
       ...(schoolEmojis[entry.school] ? { emoji: schoolEmojis[entry.school] } : {}),
       description: `${entry.school} · ${hasRank(entry.rank) ? `Board #${entry.rank}` : 'Unranked'}`, default: entry.id === player?.id })))));
   if (pageCount > 1) components.push(new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
-    .setCustomId(`${prefix}_page_${position}`).setPlaceholder('Choose a page')
+    .setCustomId(`${prefix}_page_${position}`).setPlaceholder('Choose a group of players')
     .addOptions(Array.from({ length: pageCount }, (_, pageIndex) => ({
-      label: `Page ${pageIndex + 1} of ${pageCount}`, value: String(pageIndex), default: pageIndex === index,
+      label: `Players ${pageIndex * pageSize + 1}–${Math.min((pageIndex + 1) * pageSize, players.length)}`,
+      value: String(pageIndex), default: pageIndex === menuPage,
     })))));
 
   const classMenu = new StringSelectMenuBuilder().setCustomId('madden_prospects_class').setPlaceholder('Choose a draft class')
@@ -195,6 +200,14 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
   const embed = new EmbedBuilder().setColor(0x5865f2);
   const files = [];
   if (player) {
+    const previous = players[playerIndex - 1];
+    const next = players[playerIndex + 1];
+    components.push(new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`${prefix}_previous_${position}_${previous?.id ?? player.id}`)
+        .setLabel('Previous').setStyle(ButtonStyle.Secondary).setDisabled(!previous),
+      new ButtonBuilder().setCustomId(`${prefix}_next_${position}_${next?.id ?? player.id}`)
+        .setLabel('Next').setStyle(ButtonStyle.Primary).setDisabled(!next),
+    ));
     embed.setColor(schoolColors[player.school] || 0x5865f2)
       .setTitle(`${player.name} · ${player.position}${player.heisman ? ` ${heismanBadge('heisman')}` : ''}`).setDescription(player.bio)
       .addFields(
@@ -204,7 +217,7 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
       );
     const statistics = formatProspectStatistics(player.statistics);
     if (statistics) embed.addFields({ name: 'Final college season', value: statistics });
-    embed.setFooter({ text: statistics ? `${classId} · Simulated college statistics` : `${classId} · Scouting profile` });
+    embed.setFooter({ text: `${classId} · ${statistics ? 'Simulated college statistics' : 'Scouting profile'} · ${playerIndex + 1}/${players.length}` });
     if (fs.existsSync(player.portrait)) {
       const attachment = `${classId.toLowerCase()}-${player.id}.png`;
       files.push(new AttachmentBuilder(player.portrait, { name: attachment }));

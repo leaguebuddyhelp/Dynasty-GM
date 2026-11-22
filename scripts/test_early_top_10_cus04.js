@@ -24,9 +24,15 @@ for (const item of portraits) {
 }
 
 const board = loadEarlyTop10('CUS04');
-assert.equal(board.size, 10);
+assert.equal(board.size, 32);
 assert.equal(board.get(1).name, 'Conor Williams');
 assert.equal(board.get(10).name, 'Alex Martinez');
+for (const [name, pick] of [['Alex Savage', 17], ['Johnny Hatcher', 26], ['Jocquise Harrison', 28]]) {
+  const player = players.find((entry) => entry.name === name);
+  assert.equal(player.round, 1);
+  assert.equal(player.pick, pick);
+  assert.equal(board.get(pick).name, name);
+}
 for (let page = 0; page < 32; page++) {
   const rank = page + 1;
   const view = buildEarlyTop10View(page, 'CUS04');
@@ -37,25 +43,23 @@ for (let page = 0; page < 32; page++) {
   assert.equal(next.disabled, page === 31);
   assert.deepEqual(view.attachments, []);
   const player = board.get(rank);
-  if (!player) {
-    assert.equal(embed.description, 'This spot has not been assigned yet.');
-    assert.equal(view.files.length, 0);
-    continue;
-  }
+  assert.ok(player, `Missing prospect at rank ${rank}`);
   assert.ok(embed.title.includes(`${player.position} ${player.name}`));
   assert.equal(embed.description, player.scoutingBio);
   const words = player.scoutingBio.trim().split(/\s+/).length;
   assert.ok(words >= 40 && words <= 50, player.name);
-  assert.match(embed.thumbnail.url, new RegExp(`^attachment://early-cus04-rank-${rank}\\.png$`));
-  assert.equal(view.files.length, 1);
   const portrait = portraits.find((item) => item.name === player.name);
+  assert.ok(portrait, `Missing portrait for ${player.name}`);
+  assert.equal(embed.thumbnail.url, `attachment://early-cus04-rank-${rank}.png`);
+  assert.equal(view.files.length, 1);
   assert.equal(view.files[0].attachment, path.resolve(root, portrait.file));
 }
 
 for (const [id, values, expected] of [
   ['madden_earlytop10_class', ['CUS04'], 'Conor Williams'],
+  ['madden_earlytop10_cus04_page_8', undefined, 'Matteo Jackson'],
   ['madden_earlytop10_cus04_page_9', undefined, 'Alex Martinez'],
-  ['madden_earlytop10_cus04_page_31', undefined, 'Early Big Board · #32'],
+  ['madden_earlytop10_cus04_page_31', undefined, 'Ayren Leonard'],
 ]) {
   assert.ok(customId.test(id));
   let payload;
@@ -65,4 +69,4 @@ for (const [id, values, expected] of [
   const classes = payload.components[1].toJSON().components[0].options;
   assert.equal(classes.find((option) => option.value === 'CUS04').default, true);
 }
-console.log('PASS CUS04 ranked and unassigned slots, class navigation and 14 matching transparent portraits');
+console.log('PASS 32 CUS04 Early Big Board cards and 37 matching transparent portraits');

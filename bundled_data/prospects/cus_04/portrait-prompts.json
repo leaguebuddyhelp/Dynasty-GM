@@ -1,6 +1,25 @@
 [
   {
     "id": "1",
+    "name": "DeMarcus Anthony",
+    "position": "WR",
+    "school": "Texas A&M",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of DeMarcus Anthony, a fictional adult male WR college football prospect, African American athlete with dark brown skin, brown eyes, black straight-back cornrows and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'1\", 190-pound position. He wears a maroon Texas A&M Aggies jersey with white digits; the only jersey numeral is 10. Show 10 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/demarcus-anthony-transparent.png"
+  },
+  {
+    "id": "2",
+    "name": "Bryan Nunez",
+    "position": "HB",
+    "school": "Clemson",
+    "file": "portraits/bryan-nunez-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Bryan Nunez, a fictional 21-year-old running back. Subject: Black and Latino man with olive tan skin, brown eyes, messy curly brown afro, light neat stubble and a round face. Build consistent with 5'10\", 213 pounds and his position. Wear a orange Clemson jersey with white numbers, purple accents and a paw emblem; uniform number exactly \"2\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "3",
     "name": "C.J. Nielsen",
     "position": "QB",
     "school": "Ole Miss",
@@ -10,37 +29,63 @@
     "file": "portraits/cj-nielsen-transparent.png"
   },
   {
-    "id": "2",
-    "name": "Johnny Peña",
-    "position": "QB",
-    "school": "Tulsa",
-    "mode": "built-in imagegen",
-    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
-    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Johnny Peña, a fictional adult male QB college football prospect, Latino athlete with fair skin, brown eyes, a short brown Caesar fade and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'6\", 218-pound position. He wears a royal blue Tulsa Golden Hurricane jersey with white digits and gold details; the only jersey numeral is 1. Show 1 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
-    "file": "portraits/johnny-pena-transparent.png"
-  },
-  {
-    "id": "3",
-    "name": "Dareon Willis",
-    "position": "QB",
-    "school": "Alabama",
-    "mode": "built-in imagegen",
-    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
-    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Dareon Willis, a fictional adult male QB college football prospect, African American athlete with dark brown skin, brown eyes, a short black afro fade and a clean-shaven face. Build and shoulder proportions suit his 6'2\", 225-pound position. He wears a crimson Alabama Crimson Tide jersey with white digits; the only jersey numeral is 8. Show 8 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
-    "file": "portraits/dareon-willis-transparent.png"
-  },
-  {
     "id": "4",
-    "name": "Dylan Fredericks",
-    "position": "HB",
-    "school": "BYU",
+    "name": "Brennan Coombs",
+    "position": "MIKE",
+    "school": "Texas A&M",
     "mode": "built-in imagegen",
     "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
-    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Dylan Fredericks, a fictional adult male HB college football prospect, white athlete with fair skin, blue eyes, long straight blond hair and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 5'9\", 210-pound position. He wears a royal blue BYU Cougars jersey with white digits and BYU details; the only jersey numeral is 11. Show 11 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
-    "file": "portraits/dylan-fredericks-transparent.png"
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Brennan Coombs, a fictional adult male MIKE college football prospect, white athlete with fair skin, brown eyes, short straight brown hair with faded sides, a round face and a clean-shaven jaw. Build and shoulder proportions suit his 6'5\", 247-pound position. He wears a maroon Texas A&M Aggies jersey with white digits; the only jersey numeral is 51. Show 51 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/brennan-coombs-transparent.png"
+  },
+  {
+    "id": "5",
+    "name": "Troy Morales",
+    "position": "CB",
+    "school": "Oregon",
+    "file": "portraits/troy-morales-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Troy Morales, a fictional 22-year-old cornerback. Subject: Black and Latino man with olive tan skin, brown eyes, black short Caesar cut with a fade, clean shaven. Build consistent with 6'3\", 201 pounds and his position. Wear a green Oregon Ducks jersey with yellow numbers and an Oregon O; uniform number exactly \"13\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "6",
+    "name": "DaQuan Jefferson",
+    "position": "DT",
+    "school": "Alabama",
+    "file": "portraits/daquan-jefferson-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of DaQuan Jefferson, a fictional 22-year-old defensive tackle. Subject: Black man with medium brown skin, brown eyes, short black Caesar fade, medium groomed beard and round face. Build consistent with 6'3\", 320 pounds and his position. Wear a crimson Alabama jersey with white numbers; uniform number exactly \"55\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "7",
+    "name": "Conor Williams",
+    "position": "LT",
+    "school": "Texas",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Conor Williams, a fictional adult male LT college football prospect, fair-skinned white athlete with blue eyes, medium-length wavy blond hair and a goatee. Build and shoulder proportions suit his 6'5\", 323-pound position. He wears a burnt orange Texas Longhorns jersey with white digits; the only jersey numeral is 75. Show 75 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/conor-williams-transparent.png"
+  },
+  {
+    "id": "8",
+    "name": "Sammy Mosley",
+    "position": "MIKE",
+    "school": "Clemson",
+    "file": "portraits/sammy-mosley-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Sammy Mosley, a fictional 21-year-old middle linebacker. Subject: Black man with dark skin, brown eyes, black high-top fade haircut and a medium neatly groomed beard. Build consistent with 6'1\", 228 pounds and his position. Wear a orange Clemson jersey with white numbers, purple accents and Clemson paw; uniform number exactly \"1\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
   },
   {
     "id": "9",
+    "name": "Coleton Williamson",
+    "position": "RT",
+    "school": "Alabama",
+    "file": "portraits/coleton-williamson-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Coleton Williamson, a fictional 21-year-old right tackle. Subject: White man with fair skin, brown eyes, short straight brown hair, clean-shaven full face. Build consistent with 6'5\", 320 pounds and his position. Wear a crimson Alabama jersey with white digits; uniform number exactly \"74\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "10",
     "name": "Ryan Hodges III",
     "position": "WR",
     "school": "Ohio State",
@@ -48,16 +93,6 @@
     "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
     "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Ryan Hodges III, a fictional adult male WR college football prospect, African American athlete with light brown skin, hazel eyes, a short brown Caesar cut and a clean-shaven face. Build and shoulder proportions suit his 5'10\", 190-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 3. Show 3 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
     "file": "portraits/ryan-hodges-iii-transparent.png"
-  },
-  {
-    "id": "10",
-    "name": "DeMarcus Anthony",
-    "position": "WR",
-    "school": "Texas A&M",
-    "mode": "built-in imagegen",
-    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
-    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of DeMarcus Anthony, a fictional adult male WR college football prospect, African American athlete with dark brown skin, brown eyes, black straight-back cornrows and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'1\", 190-pound position. He wears a maroon Texas A&M Aggies jersey with white digits; the only jersey numeral is 10. Show 10 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
-    "file": "portraits/demarcus-anthony-transparent.png"
   },
   {
     "id": "11",
@@ -70,27 +105,25 @@
     "file": "portraits/taylen-ingram-transparent.png"
   },
   {
-    "id": "14",
-    "name": "Alex Martinez",
-    "position": "TE",
-    "school": "Ohio State",
+    "id": "12",
+    "name": "Matteo Jackson",
+    "position": "WR",
+    "school": "USC",
+    "file": "portraits/matteo-jackson-transparent.png",
     "mode": "built-in imagegen",
-    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
-    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Alex Martinez, a fictional adult male TE college football prospect, Latino athlete with olive tan skin, brown eyes, a short brown Caesar fade and light neatly groomed facial hair. Build and shoulder proportions suit his 6'5\", 249-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 85. Show 85 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
-    "file": "portraits/alex-martinez-transparent.png"
+    "prompt": "Photorealistic studio media-day portrait of Matteo Jackson, a fictional 22-year-old wide receiver. Subject: Black man with medium brown skin, brown eyes, short black locs arranged in a deliberate pattern, medium groomed facial hair and oval face. Build consistent with 6'3\", 195 pounds and his position. Wear a cardinal USC Trojans jersey with gold digits and USC mark; uniform number exactly \"5\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
   },
   {
-    "id": "18",
-    "name": "Conor Williams",
+    "id": "13",
+    "name": "Jonathan Pickney",
     "position": "LT",
-    "school": "Texas",
+    "school": "Alabama",
+    "file": "portraits/jonathan-pickney-transparent.png",
     "mode": "built-in imagegen",
-    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
-    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Conor Williams, a fictional adult male LT college football prospect, fair-skinned white athlete with blue eyes, medium-length wavy blond hair and a goatee. Build and shoulder proportions suit his 6'5\", 323-pound position. He wears a burnt orange Texas Longhorns jersey with white digits; the only jersey numeral is 75. Show 75 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
-    "file": "portraits/conor-williams-transparent.png"
+    "prompt": "Photorealistic studio media-day portrait of Jonathan Pickney, a fictional 21-year-old left tackle. Subject: Black man with medium brown skin, brown eyes, short designed black locs and a full clean-shaven face. Build consistent with 6'6\", 331 pounds and his position. Wear a crimson Alabama jersey with white digits; uniform number exactly \"72\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
   },
   {
-    "id": "19",
+    "id": "14",
     "name": "Jordan Nunez",
     "position": "LT",
     "school": "Notre Dame",
@@ -100,7 +133,44 @@
     "file": "portraits/jordan-nunez-transparent.png"
   },
   {
-    "id": "23",
+    "id": "15",
+    "name": "Joziah Brooks",
+    "position": "RG",
+    "school": "Oregon",
+    "file": "portraits/joziah-brooks-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Joziah Brooks, a fictional 21-year-old right guard. Subject: Black man with medium brown skin, brown eyes, short black Caesar fade and a shaped goatee, broad round face. Build consistent with 6'6\", 334 pounds and his position. Wear a green Oregon Ducks jersey with yellow digits and Oregon O; uniform number exactly \"65\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "16",
+    "name": "Troy Redman",
+    "position": "LEDG",
+    "school": "Ohio State",
+    "file": "portraits/troy-redman-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Troy Redman, a fictional 21-year-old edge rusher. Subject: Black man with light brown skin, brown eyes, messy curly brown afro faded on the sides, light stubble and round face. Build consistent with 6'5\", 260 pounds and his position. Wear a scarlet Ohio State jersey with white numbers and gray and black sleeve details; uniform number exactly \"11\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "17",
+    "name": "Dylan Fredericks",
+    "position": "HB",
+    "school": "BYU",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Dylan Fredericks, a fictional adult male HB college football prospect, white athlete with fair skin, blue eyes, long straight blond hair and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 5'9\", 210-pound position. He wears a royal blue BYU Cougars jersey with white digits and BYU details; the only jersey numeral is 11. Show 11 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/dylan-fredericks-transparent.png"
+  },
+  {
+    "id": "18",
+    "name": "Deandre Muncy",
+    "position": "SAM",
+    "school": "Texas",
+    "file": "portraits/deandre-muncy-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Deandre Muncy, a fictional 21-year-old outside linebacker. Subject: Black man with medium brown skin, brown eyes, short brown afro fade and a medium neatly groomed beard. Build consistent with 6'2\", 240 pounds and his position. Wear a burnt orange Texas Longhorns jersey with white numbers and a longhorn mark; uniform number exactly \"12\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "19",
     "name": "James Rodriquez",
     "position": "SAM",
     "school": "Ohio State",
@@ -110,17 +180,128 @@
     "file": "portraits/james-rodriquez-transparent.png"
   },
   {
-    "id": "24",
-    "name": "Brennan Coombs",
-    "position": "MIKE",
-    "school": "Texas A&M",
+    "id": "20",
+    "name": "Neville Gibson",
+    "position": "FS",
+    "school": "Ohio State",
     "mode": "built-in imagegen",
     "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
-    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Brennan Coombs, a fictional adult male MIKE college football prospect, white athlete with fair skin, brown eyes, short straight brown hair with faded sides, a round face and a clean-shaven jaw. Build and shoulder proportions suit his 6'5\", 247-pound position. He wears a maroon Texas A&M Aggies jersey with white digits; the only jersey numeral is 51. Show 51 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
-    "file": "portraits/brennan-coombs-transparent.png"
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Neville Gibson, a fictional adult male FS college football prospect, African American athlete with medium brown skin, brown eyes, short brown freeform dreadlocks and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'0\", 213-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 5. Show 5 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/neville-gibson-transparent.png"
+  },
+  {
+    "id": "21",
+    "name": "Justin Okpara",
+    "position": "QB",
+    "school": "Louisville",
+    "file": "portraits/justin-okpara-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Justin Okpara, a fictional 22-year-old quarterback. Subject: Black man with dark brown skin, brown eyes, short styled black locs and a clean-shaven face. Build consistent with 6'1\", 206 pounds and his position. Wear a red Louisville Cardinals jersey with white numbers and a Louisville cardinal mark; uniform number exactly \"1\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "22",
+    "name": "Dareon Willis",
+    "position": "QB",
+    "school": "Alabama",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Dareon Willis, a fictional adult male QB college football prospect, African American athlete with dark brown skin, brown eyes, a short black afro fade and a clean-shaven face. Build and shoulder proportions suit his 6'2\", 225-pound position. He wears a crimson Alabama Crimson Tide jersey with white digits; the only jersey numeral is 8. Show 8 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/dareon-willis-transparent.png"
+  },
+  {
+    "id": "23",
+    "name": "Johnny Peña",
+    "position": "QB",
+    "school": "Tulsa",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Johnny Peña, a fictional adult male QB college football prospect, Latino athlete with fair skin, brown eyes, a short brown Caesar fade and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'6\", 218-pound position. He wears a royal blue Tulsa Golden Hurricane jersey with white digits and gold details; the only jersey numeral is 1. Show 1 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/johnny-pena-transparent.png"
+  },
+  {
+    "id": "24",
+    "name": "Johan Anderson",
+    "position": "WR",
+    "school": "Stanford",
+    "file": "portraits/johan-anderson-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Johan Anderson, a fictional 22-year-old wide receiver. Subject: Black man of mixed heritage with light brown skin, brown eyes, messy curly black afro fade and neat goatee. Build consistent with 6'2\", 220 pounds and his position. Wear a cardinal red Stanford jersey with white numbers and a Stanford S mark; uniform number exactly \"2\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
   },
   {
     "id": "25",
+    "name": "Chuma Okar",
+    "position": "REDG",
+    "school": "Oklahoma",
+    "file": "portraits/chuma-okar-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Chuma Okar, a fictional 21-year-old edge rusher. Subject: Black man with medium brown skin, brown eyes, short black afro fade, medium groomed beard and round face. Build consistent with 6'2\", 258 pounds and his position. Wear a crimson Oklahoma Sooners jersey with white numbers and interlocking OU mark; uniform number exactly \"10\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "26",
+    "name": "Ayren Leonard",
+    "position": "REDG",
+    "school": "LSU",
+    "file": "portraits/ayren-leonard-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Ayren Leonard, a fictional 21-year-old edge rusher. Subject: Black man with light brown skin, brown eyes, brown high-top fade and a clean-shaven face. Build consistent with 6'5\", 259 pounds and his position. Wear a white LSU Tigers jersey with purple digits and purple-and-gold shoulder stripes; uniform number exactly \"15\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "27",
+    "name": "Shayne Crawford",
+    "position": "REDG",
+    "school": "Kansas",
+    "file": "portraits/shayne-crawford-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Shayne Crawford, a fictional 22-year-old edge rusher. Subject: Black man with medium brown skin, brown eyes, short black afro fade and a medium groomed beard. Build consistent with 6'5\", 248 pounds and his position. Wear a royal blue Kansas Jayhawks jersey with white digits and KU school mark; uniform number exactly \"5\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "28",
+    "name": "Joseph Simmons",
+    "position": "DT",
+    "school": "Mississippi State",
+    "file": "portraits/joseph-simmons-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Joseph Simmons, a fictional 21-year-old defensive tackle. Subject: Black man with light brown skin, brown eyes, short styled black locs and a medium groomed beard. Build consistent with 6'3\", 306 pounds and his position. Wear a maroon Mississippi State jersey with white digits and Mississippi State branding; uniform number exactly \"13\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "29",
+    "name": "Khalil Miller",
+    "position": "DT",
+    "school": "LSU",
+    "file": "portraits/khalil-miller-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Khalil Miller, a fictional 21-year-old defensive tackle. Subject: Black man with dark skin, brown eyes, short black afro fade and a clean-shaven face. Build consistent with 6'4\", 310 pounds and his position. Wear a white LSU Tigers jersey with purple numbers and purple-and-gold shoulder stripes; uniform number exactly \"94\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "30",
+    "name": "Alex Martinez",
+    "position": "TE",
+    "school": "Ohio State",
+    "mode": "built-in imagegen",
+    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
+    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Alex Martinez, a fictional adult male TE college football prospect, Latino athlete with olive tan skin, brown eyes, a short brown Caesar fade and light neatly groomed facial hair. Build and shoulder proportions suit his 6'5\", 249-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 85. Show 85 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
+    "file": "portraits/alex-martinez-transparent.png"
+  },
+  {
+    "id": "31",
+    "name": "Bo Weatherly",
+    "position": "TE",
+    "school": "Tennessee",
+    "file": "portraits/bo-weatherly-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Bo Weatherly, a fictional 21-year-old tight end. Subject: Black man with dark skin, brown eyes, long black dreadlocks and a clean-shaven face. Build consistent with 6'6\", 253 pounds and his position. Wear a orange Tennessee Volunteers jersey with white digits and a Power T mark; uniform number exactly \"88\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "32",
+    "name": "Tyquavion Jones",
+    "position": "CB",
+    "school": "Ohio State",
+    "file": "portraits/tyquavion-jones-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Tyquavion Jones, a fictional 21-year-old cornerback. Subject: Black man with dark skin, brown eyes, styled black locs, medium groomed beard and a narrow face. Build consistent with 6'0\", 181 pounds and his position. Wear a scarlet Ohio State jersey with white numbers and gray and black sleeve details; uniform number exactly \"3\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "id": "33",
     "name": "Mikael Thomas",
     "position": "CB",
     "school": "Clemson",
@@ -130,13 +311,39 @@
     "file": "portraits/mikael-thomas-transparent.png"
   },
   {
-    "id": "29",
-    "name": "Neville Gibson",
+    "id": "34",
+    "name": "Treyton Britt",
     "position": "FS",
+    "school": "Tulsa",
+    "file": "portraits/treyton-britt-transparent.png",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic studio media-day portrait of Treyton Britt, a fictional 24-year-old free safety. Subject: Black man with medium brown skin, brown eyes, styled black dreadlocks and a neat goatee. Build consistent with 6'4\", 204 pounds and his position. Wear a royal blue Tulsa Golden Hurricane jersey with white numbers and gold details; uniform number exactly \"31\" consistently on both shoulders and front. Tight square 1254 × 1254 head-and-shoulders cutout, centered face looking into camera, full hairstyle with a sliver of top clearance, eyes about one-quarter down, shoulders filling lower width, bottom edge cutting through the main chest numeral. Match tight sports card framing and give this player a distinct natural face. One unhelmeted athlete, even studio light, realistic skin and fabric texture. Clean genuine alpha transparency around silhouette, no backdrop, checkerboard, captions, shadow or watermark."
+  },
+  {
+    "name": "Alex Savage",
+    "position": "REDG",
+    "school": "Georgia",
+    "mode": "built-in imagegen",
+    "file": "portraits/alex-savage-transparent.png",
+    "prompt": "Photorealistic studio media-day portrait of Alex Savage, a fictional 21-year-old right edge rusher. Subject: Black man with medium brown skin, brown eyes, styled black dreadlocks and light groomed stubble. Build consistent with 6'2\", 243 pounds and his position. Wear a red Georgia Bulldogs jersey with white digits and Georgia G; uniform number exactly \"12\" on both shoulders and chest. Tight 1254 × 1254 square head-and-shoulders cutout, centered straight-on face, full hairstyle with a sliver of top clearance, eyes a quarter down, shoulders filling lower width, bottom edge through the front numeral. One unhelmeted athlete, even studio light, realistic skin and fabric texture and a natural distinct face. Clean genuine alpha transparency around the silhouette, no background, checkerboard, shadows, captions or watermark.",
+    "id": "97"
+  },
+  {
+    "name": "Jocquise Harrison",
+    "position": "CB",
     "school": "Ohio State",
     "mode": "built-in imagegen",
-    "reference": "../cus_03/portraits/tyler-smit-class03-v2.png",
-    "prompt": "Use case: photorealistic-natural. Create a new head-and-shoulders cutout of Neville Gibson, a fictional adult male FS college football prospect, African American athlete with medium brown skin, brown eyes, short brown freeform dreadlocks and a neatly groomed medium beard and mustache. Build and shoulder proportions suit his 6'0\", 213-pound position. He wears a scarlet Ohio State Buckeyes jersey with white digits and gray, white and black sleeve striping; the only jersey numeral is 5. Show 5 clearly and correctly on both upper shoulder panels. Image 1, Tyler Smit, is a reference for framing, scale, lighting and cutout only. Generate a distinctly different face, hair and correct new uniform from the subject description. Match Image 1's tight square crop and visual scale: 1254×1254 canvas, head centered face-forward, top of full hairstyle 2–4% below the top, eyes near 26% down, chin around 48%, shoulder pads filling the width in the lower half, cropped at upper chest through the large front jersey numeral, never zoom out to show the entire chest numeral. Only the tops of the upper arms may enter the bottom corners. Realistic sports media-day photography, even studio lighting, natural skin texture and composed expression, no helmet. Clean real alpha transparency around the entire silhouette with no background, no checker pattern, no shadow, no captions, no watermark.",
-    "file": "portraits/neville-gibson-transparent.png"
+    "file": "portraits/jocquise-harrison-transparent.png",
+    "prompt": "Photorealistic studio media-day portrait of Jocquise Harrison, a fictional 22-year-old cornerback. Subject: Black man with dark skin, brown eyes, a short brown afro faded on the sides and a neatly groomed medium beard and mustache. Build consistent with 6'2\", 195 pounds and his position. Wear a scarlet Ohio State jersey with white digits and gray, white and black sleeve details; uniform number exactly \"21\" on both shoulders and chest. Tight 1254 × 1254 square head-and-shoulders cutout, centered straight-on face, full hairstyle with a sliver of top clearance, eyes a quarter down, shoulders filling lower width, bottom edge through the front numeral. One unhelmeted athlete, even studio light, realistic skin and fabric texture and a natural distinct face. Clean genuine alpha transparency around the silhouette, no background, checkerboard, shadows, captions or watermark.",
+    "id": "98"
+  },
+  {
+    "name": "Johnny Hatcher",
+    "position": "LEDG",
+    "school": "South Carolina",
+    "mode": "built-in imagegen",
+    "file": "portraits/johnny-hatcher-transparent.png",
+    "prompt": "Photorealistic studio media-day portrait of Johnny Hatcher, a fictional 24-year-old left edge rusher. Subject: white man with fair skin, brown eyes, medium-length straight brown hair and a neatly groomed medium brown beard and mustache. Build consistent with 6'5\", 280 pounds and his position. Wear a garnet South Carolina Gamecocks jersey with white digits and South Carolina branding; uniform number exactly \"52\" on both shoulders and chest. Tight 1254 × 1254 square head-and-shoulders cutout, centered straight-on face, full hairstyle with a sliver of top clearance, eyes a quarter down, shoulders filling lower width, bottom edge through the front numeral. One unhelmeted athlete, even studio light, realistic skin and fabric texture and a natural distinct face. Clean genuine alpha transparency around the silhouette, no background, checkerboard, shadows, captions or watermark.",
+    "id": "99"
   }
 ]

@@ -66,7 +66,8 @@ for (const player of players) {
   const embed = view.embeds[0].toJSON();
   assert.equal(embed.title, `${player.name} · ${player.position}${player.heisman ? ' <:heisman:1573390983457022102>' : ''}`);
   assert.equal(embed.thumbnail.url, `attachment://cus02-${player.id}.png`);
-  assert.equal(embed.footer.text, scouting ? 'CUS02 · Scouting profile' : 'CUS02 · Simulated college statistics');
+  const positionPlayers = players.filter((entry) => entry.position === player.position);
+  assert.equal(embed.footer.text, `CUS02 · ${scouting ? 'Scouting profile' : 'Simulated college statistics'} · ${positionPlayers.indexOf(player) + 1}/${positionPlayers.length}`);
   if (scouting) assert.equal(embed.fields.some(({ name }) => name === 'Final college season'), false);
   assert.doesNotMatch(JSON.stringify(embed), /fictional|dev_trait|overall rating/i);
   assert.deepEqual(view.attachments, []);
@@ -100,11 +101,11 @@ for (const [id, emoji] of [['101', '1573748014009286756'], ['102', '157375004850
 }
 for (const [id, value, expected] of [
   ['madden_prospects_class', 'CUS02', 'CUS02 Draft Prospects · QB'],
-  ['madden_prospects_cus02_position', 'HB', 'CUS02 Draft Prospects · HB'],
+  ['madden_prospects_cus02_position', 'HB', 'LaMarian Johnson · HB'],
   ['madden_prospects_cus02_player_HB', '13', 'LaMarian Johnson · HB'],
-  ['madden_prospects_cus02_position', 'WR', 'CUS02 Draft Prospects · WR'],
+  ['madden_prospects_cus02_position', 'WR', 'Michael Oluwafemi · WR'],
   ['madden_prospects_cus02_player_WR', '2', 'Michael Oluwafemi · WR'],
-  ['madden_prospects_cus02_position', 'TE', 'CUS02 Draft Prospects · TE'],
+  ['madden_prospects_cus02_position', 'TE', 'Brayan Williams · TE'],
   ['madden_prospects_cus02_player_TE', '33', 'Brayan Williams · TE'],
   ['madden_prospects_cus02_player_QB', '102', 'Will Hoggard · QB'],
   ['madden_prospects_cus02_player_QB', '106', 'Tyler Costa · QB'],
@@ -119,4 +120,16 @@ for (const [id, value, expected] of [
   assert.equal(payload.embeds[0].toJSON().title, expected === 'J.T. Rhoads · QB' ? `${expected} <:heisman:1573390983457022102>` : expected);
   assert.deepEqual(payload.attachments, []);
 }
+const firstReceiver = buildProspectView({ classId: 'CUS02', position: 'WR', page: 0 });
+const next = firstReceiver.components.at(-1).toJSON().components[1];
+let nextCard;
+assert.match(next.custom_id, /^madden_prospects_cus02_next_WR_/);
+await execute({ customId: next.custom_id, isButton: () => true, deferUpdate: async () => {}, editReply: async (reply) => { nextCard = reply; } });
+const nextReceiver = players.filter((player) => player.position === 'WR')[1];
+assert.equal(nextCard.embeds[0].toJSON().title, `${nextReceiver.name} · WR`);
+assert.equal(nextCard.files[0].name, `cus02-${nextReceiver.id}.png`);
+const single = buildProspectView({ classId: 'CUS02', position: 'FS', page: 0 });
+const [previousOnly, nextOnly] = single.components.at(-1).toJSON().components;
+assert.ok(previousOnly.disabled && nextOnly.disabled);
+assert.notEqual(previousOnly.custom_id, nextOnly.custom_id);
 console.log('PASS 36 CUS02 profiles, unranked player cards, transparent portraits and class-safe navigation');

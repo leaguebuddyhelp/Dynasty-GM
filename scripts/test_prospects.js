@@ -126,7 +126,7 @@ for (const player of players) {
     assert.equal(player.rank, null);
     assert.match(embed.fields.find((field) => field.name === 'Jersey / Board').value, /Unranked/);
     assert.equal(embed.fields.some((field) => field.name === 'Final college season'), false);
-    assert.equal(embed.footer.text, 'CUS01 · Scouting profile');
+    assert.match(embed.footer.text, /^CUS01 · Scouting profile · \d+\/\d+$/);
     assert.equal(view.files[0].attachment, player.portrait);
     const schoolField = embed.fields.find((field) => field.name === 'School').value;
     assert.equal(schoolField, `${schoolLabel(player.school)} · ${player.year}`);
@@ -237,48 +237,49 @@ for (const [id, value, expected] of [
   ['madden_prospects_player_QB', '97', 'Danny Franklin · QB'],
   ['madden_prospects_player_QB', '98', 'Jack Greene · QB'],
   ['madden_prospects_player_QB', '99', 'Terrance May · QB'],
-  ['madden_prospects_position', 'HB', 'CUS01 Draft Prospects · HB'],
+  ['madden_prospects_position', 'HB', 'Francis Smith · HB'],
+  ['madden_prospects_position', 'FB', 'CUS01 Draft Prospects · FB'],
   ['madden_prospects_player_HB', '18', 'Francis Smith · HB'],
   ['madden_prospects_player_HB', '92', 'Kiaan Brown · HB'],
   ['madden_prospects_player_HB', '100', 'Dannie Chow · HB'],
   ['madden_prospects_player_HB', '112', 'Tanner Melendez · HB'],
-  ['madden_prospects_position', 'WR', 'CUS01 Draft Prospects · WR'],
+  ['madden_prospects_position', 'WR', 'Narquise Jones · WR'],
   ['madden_prospects_player_WR', '11', 'Narquise Jones · WR'],
   ['madden_prospects_player_WR', '89', 'Joseph Lomeli · WR'],
   ['madden_prospects_player_WR', '114', 'Jerald Simms-Morrison · WR'],
   ['madden_prospects_player_WR', '129', 'Reed Richardson · WR'],
-  ['madden_prospects_position', 'TE', 'CUS01 Draft Prospects · TE'],
+  ['madden_prospects_position', 'TE', 'Aleks Zakrzewski · TE'],
   ['madden_prospects_player_TE', '13', 'Aleks Zakrzewski · TE'],
   ['madden_prospects_player_TE', '94', 'Brendan Whitney · TE'],
   ['madden_prospects_player_TE', '130', 'Elijah Bryan · TE'],
   ['madden_prospects_player_TE', '136', 'Ehsando Mwangu · TE'],
-  ['madden_prospects_position', 'LT', 'CUS01 Draft Prospects · LT'],
+  ['madden_prospects_position', 'LT', "Nakana'ela Pukahi · LT"],
   ['madden_prospects_player_LT', '8', "Nakana'ela Pukahi · LT"],
-  ['madden_prospects_position', 'LG', 'CUS01 Draft Prospects · LG'],
+  ['madden_prospects_position', 'LG', 'Darnell Baines · LG'],
   ['madden_prospects_player_LG', '60', 'Darnell Baines · LG'],
-  ['madden_prospects_position', 'C', 'CUS01 Draft Prospects · C'],
+  ['madden_prospects_position', 'C', 'Matt Shea · C'],
   ['madden_prospects_player_C', '65', 'Matt Shea · C'],
-  ['madden_prospects_position', 'RG', 'CUS01 Draft Prospects · RG'],
+  ['madden_prospects_position', 'RG', 'Jeramy McCue · RG'],
   ['madden_prospects_player_RG', '93', 'Renaldo Varela · RG'],
-  ['madden_prospects_position', 'RT', 'CUS01 Draft Prospects · RT'],
+  ['madden_prospects_position', 'RT', 'J.C. Martens · RT'],
   ['madden_prospects_player_RT', '79', 'Colt Fisher · RT'],
-  ['madden_prospects_position', 'LEDG', 'CUS01 Draft Prospects · LEDG'],
+  ['madden_prospects_position', 'LEDG', 'Cardarion Williams · LEDG'],
   ['madden_prospects_player_LEDG', '3', 'Cardarion Williams · LEDG'],
-  ['madden_prospects_position', 'REDG', 'CUS01 Draft Prospects · REDG'],
+  ['madden_prospects_position', 'REDG', 'Deacon Robinson · REDG'],
   ['madden_prospects_player_REDG', '96', 'Jerrick McKinley · REDG'],
-  ['madden_prospects_position', 'DT', 'CUS01 Draft Prospects · DT'],
+  ['madden_prospects_position', 'DT', 'Bobbie Crawford · DT'],
   ['madden_prospects_player_DT', '39', 'Johnathan Francisco · DT'],
-  ['madden_prospects_position', 'SAM', 'CUS01 Draft Prospects · SAM'],
+  ['madden_prospects_position', 'SAM', 'Willie Mason Jr · SAM'],
   ['madden_prospects_player_SAM', '12', 'Willie Mason Jr · SAM'],
-  ['madden_prospects_position', 'MIKE', 'CUS01 Draft Prospects · MIKE'],
+  ['madden_prospects_position', 'MIKE', 'Jonathon Aquino · MIKE'],
   ['madden_prospects_player_MIKE', '52', 'Jonathon Aquino · MIKE'],
-  ['madden_prospects_position', 'WILL', 'CUS01 Draft Prospects · WILL'],
+  ['madden_prospects_position', 'WILL', 'Kevin Alexander Jr · WILL'],
   ['madden_prospects_player_WILL', '7', 'Kevin Alexander Jr · WILL'],
-  ['madden_prospects_position', 'CB', 'CUS01 Draft Prospects · CB'],
+  ['madden_prospects_position', 'CB', 'Kenneth Bell · CB'],
   ['madden_prospects_player_CB', '4', 'Kenneth Bell · CB'],
-  ['madden_prospects_position', 'FS', 'CUS01 Draft Prospects · FS'],
+  ['madden_prospects_position', 'FS', 'Keanu Jones · FS'],
   ['madden_prospects_player_FS', '22', 'Keanu Jones · FS'],
-  ['madden_prospects_position', 'SS', 'CUS01 Draft Prospects · SS'],
+  ['madden_prospects_position', 'SS', 'Malachi Robinson · SS'],
   ['madden_prospects_player_SS', '5', 'Malachi Robinson · SS'],
 ]) {
   let deferred = false;
@@ -293,4 +294,25 @@ const commands = await loadSoloCommands();
 assert.ok(commands.has('prospects'));
 const handlers = await loadSoloInteractionHandlers();
 assert.ok(handlers.some((h) => h.customId.test?.('madden_prospects_player_QB')));
+const navigation = (view) => view.components.at(-1).toJSON().components;
+const firstReceiver = buildProspectView({ position: 'WR', page: 0 });
+const [firstBack, firstNext] = navigation(firstReceiver);
+assert.equal(firstReceiver.embeds[0].toJSON().footer.text, 'CUS01 · Simulated college statistics · 1/24');
+assert.equal(firstBack.disabled, true);
+assert.equal(firstNext.disabled, false);
+assert.ok(handlers.some((h) => h.customId.test?.(firstNext.custom_id)));
+let card;
+const click = async (button) => menuExecute({ customId: button.custom_id, isButton: () => true,
+  deferUpdate: async () => {}, editReply: async (reply) => { card = reply; } });
+await click(firstNext);
+assert.equal(card.embeds[0].toJSON().title, 'Nick Monk · WR');
+assert.equal(card.embeds[0].toJSON().footer.text, 'CUS01 · Simulated college statistics · 2/24');
+assert.equal(card.files[0].name, 'cus01-17.png');
+assert.deepEqual(card.attachments, []);
+await click(navigation(card)[0]);
+assert.equal(card.embeds[0].toJSON().title, 'Narquise Jones · WR');
+const lastReceiver = buildProspectView({ position: 'WR', playerId: '129' });
+assert.equal(lastReceiver.embeds[0].toJSON().footer.text, 'CUS01 · Scouting profile · 24/24');
+assert.equal(navigation(lastReceiver)[1].disabled, true);
+assert.equal(navigation(lastReceiver)[0].disabled, false);
 console.log('PASS 136 transparent prospect portraits, 14 CUS01 tight ends and consistent fictional statistics');
