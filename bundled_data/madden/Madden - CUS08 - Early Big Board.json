@@ -1,0 +1,258 @@
+{
+  "1": {
+    "#": 1,
+    "position": "QB",
+    "name": "Akoni Kaeo",
+    "school": "USC",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 1,
+    "overall": 78,
+    "dev_trait": 3,
+    "archetype": "Field General",
+    "height": "6'2\"",
+    "weight": 208,
+    "jersey": "#8",
+    "round": 1,
+    "pick": 1,
+    "class": 8,
+    "bio": "Generational quarterback prospect with extraordinary processing, surgical accuracy, and unmatched command of offenses."
+  },
+  "2": {
+    "#": 2,
+    "position": "QB",
+    "name": "Chris Nwachukwu",
+    "school": "Ohio State",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 1,
+    "overall": 73,
+    "dev_trait": 2,
+    "archetype": "Scrambler",
+    "height": "6'1\"",
+    "weight": 210,
+    "jersey": "#2",
+    "round": 1,
+    "pick": 2,
+    "class": 8,
+    "bio": "Electrifying dual-threat quarterback with exceptional processing, polished passing ability, and explosive scrambling instincts."
+  },
+  "3": {
+    "#": 3,
+    "position": "WR",
+    "name": "Justin Williams",
+    "school": "Colorado",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 3,
+    "overall": 79,
+    "dev_trait": 0,
+    "archetype": "Playmaker",
+    "height": "6'1\"",
+    "weight": 195,
+    "jersey": "#1",
+    "round": 1,
+    "pick": 3,
+    "class": 8,
+    "bio": "Complete offensive weapon with elite route-running, spectacular hands, and exceptional open-field creativity."
+  },
+  "4": {
+    "#": 4,
+    "position": "CB",
+    "name": "Xavion Hill",
+    "school": "Michigan",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 16,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Man to Man",
+    "height": "5'10\"",
+    "weight": 197,
+    "jersey": "#33",
+    "round": 1,
+    "pick": 4,
+    "class": 8,
+    "bio": "Tenacious man-cover specialist with exceptional mirror technique, explosive recovery, and lockdown potential."
+  },
+  "5": {
+    "#": 5,
+    "position": "WR",
+    "name": "Amari Brown",
+    "school": "Alabama",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 3,
+    "overall": 78,
+    "dev_trait": 0,
+    "archetype": "Playmaker",
+    "height": "5'9\"",
+    "weight": 199,
+    "jersey": "#3",
+    "round": 1,
+    "pick": 5,
+    "class": 8,
+    "bio": "Dynamic, compact playmaker with extraordinary short-area quickness, elite balance, and spectacular catch ability."
+  },
+  "6": {
+    "#": 6,
+    "position": "QB",
+    "name": "Kyan Stokes",
+    "school": "Oklahoma",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 1,
+    "overall": 67,
+    "dev_trait": 0,
+    "archetype": "Scrambler",
+    "height": "6'0\"",
+    "weight": 212,
+    "jersey": "#6",
+    "round": 1,
+    "pick": 6,
+    "class": 8,
+    "bio": "Former five-star Louisville starter with explosive mobility, dynamic playmaking ability, and tremendous upside."
+  },
+  "7": {
+    "#": 7,
+    "position": "LEDG",
+    "name": "DaMarco Murphy",
+    "school": "Texas",
+    "age": 21,
+    "year": "SPH(RS)",
+    "pos_num": 10,
+    "overall": 79,
+    "dev_trait": 0,
+    "archetype": "Speed Rusher",
+    "height": "6'4\"",
+    "weight": 258,
+    "jersey": "#11",
+    "round": 1,
+    "pick": 7,
+    "class": 8,
+    "bio": "Explosive edge defender with elite first-step quickness, exceptional bend, and relentless pass-rushing instincts."
+  },
+  "8": {
+    "#": 8,
+    "position": "CB",
+    "name": "Kofi Singleton",
+    "school": "Georgia",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 16,
+    "overall": 73,
+    "dev_trait": 0,
+    "archetype": "Man to Man",
+    "height": "6'3\"",
+    "weight": 207,
+    "jersey": "#23",
+    "round": 1,
+    "pick": 8,
+    "class": 8,
+    "bio": "Long, physical press corner with impressive length, fluid movement, and shutdown coverage potential."
+  },
+  "9": {
+    "#": 9,
+    "position": "REDG",
+    "name": "Connor O'Malley",
+    "school": "Ohio State",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 11,
+    "overall": 77,
+    "dev_trait": 0,
+    "archetype": "Power Rusher",
+    "height": "6'5\"",
+    "weight": 275,
+    "jersey": "#95",
+    "round": 1,
+    "pick": 9,
+    "class": 8,
+    "bio": "Powerful edge rusher with overwhelming strength, violent hands, and dominant pocket-collapsing ability."
+  },
+  "10": {
+    "#": 10,
+    "position": "LT",
+    "name": "Ashton Johnston",
+    "school": "Ohio State",
+    "age": 21,
+    "year": "JR",
+    "pos_num": 5,
+    "overall": 76,
+    "dev_trait": 0,
+    "archetype": "Agile",
+    "height": "6'7\"",
+    "weight": 310,
+    "jersey": "#75",
+    "round": 1,
+    "pick": 10,
+    "class": 8,
+    "bio": "Towering, athletic blindside protector with exceptional footwork, fluid movement, and franchise tackle upside."
+  },
+  "11": {
+    "#": 11
+  },
+  "12": {
+    "#": 12
+  },
+  "13": {
+    "#": 13
+  },
+  "14": {
+    "#": 14
+  },
+  "15": {
+    "#": 15
+  },
+  "16": {
+    "#": 16
+  },
+  "17": {
+    "#": 17
+  },
+  "18": {
+    "#": 18
+  },
+  "19": {
+    "#": 19
+  },
+  "20": {
+    "#": 20
+  },
+  "21": {
+    "#": 21
+  },
+  "22": {
+    "#": 22
+  },
+  "23": {
+    "#": 23
+  },
+  "24": {
+    "#": 24
+  },
+  "25": {
+    "#": 25
+  },
+  "26": {
+    "#": 26
+  },
+  "27": {
+    "#": 27
+  },
+  "28": {
+    "#": 28
+  },
+  "29": {
+    "#": 29
+  },
+  "30": {
+    "#": 30
+  },
+  "31": {
+    "#": 31
+  },
+  "32": {
+    "#": 32
+  }
+}
