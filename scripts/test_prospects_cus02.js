@@ -5,10 +5,16 @@ import { buildProspectView, loadProspects } from '../src/madden/prospects.js';
 import { customId, execute } from '../src/interactions/madden_prospects.js';
 
 const players = loadProspects('CUS02');
-assert.equal(players.length, 36);
+assert.equal(players.length, 54);
 assert.equal(new Set(players.flatMap((p) => p.statistics ? [p.statistics.games] : [])).size >= 4, true);
 assert.equal(players.filter((p) => p.position === 'QB').length, 10);
-assert.equal(players.filter((p) => p.position === 'HB').length, 9);
+const halfbacks = players.filter((p) => p.position === 'HB');
+const board = Object.values(JSON.parse(fs.readFileSync('bundled_data/madden/Madden - CUS02 - Big Board.json', 'utf8')));
+const boardHalfbacks = board.filter((row) => row.position === 'HB' && row.name);
+assert.equal(halfbacks.length, 27);
+assert.deepEqual(halfbacks.map(({ name, school, jersey }) => [name, school, jersey]),
+  boardHalfbacks.map(({ name, school, jersey }) => [name, school, jersey]));
+const scoutingHalfbacks = new Set(boardHalfbacks.filter(({ round }) => round == null).map(({ name }) => name));
 assert.equal(players.filter((p) => p.position === 'WR').length, 8);
 assert.equal(players.filter((p) => p.position === 'TE').length, 7);
 assert.equal(players.filter((p) => p.position === 'FS').length, 1);
@@ -24,11 +30,15 @@ const scoutingQbs = {
 for (const player of players) {
   assert.ok(['QB', 'HB', 'WR', 'TE', 'FS', 'REDG'].includes(player.position));
   assert.ok(player.bio.split(/\s+/).length >= 40 && player.bio.split(/\s+/).length <= 50);
-  const scouting = scoutingQbs[player.id];
-  if (scouting) {
+  const scoutingQb = scoutingQbs[player.id];
+  if (scoutingQb) {
     assert.equal(player.position, 'QB');
-    assert.equal(player.name, scouting[0]);
-    assert.ok(player.portrait.endsWith(`/${scouting[1]}`));
+    assert.equal(player.name, scoutingQb[0]);
+    assert.ok(player.portrait.endsWith(`/${scoutingQb[1]}`));
+  }
+  const scoutingHb = player.position === 'HB' && scoutingHalfbacks.has(player.name);
+  const scouting = scoutingQb || scoutingHb;
+  if (scouting) {
     assert.equal(player.rank, null);
     assert.equal(player.statistics, undefined);
   } else {
@@ -39,7 +49,7 @@ for (const player of players) {
     assert.ok(s.completions <= s.attempts && s.passingTD + s.interceptions <= s.attempts);
     assert.ok(s.attempts / s.games >= 12 && s.attempts / s.games <= 55);
   }
-  if (player.position === 'HB') {
+  if (player.position === 'HB' && !scoutingHb) {
     const s = player.statistics;
     assert.ok(s.carries / s.games <= 28);
     if (s.rushingYardsAfterContact !== undefined) assert.ok(s.rushingYardsAfterContact <= s.rushingYards);
@@ -62,6 +72,7 @@ for (const player of players) {
   const metadata = await image.metadata();
   const stats = await image.stats();
   assert.ok(metadata.hasAlpha && stats.channels.at(-1).min === 0 && stats.channels.at(-1).max === 255);
+  if (scoutingHb) assert.deepEqual([metadata.width, metadata.height], [1254, 1254], player.name);
   const view = buildProspectView({ classId: 'CUS02', position: player.position, playerId: player.id });
   const embed = view.embeds[0].toJSON();
   assert.equal(embed.title, `${player.name} · ${player.position}${player.heisman ? ' <:heisman:1573390983457022102>' : ''}`);
@@ -128,8 +139,23 @@ await execute({ customId: next.custom_id, isButton: () => true, deferUpdate: asy
 const nextReceiver = players.filter((player) => player.position === 'WR')[1];
 assert.equal(nextCard.embeds[0].toJSON().title, `${nextReceiver.name} · WR`);
 assert.equal(nextCard.files[0].name, `cus02-${nextReceiver.id}.png`);
+const firstHalfbackGroup = buildProspectView({ classId: 'CUS02', position: 'HB', playerId: halfbacks[24].id });
+assert.equal(firstHalfbackGroup.components[1].toJSON().components[0].options.length, 25);
+assert.equal(firstHalfbackGroup.components[2].toJSON().components[0].options.length, 2);
+const nextHalfback = firstHalfbackGroup.components.at(-1).toJSON().components[1];
+let nextHalfbackCard;
+await execute({
+  customId: nextHalfback.custom_id,
+  isButton: () => true,
+  deferUpdate: async () => {},
+  editReply: async (reply) => { nextHalfbackCard = reply; },
+});
+assert.equal(nextHalfbackCard.embeds[0].toJSON().title, `${halfbacks[25].name} · HB`);
+assert.deepEqual(nextHalfbackCard.components[1].toJSON().components[0].options.map(({ value }) => value),
+  halfbacks.slice(25).map(({ id }) => id));
+assert.equal(nextHalfbackCard.components[2].toJSON().components[0].options[1].default, true);
 const single = buildProspectView({ classId: 'CUS02', position: 'FS', page: 0 });
 const [previousOnly, nextOnly] = single.components.at(-1).toJSON().components;
 assert.ok(previousOnly.disabled && nextOnly.disabled);
 assert.notEqual(previousOnly.custom_id, nextOnly.custom_id);
-console.log('PASS 36 CUS02 profiles, unranked player cards, transparent portraits and class-safe navigation');
+console.log('PASS 54 CUS02 profiles, 27 halfbacks across both menu pages, and transparent portraits');
