@@ -110,5 +110,122 @@
     "prompt": "Use case: photorealistic-natural.\nAsset type: transparent PNG fictional college football draft prospect portrait for a Discord player card.\nSubject: Renaldo Varela, fictional 22-year-old Latino male offensive guard, olive skin, brown eyes, medium-length curly black afro, medium neatly groomed facial hair, large athletic six-foot-three 303-pound build; USC cardinal and gold jersey number 64 with Trojans school branding. A unique fictional adult athlete, not a real player. Respect the explicitly supplied complexion, eyes, hairstyle, facial hair and heavy offensive-lineman build; ethnicity is an identity description, not a basis for exaggerated facial stereotypes.\nComposition: square studio head-and-shoulders photograph, centered facing camera, entire hairstyle visible, no helmet. Broad shoulders and thick neck appropriate to the stated build. Upper chest school branding and specified jersey number visible. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial sports photography. Use only the subject's named school's recognizable logo and authentic colors.\nBackground: genuine alpha transparency; no backdrop, solid fill, checkerboard pattern, shadow, captions, watermark or additional people. Clean natural hair and shoulder edges.",
     "source": "/Users/brandongordon/.codex/generated_images/01a1c76a-70a0-7de2-a9cd-5af41c7423fc/exec-56684dac-c87a-4e69-bce5-9cad7735a7fd.png",
     "file": "portraits/renaldo-varela-transparent.png"
+  },
+  {
+    "id": "137",
+    "name": "Kamryn Brown",
+    "position": "LT",
+    "school": "Kansas",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Kamryn Brown, a fictional 22-year-old adult left tackle. Appearance: Black man with medium brown skin, brown eyes, a short brown Caesar fade, neat goatee and full cheeks. Distinct sturdy offensive line build, 6'5\" and 320 pounds. Wear the royal blue Kansas Jayhawks home jersey with white digits and red accents. Exact jersey number 72 consistently on front and shoulders. A square 1254 by 1254 head and upper chest cutout. Whole hair with slight clearance, centered front view, eyes near upper quarter, wide padded shoulders fill lower frame, crop through the bottoms of the chest numerals. One unhelmeted player, natural distinctive face, realistic skin and jersey texture, even soft studio lighting. Genuine transparent alpha outside a clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/kamryn-brown-transparent.png"
+  },
+  {
+    "id": "138",
+    "name": "Westley Miller",
+    "position": "LT",
+    "school": "Baylor",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Westley Miller, a fictional 23-year-old adult left tackle. Appearance: white man with fair skin, blue eyes, medium-length straight blond hair, and light neatly groomed stubble. Distinct sturdy offensive line build, 6'8\" and 310 pounds. Wear the dark green Baylor Bears home jersey with gold digits and small Baylor branding. Exact jersey number 60 consistently on front and shoulders. A square 1254 by 1254 head and upper chest cutout. Whole hair with slight clearance, centered front view, eyes near upper quarter, wide padded shoulders fill lower frame, crop through the bottoms of the chest numerals. One unhelmeted player, natural distinctive face, realistic skin and jersey texture, even soft studio lighting. Genuine transparent alpha outside a clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/westley-miller-transparent.png"
+  },
+  {
+    "id": "139",
+    "name": "Ty Dixon Jr",
+    "position": "LT",
+    "school": "Boston College",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Ty Dixon Jr, a fictional 22-year-old adult left tackle. Appearance: Black man with medium brown skin, brown eyes, short brown Caesar fade, clean-shaven face and strong jaw. Distinct sturdy offensive line build, 6'3\" and 315 pounds. Wear the maroon Boston College Eagles home jersey with white digits and gold trim. Exact jersey number 60 consistently on front and shoulders. A square 1254 by 1254 head and upper chest cutout. Whole hair with slight clearance, centered front view, eyes near upper quarter, wide padded shoulders fill lower frame, crop through the bottoms of the chest numerals. One unhelmeted player, natural distinctive face, realistic skin and jersey texture, even soft studio lighting. Genuine transparent alpha outside a clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/ty-dixon-jr-transparent.png"
+  },
+  {
+    "id": "140",
+    "name": "Johan Bradford",
+    "position": "LT",
+    "school": "Princeton",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Johan Bradford, a fictional 24-year-old adult left tackle. Appearance: white man with fair skin, brown eyes, long straight brown hair and a neatly trimmed brown goatee. Distinct sturdy offensive line build, 6'8\" and 306 pounds. Wear the black Princeton Tigers football jersey with orange details, clean white digits and Princeton chest lettering. Exact jersey number 57 consistently on front and shoulders. A square 1254 by 1254 head and upper chest cutout. Whole hair with slight clearance, centered front view, eyes near upper quarter, wide padded shoulders fill lower frame, crop through the bottoms of the chest numerals. One unhelmeted player, natural distinctive face, realistic skin and jersey texture, even soft studio lighting. Genuine transparent alpha outside a clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/johan-bradford-transparent.png"
+  },
+  {
+    "id": "141",
+    "name": "Raylan Edwards",
+    "position": "LT",
+    "school": "Iowa State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Raylan Edwards, a fictional 22-year-old adult left tackle. Appearance: Black man with dark skin, brown eyes, short black afro with a fade and a neatly trimmed medium beard. Distinct sturdy offensive line build, 6'4\" and 310 pounds. Wear the cardinal red Iowa State Cyclones home jersey with gold digits and I-State branding. Exact jersey number 67 consistently on front and shoulders. A square 1254 by 1254 head and upper chest cutout. Whole hair with slight clearance, centered front view, eyes near upper quarter, wide padded shoulders fill lower frame, crop through the bottoms of the chest numerals. One unhelmeted player, natural distinctive face, realistic skin and jersey texture, even soft studio lighting. Genuine transparent alpha outside a clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/raylan-edwards-transparent.png"
+  },
+  {
+    "id": "142",
+    "name": "Jack Figueroa",
+    "position": "LT",
+    "school": "New Mexico State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Jack Figueroa, a fictional 23-year-old adult left tackle. Appearance: light tan skin, brown eyes, short straight black hair, clean-shaven face, subtly mixed Black and Latino features. Distinct sturdy offensive line build, 6'7\" and 323 pounds. Wear the crimson New Mexico State Aggies home jersey with white digits and Aggies chest marking. Exact jersey number 64 consistently on front and shoulders. A square 1254 by 1254 head and upper chest cutout. Whole hair with slight clearance, centered front view, eyes near upper quarter, wide padded shoulders fill lower frame, crop through the bottoms of the chest numerals. One unhelmeted player, natural distinctive face, realistic skin and jersey texture, even soft studio lighting. Genuine transparent alpha outside a clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/jack-figueroa-transparent.png"
+  },
+  {
+    "id": "143",
+    "name": "Yusuf Ahmed",
+    "position": "LT",
+    "school": "Arkansas",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Yusuf Ahmed, a fictional 22-year-old adult left tackle. Appearance: Black man with dark brown skin, brown eyes, a long black afro with faded sides and light groomed facial hair. Distinct sturdy offensive line build, 6'4\" and 328 pounds. Wear the cardinal red Arkansas Razorbacks home jersey with white block digits and Arkansas chest lettering. Exact jersey number 75 consistently on front and shoulders. A square 1254 by 1254 head and upper chest cutout. Whole hair with slight clearance, centered front view, eyes near upper quarter, wide padded shoulders fill lower frame, crop through the bottoms of the chest numerals. One unhelmeted player, natural distinctive face, realistic skin and jersey texture, even soft studio lighting. Genuine transparent alpha outside a clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/yusuf-ahmed-transparent.png"
+  },
+  {
+    "id": "144",
+    "name": "Jalen Chandler Jr",
+    "position": "LG",
+    "school": "Florida State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic football media-day portrait of Jalen Chandler Jr, a fictional 21-year-old adult college left guard. Appearance: Black man with medium brown skin, brown eyes, long black locs draping over both shoulders and a clean-shaven face. Thick neck and broad offensive guard build, 6'6\" tall and 306 pounds. Wear the Florida State Seminoles garnet home jersey with white block digits, gold trim and FSU branding. Exact jersey number 63 consistently on front and both shoulders. Centered straight-on natural face, unhelmeted, upper chest and head tightly framed within square 1254 by 1254 cutout, entire hair with a sliver of top clearance, eyes around upper quarter, broad shoulder pads fill lower sides and front number partly cropped at the bottom. Realistic skin and uniform texture, soft even studio lighting. Genuinely transparent alpha outside the clean silhouette. No backdrop, checkerboard, cast shadow, captions or watermark.",
+    "file": "portraits/jalen-chandler-jr-transparent.png"
+  },
+  {
+    "id": "145",
+    "name": "Jarmal Carson",
+    "position": "LG",
+    "school": "Wake Forest",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic football media-day portrait of Jarmal Carson, a fictional 23-year-old adult college left guard. Appearance: Black man with medium brown skin, brown eyes, short tapered black afro and a neat goatee, broad angular jaw. Thick neck and broad offensive guard build, 6'3\" tall and 313 pounds. Wear the Wake Forest Demon Deacons black home jersey with gold digits and recognizable Wake Forest WF. Exact jersey number 53 consistently on front and both shoulders. Centered straight-on natural face, unhelmeted, upper chest and head tightly framed within square 1254 by 1254 cutout, entire hair with a sliver of top clearance, eyes around upper quarter, broad shoulder pads fill lower sides and front number partly cropped at the bottom. Realistic skin and uniform texture, soft even studio lighting. Genuinely transparent alpha outside the clean silhouette. No backdrop, checkerboard, cast shadow, captions or watermark.",
+    "file": "portraits/jarmal-carson-transparent.png"
+  },
+  {
+    "id": "146",
+    "name": "Malachi Richards",
+    "position": "LG",
+    "school": "Utah",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic football media-day portrait of Malachi Richards, a fictional 22-year-old adult college left guard. Appearance: Black man with medium brown skin, brown eyes, short brown Caesar fade and a tidy medium beard. Thick neck and broad offensive guard build, 6'5\" tall and 320 pounds. Wear the Utah Utes red home jersey with white digits and Utah's interlocking U insignia. Exact jersey number 66 consistently on front and both shoulders. Centered straight-on natural face, unhelmeted, upper chest and head tightly framed within square 1254 by 1254 cutout, entire hair with a sliver of top clearance, eyes around upper quarter, broad shoulder pads fill lower sides and front number partly cropped at the bottom. Realistic skin and uniform texture, soft even studio lighting. Genuinely transparent alpha outside the clean silhouette. No backdrop, checkerboard, cast shadow, captions or watermark.",
+    "file": "portraits/malachi-richards-transparent.png"
+  },
+  {
+    "id": "147",
+    "name": "Jeremy Ray",
+    "position": "LG",
+    "school": "Missouri",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic football media-day portrait of Jeremy Ray, a fictional 22-year-old adult college left guard. Appearance: light-skinned Black man with green eyes, medium black afro with faded sides, tidy medium beard and full rounded cheeks. Thick neck and broad offensive guard build, 6'5\" tall and 340 pounds. Wear the Missouri Tigers black home jersey with gold digits and Missouri Tigers details. Exact jersey number 56 consistently on front and both shoulders. Centered straight-on natural face, unhelmeted, upper chest and head tightly framed within square 1254 by 1254 cutout, entire hair with a sliver of top clearance, eyes around upper quarter, broad shoulder pads fill lower sides and front number partly cropped at the bottom. Realistic skin and uniform texture, soft even studio lighting. Genuinely transparent alpha outside the clean silhouette. No backdrop, checkerboard, cast shadow, captions or watermark.",
+    "file": "portraits/jeremy-ray-transparent.png"
+  },
+  {
+    "id": "148",
+    "name": "Troy Jensen",
+    "position": "LG",
+    "school": "Northern Iowa",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic football media-day portrait of Troy Jensen, a fictional 24-year-old adult college left guard. Appearance: fair-skinned white man with brown eyes, short straight brown hair, clean-shaven face and broad jaw. Thick neck and broad offensive guard build, 6'4\" tall and 330 pounds. Wear the Northern Iowa Panthers deep purple football jersey with white digits and gold accents, small UNI Panthers insignia. Exact jersey number 69 consistently on front and both shoulders. Centered straight-on natural face, unhelmeted, upper chest and head tightly framed within square 1254 by 1254 cutout, entire hair with a sliver of top clearance, eyes around upper quarter, broad shoulder pads fill lower sides and front number partly cropped at the bottom. Realistic skin and uniform texture, soft even studio lighting. Genuinely transparent alpha outside the clean silhouette. No backdrop, checkerboard, cast shadow, captions or watermark.",
+    "file": "portraits/troy-jensen-transparent.png"
+  },
+  {
+    "id": "149",
+    "name": "Neema Rashid",
+    "position": "LG",
+    "school": "Utah State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic football media-day portrait of Neema Rashid, a fictional 23-year-old adult college left guard. Appearance: Black man with dark skin, brown eyes, short designed black locs with distinct scalp parting, light neat stubble and full cheeks. Thick neck and broad offensive guard build, 6'2\" tall and 303 pounds. Wear the Utah State Aggies navy football jersey with white digits and Utah State U-State branding. Exact jersey number 72 consistently on front and both shoulders. Centered straight-on natural face, unhelmeted, upper chest and head tightly framed within square 1254 by 1254 cutout, entire hair with a sliver of top clearance, eyes around upper quarter, broad shoulder pads fill lower sides and front number partly cropped at the bottom. Realistic skin and uniform texture, soft even studio lighting. Genuinely transparent alpha outside the clean silhouette. No backdrop, checkerboard, cast shadow, captions or watermark.",
+    "file": "portraits/neema-rashid-transparent.png"
   }
 ]
