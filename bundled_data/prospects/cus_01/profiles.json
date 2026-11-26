@@ -1569,7 +1569,7 @@
     },
     "71": {
       "headline": "A reserve-center pathway with finishing work ahead",
-      "bio": "Bauer gives an offense a center whose pass protection can help keep the pocket intact. His next step is improving as a run blocker, where more consistent execution would make his interior profile easier to trust across the full range of offensive situations.",
+      "bio": "Bauer gives Michigan rare size and athleticism at center, with the movement to adjust when an interior assignment changes. That blend stands out on a 6-foot-6 frame. He can lose leverage when his pads rise, so playing lower more consistently would help him get more from his size.",
       "watch": "Sustain control after first contact and improve the consistency of his run-block finish.",
       "name": "Jacob Bauer",
       "portrait": "jacob-bauer-transparent.png",
@@ -2453,6 +2453,96 @@
       "position": "LG",
       "portrait": "neema-rashid-transparent.png",
       "bio": "Rashid gives Utah State a technically sound pass protector who can use his feet to stay in front of an interior rusher. His footwork helps him maintain position early in the rep. Limited reach and strength can make it harder to recover when a defender gets into his frame."
+    },
+    "150": {
+      "name": "Ahmir Richards",
+      "position": "C",
+      "portrait": "ahmir-richards-transparent.png",
+      "bio": "Richards reads pressure well and gives Illinois a center who can recognize when a blitzer is about to test the protection. His awareness helps him get into position early on passing downs. Drive blocking is a tougher assignment because he generates less force when he has to move a defender."
+    },
+    "151": {
+      "name": "Mitchell Ochoa",
+      "position": "C",
+      "portrait": "mitchell-ochoa-transparent.png",
+      "bio": "Ochoa moves comfortably in Oklahoma’s zone game and uses natural leverage to get underneath defenders on the move. His mobility helps him reach his assignment when the front shifts. Against more powerful nose tackles, his anchor can give way and leave him working to regain his position."
+    },
+    "152": {
+      "name": "Matthew Wiley",
+      "position": "C",
+      "portrait": "matthew-wiley-transparent.png",
+      "bio": "Wiley brings Eastern Michigan a physical center who can use heavy hands to control the first exchange. He is most comfortable when he can engage a defender early. Quicker rushers force him to recover, and his ability to reset against them varies from rep to rep."
+    },
+    "153": {
+      "name": "Jonathan Gonzales",
+      "position": "C",
+      "portrait": "jonathan-gonzales-transparent.png",
+      "bio": "Gonzales has the athleticism to climb to the second level and get into position against defenders in space. LSU can use that mobility when a block calls for him to cover ground. Holding the block after contact is less consistent, which can limit the value of getting there first."
+    },
+    "154": {
+      "name": "Noel Bryan-Robinson",
+      "position": "C",
+      "portrait": "noel-bryan-robinson-transparent.png",
+      "bio": "Bryan-Robinson gives West Virginia a developmental center with the lateral quickness to work across the front on zone plays. He can get moving when the blocking scheme asks him to reach a defender. More consistent positioning and balance would help him control the block once he gets there."
+    },
+    "155": {
+      "name": "Braylen Valentine",
+      "position": "RG",
+      "portrait": "braylen-valentine-transparent.png",
+      "bio": "Valentine gives Oregon a guard who can drive defenders off the ball and create room inside. His strength shows when he engages directly and keeps his feet moving through contact. His pass protection technique is less consistent, especially when he has to adjust after his first strike."
+    },
+    "156": {
+      "name": "Matej Bogdanovic",
+      "position": "RG",
+      "portrait": "matej-bogdanovic-transparent.png",
+      "bio": "Bogdanovic uses his length and disciplined hand placement to keep pass rushers from getting into his frame. UCLA can put those traits to work when an interior block calls for control and positioning. He generates less force as a downhill run blocker, which narrows how he can create movement."
+    },
+    "157": {
+      "name": "Khylen McDowell",
+      "position": "RG",
+      "portrait": "khylen-mcdowell-transparent.png",
+      "bio": "McDowell gets low into contact and uses his compact frame to generate power inside. Alabama can lean on that leverage when he has a direct path to his assignment. Longer defenders can land their hands first, making it harder for him to get close enough to use his strength."
+    },
+    "158": {
+      "name": "Donjae Stone",
+      "position": "RG",
+      "portrait": "donjae-stone-transparent.png",
+      "bio": "Stone attacks run blocks with force and shows the strength to finish once he has a defender moving. Auburn can use that aggression on plays that ask him to drive through contact. His balance can vary once bodies collide, making it harder to keep control to finish the rep."
+    },
+    "159": {
+      "name": "Za'Kari McIntosh",
+      "position": "RG",
+      "portrait": "zakari-mcintosh-transparent.png",
+      "bio": "McIntosh brings West Virginia heavy hands and the strength to control an interior block once he lands his first strike. He can make it difficult for a defender to move through him. Quicker opponents can force him to redirect, where his ability to stay square becomes less reliable."
+    },
+    "160": {
+      "name": "Zane Woodard",
+      "position": "RG",
+      "portrait": "zane-woodard-transparent.png",
+      "bio": "Woodard stays patient in pass protection and gives Youngstown State a guard who can establish position before contact. That approach helps him stay between the rusher and the quarterback. Powerful opponents can push through his set, so holding ground against direct force is central to his projection."
+    },
+    "161": {
+      "name": "Alex Cortes",
+      "position": "RG",
+      "portrait": "alex-cortes-transparent.png",
+      "bio": "Cortes gives Ohio State a developmental guard who can pull across the formation and reach blocks on the move. His mobility lets him cover ground beyond his starting spot. More consistent timing and execution would help him turn that range into useful contact at the point of attack."
+    },
+    "162": {
+      "name": "Kalawai'a Pukahi",
+      "position": "RT",
+      "portrait": "kalawaia-pukahi-transparent.png",
+      "bio": "Pukahi gives USC a 6-foot-8 right tackle with the reach to engage early and the strength to move defenders once he has control. Those tools fit a power blocking role. His lateral footwork is less consistent, especially when a defender forces him to move off his initial track."
+    },
+    "163": {
+      "name": "Patrick Morton",
+      "position": "RT",
+      "portrait": "patrick-morton-transparent.png",
+      "bio": "Morton brings Bowling Green State a long frame with room to develop as a run blocker. His reach helps him make first contact and gives him a starting point for controlling a defender. Maintaining leverage is less reliable, which makes it harder to turn that length into movement."
+    },
+    "164": {
+      "name": "D'Quan Young",
+      "position": "RT",
+      "portrait": "dquan-young-transparent.png",
+      "bio": "Young uses his 339-pound frame, heavy hands, and leverage to generate force on direct blocks. Miami can lean on that combination when the assignment calls for movement at the point of attack. His lateral mobility is limited, making blocks that require him to cover space a tougher fit."
     }
   }
 }

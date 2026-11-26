@@ -227,5 +227,140 @@
     "mode": "built-in imagegen",
     "prompt": "Photorealistic football media-day portrait of Neema Rashid, a fictional 23-year-old adult college left guard. Appearance: Black man with dark skin, brown eyes, short designed black locs with distinct scalp parting, light neat stubble and full cheeks. Thick neck and broad offensive guard build, 6'2\" tall and 303 pounds. Wear the Utah State Aggies navy football jersey with white digits and Utah State U-State branding. Exact jersey number 72 consistently on front and both shoulders. Centered straight-on natural face, unhelmeted, upper chest and head tightly framed within square 1254 by 1254 cutout, entire hair with a sliver of top clearance, eyes around upper quarter, broad shoulder pads fill lower sides and front number partly cropped at the bottom. Realistic skin and uniform texture, soft even studio lighting. Genuinely transparent alpha outside the clean silhouette. No backdrop, checkerboard, cast shadow, captions or watermark.",
     "file": "portraits/neema-rashid-transparent.png"
+  },
+  {
+    "id": "150",
+    "name": "Ahmir Richards",
+    "position": "C",
+    "school": "Illinois",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Ahmir Richards, a fictional adult 22-year-old college center. Appearance: Black man with medium brown skin, brown eyes, short faded brown afro and a neat goatee. Match the 6'2\", 298-pound offensive lineman build, broad shoulders and thick neck. Wear the Illinois Fighting Illini navy home jersey with white digits, orange trim and Illinois chest branding. Exact jersey number 74, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/ahmir-richards-transparent.png"
+  },
+  {
+    "id": "151",
+    "name": "Mitchell Ochoa",
+    "position": "C",
+    "school": "Oklahoma",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Mitchell Ochoa, a fictional adult 23-year-old college center. Appearance: white man with tan skin, brown eyes, a short brown Caesar fade, neatly trimmed medium beard, and a broad face. Match the 6'1\", 306-pound offensive lineman build, broad shoulders and thick neck. Wear the Oklahoma Sooners crimson home jersey with white digits and OU branding. Exact jersey number 54, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/mitchell-ochoa-transparent.png"
+  },
+  {
+    "id": "152",
+    "name": "Matthew Wiley",
+    "position": "C",
+    "school": "Eastern Michigan",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Matthew Wiley, a fictional adult 24-year-old college center. Appearance: white man with fair skin, brown eyes, short straight brown hair, and a neat medium brown beard. Match the 6'4\", 311-pound offensive lineman build, broad shoulders and thick neck. Wear the Eastern Michigan Eagles forest green home jersey with white digits and EMU markings. Exact jersey number 60, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/matthew-wiley-transparent.png"
+  },
+  {
+    "id": "153",
+    "name": "Jonathan Gonzales",
+    "position": "C",
+    "school": "LSU",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Jonathan Gonzales, a fictional adult 22-year-old college center. Appearance: Latino man with tan olive skin, green eyes, short curly brown afro, clean-shaven face and broad cheeks. Match the 6'2\", 296-pound offensive lineman build, broad shoulders and thick neck. Wear the LSU Tigers white football jersey with purple numbers and purple-gold shoulder accents. Exact jersey number 67, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/jonathan-gonzales-transparent.png"
+  },
+  {
+    "id": "154",
+    "name": "Noel Bryan-Robinson",
+    "position": "C",
+    "school": "West Virginia",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Noel Bryan-Robinson, a fictional adult 23-year-old college center. Appearance: Black man with dark skin, brown eyes, styled black locs and neat light stubble. Match the 6'3\", 308-pound offensive lineman build, broad shoulders and thick neck. Wear the West Virginia Mountaineers navy home jersey with gold digits and WV monogram. Exact jersey number 78, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/noel-bryan-robinson-transparent.png"
+  },
+  {
+    "id": "155",
+    "name": "Braylen Valentine",
+    "position": "RG",
+    "school": "Oregon",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Braylen Valentine, a fictional adult 22-year-old college right guard. Appearance: Black man with dark skin, brown eyes, styled black locs and a neat goatee. Match the 6'4\", 318-pound offensive lineman build, broad shoulders and thick neck. Wear the Oregon Ducks deep green home jersey with yellow digits and Oregon O. Exact jersey number 58, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/braylen-valentine-transparent.png"
+  },
+  {
+    "id": "156",
+    "name": "Matej Bogdanovic",
+    "position": "RG",
+    "school": "UCLA",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Matej Bogdanovic, a fictional adult 23-year-old college right guard. Appearance: white man with fair skin, blue eyes, medium-length straight brown hair and a tidy medium brown beard. Match the 6'6\", 313-pound offensive lineman build, broad shoulders and thick neck. Wear the UCLA Bruins powder blue home jersey with white digits and gold trim. Exact jersey number 55, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/matej-bogdanovic-transparent.png"
+  },
+  {
+    "id": "157",
+    "name": "Khylen McDowell",
+    "position": "RG",
+    "school": "Alabama",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Khylen McDowell, a fictional adult 22-year-old college right guard. Appearance: Black man with dark skin, brown eyes, short brown Caesar fade and a neat goatee. Match the 6'2\", 318-pound offensive lineman build, broad shoulders and thick neck. Wear the Alabama Crimson Tide crimson home jersey with white block digits. Exact jersey number 65, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/khylen-mcdowell-transparent.png"
+  },
+  {
+    "id": "158",
+    "name": "Donjae Stone",
+    "position": "RG",
+    "school": "Auburn",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Donjae Stone, a fictional adult 22-year-old college right guard. Appearance: Black man with medium brown skin, brown eyes, short brown Caesar fade and a neatly trimmed medium beard. Match the 6'3\", 314-pound offensive lineman build, broad shoulders and thick neck. Wear the Auburn Tigers deep navy home jersey with white digits and orange-white sleeve stripes. Exact jersey number 70, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/donjae-stone-transparent.png"
+  },
+  {
+    "id": "159",
+    "name": "Za'Kari McIntosh",
+    "position": "RG",
+    "school": "West Virginia",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Za'Kari McIntosh, a fictional adult 23-year-old college right guard. Appearance: Black man with dark skin, brown eyes, designed black locs and a tidy medium beard. Match the 6'5\", 313-pound offensive lineman build, broad shoulders and thick neck. Wear the West Virginia Mountaineers navy home jersey with gold digits and WV monogram. Exact jersey number 64, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/zakari-mcintosh-transparent.png"
+  },
+  {
+    "id": "160",
+    "name": "Zane Woodard",
+    "position": "RG",
+    "school": "Youngstown State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Zane Woodard, a fictional adult 23-year-old college right guard. Appearance: Black man with medium brown skin, brown eyes, classic black cornrows and a clean-shaven face. Match the 6'4\", 305-pound offensive lineman build, broad shoulders and thick neck. Wear the Youngstown State Penguins red home jersey with white digits and Youngstown State marking. Exact jersey number 58, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/zane-woodard-transparent.png"
+  },
+  {
+    "id": "161",
+    "name": "Alex Cortes",
+    "position": "RG",
+    "school": "Ohio State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Alex Cortes, a fictional adult 22-year-old college right guard. Appearance: white man with tan skin, brown eyes, short straight brown hair, light tidy stubble and full cheeks. Match the 6'5\", 323-pound offensive lineman build, broad shoulders and thick neck. Wear the Ohio State Buckeyes scarlet home jersey with white digits and gray and white sleeve stripes. Exact jersey number 73, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/alex-cortes-transparent.png"
+  },
+  {
+    "id": "162",
+    "name": "Kalawai'a Pukahi",
+    "position": "RT",
+    "school": "USC",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Kalawai'a Pukahi, a fictional adult 23-year-old college right tackle. Appearance: Native Hawaiian man with tan olive skin, brown eyes, brown Caesar fade and a clean-shaven face. Match the 6'8\", 318-pound offensive lineman build, broad shoulders and thick neck. Wear the USC Trojans cardinal home jersey with gold digits and shoulder accents. Exact jersey number 74, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/kalawaia-pukahi-transparent.png"
+  },
+  {
+    "id": "163",
+    "name": "Patrick Morton",
+    "position": "RT",
+    "school": "Bowling Green State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Patrick Morton, a fictional adult 23-year-old college right tackle. Appearance: Black man with dark skin, brown eyes, short black afro fade and a neatly trimmed medium beard. Match the 6'8\", 317-pound offensive lineman build, broad shoulders and thick neck. Wear the Bowling Green Falcons orange home jersey with white digits and brown trim. Exact jersey number 65, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/patrick-morton-transparent.png"
+  },
+  {
+    "id": "164",
+    "name": "D'Quan Young",
+    "position": "RT",
+    "school": "Miami",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of D'Quan Young, a fictional adult 22-year-old college right tackle. Appearance: Black man with dark skin, brown eyes, long black locs and a neat goatee. Match the 6'3\", 339-pound offensive lineman build, broad shoulders and thick neck. Wear the Miami Hurricanes orange home jersey with white digits, green and white accents and Miami U. Exact jersey number 72, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest with the bottom crop through the lower part of the large front number. Straight-on eye contact, centered natural face, entire hair visible with slight top clearance, padded shoulders fill lower sides. One unhelmeted athlete. Realistic skin and uniform texture, even soft studio lighting. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, caption or watermark.",
+    "file": "portraits/dquan-young-transparent.png"
   }
 ]
