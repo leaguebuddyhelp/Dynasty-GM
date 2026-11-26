@@ -1,6 +1,6 @@
 # CUS02 prospect cards
 
-`/prospects` offers a class selector for CUS01 and CUS02. Class 2 currently publishes ten quarterbacks, 27 halfbacks, eight receivers, seven tight ends, one free safety and one right edge defender. Completed entries in `bundled_data/madden/Madden - CUS02 - Big Board.json` supply card details as the class is filled in by position. Existing cards use `bundled_data/madden/Madden - CUS02.json` until their entries are ready. New board entries without a round and pick appear as unranked.
+`/prospects` offers a class selector for CUS01 and CUS02. Class 2 currently publishes ten quarterbacks, 27 halfbacks, 24 receivers, seven tight ends, one free safety and one right edge defender. Completed entries in `bundled_data/madden/Madden - CUS02 - Big Board.json` supply card details as the class is filled in by position. Existing cards use `bundled_data/madden/Madden - CUS02.json` until their entries are ready. New board entries without a round and pick appear as unranked.
 
 `profiles.json` contains authored 40–50-word scouting bios based on each player's source `bio` notes, portrait filenames keyed by stable profile ID, and simulated final college-season statistics where available. Cards label those statistics as simulated. The source spelling `Ole MIss` displays as Ole Miss.
 
@@ -19,5 +19,7 @@ The four additional published players use portraits generated from `additional-p
 The expanded quarterback group uses Will Hoggard's existing early-board portrait. The four first-time quarterback portrait prompts are recorded in `big-board-portrait-prompts.json`.
 
 The expanded halfback group adds 18 scouting profiles based on the Big Board notes. Their first-time portrait prompts are recorded in `hb-portrait-prompts.json`.
+
+The expanded receiver group adds 16 scouting profiles and updates Derick Soliz’s bio from the Big Board. The 16 new portrait prompts are recorded in `big-board-wr-portrait-prompts.json`.
 
 `/earlybigboard` also offers 32 CUS02 preseason prospects. Its rankings and scouting direction come from `bundled_data/madden/Madden - CUS02 - Early Big Board.json`; its separate 40–50-word bios live in `early-top-10-bios.json`. The board uses portraits from completed prospect cards, `early-top-10-portrait-prompts.json` and `future-player-portrait-prompts.json`. An early-board portrait does not itself publish a player in the later `/prospects` browser.

@@ -516,7 +516,7 @@
     },
     "100": {
       "name": "Derick Soliz",
-      "bio": "Washington can put a 6-foot-5 target on the field in Soliz. The senior’s size gives scouts a clear physical starting point as they consider his fit in a receiving room and the types of matchups an offense might create outside.",
+      "bio": "Soliz gives Washington a 6-foot-5 possession receiver whose size opens up throws near the goal line. He can use his frame to give the quarterback a target when coverage tightens. His acceleration is limited, so his best opportunities come when the route rewards positioning and reach.",
       "portrait": "derick-soliz-transparent.png",
       "statistics": {
         "position": "WR",
@@ -686,6 +686,102 @@
       "position": "HB",
       "portrait": "prince-matthews-transparent.png",
       "bio": "Matthews stays patient while his blocks develop and has the instincts to find space once he reaches the open field. Washington State can use his elusiveness when he has room to change direction. He has less strength through contact, which limits the gains he can create in crowded lanes."
+    },
+    "125": {
+      "name": "Marques Cook",
+      "position": "WR",
+      "portrait": "marques-cook-transparent.png",
+      "bio": "Cook makes quick lateral cuts underneath, giving Clemson a way to turn short throws into gains in space. The compact receiver can get a defender leaning before he changes direction. His limited catch radius puts more pressure on ball placement, especially when coverage closes before the pass arrives."
+    },
+    "126": {
+      "name": "De'Kavion Prescott",
+      "position": "WR",
+      "portrait": "dekavion-prescott-transparent.png",
+      "bio": "Prescott combines a 225-pound frame with the long speed to threaten Tennessee’s opponents vertically. Once he gets into stride, he can force coverage to turn and run with him. More precise routes would help him use that speed when a deeper throw depends on timing and spacing."
+    },
+    "127": {
+      "name": "Athumo Mweyambugu",
+      "position": "WR",
+      "portrait": "athumo-mweyambugu-transparent.png",
+      "bio": "Mweyambugu gives Georgia Tech a 6-foot-5 target who can win catches at the boundary with a defender in position. His size and ability to finish contested throws give the quarterback a viable window outside. He has less quickness to separate, so body positioning is central to his game."
+    },
+    "128": {
+      "name": "Robin Jefferson Jr.",
+      "position": "WR",
+      "portrait": "robin-jefferson-jr-transparent.png",
+      "bio": "Jefferson’s footwork gives Arizona State a receiver who can change direction fluidly and create once a play reaches the open field. He can improvise around a defender with room to work. More physical coverage can disrupt his rhythm before he gets enough space to put those moves to use."
+    },
+    "129": {
+      "name": "Terrell Washington",
+      "position": "WR",
+      "portrait": "terrell-washington-transparent.png",
+      "bio": "Washington uses long strides to stretch coverage and tracks the ball well once it is in the air. Clemson can put both traits to work on vertical throws that let him build speed. His underneath routes are less consistent, leaving room to improve at shorter depths."
+    },
+    "130": {
+      "name": "Amari Johns",
+      "position": "WR",
+      "portrait": "amari-johns-transparent.png",
+      "bio": "Johns keeps his balance when defenders make contact after the catch, giving South Florida a receiver who can squeeze extra yardage from a completion. He is most dangerous once the ball is secured. More consistent separation would help him get enough touches to make that strength matter."
+    },
+    "131": {
+      "name": "Ja'Kobe Edwards",
+      "position": "WR",
+      "portrait": "jakobe-edwards-transparent.png",
+      "bio": "Edwards gives Georgia a strong-handed boundary receiver who can handle physical play outside. His frame helps him hold his ground when a defender closes on the throw. He is less flexible entering breaks, which can make it harder to create space on routes that demand a quick change of direction."
+    },
+    "132": {
+      "name": "Ian Sanders",
+      "position": "WR",
+      "portrait": "ian-sanders-transparent.png",
+      "bio": "Sanders gives North Texas a vertical target with the size and speed to threaten a defender once he gets downfield. A clean release lets him build momentum on deeper routes. His work off the line varies, so a more reliable release would help him reach those opportunities."
+    },
+    "133": {
+      "name": "Eric Mays",
+      "position": "WR",
+      "portrait": "eric-mays-transparent.png",
+      "bio": "Mays gives Oklahoma State a 6-foot-5 possession target who can reach throws outside a defender’s leverage. That catch radius offers a useful option when the quarterback has a narrow window. Slower short-area movement limits his separation, making positioning important when he works through crowded coverage."
+    },
+    "134": {
+      "name": "Corey Edwards Jr",
+      "position": "WR",
+      "portrait": "corey-edwards-jr-transparent.png",
+      "bio": "Edwards reads coverage well from the slot and gives Purdue a dependable option when a play asks him to settle into space. His awareness helps him find a throwing window at the right time. He offers less explosive upside, so his clearest role comes on throws that reward timing."
+    },
+    "135": {
+      "name": "Ja'Michael Abernathy",
+      "position": "WR",
+      "portrait": "jamichael-abernathy-transparent.png",
+      "bio": "Abernathy has the acceleration to threaten deep coverage and can get into his stride quickly for Stanford. His speed gives the offense a reason to stretch the field with him. More consistent tracking and hands would help him finish the downfield opportunities his movement creates."
+    },
+    "136": {
+      "name": "Zaniel Branch",
+      "position": "WR",
+      "portrait": "zaniel-branch-transparent.png",
+      "bio": "Branch stays balanced through contact after the catch, giving Mississippi State a compact target who can keep a short play going. His playmaking is most apparent with the ball in his hands. Improving the detail in his routes would make him a more dependable option before it gets there."
+    },
+    "137": {
+      "name": "Rodnell Knight",
+      "position": "WR",
+      "portrait": "rodnell-knight-transparent.png",
+      "bio": "Knight gets to his downfield speed more quickly than his 220-pound frame suggests. Wyoming can use his strength and stride on vertical routes when he has room to build momentum. Man coverage gives him trouble when a defender stays attached and forces him to create his own separation."
+    },
+    "138": {
+      "name": "Hau'oli'oli Liko",
+      "position": "WR",
+      "portrait": "hauolioli-liko-transparent.png",
+      "bio": "Liko gives California a 6-foot-4 athlete with the versatility to contribute in different receiving situations. His length and movement give the offense several ways to get him involved. More consistent receiving fundamentals would help him turn those physical tools into dependable play when the ball comes his way."
+    },
+    "139": {
+      "name": "Deandre Traylor",
+      "position": "WR",
+      "portrait": "deandre-traylor-transparent.png",
+      "bio": "Traylor brings the speed to threaten vertically for Michigan, especially when he can get into his route without early contact. His lighter frame gives physical press corners a way to interrupt that start. A cleaner release against contact would let him put that speed to work more often."
+    },
+    "140": {
+      "name": "Kevin Spears",
+      "position": "WR",
+      "portrait": "kevin-spears-transparent.png",
+      "bio": "Spears can make defenders adjust with quick cuts on underneath touches, giving Memphis a receiver who can create in space after the catch. He is less dependable when contact arrives at the catch point. Stronger finishes would let him make more of the throws his movement helps earn."
     }
   }
 }
