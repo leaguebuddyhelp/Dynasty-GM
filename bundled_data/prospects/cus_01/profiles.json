@@ -1549,7 +1549,7 @@
       "name": "Kaziri Nyokare",
       "portrait": "kaziri-nyokare-transparent.png",
       "statistics": {
-        "position": "LEDG",
+        "position": "REDG",
         "fictional": true,
         "games": 10,
         "defensiveSnaps": 372,
@@ -2543,6 +2543,54 @@
       "position": "RT",
       "portrait": "dquan-young-transparent.png",
       "bio": "Young uses his 339-pound frame, heavy hands, and leverage to generate force on direct blocks. Miami can lean on that combination when the assignment calls for movement at the point of attack. His lateral mobility is limited, making blocks that require him to cover space a tougher fit."
+    },
+    "165": {
+      "name": "Travis Kelley",
+      "position": "LEDG",
+      "portrait": "travis-kelley-transparent.png",
+      "bio": "Kelley gets off the snap quickly and shows the bend to turn a tight corner against an offensive tackle. Clemson can use that burst when it wants to threaten the edge of the pocket. Holding his ground consistently against run blocks is the bigger question in his projection."
+    },
+    "166": {
+      "name": "Charles Sneed",
+      "position": "LEDG",
+      "portrait": "charles-sneed-transparent.png",
+      "bio": "Sneed brings Wake Forest heavy hands and the power to move a blocker when he lands his first strike. At 290 pounds, he can take rush snaps inside as well as on the edge. His acceleration limits how often he can win by racing around an offensive tackle."
+    },
+    "167": {
+      "name": "Darriel Hawkins Jr",
+      "position": "LEDG",
+      "portrait": "darriel-hawkins-jr-transparent.png",
+      "bio": "Hawkins uses a compact frame and natural leverage to get underneath blockers and bring power off the edge for Louisville. That gives him a useful starting point when he can attack directly. His rush needs more developed counters for tackles who can absorb the first move and stay square."
+    },
+    "168": {
+      "name": "Johmarcus Phillips",
+      "position": "LEDG",
+      "portrait": "johmarcus-phillips-transparent.png",
+      "bio": "Phillips brings Florida Atlantic a strong frame and the physical tools to develop on the edge. He can make initial contact count when he gets into good position. Getting free of blocks and staying involved in pursuit are less consistent, which limits how often his strength finishes a play."
+    },
+    "169": {
+      "name": "Sammy Jordan",
+      "position": "REDG",
+      "portrait": "sammy-jordan-transparent.png",
+      "bio": "Jordan can accelerate quickly off the snap and force an offensive tackle to react before the pass set is established. Central Arkansas can use that first step to attack the edge. His reach is limited, so longer tackles can get their hands on him and slow the rush."
+    },
+    "170": {
+      "name": "Zephan Benjamin",
+      "position": "REDG",
+      "portrait": "zephan-benjamin-transparent.png",
+      "bio": "Benjamin brings Wisconsin a heavy-handed bull rush that can drive a tackle back toward the quarterback. His strength gives him a direct way to compress the pocket. He is less flexible turning the corner, which reduces his options when a blocker holds up against the initial power."
+    },
+    "171": {
+      "name": "Trivelle Allen",
+      "position": "REDG",
+      "portrait": "trivelle-allen-transparent.png",
+      "bio": "Allen attacks quickly and can turn his initial speed into power when he hits a blocker. That combination gives Syracuse an edge rusher who can threaten the pocket with force. His hand usage varies, making it harder to control contact and sustain the rush after the first exchange."
+    },
+    "172": {
+      "name": "Quillin Bush",
+      "position": "REDG",
+      "portrait": "quillin-bush-transparent.png",
+      "bio": "Bush gives Western Kentucky a 303-pound end who can hold his ground and keep runs from getting around the edge. His mass helps him absorb contact and make the runner change course. His pass rush has fewer answers, so his clearest role comes on run downs."
     }
   }
 }

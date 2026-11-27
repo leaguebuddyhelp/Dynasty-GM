@@ -17,6 +17,13 @@ const classes = Object.freeze({
 const dataRoot = fileURLToPath(new URL('../../bundled_data/', import.meta.url));
 const edgePositions = new Set(['LEDG', 'REDG']);
 
+function matchPlayerPortrait(entries, player) {
+  const candidates = entries.filter((entry) => entry.name === player.name && schoolLabel(entry.school) === schoolLabel(player.school));
+  return candidates.find((entry) => entry.position === player.position)
+    // An edge rusher can be listed on opposite sides across the two boards.
+    ?? (edgePositions.has(player.position) ? candidates.find((entry) => edgePositions.has(entry.position)) : undefined);
+}
+
 export function loadEarlyTop10(classId = 'CUS01') {
   if (!Object.hasOwn(classes, classId)) throw new Error('Unknown early top ten class');
   const { source: filename, folder, pageCount } = classes[classId];
@@ -56,7 +63,7 @@ export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
       );
     // Match the player identity, not the early rank: the final board uses a different order.
     const prospect = PROSPECT_CLASSES.includes(classId)
-      ? loadProspects(classId).find((entry) => entry.name === player.name && entry.position === player.position && schoolLabel(entry.school) === schoolLabel(player.school))
+      ? matchPlayerPortrait(loadProspects(classId), player)
       : null;
     if (prospect && fs.existsSync(prospect.portrait)) {
       const name = `early-${classId.toLowerCase()}-${prospect.id}${path.extname(prospect.portrait)}`;
@@ -68,10 +75,7 @@ export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
         const file = path.join(root, manifest);
         return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
       });
-      const candidates = portraits.filter((entry) => entry.name === player.name && schoolLabel(entry.school) === schoolLabel(player.school));
-      const match = candidates.find((entry) => entry.position === player.position)
-        // An edge rusher can be listed on opposite sides across the two boards.
-        ?? (edgePositions.has(player.position) ? candidates.find((entry) => edgePositions.has(entry.position)) : undefined);
+      const match = matchPlayerPortrait(portraits, player);
       const portrait = match && path.join(root, 'portraits', path.basename(match.file));
       if (portrait && fs.existsSync(portrait)) {
         const name = `early-${classId.toLowerCase()}-rank-${rank}.png`;

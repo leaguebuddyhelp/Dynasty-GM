@@ -145,5 +145,77 @@
     "prompt": "Use case: photorealistic-natural.\nAsset type: transparent PNG fictional college football draft prospect portrait for a Discord player card.\nSubject: Jerrick McKinley, a unique fictional 22-year-old adult male defensive lineman, not a real player. Identity as supplied: african american. light brown skin, green eyes, brown hair styled as short dreads, clean-shaven, a youthful adult face. Athletic build matching height 6'3\" and weight 273 pounds; broad shoulders and an appropriately proportioned neck, with the heavier build of a tackle when appropriate. Follow explicit physical traits without racial caricature.\nJersey: Illinois football jersey, orange and navy, number #90, recognizable school wordmark or logo. Only this subject's school branding.\nComposition: square studio head-and-shoulders photograph, centered facing camera, complete hairstyle visible, no helmet. Upper chest branding and correct number visible. Natural composed expression, realistic skin texture, soft professional lighting, polished sports editorial photography.\nBackground: genuine alpha transparency, no backdrop, solid fill, checkerboard pattern, drop shadow, captions, watermark or additional people. Clean natural hair and shoulder edges.",
     "source": "/Users/brandongordon/.codex/generated_images/01a1c76a-70a0-7de2-a9cd-5af41c7423fc/exec-51ac59de-e866-4d40-b425-8fcb6f017c89.png",
     "file": "portraits/jerrick-mckinley-transparent.png"
+  },
+  {
+    "id": "165",
+    "name": "Travis Kelley",
+    "position": "LEDG",
+    "school": "Clemson",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Travis Kelley, a fictional 22-year-old adult edge defender. Appearance: Black man with medium brown skin, brown eyes, classic black cornrows and a neat goatee. Match his 6'2\", 245-pound build, thick neck and broad padded shoulders. Wear the Clemson Tigers orange football jersey with white digits and tiger paw. Use exact number 31 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
+    "file": "portraits/travis-kelley-transparent.png"
+  },
+  {
+    "id": "166",
+    "name": "Charles Sneed",
+    "position": "LEDG",
+    "school": "Wake Forest",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Charles Sneed, a fictional 22-year-old adult edge defender. Appearance: light-skinned Black man with brown eyes, short faded black afro, light neatly groomed stubble and soft facial contours. Match his 6'3\", 290-pound build, thick neck and broad padded shoulders. Wear the Wake Forest Demon Deacons black football jersey with gold digits and WF. Use exact number 51 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
+    "file": "portraits/charles-sneed-transparent.png"
+  },
+  {
+    "id": "167",
+    "name": "Darriel Hawkins Jr",
+    "position": "LEDG",
+    "school": "Louisville",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Darriel Hawkins Jr, a fictional 23-year-old adult edge defender. Appearance: Black man with dark skin, brown eyes, short faded black afro, a clean-shaven face and full cheeks. Match his 6'2\", 263-pound build, thick neck and broad padded shoulders. Wear the Louisville Cardinals red football jersey with white digits and Louisville branding. Use exact number 57 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
+    "file": "portraits/darriel-hawkins-jr-transparent.png"
+  },
+  {
+    "id": "168",
+    "name": "Johmarcus Phillips",
+    "position": "LEDG",
+    "school": "FAU",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Johmarcus Phillips, a fictional 23-year-old adult edge defender. Appearance: Black man with medium brown skin, brown eyes, designed black locs, light tidy stubble and a narrow face. Match his 6'4\", 273-pound build, thick neck and broad padded shoulders. Wear the Florida Atlantic Owls navy football jersey with white digits, red accents and FAU branding. Use exact number 98 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
+    "file": "portraits/johmarcus-phillips-transparent.png"
+  },
+  {
+    "id": "169",
+    "name": "Sammy Jordan",
+    "position": "REDG",
+    "school": "Central Arkansas",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Sammy Jordan, a fictional 22-year-old adult edge defender. Appearance: Black man with dark skin, brown eyes, individually styled black locs and a clean-shaven face. Match his 6'1\", 253-pound build, thick neck and broad padded shoulders. Wear the Central Arkansas Bears purple football jersey with white digits and Central Arkansas Bears branding. Use exact number 95 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
+    "file": "portraits/sammy-jordan-transparent.png"
+  },
+  {
+    "id": "170",
+    "name": "Zephan Benjamin",
+    "position": "REDG",
+    "school": "Wisconsin",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Zephan Benjamin, a fictional 23-year-old adult edge defender. Appearance: Black man with dark skin, brown eyes, short faded black afro and tidy medium beard. Match his 6'3\", 278-pound build, thick neck and broad padded shoulders. Wear the Wisconsin Badgers red football jersey with white digits and Wisconsin W. Use exact number 58 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
+    "file": "portraits/zephan-benjamin-transparent.png"
+  },
+  {
+    "id": "171",
+    "name": "Trivelle Allen",
+    "position": "REDG",
+    "school": "Syracuse",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Trivelle Allen, a fictional 23-year-old adult edge defender. Appearance: light-skinned Black man with brown eyes, classic brown cornrows, light neat stubble and mixed-race features. Match his 6'2\", 265-pound build, thick neck and broad padded shoulders. Wear the Syracuse Orange orange football jersey with white digits edged in navy and Syracuse branding. Use exact number 95 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
+    "file": "portraits/trivelle-allen-transparent.png"
+  },
+  {
+    "id": "172",
+    "name": "Quillin Bush",
+    "position": "REDG",
+    "school": "Western Kentucky",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic college football media-day headshot of Quillin Bush, a fictional 22-year-old adult edge defender. Appearance: Black man with dark skin, brown eyes, short faded black afro and a neatly trimmed goatee. Match his 6'3\", 303-pound build, thick neck and broad padded shoulders. Wear the Western Kentucky Hilltoppers red football jersey with white digits and WKU branding. Use exact number 97 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
+    "file": "portraits/quillin-bush-transparent.png"
   }
 ]

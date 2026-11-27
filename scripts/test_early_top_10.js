@@ -43,6 +43,9 @@ assert.match(buildEarlyTop10View(16).files[0].attachment, /chacha-oakim-early-tr
 assert.match(buildEarlyTop10View(21).embeds[0].toJSON().thumbnail.url, /early-cus01-rank-22\.png/);
 assert.match(buildEarlyTop10View(25).files[0].attachment, /jerald-simms-morrison-early-transparent\.png$/);
 assert.match(buildEarlyTop10View(26).embeds[0].toJSON().thumbnail.url, /early-cus01-rank-27\.png/);
+const nyokare = buildEarlyTop10View(30);
+assert.match(nyokare.embeds[0].toJSON().title, /LEDG Kaziri Nyokare/);
+assert.match(nyokare.files[0].attachment, /kaziri-nyokare-transparent\.png$/);
 assert.equal(buildEarlyTop10View(9).components[0].toJSON().components[1].disabled, false);
 let commandReply;
 await commandExecute({ deferReply: async ({ flags }) => assert.equal(flags, 64), editReply: async (payload) => { commandReply = payload; } });
