@@ -73,6 +73,10 @@ const schoolEmojis = {
   'East Carolina': { name: 'eastcarolina', id: '1574094868450639952' },
   UAB: { name: 'uab', id: '1574094866181259374' },
   'Arizona State': { name: 'arizonastate', id: '1574182155125526748' },
+  'North Dakota State': { name: 'northdakotastate', id: '1575956233998041230' },
+  UCF: { name: 'ucf', id: '1575956232051757278' },
+  Rutgers: { name: 'rutgers', id: '1575956229459550298' },
+  Buffalo: { name: 'buffalo', id: '1575956227865706676' },
 };
 export function schoolLabel(school) {
   const display = schoolAliases[school] || school;

@@ -22,6 +22,12 @@ assert.equal(playerMenu.custom_id, 'madden_prospects_cus03_player_QB');
 assert.deepEqual(playerMenu.options.map(({ value }) => value), players.map(({ id }) => id));
 assert.equal(buildProspectView({ classId: 'CUS03', position: 'HB' }).files.length, 0);
 
+const schoolEmojis = {
+  'North Dakota State': { name: 'northdakotastate', id: '1575956233998041230' },
+  UCF: { name: 'ucf', id: '1575956232051757278' },
+  Rutgers: { name: 'rutgers', id: '1575956229459550298' },
+  Buffalo: { name: 'buffalo', id: '1575956227865706676' },
+};
 for (const [index, player] of players.entries()) {
   const view = buildProspectView({ classId: 'CUS03', position: 'QB', playerId: player.id });
   const embed = view.embeds[0].toJSON();
@@ -31,6 +37,14 @@ for (const [index, player] of players.entries()) {
   assert.equal(embed.fields.find(({ name }) => name === 'Jersey / Board').value,
     `${player.jersey} · ${player.rank === null ? 'Unranked' : '#' + player.rank}`);
   assert.equal(embed.fields.some(({ name }) => name === 'Final college season'), false);
+  const emoji = schoolEmojis[player.school];
+  if (emoji) {
+    const option = playerMenu.options.find(({ value }) => value === player.id);
+    assert.equal(option.emoji.id, emoji.id);
+    assert.equal(option.emoji.name, emoji.name);
+    assert.equal(embed.fields.find(({ name }) => name === 'School').value,
+      `<:${emoji.name}:${emoji.id}> ${player.school} · ${player.year}`);
+  }
   assert.equal(view.files[0].attachment, player.portrait);
   assert.equal(embed.thumbnail.url, `attachment://cus03-${player.id}.png`);
   const image = sharp(player.portrait);
