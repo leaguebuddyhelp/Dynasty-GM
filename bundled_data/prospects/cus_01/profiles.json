@@ -2591,6 +2591,84 @@
       "position": "REDG",
       "portrait": "quillin-bush-transparent.png",
       "bio": "Bush gives Western Kentucky a 303-pound end who can hold his ground and keep runs from getting around the edge. His mass helps him absorb contact and make the runner change course. His pass rush has fewer answers, so his clearest role comes on run downs."
+    },
+    "173": {
+      "name": "Brandon Hurst",
+      "position": "DT",
+      "portrait": "brandon-hurst-transparent.png",
+      "bio": "Hurst brings Wisconsin an interior rusher who can jar blockers with his hands and drive them backward once he connects. At 314 pounds, he can put force behind a direct rush. His first step is less explosive from snap to snap, making it harder to win before a blocker sets."
+    },
+    "174": {
+      "name": "Tykeim Mack",
+      "position": "DT",
+      "portrait": "tykeim-mack-transparent.png",
+      "bio": "Mack gets underneath blockers and uses his compact frame to hold his ground against the run. Alabama can use that leverage at nose tackle to keep an interior lane from opening. His pass rush has fewer answers, so his clearest role comes on downs when the offense can run."
+    },
+    "175": {
+      "name": "Zharvis Price",
+      "position": "DT",
+      "portrait": "zharvis-price-transparent.png",
+      "bio": "Price can burst through an interior gap before a blocker settles, giving Washington a defensive tackle who can disrupt a play early. His athletic tools offer room to grow as a penetrator. Double-teams test his anchor, where he is less consistent when two blockers apply force from different angles."
+    },
+    "176": {
+      "name": "Zakari Miller",
+      "position": "DT",
+      "portrait": "zakari-miller-transparent.png",
+      "bio": "Miller uses leverage and power to push the pocket from the inside, giving North Carolina a tackle who can challenge blockers directly. His first move can make a guard give ground. The next step is sharpening his counters for snaps when an opponent absorbs that initial push."
+    },
+    "177": {
+      "name": "Jahmir Bell",
+      "position": "DT",
+      "portrait": "jahmir-bell-transparent.png",
+      "bio": "Bell gives Colorado a 6-foot-6 nose tackle with the length to occupy space and make an interior running lane smaller. His reach helps him engage blockers early. Keeping his pads low is a challenge at that height, and better consistency there would help him hold his ground through contact."
+    },
+    "178": {
+      "name": "Austin Evans",
+      "position": "DT",
+      "portrait": "austin-evans-transparent.png",
+      "bio": "Evans stays in position against the run and gives California a defender who can be trusted to work his assigned gap. His discipline helps him keep the front organized as a play develops. Double-teams put more pressure on his strength, and he can give ground when two blockers engage."
+    },
+    "179": {
+      "name": "Javon Joseph",
+      "position": "DT",
+      "portrait": "javon-joseph-transparent.png",
+      "bio": "Joseph uses his reach to get into a blocker’s chest and bring power from the interior. At 6-foot-6, he gives Mississippi State length that can matter when he strikes first. His balance can slip through contact, making it harder to sustain the rush after the initial exchange."
+    },
+    "180": {
+      "name": "Shraudi Njumu",
+      "position": "DT",
+      "portrait": "shraudi-njumu-transparent.png",
+      "bio": "Njumu brings South Florida rare length and athleticism in a 6-foot-7 frame. He has the movement to threaten interior gaps and the reach to affect a block early. His technique is still developing, and more precise work through contact would help him turn those tools into consistent disruption."
+    },
+    "181": {
+      "name": "Bryce Nicholas",
+      "position": "DT",
+      "portrait": "bryce-nicholas-transparent.png",
+      "bio": "Nicholas gives Wisconsin a heavy-handed defender who can push a guard back with a direct bull rush. The 320-pound tackle is most effective when he can bring his strength straight through the block. He is less mobile laterally when a play asks him to redirect or chase across the front."
+    },
+    "182": {
+      "name": "Grady O’Brien",
+      "position": "DT",
+      "portrait": "grady-obrien-transparent.png",
+      "bio": "O’Brien can accelerate into an interior gap and give Missouri a chance to disrupt a play before it develops. His quickness shows best when he has a clean path upfield. Physical blockers can stay attached once they get their hands on him, making disengagement an important part of his development."
+    },
+    "183": {
+      "name": "Donovan Branch",
+      "position": "DT",
+      "portrait": "donovan-branch-transparent.png",
+      "bio": "Branch gives Memphis an experienced nose tackle who can occupy space and stay responsible for his gap. His discipline helps keep interior run lanes from opening when the front needs him to hold his position. He offers less as a pass rusher, so his strongest role comes against the run."
+    },
+    "184": {
+      "name": "Caleb Bryant",
+      "position": "DT",
+      "portrait": "caleb-bryant-transparent.png",
+      "bio": "Bryant brings Florida a 320-pound tackle with the physical tools to develop as a power rusher. His size gives him a foundation for moving blockers when he wins the first exchange. More consistent leverage and hand placement would help him convert that strength into pressure from the interior."
+    },
+    "185": {
+      "name": "Taevion Jefferson",
+      "position": "DT",
+      "portrait": "taevion-jefferson-transparent.png",
+      "bio": "Jefferson has the strength and mass to give UConn useful rotational snaps at nose tackle. He can hold his ground on direct interior runs and make a runner work around him. His range is limited in pursuit, so his best work comes when the play stays near his gap."
     }
   }
 }

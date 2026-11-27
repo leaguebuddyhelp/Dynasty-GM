@@ -217,5 +217,122 @@
     "mode": "built-in imagegen",
     "prompt": "Photorealistic college football media-day headshot of Quillin Bush, a fictional 22-year-old adult edge defender. Appearance: Black man with dark skin, brown eyes, short faded black afro and a neatly trimmed goatee. Match his 6'3\", 303-pound build, thick neck and broad padded shoulders. Wear the Western Kentucky Hilltoppers red football jersey with white digits and WKU branding. Use exact number 97 consistently on the chest and shoulders. Square 1254 by 1254 cutout, straight-on centered unhelmeted face, natural expression, eyes high in frame, full hairstyle visible with a sliver of top clearance, shoulders fill the lower sides and the bottom crop runs through the chest number. Realistic skin and jersey texture, even soft studio lighting, one subject. Genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard, shadow, captions or watermark.",
     "file": "portraits/quillin-bush-transparent.png"
+  },
+  {
+    "id": "173",
+    "name": "Brandon Hurst",
+    "position": "DT",
+    "school": "Wisconsin",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Brandon Hurst, a fictional 22-year-old adult college defensive tackle. Appearance: light-skinned Black man, brown eyes, short brown Caesar fade, light groomed stubble and mixed-race features. Match his 6'4\", 314-pound defensive line build with thick neck and broad shoulders. Wear the Wisconsin Badgers red with white digits and Wisconsin W football jersey. Exact jersey numeral 90, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/brandon-hurst-transparent.png"
+  },
+  {
+    "id": "174",
+    "name": "Tykeim Mack",
+    "position": "DT",
+    "school": "Alabama",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Tykeim Mack, a fictional 21-year-old adult college defensive tackle. Appearance: dark-skinned Black man, brown eyes, short styled black locs and tidy medium beard. Match his 6'2\", 303-pound defensive line build with thick neck and broad shoulders. Wear the Alabama Crimson Tide crimson with white block digits football jersey. Exact jersey numeral 93, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/tykeim-mack-transparent.png"
+  },
+  {
+    "id": "175",
+    "name": "Zharvis Price",
+    "position": "DT",
+    "school": "Washington",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Zharvis Price, a fictional 21-year-old adult college defensive tackle. Appearance: light-skinned Black man, hazel eyes, short brown afro with faded sides and a neatly shaped goatee. Match his 6'4\", 297-pound defensive line build with thick neck and broad shoulders. Wear the Washington Huskies purple with gold details, white digits and Washington W football jersey. Exact jersey numeral 94, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/zharvis-price-transparent.png"
+  },
+  {
+    "id": "176",
+    "name": "Zakari Miller",
+    "position": "DT",
+    "school": "North Carolina",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Zakari Miller, a fictional 22-year-old adult college defensive tackle. Appearance: dark-skinned Black man, brown eyes, classic brown cornrows, clean-shaven face. Match his 6'2\", 310-pound defensive line build with thick neck and broad shoulders. Wear the North Carolina Tar Heels Carolina blue with white digits, subtle argyle trim and interlocking NC football jersey. Exact jersey numeral 95, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/zakari-miller-transparent.png"
+  },
+  {
+    "id": "177",
+    "name": "Jahmir Bell",
+    "position": "DT",
+    "school": "Colorado",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Jahmir Bell, a fictional 22-year-old adult college defensive tackle. Appearance: medium brown-skinned Black man, brown eyes, short faded brown afro, light clean stubble. Match his 6'6\", 318-pound defensive line build with thick neck and broad shoulders. Wear the Colorado Buffaloes black with gold digits and Colorado branding football jersey. Exact jersey numeral 58, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/jahmir-bell-transparent.png"
+  },
+  {
+    "id": "178",
+    "name": "Austin Evans",
+    "position": "DT",
+    "school": "California",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Austin Evans, a fictional 23-year-old adult college defensive tackle. Appearance: light-skinned Black man, brown eyes, short brown Caesar fade, tidy medium beard and mixed-race features. Match his 6'3\", 299-pound defensive line build with thick neck and broad shoulders. Wear the California Golden Bears navy with gold digits and Cal script football jersey. Exact jersey numeral 94, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/austin-evans-transparent.png"
+  },
+  {
+    "id": "179",
+    "name": "Javon Joseph",
+    "position": "DT",
+    "school": "Mississippi State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Javon Joseph, a fictional 21-year-old adult college defensive tackle. Appearance: dark-skinned Black man, brown eyes, styled black locs and neat goatee. Match his 6'6\", 316-pound defensive line build with thick neck and broad shoulders. Wear the Mississippi State Bulldogs maroon with white digits and Mississippi State insignia football jersey. Exact jersey numeral 50, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/javon-joseph-transparent.png"
+  },
+  {
+    "id": "180",
+    "name": "Shraudi Njumu",
+    "position": "DT",
+    "school": "USF",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Shraudi Njumu, a fictional 22-year-old adult college defensive tackle. Appearance: dark-skinned Black man, brown eyes, a large black afro with faded sides, clean-shaven face. Match his 6'7\", 298-pound defensive line build with thick neck and broad shoulders. Wear the South Florida Bulls dark green with white digits, gold accents and Bulls insignia football jersey. Exact jersey numeral 2, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/shraudi-njumu-transparent.png"
+  },
+  {
+    "id": "181",
+    "name": "Bryce Nicholas",
+    "position": "DT",
+    "school": "Wisconsin",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Bryce Nicholas, a fictional 23-year-old adult college defensive tackle. Appearance: light-skinned Black man, brown eyes, short brown Caesar fade, light neat stubble and full cheeks. Match his 6'3\", 320-pound defensive line build with thick neck and broad shoulders. Wear the Wisconsin Badgers red with white digits and Wisconsin W football jersey. Exact jersey numeral 98, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/bryce-nicholas-transparent.png"
+  },
+  {
+    "id": "182",
+    "name": "Grady O’Brien",
+    "position": "DT",
+    "school": "Missouri",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Grady O’Brien, a fictional 23-year-old adult college defensive tackle. Appearance: fair-skinned white man, brown eyes, short straight brown hair, tidy medium brown beard. Match his 6'4\", 295-pound defensive line build with thick neck and broad shoulders. Wear the Missouri Tigers black with gold digits and Missouri Tigers branding football jersey. Exact jersey numeral 94, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/grady-obrien-transparent.png"
+  },
+  {
+    "id": "183",
+    "name": "Donovan Branch",
+    "position": "DT",
+    "school": "Memphis",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Donovan Branch, a fictional 24-year-old adult college defensive tackle. Appearance: medium brown-skinned Black man, brown eyes, styled black locs and neat goatee. Match his 6'5\", 306-pound defensive line build with thick neck and broad shoulders. Wear the Memphis Tigers royal blue with white digits and Memphis branding football jersey. Exact jersey numeral 55, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/donovan-branch-transparent.png"
+  },
+  {
+    "id": "184",
+    "name": "Caleb Bryant",
+    "position": "DT",
+    "school": "Florida",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Caleb Bryant, a fictional 22-year-old adult college defensive tackle. Appearance: light-skinned Black man, hazel eyes, short brown Caesar fade, clean-shaven face and mixed-race features. Match his 6'4\", 320-pound defensive line build with thick neck and broad shoulders. Wear the Florida Gators royal blue with white digits outlined in orange and Florida branding football jersey. Exact jersey numeral 4, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/caleb-bryant-transparent.png"
+  },
+  {
+    "id": "185",
+    "name": "Taevion Jefferson",
+    "position": "DT",
+    "school": "UConn",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Taevion Jefferson, a fictional 23-year-old adult college defensive tackle. Appearance: dark-skinned Black man, brown eyes, individually styled black locs and light groomed stubble. Match his 6'3\", 323-pound defensive line build with thick neck and broad shoulders. Wear the UConn Huskies navy with white digits and UConn marking football jersey. Exact jersey numeral 10, consistent on chest and shoulders. Square 1254 by 1254 cutout, tight head and upper chest, padded shoulders fill the lower sides and the lower chest number is partly cropped. The entire hairstyle is visible with a sliver of clearance. Centered straight-on face, unhelmeted, natural expression, realistic skin and uniform texture, soft even studio lighting. One subject and genuine alpha transparency outside clean silhouette. No backdrop, cast shadow, checkerboard, captions, frame or watermark.",
+    "file": "portraits/taevion-jefferson-transparent.png"
   }
 ]
