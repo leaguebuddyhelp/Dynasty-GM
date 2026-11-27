@@ -1,0 +1,61 @@
+{
+  "classId": "CUS03",
+  "label": "Class 3",
+  "source": "bundled_data/madden/Madden - CUS03 - Big Board.json",
+  "profiles": {
+    "1": {
+      "name": "Dashaud Smith",
+      "position": "QB",
+      "portrait": "dashaud-smith-class03-v2.png",
+      "bio": "Smith brings Georgia a rare combination of size, elite arm strength, and command from the pocket. The Mississippi State transfer won the Heisman and has the physical tools to drive throws across the field. His presence and arm talent give him the profile of a franchise quarterback."
+    },
+    "2": {
+      "name": "Nick Boyle",
+      "position": "QB",
+      "portrait": "nick-boyle-class03-v2.png",
+      "bio": "Boyle anticipates openings and places the ball accurately on short and intermediate routes. Michigan can trust him to process coverage from the pocket and deliver on time as a receiver comes out of his break. That combination gives a passing game a steady rhythm and a reliable distributor."
+    },
+    "3": {
+      "name": "Dannie Montano",
+      "position": "QB",
+      "portrait": "dannie-montano-class03-v2.png",
+      "bio": "Montano gives North Dakota State a quarterback who can improvise when the pocket breaks down. His movement creates options as a runner and lets him keep passing plays alive. The downfield accuracy varies, so more reliable placement on deep throws would help him get more from those extended plays."
+    },
+    "4": {
+      "name": "Josiah Freeman",
+      "position": "QB",
+      "portrait": "josiah-freeman-class03-v2.png",
+      "bio": "Freeman brings UCF a 6-foot-5 pocket passer with the arm talent to challenge defenses downfield. His frame and throwing ability give him a strong starting point when he has room to set up. Pressure can disrupt his mechanics, making a consistent delivery through traffic a focus of his development."
+    },
+    "5": {
+      "name": "Tucker Wilson",
+      "position": "QB",
+      "portrait": "tucker-wilson-class03-v2.png",
+      "bio": "Wilson gives Memphis a quarterback who makes sound decisions and can keep the passing game moving with the right read. His arm strength and athletic upside are limited, so his best work comes when the offense gives him a clear timing window and lets him deliver on schedule."
+    },
+    "6": {
+      "name": "Jake Denney",
+      "position": "QB",
+      "portrait": "jake-denney-class03-v3.png",
+      "bio": "Denney can escape pressure and keep a play alive with his legs, giving Texas an athletic option when the pocket changes shape. That movement gives him a foundation to develop. Working through multiple reads is less consistent, especially when his first option is covered."
+    },
+    "7": {
+      "name": "Jaxson Suarez",
+      "position": "QB",
+      "portrait": "jaxson-suarez-class03-transparent.png",
+      "bio": "Suarez brings Tennessee a strong arm and the size to develop into a pocket passer who can attack different parts of the field. The physical tools give him something to build around. More consistent accuracy and placement would help him convert that arm strength into dependable completions."
+    },
+    "8": {
+      "name": "Jasiah Anderson",
+      "position": "QB",
+      "portrait": "jasiah-anderson-class03-transparent.png",
+      "bio": "Anderson’s throwing velocity gives Rutgers a quarterback who can get the ball to a target quickly. His arm stands out when he sees a window and drives the throw through it. Better timing and anticipation would help him release the ball before that window starts to close."
+    },
+    "9": {
+      "name": "Isaac McCormick",
+      "position": "QB",
+      "portrait": "isaac-mccormick-class03-transparent.png",
+      "bio": "McCormick gives Buffalo a 240-pound quarterback who can use his strength and mobility to create yards on the ground. His rushing ability gives an offense options when a play breaks down. He is still developing as a pocket passer, where more consistent execution would make him a more complete threat."
+    }
+  }
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "6",
+    "name": "Jake Denney",
+    "school": "Texas",
+    "mode": "built-in imagegen edit",
+    "file": "portraits/jake-denney-class03-v3.png",
+    "prompt": "Edit reference image 1, Jake Denney’s existing portrait. Use image 2 (Tyler Smit) ONLY as an exact crop and scale reference. Zoom Jake’s existing photo by approximately 1.35 times and recenter horizontally on his nose. Match the Tyler Smit head size, framing and composition at 1254 by 1254. Entire hairstyle with 20–25 px of clearance above it, eyes about one quarter down the frame, chin around 47 percent down, shoulder pads extending to both sides, bottom edge crosses the upper chest through the numeral 12. No full jersey, elbows, waist, or upper torso beyond the top portion of the chest numerals. Preserve Jake’s identifiable face, short straight brown hair, fair skin, brown eyes, neat short brown goatee, and authentic Texas Longhorns burnt orange jersey with white numeral 12. Preserve genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard or added text.",
+    "position": "QB"
+  },
+  {
+    "id": "7",
+    "name": "Jaxson Suarez",
+    "school": "Tennessee",
+    "mode": "built-in imagegen",
+    "file": "portraits/jaxson-suarez-class03-transparent.png",
+    "position": "QB",
+    "prompt": "Photorealistic college football media-day portrait of fictional adult quarterback Jaxson Suarez. Subject is a Black and Latino man with tan olive skin, brown eyes, a short dense black afro fade, light clean stubble and a defined jaw, 6-foot-5 and 230 pounds. Wear the Tennessee Volunteers orange home jersey with white number 9 on chest and shoulders and Tennessee insignia. Preserve the same exact jersey number everywhere. Square 1254 by 1254 tight head and upper chest cutout, aligned center and facing camera, full hair with a sliver of top margin, eyes in the upper quarter, shoulder pads fill the lower sides and crop through the bottom of the large jersey number. No helmet. Natural expression, authentic skin and jersey texture, even soft studio lighting. One subject on genuine transparent alpha. No backdrop, checkerboard, shadow, caption or watermark."
+  },
+  {
+    "id": "8",
+    "name": "Jasiah Anderson",
+    "school": "Rutgers",
+    "mode": "built-in imagegen",
+    "file": "portraits/jasiah-anderson-class03-transparent.png",
+    "position": "QB",
+    "prompt": "Photorealistic college football media-day portrait of fictional adult quarterback Jasiah Anderson. Subject is a Black man with medium brown skin, brown eyes, a medium black afro with a fade and a tidy medium beard, 6-foot-2 and 230 pounds. Wear the Rutgers Scarlet Knights scarlet jersey with white number 2 on chest and shoulders and a Rutgers R. Preserve the same exact jersey number everywhere. Square 1254 by 1254 tight head and upper chest cutout, aligned center and facing camera, full hair with a sliver of top margin, eyes in the upper quarter, shoulder pads fill the lower sides and crop through the bottom of the large jersey number. No helmet. Natural expression, authentic skin and jersey texture, even soft studio lighting. One subject on genuine transparent alpha. No backdrop, checkerboard, shadow, caption or watermark."
+  },
+  {
+    "id": "9",
+    "name": "Isaac McCormick",
+    "school": "Buffalo",
+    "mode": "built-in imagegen",
+    "file": "portraits/isaac-mccormick-class03-transparent.png",
+    "position": "QB",
+    "prompt": "Photorealistic college football media-day portrait of fictional adult quarterback Isaac McCormick. Subject is a Black man with tan olive skin, hazel eyes, a short brown temple-fade afro, clean-shaven face, and distinctly mixed-race features, 6-foot-4 and 240 pounds. Wear the Buffalo Bulls royal blue home jersey with white number 8 on chest and shoulders and Buffalo branding. Preserve the same exact jersey number everywhere. Square 1254 by 1254 tight head and upper chest cutout, aligned center and facing camera, full hair with a sliver of top margin, eyes in the upper quarter, shoulder pads fill the lower sides and crop through the bottom of the large jersey number. No helmet. Natural expression, authentic skin and jersey texture, even soft studio lighting. One subject on genuine transparent alpha. No backdrop, checkerboard, shadow, caption or watermark."
+  }
+]

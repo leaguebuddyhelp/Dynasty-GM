@@ -7,7 +7,7 @@ import { heismanBadge, loadProspects, PROSPECT_CLASSES, schoolLabel } from './pr
 const classes = Object.freeze({
   CUS01: { source: 'Madden - CUS01 - Early Big Board.json', folder: 'cus_01', pageCount: 32, manifests: ['early-top-32-portrait-prompts.json'] },
   CUS02: { source: 'Madden - CUS02 - Early Big Board.json', folder: 'cus_02', pageCount: 32, manifests: ['early-top-10-portrait-prompts.json', 'future-player-portrait-prompts.json'] },
-  CUS03: { source: 'Madden - CUS03 - Early Big Board.json', folder: 'cus_03', pageCount: 32, manifests: ['class03-portrait-prompts.json'] },
+  CUS03: { source: 'Madden - CUS03 - Early Big Board.json', folder: 'cus_03', pageCount: 32, manifests: ['class03-portrait-prompts.json'], preferManifest: true },
   CUS04: { source: 'Madden - CUS04 - Early Big Board.json', folder: 'cus_04', pageCount: 32, manifests: ['portrait-prompts.json'] },
   CUS05: { source: 'Madden - CUS05 - Early Big Board.json', folder: 'cus_05', pageCount: 32, manifests: ['portrait-prompts.json'] },
   CUS06: { source: 'Madden - CUS06 - Early Big Board.json', folder: 'cus_06', pageCount: 32, manifests: ['portrait-prompts.json'] },
@@ -22,6 +22,16 @@ function matchPlayerPortrait(entries, player) {
   return candidates.find((entry) => entry.position === player.position)
     // An edge rusher can be listed on opposite sides across the two boards.
     ?? (edgePositions.has(player.position) ? candidates.find((entry) => edgePositions.has(entry.position)) : undefined);
+}
+
+function findManifestPortrait(root, manifests, player) {
+  const portraits = manifests.flatMap((manifest) => {
+    const file = path.join(root, manifest);
+    return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
+  });
+  const match = matchPlayerPortrait(portraits, player);
+  const portrait = match && path.join(root, 'portraits', path.basename(match.file));
+  return portrait && fs.existsSync(portrait) ? portrait : null;
 }
 
 export function loadEarlyTop10(classId = 'CUS01') {
@@ -46,7 +56,7 @@ export function loadEarlyTop10(classId = 'CUS01') {
 
 export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
   if (!Object.hasOwn(classes, classId)) throw new Error('Unknown early top ten class');
-  const { folder, manifests, pageCount } = classes[classId];
+  const { folder, manifests, pageCount, preferManifest } = classes[classId];
   const index = Math.max(0, Math.min(pageCount - 1, Number.isInteger(page) ? page : 0));
   const rank = index + 1;
   const player = loadEarlyTop10(classId).get(rank);
@@ -61,8 +71,10 @@ export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
         { name: 'School / Year', value: `${schoolLabel(player.school)} · ${player.year}`, inline: true },
         { name: 'Build', value: `${player.height} · ${player.weight} lb`, inline: true },
       );
+    const root = path.join(dataRoot, 'prospects', folder);
+    const earlyPortrait = preferManifest ? findManifestPortrait(root, manifests, player) : null;
     // Match the player identity, not the early rank: the final board uses a different order.
-    const prospect = PROSPECT_CLASSES.includes(classId)
+    const prospect = !earlyPortrait && PROSPECT_CLASSES.includes(classId)
       ? matchPlayerPortrait(loadProspects(classId), player)
       : null;
     if (prospect && fs.existsSync(prospect.portrait)) {
@@ -70,14 +82,8 @@ export function buildEarlyTop10View(page = 0, classId = 'CUS01') {
       files.push(new AttachmentBuilder(prospect.portrait, { name }));
       embed.setThumbnail(`attachment://${name}`);
     } else {
-      const root = path.join(dataRoot, 'prospects', folder);
-      const portraits = manifests.flatMap((manifest) => {
-        const file = path.join(root, manifest);
-        return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
-      });
-      const match = matchPlayerPortrait(portraits, player);
-      const portrait = match && path.join(root, 'portraits', path.basename(match.file));
-      if (portrait && fs.existsSync(portrait)) {
+      const portrait = preferManifest ? earlyPortrait : findManifestPortrait(root, manifests, player);
+      if (portrait) {
         const name = `early-${classId.toLowerCase()}-rank-${rank}.png`;
         files.push(new AttachmentBuilder(portrait, { name }));
         embed.setThumbnail(`attachment://${name}`);

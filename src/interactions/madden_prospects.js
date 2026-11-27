@@ -1,6 +1,6 @@
 import { buildProspectView, PROSPECT_CLASSES, PROSPECT_POSITIONS } from '../madden/prospects.js';
 
-export const customId = /^madden_prospects_(?:class|(?:cus02_)?(?:position|(?:player|page)_[A-Z]+|(?<button>(?:previous|next)_[A-Z]+_\d+)))$/;
+export const customId = /^madden_prospects_(?:class|(?:(?<draftClass>cus0[23])_)?(?:position|(?:player|page)_[A-Z]+|(?<button>(?:previous|next)_[A-Z]+_\d+)))$/;
 
 export async function execute(interaction) {
   const match = customId.exec(interaction.customId);
@@ -15,8 +15,9 @@ export async function execute(interaction) {
       await interaction.editReply(buildProspectView({ classId }));
       return;
     }
-    const classId = interaction.customId.startsWith('madden_prospects_cus02_') ? 'CUS02' : 'CUS01';
-    const prefix = classId === 'CUS02' ? 'madden_prospects_cus02_' : 'madden_prospects_';
+    const draftClass = match.groups.draftClass;
+    const classId = draftClass ? draftClass.toUpperCase() : 'CUS01';
+    const prefix = draftClass ? `madden_prospects_${draftClass}_` : 'madden_prospects_';
     const selection = interaction.customId.slice(prefix.length);
     const [action, selectedPosition, target] = selection.split('_');
     const value = isNavigation ? target : interaction.values[0];

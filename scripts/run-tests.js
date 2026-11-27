@@ -6,6 +6,7 @@ import path from 'node:path';
 const scripts = [
   'test_prospects.js',
   'test_prospects_cus02.js',
+  'test_prospects_cus03.js',
   'test_early_top_10.js',
   'test_early_top_10_cus02.js',
   'test_early_top_10_cus03.js',

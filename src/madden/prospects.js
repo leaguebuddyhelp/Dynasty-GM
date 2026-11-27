@@ -6,6 +6,7 @@ import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, EmbedB
 const classFiles = Object.freeze({
   CUS01: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_01/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01.json', import.meta.url)), boardFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS01 - Big Board.json', import.meta.url)) },
   CUS02: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_02/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS02.json', import.meta.url)), boardFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS02 - Big Board.json', import.meta.url)) },
+  CUS03: { assetRoot: fileURLToPath(new URL('../../bundled_data/prospects/cus_03/', import.meta.url)), sourceFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS03.json', import.meta.url)), boardFile: fileURLToPath(new URL('../../bundled_data/madden/Madden - CUS03 - Big Board.json', import.meta.url)) },
 });
 export const PROSPECT_CLASSES = Object.freeze(Object.keys(classFiles));
 export const PROSPECT_POSITIONS = Object.freeze(['QB', 'HB', 'FB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL', 'CB', 'FS', 'SS', 'K', 'P']);
@@ -196,7 +197,7 @@ export function buildProspectView({ classId = 'CUS01', position = 'QB', playerId
     })))));
 
   const classMenu = new StringSelectMenuBuilder().setCustomId('madden_prospects_class').setPlaceholder('Choose a draft class')
-    .addOptions(PROSPECT_CLASSES.map((value) => ({ label: value === 'CUS01' ? 'Class 1 · CUS01' : 'Class 2 · CUS02', value, default: classId === value })));
+    .addOptions(PROSPECT_CLASSES.map((value) => ({ label: `Class ${Number(value.slice(3))} · ${value}`, value, default: classId === value })));
   components.push(new ActionRowBuilder().addComponents(classMenu));
   const embed = new EmbedBuilder().setColor(0x5865f2);
   const files = [];

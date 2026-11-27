@@ -310,8 +310,8 @@
     "name": "Jake Denney",
     "position": "QB",
     "school": "Texas",
-    "mode": "built-in imagegen",
-    "prompt": "Use case: photorealistic-natural. Asset: square transparent PNG for a Discord college football scouting card. Subject: fictional Jake Denney, a 22-year-old white quarterback with fair skin, brown eyes, short straight brown hair, an oval face, and clean-shaven cheeks and chin, with an athletic 6'3\", 220-pound build. Wear a burnt orange Texas Longhorns jersey with white numbers and the Texas wordmark, with the complete jersey number 12 clearly legible and centered on the chest. One unhelmeted athlete at a college football media day, straight-on, looking at the camera, arms at sides. Frame from a small margin above the entire hairstyle through the full chest number, with the jersey continuing naturally to the bottom edge. Use realistic skin and fabric texture, position-appropriate shoulder pads and balanced studio light. True alpha transparency outside the silhouette. No backdrop, checkerboard, captions or watermark.",
-    "file": "portraits/jake-denney-class03-v2.png"
+    "mode": "built-in imagegen edit",
+    "prompt": "Edit reference image 1, Jake Denney’s existing portrait. Use image 2 (Tyler Smit) ONLY as an exact crop and scale reference. Zoom Jake’s existing photo by approximately 1.35 times and recenter horizontally on his nose. Match the Tyler Smit head size, framing and composition at 1254 by 1254. Entire hairstyle with 20–25 px of clearance above it, eyes about one quarter down the frame, chin around 47 percent down, shoulder pads extending to both sides, bottom edge crosses the upper chest through the numeral 12. No full jersey, elbows, waist, or upper torso beyond the top portion of the chest numerals. Preserve Jake’s identifiable face, short straight brown hair, fair skin, brown eyes, neat short brown goatee, and authentic Texas Longhorns burnt orange jersey with white numeral 12. Preserve genuine alpha transparency outside the clean silhouette. No backdrop, checkerboard or added text.",
+    "file": "portraits/jake-denney-class03-v3.png"
   }
 ]

@@ -1,0 +1,873 @@
+{
+  "1": {
+    "#": 1,
+    "position": "QB",
+    "name": "Dashaud Smith",
+    "school": "Georgia",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 1,
+    "overall": 74,
+    "dev_trait": 2,
+    "archetype": "Strong Arm",
+    "height": "6'5\"",
+    "weight": 258,
+    "jersey": "#14",
+    "round": 1,
+    "pick": 1,
+    "class": 3,
+    "skin": "dark skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med messy afro faded",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "chubby round face",
+    "bio": "(heisman) trasnferred from, mississippi state, Franchise quarterback prospect with exceptional size, elite arm strength and impressive pocket presence."
+  },
+  "2": {
+    "#": 2,
+    "position": "QB",
+    "name": "Nick Boyle",
+    "school": "Michigan",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 1,
+    "overall": 71,
+    "dev_trait": 0,
+    "archetype": "Field General",
+    "height": "6'1\"",
+    "weight": 208,
+    "jersey": "#10",
+    "round": 1,
+    "pick": 22,
+    "class": 3,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short fade",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "classic white qb",
+    "bio": "Polished pocket passer with advanced processing, anticipation and excellent short-to-intermediate accuracy."
+  },
+  "3": {
+    "#": 3,
+    "position": "QB",
+    "name": "Dannie Montano",
+    "school": "North Dakota State",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 1,
+    "overall": 68,
+    "dev_trait": 0,
+    "archetype": "Scrambler",
+    "height": "6'2\"",
+    "weight": 220,
+    "jersey": "#10",
+    "round": 3,
+    "pick": 20,
+    "class": 3,
+    "skin": "olive/white",
+    "eye_color": "brown",
+    "ethnicity": "latin/black",
+    "hair": "med short hair",
+    "hair_color": "brown",
+    "facial_hair": "med/clean",
+    "features": "spanish/black",
+    "bio": "Dynamic dual-threat quarterback with impressive improvisational ability, but inconsistent downfield accuracy."
+  },
+  "4": {
+    "#": 4,
+    "position": "QB",
+    "name": "Josiah Freeman",
+    "school": "UCF",
+    "age": 22,
+    "year": "JR(RS)",
+    "pos_num": 1,
+    "overall": 65,
+    "dev_trait": 0,
+    "archetype": "Strong Arm",
+    "height": "6'5\"",
+    "weight": 230,
+    "jersey": "#5",
+    "round": 3,
+    "pick": 22,
+    "class": 3,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "high top fade",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "light skin",
+    "bio": "Prototypical pocket passer with impressive arm talent, but inconsistent mechanics under pressure."
+  },
+  "5": {
+    "#": 5,
+    "position": "QB",
+    "name": "Tucker Wilson",
+    "school": "Memphis",
+    "age": 23,
+    "year": "SR(RS)",
+    "pos_num": 1,
+    "overall": 64,
+    "dev_trait": 0,
+    "archetype": "Field General",
+    "height": "6'1\"",
+    "weight": 207,
+    "jersey": "#1",
+    "round": 3,
+    "pick": 28,
+    "class": 3,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short/med straight hair",
+    "hair_color": "brown",
+    "facial_hair": "light/clean",
+    "features": "classic white qb",
+    "bio": "Cerebral quarterback with sound decision-making, but limited arm strength and athletic upside."
+  },
+  "6": {
+    "#": 6,
+    "position": "QB",
+    "name": "Jake Denney",
+    "school": "Texas",
+    "age": 23,
+    "year": "SR(RS)",
+    "pos_num": 1,
+    "overall": 65,
+    "dev_trait": 0,
+    "archetype": "Scrambler",
+    "height": "6'3\"",
+    "weight": 223,
+    "jersey": "#12",
+    "class": 3,
+    "skin": "white",
+    "eye_color": "brown",
+    "ethnicity": "white",
+    "hair": "short straight hair",
+    "hair_color": "brown",
+    "facial_hair": "goatee",
+    "features": "classic white qb",
+    "bio": "Athletic developmental quarterback with promising escapability, but struggles progressing through multiple reads."
+  },
+  "7": {
+    "#": 7,
+    "position": "QB",
+    "name": "Jaxson Suarez",
+    "school": "Tennessee",
+    "age": 22,
+    "year": "SR",
+    "pos_num": 1,
+    "overall": 63,
+    "dev_trait": 0,
+    "archetype": "Strong Arm",
+    "height": "6'5\"",
+    "weight": 230,
+    "jersey": "#9",
+    "class": 3,
+    "skin": "olive/tan",
+    "eye_color": "brown",
+    "ethnicity": "latin/black",
+    "hair": "short dense afro faded",
+    "hair_color": "black",
+    "facial_hair": "light/clean",
+    "features": "mixxed race",
+    "bio": "Strong-armed developmental passer with ideal size, but inconsistent accuracy and ball placement."
+  },
+  "8": {
+    "#": 8,
+    "position": "QB",
+    "name": "Jasiah Anderson",
+    "school": "Rutgers",
+    "age": 23,
+    "year": "SR(RS)",
+    "pos_num": 1,
+    "overall": 61,
+    "dev_trait": 0,
+    "archetype": "Strong Arm",
+    "height": "6'2\"",
+    "weight": 230,
+    "jersey": "#2",
+    "class": 3,
+    "skin": "med brown skin",
+    "eye_color": "brown",
+    "ethnicity": "african american",
+    "hair": "med afro faded",
+    "hair_color": "black",
+    "facial_hair": "med/clean",
+    "features": "black features",
+    "bio": "Physically gifted passer with impressive throwing velocity, but struggles with timing and anticipation."
+  },
+  "9": {
+    "#": 9,
+    "position": "QB",
+    "name": "Isaac McCormick",
+    "school": "Buffalo",
+    "age": 24,
+    "year": "SR(RS)",
+    "pos_num": 1,
+    "overall": 61,
+    "dev_trait": 0,
+    "archetype": "Scrambler",
+    "height": "6'4\"",
+    "weight": 240,
+    "jersey": "#8",
+    "class": 3,
+    "skin": "olive/tan",
+    "eye_color": "hazel",
+    "ethnicity": "african american",
+    "hair": "temple fade afro",
+    "hair_color": "brown",
+    "facial_hair": "none",
+    "features": "mixxed race",
+    "bio": "Powerful dual-threat quarterback with intriguing rushing ability, but limited pocket passing refinement."
+  },
+  "10": {
+    "#": 10
+  },
+  "11": {
+    "#": 11
+  },
+  "12": {
+    "#": 12
+  },
+  "13": {
+    "#": 13
+  },
+  "14": {
+    "#": 14
+  },
+  "15": {
+    "#": 15
+  },
+  "16": {
+    "#": 16
+  },
+  "17": {
+    "#": 17
+  },
+  "18": {
+    "#": 18
+  },
+  "19": {
+    "#": 19
+  },
+  "20": {
+    "#": 20
+  },
+  "21": {
+    "#": 21
+  },
+  "22": {
+    "#": 22
+  },
+  "23": {
+    "#": 23
+  },
+  "24": {
+    "#": 24
+  },
+  "25": {
+    "#": 25
+  },
+  "26": {
+    "#": 26
+  },
+  "27": {
+    "#": 27
+  },
+  "28": {
+    "#": 28
+  },
+  "29": {
+    "#": 29
+  },
+  "30": {
+    "#": 30
+  },
+  "31": {
+    "#": 31
+  },
+  "32": {
+    "#": 32
+  },
+  "33": {
+    "#": 33
+  },
+  "34": {
+    "#": 34
+  },
+  "35": {
+    "#": 35
+  },
+  "36": {
+    "#": 36
+  },
+  "37": {
+    "#": 37
+  },
+  "38": {
+    "#": 38
+  },
+  "39": {
+    "#": 39
+  },
+  "40": {
+    "#": 40
+  },
+  "41": {
+    "#": 41
+  },
+  "42": {
+    "#": 42
+  },
+  "43": {
+    "#": 43
+  },
+  "44": {
+    "#": 44
+  },
+  "45": {
+    "#": 45
+  },
+  "46": {
+    "#": 46
+  },
+  "47": {
+    "#": 47
+  },
+  "48": {
+    "#": 48
+  },
+  "49": {
+    "#": 49
+  },
+  "50": {
+    "#": 50
+  },
+  "51": {
+    "#": 51
+  },
+  "52": {
+    "#": 52
+  },
+  "53": {
+    "#": 53
+  },
+  "54": {
+    "#": 54
+  },
+  "55": {
+    "#": 55
+  },
+  "56": {
+    "#": 56
+  },
+  "57": {
+    "#": 57
+  },
+  "58": {
+    "#": 58
+  },
+  "59": {
+    "#": 59
+  },
+  "60": {
+    "#": 60
+  },
+  "61": {
+    "#": 61
+  },
+  "62": {
+    "#": 62
+  },
+  "63": {
+    "#": 63
+  },
+  "64": {
+    "#": 64
+  },
+  "65": {
+    "#": 65
+  },
+  "66": {
+    "#": 66
+  },
+  "67": {
+    "#": 67
+  },
+  "68": {
+    "#": 68
+  },
+  "69": {
+    "#": 69
+  },
+  "70": {
+    "#": 70
+  },
+  "71": {
+    "#": 71
+  },
+  "72": {
+    "#": 72
+  },
+  "73": {
+    "#": 73
+  },
+  "74": {
+    "#": 74
+  },
+  "75": {
+    "#": 75
+  },
+  "76": {
+    "#": 76
+  },
+  "77": {
+    "#": 77
+  },
+  "78": {
+    "#": 78
+  },
+  "79": {
+    "#": 79
+  },
+  "80": {
+    "#": 80
+  },
+  "81": {
+    "#": 81
+  },
+  "82": {
+    "#": 82
+  },
+  "83": {
+    "#": 83
+  },
+  "84": {
+    "#": 84
+  },
+  "85": {
+    "#": 85
+  },
+  "86": {
+    "#": 86
+  },
+  "87": {
+    "#": 87
+  },
+  "88": {
+    "#": 88
+  },
+  "89": {
+    "#": 89
+  },
+  "90": {
+    "#": 90
+  },
+  "91": {
+    "#": 91
+  },
+  "92": {
+    "#": 92
+  },
+  "93": {
+    "#": 93
+  },
+  "94": {
+    "#": 94
+  },
+  "95": {
+    "#": 95
+  },
+  "96": {
+    "#": 96
+  },
+  "97": {
+    "#": 97
+  },
+  "98": {
+    "#": 98
+  },
+  "99": {
+    "#": 99
+  },
+  "100": {
+    "#": 100
+  },
+  "101": {
+    "#": 101
+  },
+  "102": {
+    "#": 102
+  },
+  "103": {
+    "#": 103
+  },
+  "104": {
+    "#": 104
+  },
+  "105": {
+    "#": 105
+  },
+  "106": {
+    "#": 106
+  },
+  "107": {
+    "#": 107
+  },
+  "108": {
+    "#": 108
+  },
+  "109": {
+    "#": 109
+  },
+  "110": {
+    "#": 110
+  },
+  "111": {
+    "#": 111
+  },
+  "112": {
+    "#": 112
+  },
+  "113": {
+    "#": 113
+  },
+  "114": {
+    "#": 114
+  },
+  "115": {
+    "#": 115
+  },
+  "116": {
+    "#": 116
+  },
+  "117": {
+    "#": 117
+  },
+  "118": {
+    "#": 118
+  },
+  "119": {
+    "#": 119
+  },
+  "120": {
+    "#": 120
+  },
+  "121": {
+    "#": 121
+  },
+  "122": {
+    "#": 122
+  },
+  "123": {
+    "#": 123
+  },
+  "124": {
+    "#": 124
+  },
+  "125": {
+    "#": 125
+  },
+  "126": {
+    "#": 126
+  },
+  "127": {
+    "#": 127
+  },
+  "128": {
+    "#": 128
+  },
+  "129": {
+    "#": 129
+  },
+  "130": {
+    "#": 130
+  },
+  "131": {
+    "#": 131
+  },
+  "132": {
+    "#": 132
+  },
+  "133": {
+    "#": 133
+  },
+  "134": {
+    "#": 134
+  },
+  "135": {
+    "#": 135
+  },
+  "136": {
+    "#": 136
+  },
+  "137": {
+    "#": 137
+  },
+  "138": {
+    "#": 138
+  },
+  "139": {
+    "#": 139
+  },
+  "140": {
+    "#": 140
+  },
+  "141": {
+    "#": 141
+  },
+  "142": {
+    "#": 142
+  },
+  "143": {
+    "#": 143
+  },
+  "144": {
+    "#": 144
+  },
+  "145": {
+    "#": 145
+  },
+  "146": {
+    "#": 146
+  },
+  "147": {
+    "#": 147
+  },
+  "148": {
+    "#": 148
+  },
+  "149": {
+    "#": 149
+  },
+  "150": {
+    "#": 150
+  },
+  "151": {
+    "#": 151
+  },
+  "152": {
+    "#": 152
+  },
+  "153": {
+    "#": 153
+  },
+  "154": {
+    "#": 154
+  },
+  "155": {
+    "#": 155
+  },
+  "156": {
+    "#": 156
+  },
+  "157": {
+    "#": 157
+  },
+  "158": {
+    "#": 158
+  },
+  "159": {
+    "#": 159
+  },
+  "160": {
+    "#": 160
+  },
+  "161": {
+    "#": 161
+  },
+  "162": {
+    "#": 162
+  },
+  "163": {
+    "#": 163
+  },
+  "164": {
+    "#": 164
+  },
+  "165": {
+    "#": 165
+  },
+  "166": {
+    "#": 166
+  },
+  "167": {
+    "#": 167
+  },
+  "168": {
+    "#": 168
+  },
+  "169": {
+    "#": 169
+  },
+  "170": {
+    "#": 170
+  },
+  "171": {
+    "#": 171
+  },
+  "172": {
+    "#": 172
+  },
+  "173": {
+    "#": 173
+  },
+  "174": {
+    "#": 174
+  },
+  "175": {
+    "#": 175
+  },
+  "176": {
+    "#": 176
+  },
+  "177": {
+    "#": 177
+  },
+  "178": {
+    "#": 178
+  },
+  "179": {
+    "#": 179
+  },
+  "180": {
+    "#": 180
+  },
+  "181": {
+    "#": 181
+  },
+  "182": {
+    "#": 182
+  },
+  "183": {
+    "#": 183
+  },
+  "184": {
+    "#": 184
+  },
+  "185": {
+    "#": 185
+  },
+  "186": {
+    "#": 186
+  },
+  "187": {
+    "#": 187
+  },
+  "188": {
+    "#": 188
+  },
+  "189": {
+    "#": 189
+  },
+  "190": {
+    "#": 190
+  },
+  "191": {
+    "#": 191
+  },
+  "192": {
+    "#": 192
+  },
+  "193": {
+    "#": 193
+  },
+  "194": {
+    "#": 194
+  },
+  "195": {
+    "#": 195
+  },
+  "196": {
+    "#": 196
+  },
+  "197": {
+    "#": 197
+  },
+  "198": {
+    "#": 198
+  },
+  "199": {
+    "#": 199
+  },
+  "200": {
+    "#": 200
+  },
+  "201": {
+    "#": 201
+  },
+  "202": {
+    "#": 202
+  },
+  "203": {
+    "#": 203
+  },
+  "204": {
+    "#": 204
+  },
+  "205": {
+    "#": 205
+  },
+  "206": {
+    "#": 206
+  },
+  "207": {
+    "#": 207
+  },
+  "208": {
+    "#": 208
+  },
+  "209": {
+    "#": 209
+  },
+  "210": {
+    "#": 210
+  },
+  "211": {
+    "#": 211
+  },
+  "212": {
+    "#": 212
+  },
+  "213": {
+    "#": 213
+  },
+  "214": {
+    "#": 214
+  },
+  "215": {
+    "#": 215
+  },
+  "216": {
+    "#": 216
+  },
+  "217": {
+    "#": 217
+  },
+  "218": {
+    "#": 218
+  },
+  "219": {
+    "#": 219
+  },
+  "220": {
+    "#": 220
+  },
+  "221": {
+    "#": 221
+  },
+  "222": {
+    "#": 222
+  },
+  "223": {
+    "#": 223
+  },
+  "224": {
+    "#": 224
+  }
+}
