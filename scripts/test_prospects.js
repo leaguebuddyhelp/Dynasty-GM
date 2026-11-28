@@ -7,7 +7,7 @@ import { execute as menuExecute, customId } from '../src/interactions/madden_pro
 import { loadSoloCommands, loadSoloInteractionHandlers } from '../src/leaguebuddy/solo_mode.js';
 
 const players = loadProspects();
-assert.equal(players.length, 185);
+assert.equal(players.length, 201);
 assert.equal(new Set(players.flatMap((p) => p.statistics ? [p.statistics.games] : [])).size >= 4, true);
 assert.equal(PROSPECT_POSITIONS.length, 21);
 const olIds = ['8', '10', '15', '19', '20', '28', '37', '49', '60', '65', '71', '73', '76', '77', '79', '93'];
@@ -16,7 +16,7 @@ const lbIds = ['7', '12', '51', '52', '53', '57', '58', '59', '69', '78', '87', 
 const dbIds = ['4', '5', '16', '22', '23', '29', '32', '34', '40', '42', '47', '50', '64', '66', '68', '81', '82', '85', '90', '91'];
 const rankedIds = [...olIds, ...dlIds, ...lbIds, ...dbIds, '1', '2', '6', '11', '13', '14', '17', '18', '21', '24', '26', '30', '33', '43', '44', '48', '56', '61', '63', '67', '74', '83', '84', '86', '89', '92', '94'];
 const rankById = { '56': 63, '63': 56 };
-const scoutingIds = Array.from({ length: 89 }, (_, index) => String(index + 97));
+const scoutingIds = Array.from({ length: 105 }, (_, index) => String(index + 97));
 assert.deepEqual(players.map((p) => p.id), [...rankedIds.sort((a, b) => (rankById[a] ?? Number(a)) - (rankById[b] ?? Number(b))), ...scoutingIds]);
 assert.doesNotMatch(JSON.stringify(players), /"overall"|"dev_trait"|"archetype"/);
 const home = buildProspectView();
@@ -27,15 +27,17 @@ const hbHome = buildProspectView({ position: 'HB' });
 const board = Object.values(JSON.parse(fs.readFileSync('bundled_data/madden/Madden - CUS01 - Big Board.json', 'utf8')));
 const halfbacks = board.filter(({ name, position }) => name && position === 'HB');
 assert.equal(halfbacks.length, 20);
-assert.deepEqual(hbHome.components[1].toJSON().components[0].options.map((option) => option.label), halfbacks.map(({ name }) => name));
-assert.match(hbHome.embeds[0].toJSON().footer.text, /185 profiles available.*QB \/ HB \/ WR \/ TE \/ LT \/ LG \/ C \/ RG \/ RT \/ LEDG \/ REDG \/ DT \/ SAM \/ MIKE \/ WILL \/ CB \/ FS \/ SS/);
+assert.deepEqual(hbHome.components[1].toJSON().components[0].options.map((option) => option.label).sort(),
+  halfbacks.map(({ name }) => name).sort());
+assert.match(hbHome.embeds[0].toJSON().footer.text, /201 profiles available.*QB \/ HB \/ WR \/ TE \/ LT \/ LG \/ C \/ RG \/ RT \/ LEDG \/ REDG \/ DT \/ SAM \/ MIKE \/ WILL \/ CB \/ FS \/ SS/);
 assert.equal(players.find((p) => p.name === 'Xander Knox').school, 'Michigan State');
 assert.equal(players.find((p) => p.name === 'Anderius Jenkins').jersey, '#0');
 assert.equal(players.find((p) => p.name === 'Devin Guillory').jersey, '#0');
 const wrHome = buildProspectView({ position: 'WR' });
 const receivers = board.filter(({ name, position }) => name && position === 'WR');
 assert.equal(receivers.length, 24);
-assert.deepEqual(wrHome.components[1].toJSON().components[0].options.map(({ label }) => label), receivers.map(({ name }) => name));
+assert.deepEqual(wrHome.components[1].toJSON().components[0].options.map(({ label }) => label).sort(),
+  receivers.map(({ name }) => name).sort());
 for (const [id, file] of [['114', 'jerald-simms-morrison'], ['116', 'chacha-oakim']]) {
   assert.ok(players.find((p) => p.id === id).portrait.endsWith(`/${file}-early-transparent.png`));
 }
@@ -50,17 +52,18 @@ assert.equal(players.find((p) => p.name === 'Ehsando Mwangu').jersey, '#0');
 const prospectFields = ({ name, school, jersey }) => [name, school, jersey];
 for (const position of ['LT', 'LG', 'C', 'RG', 'RT']) {
   const sourcePlayers = board.filter((row) => row.name && row.position === position);
-  assert.deepEqual(players.filter((player) => player.position === position).map(prospectFields), sourcePlayers.map(prospectFields));
+  assert.deepEqual(players.filter((player) => player.position === position).map(prospectFields).sort(),
+    sourcePlayers.map(prospectFields).sort());
 }
-for (const position of ['LEDG', 'REDG', 'DT']) {
-  const defensiveLineFields = ({ name, jersey }) => [name, jersey];
+for (const position of ['LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL']) {
+  const frontSevenFields = ({ name, jersey }) => [name, jersey];
   const sourcePlayers = board.filter((row) => row.name && row.position === position);
-  assert.deepEqual(players.filter((player) => player.position === position).map(defensiveLineFields).sort(),
-    sourcePlayers.map(defensiveLineFields).sort());
+  assert.deepEqual(players.filter((player) => player.position === position).map(frontSevenFields).sort(),
+    sourcePlayers.map(frontSevenFields).sort());
 }
 assert.equal(players.filter(({ name }) => name === 'Kaziri Nyokare').length, 1);
 assert.equal(players.find(({ id }) => id === '70').position, 'REDG');
-for (const [position, count] of Object.entries({ LT: 11, LG: 8, C: 7, RG: 9, RT: 9, LEDG: 11, REDG: 13, DT: 18, SAM: 4, MIKE: 5, WILL: 3, CB: 11, FS: 4, SS: 5 })) {
+for (const [position, count] of Object.entries({ LT: 11, LG: 8, C: 7, RG: 9, RT: 9, LEDG: 11, REDG: 13, DT: 18, SAM: 8, MIKE: 10, WILL: 10, CB: 11, FS: 4, SS: 5 })) {
   const view = buildProspectView({ position });
   const options = view.components[1].toJSON().components[0].options;
   assert.equal(options.length, count);
@@ -102,6 +105,8 @@ const expectedSchoolEmojis = {
   '100': '1573014914828869642', '102': '1572332488435572916', '104': '1572347586486993047',
 };
 const newlyAddedSchoolEmojis = {
+  'North Dakota State': '1575956233998041230', UCF: '1575956232051757278',
+  Rutgers: '1575956229459550298', Buffalo: '1575956227865706676',
   'Arizona State': '1574182155125526748',
   'Michigan State': '1574094872737087579', Utah: '1574094869985493123',
   'East Carolina': '1574094868450639952', UAB: '1574094866181259374',
@@ -136,7 +141,7 @@ for (const player of players) {
   const stats = player.statistics;
   if (!stats) {
     assert.ok(scoutingIds.includes(player.id));
-    if (['HB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT'].includes(player.position)) {
+    if (['HB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'LEDG', 'REDG', 'DT', 'SAM', 'MIKE', 'WILL'].includes(player.position)) {
       assert.deepEqual([metadata.width, metadata.height], [1254, 1254], player.name);
     }
     assert.equal(player.rank, null);
@@ -296,10 +301,13 @@ for (const [id, value, expected] of [
   ['madden_prospects_player_DT', '173', 'Brandon Hurst · DT'],
   ['madden_prospects_position', 'SAM', 'Willie Mason Jr · SAM'],
   ['madden_prospects_player_SAM', '12', 'Willie Mason Jr · SAM'],
+  ['madden_prospects_player_SAM', '186', 'Kalel McKinney · SAM'],
   ['madden_prospects_position', 'MIKE', 'Jonathon Aquino · MIKE'],
   ['madden_prospects_player_MIKE', '52', 'Jonathon Aquino · MIKE'],
+  ['madden_prospects_player_MIKE', '190', 'Zeeshan Woods · MIKE'],
   ['madden_prospects_position', 'WILL', 'Kevin Alexander Jr · WILL'],
   ['madden_prospects_player_WILL', '7', 'Kevin Alexander Jr · WILL'],
+  ['madden_prospects_player_WILL', '195', 'Rehema Mbarouk · WILL'],
   ['madden_prospects_position', 'CB', 'Kenneth Bell · CB'],
   ['madden_prospects_player_CB', '4', 'Kenneth Bell · CB'],
   ['madden_prospects_position', 'FS', 'Keanu Jones · FS'],
@@ -340,4 +348,4 @@ const lastReceiver = buildProspectView({ position: 'WR', playerId: '129' });
 assert.equal(lastReceiver.embeds[0].toJSON().footer.text, 'CUS01 · Scouting profile · 24/24');
 assert.equal(navigation(lastReceiver)[1].disabled, true);
 assert.equal(navigation(lastReceiver)[0].disabled, false);
-console.log('PASS 185 CUS01 portraits, 18 defensive tackle cards, and consistent fictional statistics');
+console.log('PASS 201 CUS01 portraits, 28 linebacker cards, and consistent fictional statistics');

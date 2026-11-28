@@ -2669,6 +2669,102 @@
       "position": "DT",
       "portrait": "taevion-jefferson-transparent.png",
       "bio": "Jefferson has the strength and mass to give UConn useful rotational snaps at nose tackle. He can hold his ground on direct interior runs and make a runner work around him. His range is limited in pursuit, so his best work comes when the play stays near his gap."
+    },
+    "186": {
+      "name": "Kalel McKinney",
+      "position": "SAM",
+      "portrait": "kalel-mckinney-transparent.png",
+      "bio": "McKinney turns smoothly in coverage and gives Texas A&M a linebacker who can redirect with receivers and backs in space. His fluid hips help him stay in position when a route changes direction. Against the run, physical blockers can tie him up once they get their hands on him."
+    },
+    "187": {
+      "name": "Dominick Smith",
+      "position": "SAM",
+      "portrait": "dominick-smith-transparent.png",
+      "bio": "Smith reads the run well and gives Colorado State a linebacker who can finish reliably when he reaches the ball carrier. His instincts help him get into position early. His coverage range is more limited, especially when the assignment asks him to chase a target across open space."
+    },
+    "188": {
+      "name": "Harrison Green",
+      "position": "SAM",
+      "portrait": "harrison-green-transparent.png",
+      "bio": "Green brings Georgia Tech a long frame and the strength to meet runners downhill. He can make contact count when he takes a direct path to the ball. His recognition and pursuit angles vary, and more consistent reads would put that physical ability in position to finish more plays."
+    },
+    "189": {
+      "name": "Jonell Washington",
+      "position": "SAM",
+      "portrait": "jonell-washington-transparent.png",
+      "bio": "Washington gives UTEP a physical outside linebacker with the size to hold his ground and turn runs back inside. He can make an impact when the play stays near his edge. Limited lateral quickness makes wider pursuit and more demanding coverage assignments a tougher fit."
+    },
+    "190": {
+      "name": "Zeeshan Woods",
+      "position": "MIKE",
+      "portrait": "zeeshan-woods-transparent.png",
+      "bio": "Woods reads developing plays quickly and gives Michigan State a middle linebacker who can recognize what the offense is trying to do. His instincts help him get a head start toward the ball. Covering ground away from his initial position is less natural, which limits his range on passing downs."
+    },
+    "191": {
+      "name": "Kamoni Horton",
+      "position": "MIKE",
+      "portrait": "kamoni-horton-transparent.png",
+      "bio": "Horton diagnoses plays well and stays disciplined within his assignment, giving Georgia a linebacker who can find his path to the ball early. Those instincts help him work through traffic. Larger blockers can delay him once they engage, so getting free of contact is an important part of his development."
+    },
+    "192": {
+      "name": "Isaiah Thompson",
+      "position": "MIKE",
+      "portrait": "isaiah-thompson-transparent.png",
+      "bio": "Thompson is at his best coming downhill, where he can meet a runner with force and finish the tackle. West Virginia can use that physical style when the play stays near the line. His movement is less fluid in coverage, especially when a route forces him to turn and redirect."
+    },
+    "193": {
+      "name": "Kalikohemolele Kali",
+      "position": "MIKE",
+      "portrait": "kalikohemolele-kali-transparent.png",
+      "bio": "Kali moves well in zone coverage and shows the instincts to recognize when a target is about to enter his area. BYU can use that awareness and mobility on passing downs. His run defense varies from play to play, so more dependable work against the run would broaden his role."
+    },
+    "194": {
+      "name": "Marquise Mitchell",
+      "position": "MIKE",
+      "portrait": "marquise-mitchell-transparent.png",
+      "bio": "Mitchell brings Massachusetts a stocky middle linebacker with the awareness to recognize where a play is headed. He is most effective when he can work near his starting spot and take a direct path to the ball. Limited burst and pursuit speed make it harder to close from farther away."
+    },
+    "195": {
+      "name": "Rehema Mbarouk",
+      "position": "WILL",
+      "portrait": "rehema-mbarouk-transparent.png",
+      "bio": "Mbarouk comes downhill with force and has the tackling strength to finish when he meets a runner square. USC can lean on that physicality when the assignment asks him to attack the line of scrimmage. His coverage versatility is limited, making his clearest fit a run-focused role."
+    },
+    "196": {
+      "name": "Arkell Simmons",
+      "position": "WILL",
+      "portrait": "arkell-simmons-transparent.png",
+      "bio": "Simmons has the lateral mobility to follow routes across space and change direction without losing much ground. North Dakota State can use that movement to handle coverage assignments away from the formation. He is less effective shedding run blocks once a blocker establishes contact and stays attached."
+    },
+    "197": {
+      "name": "Lemond Anthony",
+      "position": "WILL",
+      "portrait": "lemond-anthony-transparent.png",
+      "bio": "Anthony gives Tulane a 255-pound linebacker who can meet runners with force and finish tackles through contact. His size makes him a useful presence when the run comes directly at him. Quicker changes of direction are harder for him, particularly when a runner cuts away from his original path."
+    },
+    "198": {
+      "name": "Kerrel Neal",
+      "position": "WILL",
+      "portrait": "kerrel-neal-transparent.png",
+      "bio": "Neal brings Minnesota the movement skills to stay with targets in man coverage and compete when the route changes direction. That gives him a role on passing downs. His tackling technique is less consistent, so cleaner finishes would help him turn good positioning into stops after the catch."
+    },
+    "199": {
+      "name": "Jase Stewart",
+      "position": "WILL",
+      "portrait": "jase-stewart-transparent.png",
+      "bio": "Stewart takes sound pursuit angles and gives Harvard a run defender who can stay disciplined as a play develops. His path to the ball helps him arrive in position to make the tackle. He lacks explosive closing speed, making it more important to read the play and leave early."
+    },
+    "200": {
+      "name": "Jakari McMillan",
+      "position": "WILL",
+      "portrait": "jakari-mcmillan-transparent.png",
+      "bio": "McMillan attacks downhill and gives SMU a linebacker who can finish tackles with force when he has a direct path to the ball. His physicality shows up near the line. More consistent play recognition would help him get moving in the right direction sooner and make more of that strength."
+    },
+    "201": {
+      "name": "Tyler Dominguez",
+      "position": "WILL",
+      "portrait": "tyler-dominguez-transparent.png",
+      "bio": "Dominguez gives Virginia Tech a strong linebacker who can contribute in a rotation against the run. He is most effective when the play stays close and asks him to meet a runner directly. His range is limited when an assignment requires him to cover ground from sideline to sideline."
     }
   }
 }

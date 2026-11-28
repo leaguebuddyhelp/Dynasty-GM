@@ -82,5 +82,149 @@
     "mode": "built-in imagegen",
     "prompt": "Use case: photorealistic-natural. Asset type: transparent PNG fictional college football draft prospect cutout for a Discord card. Subject: Sammie Bonilla, a fictional adult 22-year-old male SAM linebacker, african american, white/tan skin, hazel eyes, brown med straight hair fade, facial hair: goatee; 6'0\", 239-pound linebacker build; wearing a Utah State football jersey #55 with school branding and authentic colors. Unique fictional adult athlete, not a real player. Composition: square head-and-shoulders sports studio portrait, centered facing camera, entire hairstyle visible, no helmet. Natural composed expression, realistic skin texture, soft professional lighting, polished editorial photography. Show upper chest school logo and specified jersey numeral. Only one person. Background: genuinely transparent alpha, no backdrop, no fill, no checkerboard, no drop shadow. Clean natural edges around hair and shoulders. No captions or watermark.",
     "file": "portraits/sammie-bonilla-transparent.png"
+  },
+  {
+    "id": "186",
+    "name": "Kalel McKinney",
+    "position": "SAM",
+    "school": "Texas A&M",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Kalel McKinney, a fictional 22-year-old adult college strongside linebacker. Appearance: Black man with medium brown skin, brown eyes, styled black locs, clean shaven. Match his 6'1\", 230-pound linebacker build. Wear the Texas A&M maroon with white block digits and Texas A&M branding football jersey. Use exact jersey number 2, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/kalel-mckinney-transparent.png"
+  },
+  {
+    "id": "187",
+    "name": "Dominick Smith",
+    "position": "SAM",
+    "school": "Colorado State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Dominick Smith, a fictional 23-year-old adult college strongside linebacker. Appearance: white man with fair skin, brown eyes, short straight brown hair and a neat medium beard. Match his 6'3\", 238-pound linebacker build. Wear the Colorado State dark green with white digits and gold accents football jersey. Use exact jersey number 40, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/dominick-smith-transparent.png"
+  },
+  {
+    "id": "188",
+    "name": "Harrison Green",
+    "position": "SAM",
+    "school": "Georgia Tech",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Harrison Green, a fictional 22-year-old adult college strongside linebacker. Appearance: Black man with dark skin, brown eyes, long black locs, light trimmed stubble, rounded face. Match his 6'4\", 248-pound linebacker build. Wear the Georgia Tech white with navy digits, old gold accents and GT branding football jersey. Use exact jersey number 8, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/harrison-green-transparent.png"
+  },
+  {
+    "id": "189",
+    "name": "Jonell Washington",
+    "position": "SAM",
+    "school": "UTEP",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Jonell Washington, a fictional 23-year-old adult college strongside linebacker. Appearance: Black man with medium brown skin, brown eyes, short black locs with fade and a neat goatee. Match his 6'4\", 251-pound linebacker build. Wear the UTEP Miners orange with white digits and navy accents football jersey. Use exact jersey number 15, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/jonell-washington-transparent.png"
+  },
+  {
+    "id": "190",
+    "name": "Zeeshan Woods",
+    "position": "MIKE",
+    "school": "Michigan State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Zeeshan Woods, a fictional 22-year-old adult college middle linebacker. Appearance: Black man with dark skin, brown eyes, classic black cornrows and light neatly groomed stubble. Match his 5'11\", 240-pound linebacker build. Wear the Michigan State deep green with white digits and Spartan helmet chest branding football jersey. Use exact jersey number 37, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/zeeshan-woods-transparent.png"
+  },
+  {
+    "id": "191",
+    "name": "Kamoni Horton",
+    "position": "MIKE",
+    "school": "Georgia",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Kamoni Horton, a fictional 22-year-old adult college middle linebacker. Appearance: Black man with medium brown skin, brown eyes, long black locs, clean shaven. Match his 6'0\", 228-pound linebacker build. Wear the Georgia Bulldogs red with white digits and Georgia G football jersey. Use exact jersey number 51, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/kamoni-horton-transparent.png"
+  },
+  {
+    "id": "192",
+    "name": "Isaiah Thompson",
+    "position": "MIKE",
+    "school": "West Virginia",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Isaiah Thompson, a fictional 23-year-old adult college middle linebacker. Appearance: light-skinned mixed-race Black man, brown eyes, short brown Caesar fade and a clean-shaven face. Match his 6'2\", 238-pound linebacker build. Wear the West Virginia navy with gold digits and WV mark football jersey. Use exact jersey number 18, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/isaiah-thompson-transparent.png"
+  },
+  {
+    "id": "193",
+    "name": "Kalikohemolele Kali",
+    "position": "MIKE",
+    "school": "BYU",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Kalikohemolele Kali, a fictional 24-year-old adult college middle linebacker. Appearance: Native Hawaiian man with tan olive skin, brown eyes, short brown Caesar fade and light neat stubble. Match his 6'1\", 230-pound linebacker build. Wear the BYU Cougars royal blue with white numbers and BYU Y football jersey. Use exact jersey number 2, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/kalikohemolele-kali-transparent.png"
+  },
+  {
+    "id": "194",
+    "name": "Marquise Mitchell",
+    "position": "MIKE",
+    "school": "Massachusetts",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Marquise Mitchell, a fictional 23-year-old adult college middle linebacker. Appearance: Black man with dark skin, brown eyes, styled black locs with faded sides and a neat medium beard. Match his 5'11\", 245-pound linebacker build. Wear the Massachusetts Minutemen maroon with white digits and UMass lettering football jersey. Use exact jersey number 5, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/marquise-mitchell-transparent.png"
+  },
+  {
+    "id": "195",
+    "name": "Rehema Mbarouk",
+    "position": "WILL",
+    "school": "USC",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Rehema Mbarouk, a fictional 22-year-old adult college weakside linebacker. Appearance: Black man with dark skin, brown eyes, designed black locs with faded sides and light groomed stubble. Match his 6'0\", 240-pound linebacker build. Wear the USC Trojans cardinal with gold digits and gold accents football jersey. Use exact jersey number 1, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/rehema-mbarouk-transparent.png"
+  },
+  {
+    "id": "196",
+    "name": "Arkell Simmons",
+    "position": "WILL",
+    "school": "North Dakota State",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Arkell Simmons, a fictional 23-year-old adult college weakside linebacker. Appearance: light-skinned mixed-race Black man with green eyes, medium-length brown curls with temple fade and clean-shaven face. Match his 6'2\", 225-pound linebacker build. Wear the North Dakota State Bison green with gold digits and Bison insignia football jersey. Use exact jersey number 40, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/arkell-simmons-transparent.png"
+  },
+  {
+    "id": "197",
+    "name": "Lemond Anthony",
+    "position": "WILL",
+    "school": "Tulane",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Lemond Anthony, a fictional 23-year-old adult college weakside linebacker. Appearance: Black man with medium brown skin, brown eyes, short brown Caesar fade, clean shaven. Match his 6'4\", 255-pound linebacker build. Wear the Tulane Green Wave olive green with white digits and light blue accents football jersey. Use exact jersey number 44, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/lemond-anthony-transparent.png"
+  },
+  {
+    "id": "198",
+    "name": "Kerrel Neal",
+    "position": "WILL",
+    "school": "Minnesota",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Kerrel Neal, a fictional 22-year-old adult college weakside linebacker. Appearance: Black man with dark skin, brown eyes, styled black locs with a fade and neat light stubble. Match his 6'0\", 225-pound linebacker build. Wear the Minnesota Golden Gophers maroon with gold digits and Minnesota M football jersey. Use exact jersey number 21, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/kerrel-neal-transparent.png"
+  },
+  {
+    "id": "199",
+    "name": "Jase Stewart",
+    "position": "WILL",
+    "school": "Harvard",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Jase Stewart, a fictional 23-year-old adult college weakside linebacker. Appearance: white man with fair skin, brown eyes, short straight brown hair and a neatly trimmed medium beard. Match his 6'3\", 230-pound linebacker build. Wear the Harvard Crimson deep crimson with white digits and small Harvard branding football jersey. Use exact jersey number 31, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/jase-stewart-transparent.png"
+  },
+  {
+    "id": "200",
+    "name": "Jakari McMillan",
+    "position": "WILL",
+    "school": "SMU",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Jakari McMillan, a fictional 22-year-old adult college weakside linebacker. Appearance: Black man with dark skin, brown eyes, short black afro fade and light neat stubble. Match his 6'2\", 238-pound linebacker build. Wear the SMU Mustangs royal blue with white digits, red trim and SMU branding football jersey. Use exact jersey number 23, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/jakari-mcmillan-transparent.png"
+  },
+  {
+    "id": "201",
+    "name": "Tyler Dominguez",
+    "position": "WILL",
+    "school": "Virginia Tech",
+    "mode": "built-in imagegen",
+    "prompt": "Photorealistic media-day headshot of Tyler Dominguez, a fictional 23-year-old adult college weakside linebacker. Appearance: light-skinned mixed-race Black man with brown eyes, short brown Caesar fade and clean-shaven face. Match his 6'3\", 243-pound linebacker build. Wear the Virginia Tech Hokies maroon with white digits and orange trim football jersey. Use exact jersey number 33, consistently repeated on chest and shoulders. Square 1254 by 1254 cutout. Tight head and upper chest crop, shoulders across the lower frame with the lower part of the front number below the frame. Whole hairstyle visible with a sliver of clearance. Centered unhelmeted face, looking straight into the lens with natural expression, realistic skin and uniform texture, even soft studio lighting. One subject, genuine alpha transparency outside the silhouette. No backdrop, checkerboard, cast shadow, captions, frame or watermark.",
+    "file": "portraits/tyler-dominguez-transparent.png"
   }
 ]
